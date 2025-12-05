@@ -18,6 +18,7 @@ public partial class GameRoot : Node2D
     private int? _selectedPawnId = null;
     private int? _selectedObjectId = null;
     private bool _debugMode = false;
+    private RenderSnapshot? _lastSnapshot = null;
 
     [Export] public PackedScene PawnScene { get; set; } = null!;
     [Export] public PackedScene ObjectScene { get; set; } = null!;
@@ -75,6 +76,7 @@ public partial class GameRoot : Node2D
         }
 
         var snapshot = _sim.CreateRenderSnapshot();
+        _lastSnapshot = snapshot;
         SyncPawns(snapshot);
         SyncObjects(snapshot);
         UpdateInfoPanel(snapshot);
@@ -240,6 +242,29 @@ public partial class GameRoot : Node2D
                 ObjectHitboxSize
             );
             DrawRect(rect, Colors.Cyan, false, 2f);
+        }
+
+        // Draw use areas for objects
+        if (_lastSnapshot != null)
+        {
+            foreach (var obj in _lastSnapshot.Objects)
+            {
+                if (ContentDatabase.Objects.TryGetValue(obj.ObjectDefId, out var objDef))
+                {
+                    foreach (var (dx, dy) in objDef.UseAreas)
+                    {
+                        var useAreaRect = new Rect2(
+                            (obj.X + dx) * TileSize,
+                            (obj.Y + dy) * TileSize,
+                            TileSize,
+                            TileSize
+                        );
+                        // Green fill with transparency, yellow outline
+                        DrawRect(useAreaRect, new Color(0, 1, 0, 0.2f), true);
+                        DrawRect(useAreaRect, Colors.Yellow, false, 1f);
+                    }
+                }
+            }
         }
         
         // Draw mouse position (local coordinates)

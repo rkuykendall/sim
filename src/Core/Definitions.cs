@@ -42,6 +42,7 @@ public sealed class ObjectDef
     public float NeedSatisfactionAmount = 30f;
     public int InteractionDurationTicks = 100;
     public int? GrantsBuffId; // Buff to apply when interaction completes
+    public List<(int dx, int dy)> UseAreas = new(); // Relative tile offsets where pawn can use this object
 }
 
 // Action definition
@@ -79,7 +80,6 @@ public static class ContentDatabase
     public static int NeedEnergy => ContentLoader.GetNeedId("Energy") ?? 2;
     public static int NeedFun => ContentLoader.GetNeedId("Fun") ?? 3;
     public static int NeedSocial => ContentLoader.GetNeedId("Social") ?? 4;
-    public static int NeedComfort => ContentLoader.GetNeedId("Comfort") ?? 5;
     public static int NeedHygiene => ContentLoader.GetNeedId("Hygiene") ?? 6;
 
     public static int ObjectFridge => 1;

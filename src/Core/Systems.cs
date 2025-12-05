@@ -215,9 +215,12 @@ public sealed class ActionSystem : ISystem
         var pos = ctx.Entities.Positions[pawnId];
         var target = action.TargetCoord.Value;
 
+        // Get tiles occupied by other pawns for pathfinding
+        var occupiedTiles = ctx.Entities.GetOccupiedTiles(pawnId);
+
         if (actionComp.CurrentPath == null)
         {
-            actionComp.CurrentPath = Pathfinder.FindPath(ctx.World, pos.Coord, target);
+            actionComp.CurrentPath = Pathfinder.FindPath(ctx.World, pos.Coord, target, occupiedTiles);
             actionComp.PathIndex = 0;
 
             if (actionComp.CurrentPath == null || actionComp.CurrentPath.Count == 0)
@@ -232,6 +235,25 @@ public sealed class ActionSystem : ISystem
 
         if (expectedPathIndex > actionComp.PathIndex)
         {
+            var nextTile = actionComp.CurrentPath[expectedPathIndex];
+            
+            // Check if the next tile is occupied by another pawn
+            if (ctx.Entities.IsTileOccupiedByPawn(nextTile, pawnId))
+            {
+                // Blocked - try to find a new path around the obstacle
+                var newPath = Pathfinder.FindPath(ctx.World, pos.Coord, target, occupiedTiles);
+                
+                if (newPath != null && newPath.Count > 0)
+                {
+                    // Found alternate path - use it
+                    actionComp.CurrentPath = newPath;
+                    actionComp.PathIndex = 0;
+                    actionComp.ActionStartTick = ctx.Time.Tick;
+                }
+                // If no path found, just wait (pawn might move)
+                return;
+            }
+            
             actionComp.PathIndex = expectedPathIndex;
             pos.Coord = actionComp.CurrentPath[actionComp.PathIndex];
         }
@@ -335,6 +357,8 @@ public sealed class ActionSystem : ISystem
 // Utility AI - decides what action to take
 public sealed class AISystem : ISystem
 {
+    private readonly Random _random = new();
+    
     public void Tick(SimContext ctx)
     {
         foreach (var pawnId in ctx.Entities.AllPawns())
@@ -363,22 +387,61 @@ public sealed class AISystem : ISystem
                 }
             }
 
-            if (urgentNeedId == null) continue;
-
-            EntityId? targetObject = FindObjectForNeed(ctx, pawnId, urgentNeedId.Value);
-            if (targetObject == null) continue;
-
-            var objComp = ctx.Entities.Objects[targetObject.Value];
-            var objDef = ContentDatabase.Objects[objComp.ObjectDefId];
-
-            actionComp.ActionQueue.Enqueue(new ActionDef
+            EntityId? targetObject = null;
+            if (urgentNeedId != null)
             {
-                Type = ActionType.UseObject,
-                TargetEntity = targetObject,
-                DurationTicks = objDef.InteractionDurationTicks,
-                SatisfiesNeedId = objDef.SatisfiesNeedId,
-                NeedSatisfactionAmount = objDef.NeedSatisfactionAmount
-            });
+                targetObject = FindObjectForNeed(ctx, pawnId, urgentNeedId.Value);
+            }
+
+            if (targetObject != null)
+            {
+                var objComp = ctx.Entities.Objects[targetObject.Value];
+                var objDef = ContentDatabase.Objects[objComp.ObjectDefId];
+
+                actionComp.ActionQueue.Enqueue(new ActionDef
+                {
+                    Type = ActionType.UseObject,
+                    TargetEntity = targetObject,
+                    DurationTicks = objDef.InteractionDurationTicks,
+                    SatisfiesNeedId = objDef.SatisfiesNeedId,
+                    NeedSatisfactionAmount = objDef.NeedSatisfactionAmount
+                });
+            }
+            else
+            {
+                // No urgent need or no object available - wander randomly
+                WanderRandomly(ctx, pawnId, actionComp);
+            }
+        }
+    }
+
+    private void WanderRandomly(SimContext ctx, EntityId pawnId, ActionComponent actionComp)
+    {
+        if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pos))
+            return;
+
+        // Pick a random nearby tile to walk to
+        var directions = new[] { (0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1) };
+        var shuffled = directions.OrderBy(_ => _random.Next()).ToArray();
+
+        foreach (var (dx, dy) in shuffled)
+        {
+            int wanderDist = _random.Next(1, 4); // 1-3 tiles
+            var target = new TileCoord(pos.Coord.X + dx * wanderDist, pos.Coord.Y + dy * wanderDist);
+            
+            // Check if target is in bounds, walkable, and not occupied
+            if (!World.IsInBounds(target)) continue;
+            
+            var tile = ctx.World.GetTile(target);
+            if (tile.Walkable && !ctx.Entities.IsTileOccupiedByPawn(target, pawnId))
+            {
+                actionComp.ActionQueue.Enqueue(new ActionDef
+                {
+                    Type = ActionType.MoveTo,
+                    TargetCoord = target
+                });
+                return;
+            }
         }
     }
 

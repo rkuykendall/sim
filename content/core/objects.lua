@@ -1,5 +1,6 @@
 -- Object definitions
 -- Objects are interactable items that satisfy needs
+-- useAreas: list of {dx, dy} relative tile offsets where pawn can stand to use object
 
 Objects = {
     Fridge = {
@@ -8,7 +9,8 @@ Objects = {
         satisfiesNeed = "Hunger",
         satisfactionAmount = 50,
         interactionDuration = 20,
-        grantsBuff = "GoodMeal"
+        grantsBuff = "GoodMeal",
+        useAreas = { {0, 1} }  -- stand in front (south)
     },
     Bed = {
         id = 2,
@@ -16,7 +18,8 @@ Objects = {
         satisfiesNeed = "Energy",
         satisfactionAmount = 80,
         interactionDuration = 40,
-        grantsBuff = "WellRested"
+        grantsBuff = "WellRested",
+        useAreas = { {0, 0} }  -- on the bed itself
     },
     TV = {
         id = 3,
@@ -24,7 +27,8 @@ Objects = {
         satisfiesNeed = "Fun",
         satisfactionAmount = 40,
         interactionDuration = 30,
-        grantsBuff = "HadFun"
+        grantsBuff = "HadFun",
+        useAreas = { {0, 1}, {0, 2}, {-1, 1}, {1, 1}, {-1, 2}, {1, 2} }  -- viewing area in front
     },
     Shower = {
         id = 4,
@@ -32,7 +36,8 @@ Objects = {
         satisfiesNeed = "Hygiene",
         satisfactionAmount = 60,
         interactionDuration = 20,
-        grantsBuff = "FeelingFresh"
+        grantsBuff = "FeelingFresh",
+        useAreas = { {0, 0} }  -- in the shower
     },
 }
 

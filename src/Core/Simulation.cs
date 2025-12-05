@@ -32,11 +32,15 @@ public sealed class Simulation
         Entities.Objects[fridgeId] = new ObjectComponent { ObjectDefId = ContentDatabase.ObjectFridge };
         World.GetTile(new TileCoord(2, 3)).Walkable = false;
 
-        // Create a bed
-        var bedId = Entities.Create();
-        Entities.Positions[bedId] = new PositionComponent { Coord = new TileCoord(8, 8) };
-        Entities.Objects[bedId] = new ObjectComponent { ObjectDefId = ContentDatabase.ObjectBed };
-        World.GetTile(new TileCoord(8, 8)).Walkable = false;
+        // Create beds (one per pawn)
+        var bedPositions = new[] { (8, 2), (8, 4), (8, 6), (8, 8) };
+        foreach (var (x, y) in bedPositions)
+        {
+            var bedId = Entities.Create();
+            Entities.Positions[bedId] = new PositionComponent { Coord = new TileCoord(x, y) };
+            Entities.Objects[bedId] = new ObjectComponent { ObjectDefId = ContentDatabase.ObjectBed };
+            World.GetTile(new TileCoord(x, y)).Walkable = false;
+        }
 
         // Create a TV for fun
         var tvId = Entities.Create();
@@ -53,16 +57,16 @@ public sealed class Simulation
 
     private void BootstrapPawns()
     {
-        // Pawn data: (name, age, x, y, hunger, energy, fun, social, comfort, hygiene)
+        // Pawn data: (name, age, x, y, hunger, energy, fun, social, hygiene)
         var pawnData = new[]
         {
-            ("Alex", 25, 5, 5, 70f, 60f, 50f, 80f, 70f, 65f),
-            ("Jordan", 32, 3, 7, 55f, 75f, 40f, 60f, 80f, 70f),
-            ("Sam", 28, 9, 3, 80f, 45f, 65f, 50f, 55f, 85f),
-            ("Riley", 22, 7, 9, 60f, 55f, 75f, 70f, 45f, 50f),
+            ("Alex", 25, 5, 5, 70f, 60f, 50f, 80f, 65f),
+            ("Jordan", 32, 3, 7, 55f, 75f, 40f, 60f, 70f),
+            ("Sam", 28, 9, 3, 80f, 45f, 65f, 50f, 85f),
+            ("Riley", 22, 7, 9, 60f, 55f, 75f, 70f, 50f),
         };
 
-        foreach (var (name, age, x, y, hunger, energy, fun, social, comfort, hygiene) in pawnData)
+        foreach (var (name, age, x, y, hunger, energy, fun, social, hygiene) in pawnData)
         {
             var id = Entities.Create();
 
@@ -77,7 +81,6 @@ public sealed class Simulation
                     { ContentDatabase.NeedEnergy, energy },
                     { ContentDatabase.NeedFun, fun },
                     { ContentDatabase.NeedSocial, social },
-                    { ContentDatabase.NeedComfort, comfort },
                     { ContentDatabase.NeedHygiene, hygiene }
                 }
             };

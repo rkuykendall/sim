@@ -25,4 +25,42 @@ public sealed class EntityManager
 
     public IEnumerable<EntityId> AllPawns() => Pawns.Keys;
     public IEnumerable<EntityId> AllObjects() => Objects.Keys;
+
+    /// <summary>
+    /// Check if a tile is occupied by any pawn other than the excluded one.
+    /// </summary>
+    public bool IsTileOccupiedByPawn(TileCoord coord, EntityId? excludePawn = null)
+    {
+        foreach (var pawnId in Pawns.Keys)
+        {
+            if (excludePawn.HasValue && pawnId.Value == excludePawn.Value.Value)
+                continue;
+
+            if (Positions.TryGetValue(pawnId, out var pos) && 
+                pos.Coord.X == coord.X && pos.Coord.Y == coord.Y)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Get all tiles occupied by pawns, optionally excluding one pawn.
+    /// </summary>
+    public HashSet<TileCoord> GetOccupiedTiles(EntityId? excludePawn = null)
+    {
+        var occupied = new HashSet<TileCoord>();
+        foreach (var pawnId in Pawns.Keys)
+        {
+            if (excludePawn.HasValue && pawnId.Value == excludePawn.Value.Value)
+                continue;
+
+            if (Positions.TryGetValue(pawnId, out var pos))
+            {
+                occupied.Add(pos.Coord);
+            }
+        }
+        return occupied;
+    }
 }

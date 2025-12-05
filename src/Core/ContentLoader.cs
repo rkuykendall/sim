@@ -151,6 +151,19 @@ public static class ContentLoader
                 GrantsBuffId = grantsBuffId
             };
 
+            // Load use areas
+            var useAreasData = data.Get("useAreas");
+            if (!useAreasData.IsNil() && useAreasData.Type == DataType.Table)
+            {
+                foreach (var areaPair in useAreasData.Table.Pairs)
+                {
+                    var areaTable = areaPair.Value.Table;
+                    int dx = (int)areaTable.Get(1).Number;
+                    int dy = (int)areaTable.Get(2).Number;
+                    obj.UseAreas.Add((dx, dy));
+                }
+            }
+
             ContentDatabase.Objects[id] = obj;
         }
     }
