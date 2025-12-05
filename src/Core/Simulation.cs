@@ -21,7 +21,7 @@ public sealed class Simulation
         _systems.Add(new AISystem());
 
         BootstrapWorld();
-        BootstrapPawn();
+        BootstrapPawns();
     }
 
     private void BootstrapWorld()
@@ -51,27 +51,39 @@ public sealed class Simulation
         World.GetTile(new TileCoord(10, 5)).Walkable = false;
     }
 
-    private void BootstrapPawn()
+    private void BootstrapPawns()
     {
-        var id = Entities.Create();
-
-        Entities.Pawns[id] = new PawnComponent { Name = "Alex", Age = 25 };
-        Entities.Positions[id] = new PositionComponent { Coord = new TileCoord(5, 5) };
-        Entities.Moods[id] = new MoodComponent { Mood = 0 };
-        Entities.Needs[id] = new NeedsComponent
+        // Pawn data: (name, age, x, y, hunger, energy, fun, social, comfort, hygiene)
+        var pawnData = new[]
         {
-            Needs = new Dictionary<int, float>
-            {
-                { ContentDatabase.NeedHunger, 70f },
-                { ContentDatabase.NeedEnergy, 60f },
-                { ContentDatabase.NeedFun, 50f },
-                { ContentDatabase.NeedSocial, 80f },
-                { ContentDatabase.NeedComfort, 70f },
-                { ContentDatabase.NeedHygiene, 65f }
-            }
+            ("Alex", 25, 5, 5, 70f, 60f, 50f, 80f, 70f, 65f),
+            ("Jordan", 32, 3, 7, 55f, 75f, 40f, 60f, 80f, 70f),
+            ("Sam", 28, 9, 3, 80f, 45f, 65f, 50f, 55f, 85f),
+            ("Riley", 22, 7, 9, 60f, 55f, 75f, 70f, 45f, 50f),
         };
-        Entities.Buffs[id] = new BuffComponent();
-        Entities.Actions[id] = new ActionComponent();
+
+        foreach (var (name, age, x, y, hunger, energy, fun, social, comfort, hygiene) in pawnData)
+        {
+            var id = Entities.Create();
+
+            Entities.Pawns[id] = new PawnComponent { Name = name, Age = age };
+            Entities.Positions[id] = new PositionComponent { Coord = new TileCoord(x, y) };
+            Entities.Moods[id] = new MoodComponent { Mood = 0 };
+            Entities.Needs[id] = new NeedsComponent
+            {
+                Needs = new Dictionary<int, float>
+                {
+                    { ContentDatabase.NeedHunger, hunger },
+                    { ContentDatabase.NeedEnergy, energy },
+                    { ContentDatabase.NeedFun, fun },
+                    { ContentDatabase.NeedSocial, social },
+                    { ContentDatabase.NeedComfort, comfort },
+                    { ContentDatabase.NeedHygiene, hygiene }
+                }
+            };
+            Entities.Buffs[id] = new BuffComponent();
+            Entities.Actions[id] = new ActionComponent();
+        }
     }
 
     public void Tick()
