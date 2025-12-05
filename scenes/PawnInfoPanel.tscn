@@ -6,10 +6,10 @@
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -220
-offset_top = 10
-offset_right = -10
-offset_bottom = 400
+offset_left = -115
+offset_top = 5
+offset_right = -5
+offset_bottom = 200
 script = ExtResource("1")
 NameLabelPath = NodePath("MarginContainer/VBoxContainer/NameLabel")
 MoodLabelPath = NodePath("MarginContainer/VBoxContainer/MoodLabel")
@@ -19,17 +19,17 @@ BuffsContainerPath = NodePath("MarginContainer/VBoxContainer/BuffsContainer")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
 
 [node name="NameLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 10
 text = "Pawn Name"
 
 [node name="MoodLabel" type="Label" parent="MarginContainer/VBoxContainer"]
@@ -46,7 +46,7 @@ layout_mode = 2
 
 [node name="NeedsLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 8
 text = "Needs"
 
 [node name="NeedsContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
@@ -57,7 +57,7 @@ layout_mode = 2
 
 [node name="BuffsLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 8
 text = "Mood Effects"
 
 [node name="BuffsContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]

@@ -93,6 +93,7 @@ public partial class PawnInfoPanel : PanelContainer
                 Text = "(none)",
                 Modulate = Colors.Gray
             };
+            noBuffsLabel.AddThemeFontSizeOverride("font_size", 8);
             _buffsContainer.AddChild(noBuffsLabel);
             _buffLabels.Add(noBuffsLabel);
             return;
@@ -107,6 +108,7 @@ public partial class PawnInfoPanel : PanelContainer
             {
                 Text = $"{buffDef.Name} ({buffDef.MoodOffset:+0;-0})"
             };
+            label.AddThemeFontSizeOverride("font_size", 8);
 
             // Color based on mood impact
             if (buffDef.MoodOffset > 0)
@@ -133,12 +135,13 @@ public partial class PawnInfoPanel : PanelContainer
         var label = new Label
         {
             Text = needName,
-            CustomMinimumSize = new Vector2(70, 0)
+            CustomMinimumSize = new Vector2(35, 0)
         };
+        label.AddThemeFontSizeOverride("font_size", 8);
         
         var bar = new ProgressBar
         {
-            CustomMinimumSize = new Vector2(100, 20),
+            CustomMinimumSize = new Vector2(50, 10),
             MaxValue = 100,
             ShowPercentage = false
         };

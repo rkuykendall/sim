@@ -27,6 +27,8 @@ public partial class GameRoot : Node2D
     [Export] public NodePath ObjectInfoPanelPath { get; set; } = "";
     [Export] public NodePath TimeDisplayPath { get; set; } = "";
     [Export] public NodePath NightOverlayPath { get; set; } = "";
+    [Export] public NodePath CameraPath { get; set; } = "";
+    [Export] public NodePath UILayerPath { get; set; } = "";
 
     private Node2D _pawnsRoot = null!;
     private Node2D _objectsRoot = null!;
@@ -34,6 +36,8 @@ public partial class GameRoot : Node2D
     private ObjectInfoPanel? _objectInfoPanel;
     private TimeDisplay? _timeDisplay;
     private ColorRect? _nightOverlay;
+    private Camera2D? _camera;
+    private CanvasLayer? _uiLayer;
 
     public override void _Ready()
     {
@@ -54,6 +58,10 @@ public partial class GameRoot : Node2D
             _timeDisplay = GetNodeOrNull<TimeDisplay>(TimeDisplayPath);
         if (!string.IsNullOrEmpty(NightOverlayPath))
             _nightOverlay = GetNodeOrNull<ColorRect>(NightOverlayPath);
+        if (!string.IsNullOrEmpty(CameraPath))
+            _camera = GetNodeOrNull<Camera2D>(CameraPath);
+        if (!string.IsNullOrEmpty(UILayerPath))
+            _uiLayer = GetNodeOrNull<CanvasLayer>(UILayerPath);
     }
 
     public override void _Process(double delta)
@@ -81,13 +89,36 @@ public partial class GameRoot : Node2D
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        // Toggle debug mode with F3
-        if (@event is InputEventKey key && key.Pressed && key.Keycode == Key.F3)
+        if (@event is InputEventKey key && key.Pressed)
         {
-            _debugMode = !_debugMode;
-            GD.Print($"Debug mode: {_debugMode}");
-            QueueRedraw();
-            return;
+            // Toggle debug mode with F3
+            if (key.Keycode == Key.F3)
+            {
+                _debugMode = !_debugMode;
+                GD.Print($"Debug mode: {_debugMode}");
+                QueueRedraw();
+                return;
+            }
+
+            // Zoom controls: 1-4 for 1x-4x zoom
+            if (_camera != null)
+            {
+                float? newZoom = key.Keycode switch
+                {
+                    Key.Key1 => 1f,
+                    Key.Key2 => 2f,
+                    Key.Key3 => 3f,
+                    Key.Key4 => 4f,
+                    _ => null
+                };
+
+                if (newZoom.HasValue)
+                {
+                    _camera.Zoom = new Vector2(newZoom.Value, newZoom.Value);
+                    GD.Print($"Zoom: {newZoom.Value}x");
+                    return;
+                }
+            }
         }
 
         if (@event is InputEventMouseButton mb && mb.Pressed && mb.ButtonIndex == MouseButton.Left)

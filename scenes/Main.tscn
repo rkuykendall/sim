@@ -20,7 +20,8 @@ mouse_filter = 2
 color = Color(0.05, 0.05, 0.15, 0)
 
 [node name="Camera2D" type="Camera2D" parent="."]
-position = Vector2(400, 300)
+position = Vector2(200, 150)
+zoom = Vector2(2, 2)
 
 [node name="Objects" type="Node2D" parent="."]
 
@@ -36,6 +37,8 @@ InfoPanelPath = NodePath("../UI/PawnInfoPanel")
 ObjectInfoPanelPath = NodePath("../UI/ObjectInfoPanel")
 TimeDisplayPath = NodePath("../UI/TimeDisplay")
 NightOverlayPath = NodePath("../NightOverlay")
+CameraPath = NodePath("../Camera2D")
+UILayerPath = NodePath("../UI")
 
 [node name="UI" type="CanvasLayer" parent="."]
 
