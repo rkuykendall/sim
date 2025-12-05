@@ -2,12 +2,23 @@ using Godot;
 
 public partial class PawnView : Node2D
 {
-    [Export] public Label NameLabel { get; set; } = null!;
-    [Export] public Label ActionLabel { get; set; } = null!;
-    [Export] public ColorRect Body { get; set; } = null!;
+    [Export] public NodePath NameLabelPath { get; set; } = null!;
+    [Export] public NodePath ActionLabelPath { get; set; } = null!;
+    [Export] public NodePath BodyPath { get; set; } = null!;
+
+    private Label? _nameLabel;
+    private Label? _actionLabel;
+    private ColorRect? _body;
 
     private bool _selected = false;
     private float _baseMood = 0f;
+
+    public override void _Ready()
+    {
+        _nameLabel = GetNodeOrNull<Label>(NameLabelPath);
+        _actionLabel = GetNodeOrNull<Label>(ActionLabelPath);
+        _body = GetNodeOrNull<ColorRect>(BodyPath);
+    }
 
     public void SetMood(float mood)
     {
@@ -17,14 +28,14 @@ public partial class PawnView : Node2D
 
     public void SetNameLabel(string name)
     {
-        if (NameLabel != null)
-            NameLabel.Text = name;
+        if (_nameLabel != null)
+            _nameLabel.Text = name;
     }
 
     public void SetAction(string? action)
     {
-        if (ActionLabel != null)
-            ActionLabel.Text = action ?? "Idle";
+        if (_actionLabel != null)
+            _actionLabel.Text = action ?? "Idle";
     }
 
     public void SetSelected(bool selected)
@@ -35,19 +46,19 @@ public partial class PawnView : Node2D
 
     private void UpdateColors()
     {
-        if (NameLabel != null)
+        if (_nameLabel != null)
         {
-            if (_baseMood > 20) NameLabel.Modulate = Colors.Lime;
-            else if (_baseMood < -20) NameLabel.Modulate = Colors.Red;
-            else NameLabel.Modulate = Colors.White;
+            if (_baseMood > 20) _nameLabel.Modulate = Colors.Lime;
+            else if (_baseMood < -20) _nameLabel.Modulate = Colors.Red;
+            else _nameLabel.Modulate = Colors.White;
         }
 
-        if (Body != null)
+        if (_body != null)
         {
             if (_selected)
-                Body.Color = Colors.White;
+                _body.Color = Colors.White;
             else
-                Body.Color = new Color(0.2f, 0.6f, 1f);
+                _body.Color = new Color(0.2f, 0.6f, 1f);
         }
     }
 }
