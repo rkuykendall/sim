@@ -169,7 +169,8 @@ public partial class GameRoot : Node2D
 
         var entityId = new EntityId(_selectedPawnId.Value);
         _sim.Entities.Needs.TryGetValue(entityId, out var needs);
-        _infoPanel.ShowPawn(pawn, needs);
+        _sim.Entities.Buffs.TryGetValue(entityId, out var buffs);
+        _infoPanel.ShowPawn(pawn, needs, buffs);
     }
 
     private void SyncPawns(RenderSnapshot snapshot)

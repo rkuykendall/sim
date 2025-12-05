@@ -47,14 +47,51 @@ public sealed class NeedsSystem : ISystem
         {
             if (!ctx.Entities.Needs.TryGetValue(pawnId, out var needs))
                 continue;
+            if (!ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs))
+                continue;
 
-            foreach (var key in needs.Needs.Keys)
+            foreach (var needId in needs.Needs.Keys.ToList())
             {
-                float decay = ContentDatabase.Needs.TryGetValue(key, out var needDef)
-                    ? needDef.DecayPerTick
-                    : 0.005f;
-                needs.Needs[key] = Math.Clamp(needs.Needs[key] - decay, 0f, 100f);
+                if (!ContentDatabase.Needs.TryGetValue(needId, out var needDef))
+                    continue;
+
+                // Decay the need
+                float oldValue = needs.Needs[needId];
+                float newValue = Math.Clamp(oldValue - needDef.DecayPerTick, 0f, 100f);
+                needs.Needs[needId] = newValue;
+
+                // Apply/remove need-based debuffs
+                UpdateNeedDebuffs(buffs, needDef, newValue);
             }
+        }
+    }
+
+    private void UpdateNeedDebuffs(BuffComponent buffs, NeedDef needDef, float value)
+    {
+        // Remove existing debuffs for this need first
+        if (needDef.CriticalDebuffId.HasValue)
+            buffs.ActiveBuffs.RemoveAll(b => b.BuffDefId == needDef.CriticalDebuffId.Value);
+        if (needDef.LowDebuffId.HasValue)
+            buffs.ActiveBuffs.RemoveAll(b => b.BuffDefId == needDef.LowDebuffId.Value);
+
+        // Apply appropriate debuff based on current value
+        if (value < needDef.CriticalThreshold && needDef.CriticalDebuffId.HasValue)
+        {
+            buffs.ActiveBuffs.Add(new BuffInstance
+            {
+                BuffDefId = needDef.CriticalDebuffId.Value,
+                StartTick = 0,
+                EndTick = -1 // Permanent until need recovers
+            });
+        }
+        else if (value < needDef.LowThreshold && needDef.LowDebuffId.HasValue)
+        {
+            buffs.ActiveBuffs.Add(new BuffInstance
+            {
+                BuffDefId = needDef.LowDebuffId.Value,
+                StartTick = 0,
+                EndTick = -1 // Permanent until need recovers
+            });
         }
     }
 }
@@ -68,36 +105,28 @@ public sealed class BuffSystem : ISystem
 
         foreach (var buffComp in ctx.Entities.Buffs.Values)
         {
-            buffComp.ActiveBuffs.RemoveAll(b => b.EndTick <= now);
+            // Only remove buffs with a positive end tick (not permanent ones)
+            buffComp.ActiveBuffs.RemoveAll(b => b.EndTick > 0 && b.EndTick <= now);
         }
     }
 }
 
-// Mood is calculated from needs and buffs
+// Mood is calculated purely from active buffs
 public sealed class MoodSystem : ISystem
 {
     public void Tick(SimContext ctx)
     {
         foreach (var pawnId in ctx.Entities.AllPawns())
         {
-            ctx.Entities.Moods.TryGetValue(pawnId, out var moodComp);
-            ctx.Entities.Needs.TryGetValue(pawnId, out var needs);
-            ctx.Entities.Buffs.TryGetValue(pawnId, out var buffComp);
-
-            if (moodComp == null) continue;
+            if (!ctx.Entities.Moods.TryGetValue(pawnId, out var moodComp)) continue;
+            if (!ctx.Entities.Buffs.TryGetValue(pawnId, out var buffComp)) continue;
 
             float mood = 0f;
 
-            if (needs != null)
+            foreach (var inst in buffComp.ActiveBuffs)
             {
-                foreach (var v in needs.Needs.Values)
-                    mood += (v - 50f) / 50f * 10f;
-            }
-
-            if (buffComp != null)
-            {
-                foreach (var inst in buffComp.ActiveBuffs)
-                    mood += ContentDatabase.Buffs[inst.BuffDefId].MoodOffset;
+                if (ContentDatabase.Buffs.TryGetValue(inst.BuffDefId, out var buffDef))
+                    mood += buffDef.MoodOffset;
             }
 
             moodComp.Mood = Math.Clamp(mood, -100f, 100f);
@@ -216,6 +245,7 @@ public sealed class ActionSystem : ISystem
         int elapsed = ctx.Time.Tick - actionComp.ActionStartTick;
         if (elapsed >= action.DurationTicks)
         {
+            // Satisfy the need
             if (action.SatisfiesNeedId.HasValue && ctx.Entities.Needs.TryGetValue(pawnId, out var needs))
             {
                 if (needs.Needs.ContainsKey(action.SatisfiesNeedId.Value))
@@ -226,8 +256,25 @@ public sealed class ActionSystem : ISystem
                 }
             }
 
+            // Grant buff from object if applicable
             if (objComp != null)
             {
+                var objDef = ContentDatabase.Objects[objComp.ObjectDefId];
+                if (objDef.GrantsBuffId.HasValue && ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs))
+                {
+                    var buffDef = ContentDatabase.Buffs[objDef.GrantsBuffId.Value];
+                    
+                    // Remove existing instance of this buff (refresh it)
+                    buffs.ActiveBuffs.RemoveAll(b => b.BuffDefId == objDef.GrantsBuffId.Value);
+                    
+                    buffs.ActiveBuffs.Add(new BuffInstance
+                    {
+                        BuffDefId = objDef.GrantsBuffId.Value,
+                        StartTick = ctx.Time.Tick,
+                        EndTick = ctx.Time.Tick + buffDef.DurationTicks
+                    });
+                }
+
                 objComp.InUse = false;
                 objComp.UsedBy = null;
             }

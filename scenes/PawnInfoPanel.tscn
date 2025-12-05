@@ -9,12 +9,13 @@ anchor_right = 1.0
 offset_left = -220
 offset_top = 10
 offset_right = -10
-offset_bottom = 250
+offset_bottom = 400
 script = ExtResource("1")
 NameLabelPath = NodePath("MarginContainer/VBoxContainer/NameLabel")
 MoodLabelPath = NodePath("MarginContainer/VBoxContainer/MoodLabel")
 ActionLabelPath = NodePath("MarginContainer/VBoxContainer/ActionLabel")
 NeedsContainerPath = NodePath("MarginContainer/VBoxContainer/NeedsContainer")
+BuffsContainerPath = NodePath("MarginContainer/VBoxContainer/BuffsContainer")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
@@ -49,4 +50,15 @@ theme_override_font_sizes/font_size = 14
 text = "Needs"
 
 [node name="NeedsContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Separator2" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="BuffsLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Mood Effects"
+
+[node name="BuffsContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
