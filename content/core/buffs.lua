@@ -51,18 +51,6 @@ Buffs = {
         moodOffset = -8,
         isFromNeed = true
     },
-    Sore = {
-        id = 109,
-        name = "Sore!",
-        moodOffset = -15,
-        isFromNeed = true
-    },
-    Uncomfortable = {
-        id = 110,
-        name = "Uncomfortable",
-        moodOffset = -5,
-        isFromNeed = true
-    },
     Filthy = {
         id = 111,
         name = "Filthy!",

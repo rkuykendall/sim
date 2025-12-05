@@ -7,7 +7,7 @@ Objects = {
         name = "Fridge",
         satisfiesNeed = "Hunger",
         satisfactionAmount = 50,
-        interactionDuration = 60,  -- ticks
+        interactionDuration = 20,
         grantsBuff = "GoodMeal"
     },
     Bed = {
@@ -15,7 +15,7 @@ Objects = {
         name = "Bed",
         satisfiesNeed = "Energy",
         satisfactionAmount = 80,
-        interactionDuration = 200,
+        interactionDuration = 40,
         grantsBuff = "WellRested"
     },
     TV = {
@@ -23,7 +23,7 @@ Objects = {
         name = "TV",
         satisfiesNeed = "Fun",
         satisfactionAmount = 40,
-        interactionDuration = 100,
+        interactionDuration = 30,
         grantsBuff = "HadFun"
     },
     Shower = {
@@ -31,7 +31,7 @@ Objects = {
         name = "Shower",
         satisfiesNeed = "Hygiene",
         satisfactionAmount = 60,
-        interactionDuration = 80,
+        interactionDuration = 20,
         grantsBuff = "FeelingFresh"
     },
 }
