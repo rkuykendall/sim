@@ -6,8 +6,10 @@
 script = ExtResource("1")
 NameLabel = NodePath("NameLabel")
 ActionLabel = NodePath("ActionLabel")
+Body = NodePath("Body")
 
 [node name="Body" type="ColorRect" parent="."]
+mouse_filter = 2
 offset_left = -12
 offset_top = -12
 offset_right = 12
@@ -15,6 +17,7 @@ offset_bottom = 12
 color = Color(0.2, 0.6, 1, 1)
 
 [node name="NameLabel" type="Label" parent="."]
+mouse_filter = 2
 offset_left = -40
 offset_top = -35
 offset_right = 40
@@ -23,6 +26,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="ActionLabel" type="Label" parent="."]
+mouse_filter = 2
 offset_left = -50
 offset_top = 15
 offset_right = 50
