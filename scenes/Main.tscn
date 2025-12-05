@@ -1,0 +1,21 @@
+[gd_scene load_steps=4 format=3 uid="uid://main"]
+
+[ext_resource type="Script" path="res://src/Godot/GameRoot.cs" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/Pawn.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/Object.tscn" id="3"]
+
+[node name="Main" type="Node2D"]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(400, 300)
+
+[node name="Objects" type="Node2D" parent="."]
+
+[node name="Pawns" type="Node2D" parent="."]
+
+[node name="GameRoot" type="Node2D" parent="."]
+script = ExtResource("1")
+PawnScene = ExtResource("2")
+ObjectScene = ExtResource("3")
+PawnsRootPath = NodePath("../Pawns")
+ObjectsRootPath = NodePath("../Objects")
