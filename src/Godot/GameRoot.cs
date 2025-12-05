@@ -29,6 +29,10 @@ public partial class GameRoot : Node2D
 
     public override void _Ready()
     {
+        // Load content from Lua files before creating simulation
+        var contentPath = ProjectSettings.GlobalizePath("res://content");
+        ContentLoader.LoadAll(contentPath);
+
         _sim = new Simulation();
         _tickDelta = 1f / Simulation.TickRate;
         _pawnsRoot = GetNode<Node2D>(PawnsRootPath);

@@ -121,7 +121,7 @@ public partial class PawnInfoPanel : PanelContainer
         }
     }
 
-    public void Hide()
+    public new void Hide()
     {
         Visible = false;
     }
