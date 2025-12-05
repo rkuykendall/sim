@@ -21,12 +21,23 @@ public sealed class RenderObject
     public int ObjectDefId { get; init; }
     public string Name { get; init; } = "";
     public bool InUse { get; init; }
+    public string? UsedByName { get; init; }
+}
+
+public sealed class RenderTime
+{
+    public int Hour { get; init; }
+    public int Minute { get; init; }
+    public int Day { get; init; }
+    public bool IsNight { get; init; }
+    public string TimeString { get; init; } = "";
 }
 
 public sealed class RenderSnapshot
 {
     public IReadOnlyList<RenderPawn> Pawns { get; init; } = Array.Empty<RenderPawn>();
     public IReadOnlyList<RenderObject> Objects { get; init; } = Array.Empty<RenderObject>();
+    public RenderTime Time { get; init; } = new();
 }
 
 public static class RenderSnapshotBuilder
@@ -81,6 +92,14 @@ public static class RenderSnapshotBuilder
 
             var objDef = ContentDatabase.Objects[obj.ObjectDefId];
 
+            // Get name of pawn using this object
+            string? usedByName = null;
+            if (obj.InUse && obj.UsedBy.HasValue)
+            {
+                if (sim.Entities.Pawns.TryGetValue(obj.UsedBy.Value, out var userPawn))
+                    usedByName = userPawn.Name;
+            }
+
             objects.Add(new RenderObject
             {
                 Id = objId,
@@ -88,10 +107,20 @@ public static class RenderSnapshotBuilder
                 Y = pos.Coord.Y,
                 ObjectDefId = obj.ObjectDefId,
                 Name = objDef.Name,
-                InUse = obj.InUse
+                InUse = obj.InUse,
+                UsedByName = usedByName
             });
         }
 
-        return new RenderSnapshot { Pawns = pawns, Objects = objects };
+        var time = new RenderTime
+        {
+            Hour = sim.Time.Hour,
+            Minute = sim.Time.Minute,
+            Day = sim.Time.Day,
+            IsNight = sim.Time.IsNight,
+            TimeString = sim.Time.TimeString
+        };
+
+        return new RenderSnapshot { Pawns = pawns, Objects = objects, Time = time };
     }
 }

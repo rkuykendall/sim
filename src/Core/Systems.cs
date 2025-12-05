@@ -24,7 +24,26 @@ public sealed class SystemManager
 
 public sealed class TimeService
 {
-    public int Tick { get; private set; } = 0;
+    // Time configuration
+    public const int TicksPerMinute = 10;      // 0.5 real seconds = 1 game minute (2x speed)
+    public const int MinutesPerHour = 60;
+    public const int HoursPerDay = 24;
+    public const int TicksPerHour = TicksPerMinute * MinutesPerHour;
+    public const int TicksPerDay = TicksPerHour * HoursPerDay;
+
+    // Starting time: 8:00 AM on day 1
+    public int Tick { get; private set; } = 8 * TicksPerHour;
+
+    public int TotalMinutes => Tick / TicksPerMinute;
+    public int Minute => TotalMinutes % MinutesPerHour;
+    public int Hour => (Tick / TicksPerHour) % HoursPerDay;
+    public int Day => (Tick / TicksPerDay) + 1;
+
+    public bool IsNight => Hour < 6 || Hour >= 22;  // 10 PM - 6 AM
+    public bool IsSleepTime => Hour < 6 || Hour >= 23;  // 11 PM - 6 AM
+
+    public string TimeString => $"Day {Day}, {Hour:D2}:{Minute:D2}";
+
     public void AdvanceTick() => Tick++;
 }
 
@@ -43,6 +62,9 @@ public sealed class NeedsSystem : ISystem
 {
     public void Tick(SimContext ctx)
     {
+        bool isNight = ctx.Time.IsNight;
+        bool isSleepTime = ctx.Time.IsSleepTime;
+
         foreach (var pawnId in ctx.Entities.AllPawns())
         {
             if (!ctx.Entities.Needs.TryGetValue(pawnId, out var needs))
@@ -55,9 +77,18 @@ public sealed class NeedsSystem : ISystem
                 if (!ContentDatabase.Needs.TryGetValue(needId, out var needDef))
                     continue;
 
+                // Calculate decay rate with time-of-day modifiers
+                float decay = needDef.DecayPerTick;
+
+                // Energy decays faster at night (pawns get sleepy)
+                if (needId == ContentDatabase.NeedEnergy && isNight)
+                {
+                    decay *= isSleepTime ? 2.5f : 1.5f;
+                }
+
                 // Decay the need
                 float oldValue = needs.Needs[needId];
-                float newValue = Math.Clamp(oldValue - needDef.DecayPerTick, 0f, 100f);
+                float newValue = Math.Clamp(oldValue - decay, 0f, 100f);
                 needs.Needs[needId] = newValue;
 
                 // Apply/remove need-based debuffs

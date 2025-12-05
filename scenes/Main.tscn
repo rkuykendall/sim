@@ -1,11 +1,23 @@
-[gd_scene load_steps=5 format=3 uid="uid://main"]
+[gd_scene load_steps=8 format=3 uid="uid://main"]
 
 [ext_resource type="Script" path="res://src/Godot/GameRoot.cs" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/Pawn.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/Object.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/PawnInfoPanel.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/ObjectInfoPanel.tscn" id="5"]
+[ext_resource type="PackedScene" path="res://scenes/TimeDisplay.tscn" id="6"]
 
 [node name="Main" type="Node2D"]
+
+[node name="NightOverlay" type="ColorRect" parent="."]
+z_index = 100
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 800
+offset_bottom = 600
+mouse_filter = 2
+color = Color(0.05, 0.05, 0.15, 0)
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(400, 300)
@@ -21,7 +33,14 @@ ObjectScene = ExtResource("3")
 PawnsRootPath = NodePath("../Pawns")
 ObjectsRootPath = NodePath("../Objects")
 InfoPanelPath = NodePath("../UI/PawnInfoPanel")
+ObjectInfoPanelPath = NodePath("../UI/ObjectInfoPanel")
+TimeDisplayPath = NodePath("../UI/TimeDisplay")
+NightOverlayPath = NodePath("../NightOverlay")
 
 [node name="UI" type="CanvasLayer" parent="."]
 
 [node name="PawnInfoPanel" parent="UI" instance=ExtResource("4")]
+
+[node name="ObjectInfoPanel" parent="UI" instance=ExtResource("5")]
+
+[node name="TimeDisplay" parent="UI" instance=ExtResource("6")]

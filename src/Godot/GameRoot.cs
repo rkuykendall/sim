@@ -9,12 +9,14 @@ public partial class GameRoot : Node2D
     private float _accumulator = 0f;
     private float _tickDelta;
     private const int TileSize = 32;
-    private const float PawnHitboxSize = 24f; // Match the ColorRect size
+    private const float PawnHitboxSize = 24f;
+    private const float ObjectHitboxSize = 28f;
 
     private readonly Dictionary<int, Node2D> _pawnNodes = new();
     private readonly Dictionary<int, Node2D> _objectNodes = new();
     
     private int? _selectedPawnId = null;
+    private int? _selectedObjectId = null;
     private bool _debugMode = false;
 
     [Export] public PackedScene PawnScene { get; set; } = null!;
@@ -22,10 +24,16 @@ public partial class GameRoot : Node2D
     [Export] public NodePath PawnsRootPath { get; set; } = ".";
     [Export] public NodePath ObjectsRootPath { get; set; } = ".";
     [Export] public NodePath InfoPanelPath { get; set; } = "";
+    [Export] public NodePath ObjectInfoPanelPath { get; set; } = "";
+    [Export] public NodePath TimeDisplayPath { get; set; } = "";
+    [Export] public NodePath NightOverlayPath { get; set; } = "";
 
     private Node2D _pawnsRoot = null!;
     private Node2D _objectsRoot = null!;
     private PawnInfoPanel? _infoPanel;
+    private ObjectInfoPanel? _objectInfoPanel;
+    private TimeDisplay? _timeDisplay;
+    private ColorRect? _nightOverlay;
 
     public override void _Ready()
     {
@@ -40,6 +48,12 @@ public partial class GameRoot : Node2D
         
         if (!string.IsNullOrEmpty(InfoPanelPath))
             _infoPanel = GetNodeOrNull<PawnInfoPanel>(InfoPanelPath);
+        if (!string.IsNullOrEmpty(ObjectInfoPanelPath))
+            _objectInfoPanel = GetNodeOrNull<ObjectInfoPanel>(ObjectInfoPanelPath);
+        if (!string.IsNullOrEmpty(TimeDisplayPath))
+            _timeDisplay = GetNodeOrNull<TimeDisplay>(TimeDisplayPath);
+        if (!string.IsNullOrEmpty(NightOverlayPath))
+            _nightOverlay = GetNodeOrNull<ColorRect>(NightOverlayPath);
     }
 
     public override void _Process(double delta)
@@ -56,6 +70,9 @@ public partial class GameRoot : Node2D
         SyncPawns(snapshot);
         SyncObjects(snapshot);
         UpdateInfoPanel(snapshot);
+        UpdateObjectInfoPanel(snapshot);
+        UpdateTimeDisplay(snapshot);
+        UpdateNightOverlay(snapshot);
         
         // Redraw debug visuals
         if (_debugMode)
@@ -76,44 +93,59 @@ public partial class GameRoot : Node2D
         if (@event is InputEventMouseButton mb && mb.Pressed && mb.ButtonIndex == MouseButton.Left)
         {
             var localPos = GetLocalMousePosition();
-            var globalPos = GetGlobalMousePosition();
-            var viewportPos = GetViewport().GetMousePosition();
             
-            GD.Print($"=== CLICK ===");
-            GD.Print($"  Viewport mouse pos: {viewportPos}");
-            GD.Print($"  Local mouse pos: {localPos}");
-            GD.Print($"  Global mouse pos: {globalPos}");
-            GD.Print($"  Pawn count: {_pawnNodes.Count}");
-            
-            const float halfSize = PawnHitboxSize / 2f;
-            foreach (var (id, node) in _pawnNodes)
-            {
-                var pawnPos = node.Position;
-                var hitbox = $"({pawnPos.X - halfSize}, {pawnPos.Y - halfSize}) to ({pawnPos.X + halfSize}, {pawnPos.Y + halfSize})";
-                GD.Print($"  Pawn {id}: pos={pawnPos}, hitbox={hitbox}");
-            }
-            
+            // Try to click a pawn first
             var clickedPawnId = FindPawnAtPosition(localPos);
-            GD.Print($"  Clicked pawn: {clickedPawnId?.ToString() ?? "none"}");
             
-            // Update selection
-            if (_selectedPawnId.HasValue && _pawnNodes.TryGetValue(_selectedPawnId.Value, out var oldNode))
+            if (clickedPawnId.HasValue)
             {
-                if (oldNode is PawnView oldPv)
-                    oldPv.SetSelected(false);
+                // Deselect old pawn
+                if (_selectedPawnId.HasValue && _pawnNodes.TryGetValue(_selectedPawnId.Value, out var oldNode))
+                {
+                    if (oldNode is PawnView oldPv)
+                        oldPv.SetSelected(false);
+                }
+                
+                _selectedPawnId = clickedPawnId;
+                _selectedObjectId = null;
+                _objectInfoPanel?.Hide();
+                
+                if (_pawnNodes.TryGetValue(_selectedPawnId.Value, out var newNode))
+                {
+                    if (newNode is PawnView newPv)
+                        newPv.SetSelected(true);
+                }
+                return;
             }
             
-            _selectedPawnId = clickedPawnId;
+            // Try to click an object
+            var clickedObjectId = FindObjectAtPosition(localPos);
             
-            if (_selectedPawnId.HasValue && _pawnNodes.TryGetValue(_selectedPawnId.Value, out var newNode))
+            if (clickedObjectId.HasValue)
             {
-                if (newNode is PawnView newPv)
-                    newPv.SetSelected(true);
-            }
-            else
-            {
+                // Deselect pawn if one was selected
+                if (_selectedPawnId.HasValue && _pawnNodes.TryGetValue(_selectedPawnId.Value, out var oldPawnNode))
+                {
+                    if (oldPawnNode is PawnView oldPv)
+                        oldPv.SetSelected(false);
+                }
+                
+                _selectedPawnId = null;
+                _selectedObjectId = clickedObjectId;
                 _infoPanel?.Hide();
+                return;
             }
+            
+            // Clicked empty space - deselect everything
+            if (_selectedPawnId.HasValue && _pawnNodes.TryGetValue(_selectedPawnId.Value, out var pawnNode))
+            {
+                if (pawnNode is PawnView pv)
+                    pv.SetSelected(false);
+            }
+            _selectedPawnId = null;
+            _selectedObjectId = null;
+            _infoPanel?.Hide();
+            _objectInfoPanel?.Hide();
         }
     }
 
@@ -127,8 +159,21 @@ public partial class GameRoot : Node2D
             bool hit = pos.X >= pawnPos.X - halfSize && pos.X <= pawnPos.X + halfSize &&
                        pos.Y >= pawnPos.Y - halfSize && pos.Y <= pawnPos.Y + halfSize;
             
-            if (_debugMode)
-                GD.Print($"  Pawn {id} at {pawnPos}, hit={hit}");
+            if (hit)
+                return id;
+        }
+        return null;
+    }
+
+    private int? FindObjectAtPosition(Vector2 pos)
+    {
+        const float halfSize = ObjectHitboxSize / 2f;
+        
+        foreach (var (id, node) in _objectNodes)
+        {
+            var objPos = node.Position;
+            bool hit = pos.X >= objPos.X - halfSize && pos.X <= objPos.X + halfSize &&
+                       pos.Y >= objPos.Y - halfSize && pos.Y <= objPos.Y + halfSize;
             
             if (hit)
                 return id;
@@ -141,16 +186,29 @@ public partial class GameRoot : Node2D
         if (!_debugMode) return;
 
         // Draw hitboxes for all pawns
-        const float halfSize = PawnHitboxSize / 2f;
+        const float pawnHalf = PawnHitboxSize / 2f;
         foreach (var (id, node) in _pawnNodes)
         {
             var rect = new Rect2(
-                node.Position.X - halfSize,
-                node.Position.Y - halfSize,
+                node.Position.X - pawnHalf,
+                node.Position.Y - pawnHalf,
                 PawnHitboxSize,
                 PawnHitboxSize
             );
             DrawRect(rect, Colors.Magenta, false, 2f);
+        }
+
+        // Draw hitboxes for all objects
+        const float objHalf = ObjectHitboxSize / 2f;
+        foreach (var (id, node) in _objectNodes)
+        {
+            var rect = new Rect2(
+                node.Position.X - objHalf,
+                node.Position.Y - objHalf,
+                ObjectHitboxSize,
+                ObjectHitboxSize
+            );
+            DrawRect(rect, Colors.Cyan, false, 2f);
         }
         
         // Draw mouse position (local coordinates)
@@ -224,5 +282,55 @@ public partial class GameRoot : Node2D
                 ov.SetObjectInfo(obj.Name, obj.InUse);
             }
         }
+    }
+
+    private void UpdateObjectInfoPanel(RenderSnapshot snapshot)
+    {
+        if (_objectInfoPanel == null || !_selectedObjectId.HasValue)
+            return;
+
+        var obj = snapshot.Objects.FirstOrDefault(o => o.Id.Value == _selectedObjectId.Value);
+        if (obj == null)
+        {
+            _objectInfoPanel.Hide();
+            _selectedObjectId = null;
+            return;
+        }
+
+        _objectInfoPanel.ShowObject(obj);
+    }
+
+    private void UpdateTimeDisplay(RenderSnapshot snapshot)
+    {
+        _timeDisplay?.UpdateTime(snapshot.Time);
+    }
+
+    private void UpdateNightOverlay(RenderSnapshot snapshot)
+    {
+        if (_nightOverlay == null) return;
+
+        // Smoothly transition night overlay based on time
+        float targetAlpha = 0f;
+        int hour = snapshot.Time.Hour;
+
+        if (hour >= 22 || hour < 5)
+        {
+            // Deep night: 10 PM - 5 AM
+            targetAlpha = 0.4f;
+        }
+        else if (hour >= 20)
+        {
+            // Dusk: 8 PM - 10 PM
+            targetAlpha = (hour - 20) * 0.2f + (snapshot.Time.Minute / 60f) * 0.2f;
+        }
+        else if (hour < 7)
+        {
+            // Dawn: 5 AM - 7 AM
+            targetAlpha = 0.4f - ((hour - 5) * 0.2f + (snapshot.Time.Minute / 60f) * 0.2f);
+        }
+
+        var color = _nightOverlay.Color;
+        color.A = Mathf.Lerp(color.A, targetAlpha, 0.05f);
+        _nightOverlay.Color = color;
     }
 }
