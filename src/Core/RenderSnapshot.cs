@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SimGame.Core;
 
@@ -11,6 +12,11 @@ public sealed class RenderPawn
     public float Mood { get; init; }
     public string Name { get; init; } = "";
     public string? CurrentAction { get; init; }
+    
+    // Debug: pathfinding info
+    public (int X, int Y)? TargetTile { get; init; }
+    public IReadOnlyList<(int X, int Y)>? CurrentPath { get; init; }
+    public int PathIndex { get; init; }
 }
 
 public sealed class RenderObject
@@ -70,6 +76,22 @@ public static class RenderSnapshotBuilder
                 }
             }
 
+            // Get path debug info
+            (int, int)? targetTile = null;
+            List<(int, int)>? pathCoords = null;
+            int pathIndex = 0;
+            
+            if (action?.CurrentAction?.TargetCoord != null)
+            {
+                var tc = action.CurrentAction.TargetCoord.Value;
+                targetTile = (tc.X, tc.Y);
+            }
+            if (action?.CurrentPath != null)
+            {
+                pathCoords = action.CurrentPath.Select(c => (c.X, c.Y)).ToList();
+                pathIndex = action.PathIndex;
+            }
+
             pawns.Add(new RenderPawn
             {
                 Id = pawnId,
@@ -77,7 +99,10 @@ public static class RenderSnapshotBuilder
                 Y = pos.Coord.Y,
                 Mood = mood?.Mood ?? 0,
                 Name = pawn?.Name ?? $"Pawn {pawnId.Value}",
-                CurrentAction = actionName
+                CurrentAction = actionName,
+                TargetTile = targetTile,
+                CurrentPath = pathCoords,
+                PathIndex = pathIndex
             });
         }
 

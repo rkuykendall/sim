@@ -265,6 +265,50 @@ public partial class GameRoot : Node2D
                     }
                 }
             }
+
+            // Draw pawn paths and targets
+            foreach (var pawn in _lastSnapshot.Pawns)
+            {
+                var pawnCenter = new Vector2(
+                    pawn.X * TileSize + TileSize / 2,
+                    pawn.Y * TileSize + TileSize / 2
+                );
+
+                // Draw the full path
+                if (pawn.CurrentPath != null && pawn.CurrentPath.Count > 0)
+                {
+                    // Draw remaining path segments
+                    for (int i = pawn.PathIndex; i < pawn.CurrentPath.Count - 1; i++)
+                    {
+                        var from = pawn.CurrentPath[i];
+                        var to = pawn.CurrentPath[i + 1];
+                        var fromPos = new Vector2(from.X * TileSize + TileSize / 2, from.Y * TileSize + TileSize / 2);
+                        var toPos = new Vector2(to.X * TileSize + TileSize / 2, to.Y * TileSize + TileSize / 2);
+                        DrawLine(fromPos, toPos, Colors.Orange, 2f);
+                    }
+
+                    // Draw line from pawn to next tile in path
+                    if (pawn.PathIndex < pawn.CurrentPath.Count)
+                    {
+                        var nextTile = pawn.CurrentPath[pawn.PathIndex];
+                        var nextPos = new Vector2(nextTile.X * TileSize + TileSize / 2, nextTile.Y * TileSize + TileSize / 2);
+                        DrawLine(pawnCenter, nextPos, Colors.White, 2f);
+                    }
+                }
+
+                // Draw target tile (final destination)
+                if (pawn.TargetTile.HasValue)
+                {
+                    var targetRect = new Rect2(
+                        pawn.TargetTile.Value.X * TileSize + 4,
+                        pawn.TargetTile.Value.Y * TileSize + 4,
+                        TileSize - 8,
+                        TileSize - 8
+                    );
+                    DrawRect(targetRect, new Color(1, 0.5f, 0, 0.3f), true);  // Orange fill
+                    DrawRect(targetRect, Colors.Orange, false, 2f);           // Orange outline
+                }
+            }
         }
         
         // Draw mouse position (local coordinates)
