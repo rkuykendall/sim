@@ -62,6 +62,7 @@ public sealed class ActionDef
     public int DurationTicks;
     public int? SatisfiesNeedId;
     public float NeedSatisfactionAmount;
+    public string? DisplayName; // What to show in UI (e.g., "Going to Fridge", "Wandering")
 }
 
 /// <summary>

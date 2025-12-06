@@ -278,12 +278,18 @@ public sealed class ActionSystem : ISystem
         int dist = Math.Abs(pawnPos.Coord.X - objPos.Coord.X) + Math.Abs(pawnPos.Coord.Y - objPos.Coord.Y);
         if (dist > 1)
         {
+            // Get object name for display
+            string objName = "Object";
+            if (ctx.Entities.Objects.TryGetValue(targetId, out var tempObjComp))
+                objName = ContentDatabase.Objects[tempObjComp.ObjectDefId].Name;
+            
             actionComp.ActionQueue = new Queue<ActionDef>(new[] { action }.Concat(actionComp.ActionQueue));
             actionComp.CurrentAction = new ActionDef
             {
                 Type = ActionType.MoveTo,
                 TargetCoord = FindAdjacentWalkable(ctx.World, objPos.Coord, pawnPos.Coord),
-                DurationTicks = 0
+                DurationTicks = 0,
+                DisplayName = $"Going to {objName}"
             };
             actionComp.ActionStartTick = ctx.Time.Tick;
             return;
@@ -293,6 +299,10 @@ public sealed class ActionSystem : ISystem
         {
             objComp.InUse = true;
             objComp.UsedBy = pawnId;
+            
+            // Update display name to "Using X" now that we're actually using it
+            var objDef = ContentDatabase.Objects[objComp.ObjectDefId];
+            action.DisplayName = $"Using {objDef.Name}";
         }
 
         int elapsed = ctx.Time.Tick - actionComp.ActionStartTick;
@@ -404,7 +414,8 @@ public sealed class AISystem : ISystem
                     TargetEntity = targetObject,
                     DurationTicks = objDef.InteractionDurationTicks,
                     SatisfiesNeedId = objDef.SatisfiesNeedId,
-                    NeedSatisfactionAmount = objDef.NeedSatisfactionAmount
+                    NeedSatisfactionAmount = objDef.NeedSatisfactionAmount,
+                    DisplayName = $"Going to {objDef.Name}"
                 });
             }
             else
@@ -438,7 +449,8 @@ public sealed class AISystem : ISystem
                 actionComp.ActionQueue.Enqueue(new ActionDef
                 {
                     Type = ActionType.MoveTo,
-                    TargetCoord = target
+                    TargetCoord = target,
+                    DisplayName = "Wandering"
                 });
                 return;
             }

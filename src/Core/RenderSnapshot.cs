@@ -64,8 +64,12 @@ public static class RenderSnapshotBuilder
             string? actionName = null;
             if (action?.CurrentAction != null)
             {
-                actionName = action.CurrentAction.Type.ToString();
-                if (action.CurrentAction.Type == ActionType.UseObject && action.CurrentAction.TargetEntity.HasValue)
+                // Use DisplayName if set, otherwise fall back to type-based naming
+                if (!string.IsNullOrEmpty(action.CurrentAction.DisplayName))
+                {
+                    actionName = action.CurrentAction.DisplayName;
+                }
+                else if (action.CurrentAction.Type == ActionType.UseObject && action.CurrentAction.TargetEntity.HasValue)
                 {
                     var targetId = action.CurrentAction.TargetEntity.Value;
                     if (sim.Entities.Objects.TryGetValue(targetId, out var objComp))
@@ -73,6 +77,10 @@ public static class RenderSnapshotBuilder
                         var objDef = ContentDatabase.Objects[objComp.ObjectDefId];
                         actionName = $"Using {objDef.Name}";
                     }
+                }
+                else
+                {
+                    actionName = action.CurrentAction.Type.ToString();
                 }
             }
 
