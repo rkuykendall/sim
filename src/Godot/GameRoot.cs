@@ -101,26 +101,6 @@ public partial class GameRoot : Node2D
                 QueueRedraw();
                 return;
             }
-
-            // Zoom controls: 1-4 for 1x-4x zoom
-            if (_camera != null)
-            {
-                float? newZoom = key.Keycode switch
-                {
-                    Key.Key1 => 1f,
-                    Key.Key2 => 2f,
-                    Key.Key3 => 3f,
-                    Key.Key4 => 4f,
-                    _ => null
-                };
-
-                if (newZoom.HasValue)
-                {
-                    _camera.Zoom = new Vector2(newZoom.Value, newZoom.Value);
-                    GD.Print($"Zoom: {newZoom.Value}x");
-                    return;
-                }
-            }
         }
 
         if (@event is InputEventMouseButton mb && mb.Pressed && mb.ButtonIndex == MouseButton.Left)
