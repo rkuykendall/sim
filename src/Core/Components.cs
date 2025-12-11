@@ -41,6 +41,7 @@ public sealed class ActionComponent
     public Queue<ActionDef> ActionQueue = new();
     public List<TileCoord>? CurrentPath = null;
     public int PathIndex = 0;
+    public int BlockedSinceTick = -1;  // Tick when pawn first got blocked, -1 = not blocked
 }
 
 // World object (furniture, etc.)

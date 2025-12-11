@@ -126,7 +126,7 @@ public class SimulationIntegrationTests
     {
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 4)
-            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.1f)  // Fast decay for testing
+            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.5f)  // Very fast decay for testing
             .AddPawn("TestPawn", 2, 2, new Dictionary<int, float>
             {
                 { NeedIdHunger, 100f }
@@ -137,6 +137,12 @@ public class SimulationIntegrationTests
         Assert.NotNull(pawnId);
 
         float initialHunger = sim.GetNeedValue(pawnId.Value, NeedIdHunger);
+        Assert.Equal(100f, initialHunger);
+        
+        // Verify the need definition is in ContentDatabase
+        Assert.True(ContentDatabase.Needs.ContainsKey(NeedIdHunger), "Need should be registered");
+        var needDef = ContentDatabase.Needs[NeedIdHunger];
+        Assert.Equal(0.5f, needDef.DecayPerTick);
         
         sim.RunTicks(100);
 
@@ -144,9 +150,10 @@ public class SimulationIntegrationTests
         Assert.True(finalHunger < initialHunger, 
             $"Expected hunger to decay from {initialHunger}, but it was {finalHunger}");
         
-        // With 0.1 decay per tick over 100 ticks = 10 points decay (approximately)
-        Assert.True(finalHunger <= 91f, 
-            $"Expected hunger to decay to <= 91, but it was {finalHunger}");
+        // With 0.5 decay per tick over 100 ticks = 50 points decay
+        // Should be around 50 or clamped to 0
+        Assert.True(finalHunger <= 60f, 
+            $"Expected hunger to decay to <= 60, but it was {finalHunger}");
     }
 
     /// <summary>

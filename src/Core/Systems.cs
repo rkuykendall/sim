@@ -169,6 +169,7 @@ public sealed class MoodSystem : ISystem
 public sealed class ActionSystem : ISystem
 {
     private const int MoveTicksPerTile = 10;
+    private const int MaxBlockedTicks = 50;  // Give up on move after being blocked this long
 
     public void Tick(SimContext ctx)
     {
@@ -243,6 +244,22 @@ public sealed class ActionSystem : ISystem
             // Check if the next tile is occupied by another pawn
             if (ctx.Entities.IsTileOccupiedByPawn(nextTile, pawnId))
             {
+                // Track how long we've been blocked
+                if (actionComp.BlockedSinceTick < 0)
+                    actionComp.BlockedSinceTick = ctx.Time.Tick;
+                
+                int blockedDuration = ctx.Time.Tick - actionComp.BlockedSinceTick;
+                
+                // Give up if blocked too long
+                if (blockedDuration >= MaxBlockedTicks)
+                {
+                    actionComp.CurrentAction = null;
+                    actionComp.CurrentPath = null;
+                    actionComp.BlockedSinceTick = -1;
+                    actionComp.ActionQueue.Clear();  // Clear queued actions too
+                    return;
+                }
+                
                 // Blocked - try to find a new path around the obstacle
                 var newPath = Pathfinder.FindPath(ctx.World, pos.Coord, target, occupiedTiles);
                 
@@ -252,11 +269,14 @@ public sealed class ActionSystem : ISystem
                     actionComp.CurrentPath = newPath;
                     actionComp.PathIndex = 0;
                     actionComp.ActionStartTick = ctx.Time.Tick;
+                    actionComp.BlockedSinceTick = -1;  // Reset blocked timer
                 }
                 // If no path found, just wait (pawn might move)
                 return;
             }
             
+            // Not blocked anymore
+            actionComp.BlockedSinceTick = -1;
             actionComp.PathIndex = expectedPathIndex;
             pos.Coord = actionComp.CurrentPath[actionComp.PathIndex];
         }
@@ -372,6 +392,9 @@ public sealed class AISystem : ISystem
 {
     private readonly Random _random = new();
     
+    // Don't seek objects if need is above this threshold
+    private const float NeedSatisfiedThreshold = 80f;
+    
     public void Tick(SimContext ctx)
     {
         foreach (var pawnId in ctx.Entities.AllPawns())
@@ -388,6 +411,9 @@ public sealed class AISystem : ISystem
             foreach (var (needId, value) in needs.Needs)
             {
                 if (!ContentDatabase.Needs.TryGetValue(needId, out var needDef)) continue;
+                
+                // Don't consider needs that are already satisfied
+                if (value >= NeedSatisfiedThreshold) continue;
 
                 float urgency = value;
                 if (value < needDef.CriticalThreshold) urgency -= 50;
