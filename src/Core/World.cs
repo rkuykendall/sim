@@ -3,11 +3,18 @@ using System.Collections.Generic;
 
 namespace SimGame.Core;
 
-public readonly struct TileCoord
+public readonly struct TileCoord : IEquatable<TileCoord>
 {
     public readonly int X;
     public readonly int Y;
     public TileCoord(int x, int y) { X = x; Y = y; }
+
+    public bool Equals(TileCoord other) => X == other.X && Y == other.Y;
+    public override bool Equals(object? obj) => obj is TileCoord other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(X, Y);
+    public static bool operator ==(TileCoord left, TileCoord right) => left.Equals(right);
+    public static bool operator !=(TileCoord left, TileCoord right) => !left.Equals(right);
+    public override string ToString() => $"({X}, {Y})";
 }
 
 public sealed class Tile
@@ -36,14 +43,36 @@ public sealed class World
 {
     private readonly Dictionary<(int, int), Chunk> _chunks = new();
 
-    // Play area bounds (in tiles) - matches 640x360 viewport with 32px tiles
-    public const int MinX = 0;
-    public const int MaxX = 19;  // 640 / 32 = 20 tiles (0-19)
-    public const int MinY = 0;
-    public const int MaxY = 10;  // 360 / 32 = 11.25, use 11 tiles (0-10)
+    // Default play area bounds (in tiles) - matches 640x360 viewport with 32px tiles
+    public const int DefaultMinX = 0;
+    public const int DefaultMaxX = 19;  // 640 / 32 = 20 tiles (0-19)
+    public const int DefaultMinY = 0;
+    public const int DefaultMaxY = 10;  // 360 / 32 = 11.25, use 11 tiles (0-10)
 
-    public static bool IsInBounds(TileCoord coord) =>
+    // Instance bounds (can be customized)
+    public int MinX { get; }
+    public int MaxX { get; }
+    public int MinY { get; }
+    public int MaxY { get; }
+
+    public World() : this(DefaultMinX, DefaultMaxX, DefaultMinY, DefaultMaxY)
+    {
+    }
+
+    public World(int minX, int maxX, int minY, int maxY)
+    {
+        MinX = minX;
+        MaxX = maxX;
+        MinY = minY;
+        MaxY = maxY;
+    }
+
+    public bool IsInBounds(TileCoord coord) =>
         coord.X >= MinX && coord.X <= MaxX && coord.Y >= MinY && coord.Y <= MaxY;
+
+    // Static version for backward compatibility (uses default bounds)
+    public static bool IsInBoundsStatic(TileCoord coord) =>
+        coord.X >= DefaultMinX && coord.X <= DefaultMaxX && coord.Y >= DefaultMinY && coord.Y <= DefaultMaxY;
 
     public Chunk GetOrCreateChunk(int cx, int cy)
     {

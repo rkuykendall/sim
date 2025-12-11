@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+    <PackageReference Include="xunit" Version="2.7.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.7">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector" Version="6.0.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="MoonSharp" Version="2.0.0" />
+  </ItemGroup>
+
+  <!-- Include Core source files directly to avoid Godot dependency -->
+  <ItemGroup>
+    <Compile Include="../../src/Core/Components.cs" Link="Core/Components.cs" />
+    <Compile Include="../../src/Core/ContentLoader.cs" Link="Core/ContentLoader.cs" />
+    <Compile Include="../../src/Core/Definitions.cs" Link="Core/Definitions.cs" />
+    <Compile Include="../../src/Core/EntityManager.cs" Link="Core/EntityManager.cs" />
+    <Compile Include="../../src/Core/Pathfinder.cs" Link="Core/Pathfinder.cs" />
+    <Compile Include="../../src/Core/RenderSnapshot.cs" Link="Core/RenderSnapshot.cs" />
+    <Compile Include="../../src/Core/Simulation.cs" Link="Core/Simulation.cs" />
+    <Compile Include="../../src/Core/Systems.cs" Link="Core/Systems.cs" />
+    <Compile Include="../../src/Core/World.cs" Link="Core/World.cs" />
+  </ItemGroup>
+</Project>

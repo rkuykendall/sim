@@ -14,6 +14,17 @@ public static class ContentLoader
     private static Dictionary<string, int> _buffNameToId = new();
     private static Dictionary<string, int> _needNameToId = new();
 
+    /// <summary>
+    /// Optional logging callback. Set to null to disable logging.
+    /// Defaults to Godot.GD.Print when running in Godot, null otherwise.
+    /// </summary>
+    public static Action<string>? Log { get; set; }
+
+    /// <summary>
+    /// Optional error logging callback. Set to null to disable error logging.
+    /// </summary>
+    public static Action<string>? LogError { get; set; }
+
     public static void LoadAll(string contentPath)
     {
         _script = new Script();
@@ -25,14 +36,52 @@ public static class ContentLoader
         LoadNeeds(Path.Combine(contentPath, "core", "needs.lua"));
         LoadObjects(Path.Combine(contentPath, "core", "objects.lua"));
 
-        Godot.GD.Print($"ContentLoader: Loaded {ContentDatabase.Buffs.Count} buffs, {ContentDatabase.Needs.Count} needs, {ContentDatabase.Objects.Count} objects");
+        Log?.Invoke($"ContentLoader: Loaded {ContentDatabase.Buffs.Count} buffs, {ContentDatabase.Needs.Count} needs, {ContentDatabase.Objects.Count} objects");
+    }
+
+    /// <summary>
+    /// Clear all loaded content. Useful for test isolation.
+    /// </summary>
+    public static void ClearAll()
+    {
+        ContentDatabase.Buffs.Clear();
+        ContentDatabase.Needs.Clear();
+        ContentDatabase.Objects.Clear();
+        _buffNameToId.Clear();
+        _needNameToId.Clear();
+    }
+
+    /// <summary>
+    /// Register a buff definition directly (for testing without Lua files).
+    /// </summary>
+    public static void RegisterBuff(string key, BuffDef buff)
+    {
+        ContentDatabase.Buffs[buff.Id] = buff;
+        _buffNameToId[key] = buff.Id;
+    }
+
+    /// <summary>
+    /// Register a need definition directly (for testing without Lua files).
+    /// </summary>
+    public static void RegisterNeed(string key, NeedDef need)
+    {
+        ContentDatabase.Needs[need.Id] = need;
+        _needNameToId[key] = need.Id;
+    }
+
+    /// <summary>
+    /// Register an object definition directly (for testing without Lua files).
+    /// </summary>
+    public static void RegisterObject(string key, ObjectDef obj)
+    {
+        ContentDatabase.Objects[obj.Id] = obj;
     }
 
     private static void LoadBuffs(string path)
     {
         if (!File.Exists(path))
         {
-            Godot.GD.PrintErr($"ContentLoader: Buffs file not found: {path}");
+            LogError?.Invoke($"ContentLoader: Buffs file not found: {path}");
             return;
         }
 
@@ -65,7 +114,7 @@ public static class ContentLoader
     {
         if (!File.Exists(path))
         {
-            Godot.GD.PrintErr($"ContentLoader: Needs file not found: {path}");
+            LogError?.Invoke($"ContentLoader: Needs file not found: {path}");
             return;
         }
 
@@ -113,7 +162,7 @@ public static class ContentLoader
     {
         if (!File.Exists(path))
         {
-            Godot.GD.PrintErr($"ContentLoader: Objects file not found: {path}");
+            LogError?.Invoke($"ContentLoader: Objects file not found: {path}");
             return;
         }
 

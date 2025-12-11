@@ -8,4 +8,8 @@
   <ItemGroup>
     <PackageReference Include="MoonSharp" Version="2.0.0" />
   </ItemGroup>
+  <!-- Exclude test project from this build -->
+  <ItemGroup>
+    <Compile Remove="tests/**/*.cs" />
+  </ItemGroup>
 </Project>

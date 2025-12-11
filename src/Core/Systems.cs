@@ -444,7 +444,7 @@ public sealed class AISystem : ISystem
             var target = new TileCoord(pos.Coord.X + dx * wanderDist, pos.Coord.Y + dy * wanderDist);
             
             // Check if target is in bounds, walkable, and not occupied
-            if (!World.IsInBounds(target)) continue;
+            if (!ctx.World.IsInBounds(target)) continue;
             
             var tile = ctx.World.GetTile(target);
             if (tile.Walkable && !ctx.Entities.IsTileOccupiedByPawn(target, pawnId))

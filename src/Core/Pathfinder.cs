@@ -27,7 +27,7 @@ public static class Pathfinder
                 var neighbor = new TileCoord(current.X + dx, current.Y + dy);
                 
                 // Check bounds first
-                if (!World.IsInBounds(neighbor)) continue;
+                if (!world.IsInBounds(neighbor)) continue;
                 
                 var tile = world.GetTile(neighbor);
 
