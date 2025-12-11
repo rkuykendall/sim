@@ -33,9 +33,8 @@ public static class Pathfinder
 
                 if (!tile.Walkable) continue;
                 
-                // Avoid tiles with pawns (but allow the goal tile - pawn might move)
-                if (avoidTiles != null && avoidTiles.Contains(neighbor) && 
-                    !(neighbor.X == goal.X && neighbor.Y == goal.Y))
+                // Avoid tiles with pawns
+                if (avoidTiles != null && avoidTiles.Contains(neighbor))
                     continue;
 
                 float tentativeG = gScore[current] + 1;

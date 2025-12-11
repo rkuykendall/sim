@@ -225,7 +225,10 @@ public sealed class ActionSystem : ISystem
 
             if (actionComp.CurrentPath == null || actionComp.CurrentPath.Count == 0)
             {
+                // Can't reach destination - clear this action AND any queued actions
+                // (e.g., if we can't reach an object, don't keep trying to use it)
                 actionComp.CurrentAction = null;
+                actionComp.ActionQueue.Clear();
                 return;
             }
         }
@@ -287,7 +290,7 @@ public sealed class ActionSystem : ISystem
             actionComp.CurrentAction = new ActionDef
             {
                 Type = ActionType.MoveTo,
-                TargetCoord = FindAdjacentWalkable(ctx.World, objPos.Coord, pawnPos.Coord),
+                TargetCoord = FindAdjacentWalkable(ctx.World, ctx.Entities, objPos.Coord, pawnPos.Coord, pawnId),
                 DurationTicks = 0,
                 DisplayName = $"Going to {objName}"
             };
@@ -346,13 +349,13 @@ public sealed class ActionSystem : ISystem
         }
     }
 
-    private TileCoord FindAdjacentWalkable(World world, TileCoord target, TileCoord from)
+    private TileCoord FindAdjacentWalkable(World world, EntityManager entities, TileCoord target, TileCoord from, EntityId? excludePawn = null)
     {
         var candidates = new List<(TileCoord coord, int dist)>();
         foreach (var (dx, dy) in new[] { (0, 1), (0, -1), (1, 0), (-1, 0) })
         {
             var adj = new TileCoord(target.X + dx, target.Y + dy);
-            if (world.GetTile(adj).Walkable)
+            if (world.GetTile(adj).Walkable && !entities.IsTileOccupiedByPawn(adj, excludePawn))
             {
                 int dist = Math.Abs(adj.X - from.X) + Math.Abs(adj.Y - from.Y);
                 candidates.Add((adj, dist));
