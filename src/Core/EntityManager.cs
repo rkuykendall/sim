@@ -63,4 +63,23 @@ public sealed class EntityManager
         }
         return occupied;
     }
+
+    /// <summary>
+    /// Get the pawn at a specific tile, or null if none (optionally excluding one pawn).
+    /// </summary>
+    public EntityId? GetPawnAtTile(TileCoord coord, EntityId? excludePawn = null)
+    {
+        foreach (var pawnId in Pawns.Keys)
+        {
+            if (excludePawn.HasValue && pawnId.Value == excludePawn.Value.Value)
+                continue;
+
+            if (Positions.TryGetValue(pawnId, out var pos) && 
+                pos.Coord.X == coord.X && pos.Coord.Y == coord.Y)
+            {
+                return pawnId;
+            }
+        }
+        return null;
+    }
 }

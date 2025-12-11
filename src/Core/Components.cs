@@ -42,6 +42,7 @@ public sealed class ActionComponent
     public List<TileCoord>? CurrentPath = null;
     public int PathIndex = 0;
     public int BlockedSinceTick = -1;  // Tick when pawn first got blocked, -1 = not blocked
+    public int WaitUntilTick = -1;     // Wait before repathing (randomized to break dance)
 }
 
 // World object (furniture, etc.)

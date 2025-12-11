@@ -170,6 +170,7 @@ public sealed class ActionSystem : ISystem
 {
     private const int MoveTicksPerTile = 10;
     private const int MaxBlockedTicks = 50;  // Give up on move after being blocked this long
+    private readonly Random _random = new();
 
     public void Tick(SimContext ctx)
     {
@@ -242,7 +243,8 @@ public sealed class ActionSystem : ISystem
             var nextTile = actionComp.CurrentPath[expectedPathIndex];
             
             // Check if the next tile is occupied by another pawn
-            if (ctx.Entities.IsTileOccupiedByPawn(nextTile, pawnId))
+            var blockingPawnId = ctx.Entities.GetPawnAtTile(nextTile, pawnId);
+            if (blockingPawnId != null)
             {
                 // Track how long we've been blocked
                 if (actionComp.BlockedSinceTick < 0)
@@ -256,11 +258,45 @@ public sealed class ActionSystem : ISystem
                     actionComp.CurrentAction = null;
                     actionComp.CurrentPath = null;
                     actionComp.BlockedSinceTick = -1;
+                    actionComp.WaitUntilTick = -1;
                     actionComp.ActionQueue.Clear();  // Clear queued actions too
                     return;
                 }
                 
-                // Blocked - try to find a new path around the obstacle
+                // Priority-based yielding: Wandering pawns yield to goal-driven pawns
+                bool iAmWandering = action.DisplayName == "Wandering";
+                bool blockerIsWandering = false;
+                if (ctx.Entities.Actions.TryGetValue(blockingPawnId.Value, out var blockerAction))
+                {
+                    blockerIsWandering = blockerAction.CurrentAction?.DisplayName == "Wandering";
+                }
+                
+                // If I'm wandering and blocker has a goal, I should yield (cancel my action)
+                if (iAmWandering && !blockerIsWandering)
+                {
+                    actionComp.CurrentAction = null;
+                    actionComp.CurrentPath = null;
+                    actionComp.BlockedSinceTick = -1;
+                    actionComp.WaitUntilTick = -1;
+                    return;
+                }
+                
+                // Randomized wait before repathing to break the "sidewalk dance"
+                if (actionComp.WaitUntilTick < 0)
+                {
+                    // Wait a random amount of time (5-20 ticks) before trying to repath
+                    actionComp.WaitUntilTick = ctx.Time.Tick + _random.Next(5, 21);
+                    return;
+                }
+                
+                if (ctx.Time.Tick < actionComp.WaitUntilTick)
+                {
+                    // Still waiting
+                    return;
+                }
+                
+                // Done waiting - try to find a new path around the obstacle
+                actionComp.WaitUntilTick = -1;  // Reset wait timer
                 var newPath = Pathfinder.FindPath(ctx.World, pos.Coord, target, occupiedTiles);
                 
                 if (newPath != null && newPath.Count > 0)
@@ -271,12 +307,13 @@ public sealed class ActionSystem : ISystem
                     actionComp.ActionStartTick = ctx.Time.Tick;
                     actionComp.BlockedSinceTick = -1;  // Reset blocked timer
                 }
-                // If no path found, just wait (pawn might move)
+                // If no path found, will wait again with new random time next tick
                 return;
             }
             
             // Not blocked anymore
             actionComp.BlockedSinceTick = -1;
+            actionComp.WaitUntilTick = -1;
             actionComp.PathIndex = expectedPathIndex;
             pos.Coord = actionComp.CurrentPath[actionComp.PathIndex];
         }
