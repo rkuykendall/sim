@@ -139,7 +139,8 @@ public class PawnLifecycleTests
             .DefineObject("Fridge", ObjectIdFridge, "Fridge",
                 satisfiesNeedId: NeedIdHunger,
                 satisfactionAmount: 50f,
-                interactionDuration: 20)
+                interactionDuration: 20,
+                useAreas: new List<(int, int)> { (-1, 0) })  // West of fridge
             .AddObject(ObjectIdFridge, 4, 0)  // Fridge at end
             .AddPawn("TestPawn", 0, 0, new Dictionary<int, float>
             {

@@ -38,7 +38,8 @@ public class PawnMovementTests
             .DefineObject("Fridge", ObjectIdFridge, "Fridge",
                 satisfiesNeedId: NeedIdHunger,
                 satisfactionAmount: 50f,
-                interactionDuration: 20)
+                interactionDuration: 20,
+                useAreas: new List<(int, int)> { (-1, 0), (1, 0) })  // Both sides work in corridor
             .AddObject(ObjectIdFridge, 5, 0)  // Fridge in middle
             .AddPawn("LeftPawn", 0, 0, new Dictionary<int, float> { { NeedIdHunger, 10f } })
             .AddPawn("RightPawn", 9, 0, new Dictionary<int, float> { { NeedIdHunger, 10f } })
@@ -112,7 +113,8 @@ public class PawnMovementTests
             .DefineObject("Fridge", ObjectIdFridge, "Fridge",
                 satisfiesNeedId: NeedIdHunger,
                 satisfactionAmount: 50f,
-                interactionDuration: 20)
+                interactionDuration: 20,
+                useAreas: new List<(int, int)> { (1, 0), (-1, 0) })  // Use from either side
             .AddObject(ObjectIdFridge, 0, 0)  // Fridge at left
             .AddObject(ObjectIdFridge, 3, 0)  // Fridge at right
             .AddPawn("Pawn1", 1, 0, new Dictionary<int, float> { { NeedIdHunger, 10f } })

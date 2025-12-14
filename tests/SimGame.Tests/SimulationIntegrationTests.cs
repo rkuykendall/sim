@@ -31,7 +31,8 @@ public class SimulationIntegrationTests
                 satisfiesNeedId: NeedIdHunger, 
                 satisfactionAmount: 50f, 
                 interactionDuration: 20,
-                grantsBuffId: BuffIdGoodMeal)
+                grantsBuffId: BuffIdGoodMeal,
+                useAreas: new List<(int, int)> { (-1, 0) })  // West of fridge (works in 1D corridor)
             .AddObject(ObjectIdFridge, 4, 0)  // Fridge at (4,0)
             .AddPawn("TestPawn", 0, 0, new Dictionary<int, float> 
             { 
@@ -76,7 +77,8 @@ public class SimulationIntegrationTests
                 satisfiesNeedId: NeedIdHunger,
                 satisfactionAmount: 50f,
                 interactionDuration: 20,
-                grantsBuffId: BuffIdGoodMeal)
+                grantsBuffId: BuffIdGoodMeal,
+                useAreas: new List<(int, int)> { (-1, 0) })  // West of fridge
             .AddObject(ObjectIdFridge, 4, 0)
             .AddPawn("TestPawn", 0, 0, new Dictionary<int, float>
             {
@@ -171,7 +173,8 @@ public class SimulationIntegrationTests
                 satisfiesNeedId: NeedIdHunger,
                 satisfactionAmount: 50f,
                 interactionDuration: 20,
-                grantsBuffId: BuffIdGoodMeal)
+                grantsBuffId: BuffIdGoodMeal,
+                useAreas: new List<(int, int)> { (-1, 0) })  // West of fridge
             .AddObject(ObjectIdFridge, 9, 0)  // Fridge at far end
             .AddPawn("TestPawn", 0, 0, new Dictionary<int, float>
             {

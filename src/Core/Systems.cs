@@ -334,22 +334,33 @@ public sealed class ActionSystem : ISystem
 
         if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos)) return;
         if (!ctx.Entities.Positions.TryGetValue(targetId, out var objPos)) return;
-
-        int dist = Math.Abs(pawnPos.Coord.X - objPos.Coord.X) + Math.Abs(pawnPos.Coord.Y - objPos.Coord.Y);
-        if (dist > 1)
+        if (!ctx.Entities.Objects.TryGetValue(targetId, out var objCompCheck)) return;
+        
+        var objDefForCheck = ContentDatabase.Objects[objCompCheck.ObjectDefId];
+        
+        // Check if pawn is in a valid use area for this object
+        bool inUseArea = IsInUseArea(pawnPos.Coord, objPos.Coord, objDefForCheck);
+        
+        if (!inUseArea)
         {
-            // Get object name for display
-            string objName = "Object";
-            if (ctx.Entities.Objects.TryGetValue(targetId, out var tempObjComp))
-                objName = ContentDatabase.Objects[tempObjComp.ObjectDefId].Name;
+            // Need to move to a valid use area first
+            var useAreaTarget = FindValidUseArea(ctx.World, ctx.Entities, objPos.Coord, pawnPos.Coord, objDefForCheck, pawnId);
+            
+            if (useAreaTarget == null)
+            {
+                // No valid use area available (all blocked) - cancel action
+                actionComp.CurrentAction = null;
+                actionComp.ActionQueue.Clear();
+                return;
+            }
             
             actionComp.ActionQueue = new Queue<ActionDef>(new[] { action }.Concat(actionComp.ActionQueue));
             actionComp.CurrentAction = new ActionDef
             {
                 Type = ActionType.MoveTo,
-                TargetCoord = FindAdjacentWalkable(ctx.World, ctx.Entities, objPos.Coord, pawnPos.Coord, pawnId),
+                TargetCoord = useAreaTarget,
                 DurationTicks = 0,
-                DisplayName = $"Going to {objName}"
+                DisplayName = $"Going to {objDefForCheck.Name}"
             };
             actionComp.ActionStartTick = ctx.Time.Tick;
             return;
@@ -406,21 +417,58 @@ public sealed class ActionSystem : ISystem
         }
     }
 
-    private TileCoord FindAdjacentWalkable(World world, EntityManager entities, TileCoord target, TileCoord from, EntityId? excludePawn = null)
+    /// <summary>
+    /// Check if a pawn position is within a valid use area for an object.
+    /// </summary>
+    private bool IsInUseArea(TileCoord pawnCoord, TileCoord objCoord, ObjectDef objDef)
+    {
+        // If no use areas defined, fall back to adjacent (distance 1)
+        if (objDef.UseAreas.Count == 0)
+        {
+            int dist = Math.Abs(pawnCoord.X - objCoord.X) + Math.Abs(pawnCoord.Y - objCoord.Y);
+            return dist <= 1;
+        }
+        
+        foreach (var (dx, dy) in objDef.UseAreas)
+        {
+            var useAreaCoord = new TileCoord(objCoord.X + dx, objCoord.Y + dy);
+            if (pawnCoord.X == useAreaCoord.X && pawnCoord.Y == useAreaCoord.Y)
+                return true;
+        }
+        return false;
+    }
+    
+    /// <summary>
+    /// Find the closest valid use area for an object that is walkable and not occupied.
+    /// Returns null if no valid use area is available.
+    /// </summary>
+    private TileCoord? FindValidUseArea(World world, EntityManager entities, TileCoord objCoord, TileCoord from, ObjectDef objDef, EntityId? excludePawn = null)
     {
         var candidates = new List<(TileCoord coord, int dist)>();
-        foreach (var (dx, dy) in new[] { (0, 1), (0, -1), (1, 0), (-1, 0) })
+        
+        // Use the object's defined use areas, or fall back to cardinal directions
+        var useAreas = objDef.UseAreas.Count > 0 
+            ? objDef.UseAreas 
+            : new List<(int dx, int dy)> { (0, 1), (0, -1), (1, 0), (-1, 0) };
+        
+        foreach (var (dx, dy) in useAreas)
         {
-            var adj = new TileCoord(target.X + dx, target.Y + dy);
-            if (world.GetTile(adj).Walkable && !entities.IsTileOccupiedByPawn(adj, excludePawn))
+            var useAreaCoord = new TileCoord(objCoord.X + dx, objCoord.Y + dy);
+            
+            // Check bounds
+            if (!world.IsInBounds(useAreaCoord)) continue;
+            
+            // Check if tile is walkable and not occupied by another pawn
+            if (world.GetTile(useAreaCoord).Walkable && !entities.IsTileOccupiedByPawn(useAreaCoord, excludePawn))
             {
-                int dist = Math.Abs(adj.X - from.X) + Math.Abs(adj.Y - from.Y);
-                candidates.Add((adj, dist));
+                int dist = Math.Abs(useAreaCoord.X - from.X) + Math.Abs(useAreaCoord.Y - from.Y);
+                candidates.Add((useAreaCoord, dist));
             }
         }
+        
         return candidates.Count > 0
             ? candidates.OrderBy(c => c.dist).First().coord
-            : target;
+            : null;
     }
 }
 

@@ -69,7 +69,8 @@ public sealed class TestSimulationBuilder
     /// Define an object type that can be placed in the world.
     /// </summary>
     public TestSimulationBuilder DefineObject(string key, int id, string name, int? satisfiesNeedId = null, 
-        float satisfactionAmount = 50f, int interactionDuration = 20, int? grantsBuffId = null)
+        float satisfactionAmount = 50f, int interactionDuration = 20, int? grantsBuffId = null,
+        List<(int, int)>? useAreas = null)
     {
         _objects.Add((key, new ObjectDef
         {
@@ -79,7 +80,7 @@ public sealed class TestSimulationBuilder
             NeedSatisfactionAmount = satisfactionAmount,
             InteractionDurationTicks = interactionDuration,
             GrantsBuffId = grantsBuffId,
-            UseAreas = new List<(int dx, int dy)> { (0, 1) }
+            UseAreas = useAreas ?? new List<(int dx, int dy)> { (0, 1) }
         }));
         return this;
     }
