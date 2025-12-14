@@ -1,12 +1,20 @@
+using System;
 using System.Collections.Generic;
 
 namespace SimGame.Core;
 
-public readonly struct EntityId
+public readonly struct EntityId : IEquatable<EntityId>
 {
     public readonly int Value;
     public EntityId(int v) => Value = v;
+    
+    public bool Equals(EntityId other) => Value == other.Value;
+    public override bool Equals(object? obj) => obj is EntityId other && Equals(other);
+    public override int GetHashCode() => Value;
     public override string ToString() => Value.ToString();
+    
+    public static bool operator ==(EntityId left, EntityId right) => left.Equals(right);
+    public static bool operator !=(EntityId left, EntityId right) => !left.Equals(right);
 }
 
 public sealed class EntityManager
@@ -33,7 +41,7 @@ public sealed class EntityManager
     {
         foreach (var pawnId in Pawns.Keys)
         {
-            if (excludePawn.HasValue && pawnId.Value == excludePawn.Value.Value)
+            if (excludePawn.HasValue && pawnId == excludePawn.Value)
                 continue;
 
             if (Positions.TryGetValue(pawnId, out var pos) && pos.Coord == coord)
@@ -52,7 +60,7 @@ public sealed class EntityManager
         var occupied = new HashSet<TileCoord>();
         foreach (var pawnId in Pawns.Keys)
         {
-            if (excludePawn.HasValue && pawnId.Value == excludePawn.Value.Value)
+            if (excludePawn.HasValue && pawnId == excludePawn.Value)
                 continue;
 
             if (Positions.TryGetValue(pawnId, out var pos))
@@ -70,7 +78,7 @@ public sealed class EntityManager
     {
         foreach (var pawnId in Pawns.Keys)
         {
-            if (excludePawn.HasValue && pawnId.Value == excludePawn.Value.Value)
+            if (excludePawn.HasValue && pawnId == excludePawn.Value)
                 continue;
 
             if (Positions.TryGetValue(pawnId, out var pos) && pos.Coord == coord)
