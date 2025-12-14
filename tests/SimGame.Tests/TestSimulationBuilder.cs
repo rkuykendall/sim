@@ -30,15 +30,22 @@ public sealed class TestSimulationBuilder
     /// <summary>
     /// Define a need type that can be used by pawns and objects.
     /// </summary>
-    public TestSimulationBuilder DefineNeed(string key, int id, string name, float decayPerTick = 0.02f)
+    public TestSimulationBuilder DefineNeed(string key, int id, string name, 
+        float decayPerTick = 0.02f,
+        float criticalThreshold = 15f,
+        float lowThreshold = 35f,
+        int? criticalDebuffId = null,
+        int? lowDebuffId = null)
     {
         _needs.Add((key, new NeedDef
         {
             Id = id,
             Name = name,
             DecayPerTick = decayPerTick,
-            CriticalThreshold = 15f,
-            LowThreshold = 35f
+            CriticalThreshold = criticalThreshold,
+            LowThreshold = lowThreshold,
+            CriticalDebuffId = criticalDebuffId,
+            LowDebuffId = lowDebuffId
         }));
         return this;
     }

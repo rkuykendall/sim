@@ -429,9 +429,6 @@ public sealed class AISystem : ISystem
 {
     private readonly Random _random = new();
     
-    // Don't seek objects if need is above this threshold
-    private const float NeedSatisfiedThreshold = 80f;
-    
     public void Tick(SimContext ctx)
     {
         foreach (var pawnId in ctx.Entities.AllPawns())
@@ -442,31 +439,59 @@ public sealed class AISystem : ISystem
             if (actionComp.CurrentAction != null || actionComp.ActionQueue.Count > 0)
                 continue;
 
-            int? urgentNeedId = null;
-            float lowestNeed = float.MaxValue;
+            // Collect all needs that need attention, sorted by urgency
+            var urgentNeeds = new List<(int needId, float urgency)>();
+
+            // Get active debuffs to check which needs are causing problems
+            var activeDebuffIds = new HashSet<int>();
+            if (ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs))
+            {
+                foreach (var buff in buffs.ActiveBuffs)
+                    activeDebuffIds.Add(buff.BuffDefId);
+            }
 
             foreach (var (needId, value) in needs.Needs)
             {
                 if (!ContentDatabase.Needs.TryGetValue(needId, out var needDef)) continue;
                 
-                // Don't consider needs that are already satisfied
-                if (value >= NeedSatisfiedThreshold) continue;
+                // Check if this need is causing a debuff
+                bool hasDebuffFromNeed = 
+                    (needDef.CriticalDebuffId.HasValue && activeDebuffIds.Contains(needDef.CriticalDebuffId.Value)) ||
+                    (needDef.LowDebuffId.HasValue && activeDebuffIds.Contains(needDef.LowDebuffId.Value));
+                
+                // Skip needs that are high AND not causing debuffs
+                // (value >= 90 means using most objects would overflow/waste)
+                if (value >= 90f && !hasDebuffFromNeed) continue;
 
+                // Calculate urgency - lower value = more urgent
+                // Debuffs add significant urgency
                 float urgency = value;
-                if (value < needDef.CriticalThreshold) urgency -= 50;
-                else if (value < needDef.LowThreshold) urgency -= 20;
-
-                if (urgency < lowestNeed)
+                if (hasDebuffFromNeed)
                 {
-                    lowestNeed = urgency;
-                    urgentNeedId = needId;
+                    // Having a debuff makes this very urgent
+                    if (needDef.CriticalDebuffId.HasValue && activeDebuffIds.Contains(needDef.CriticalDebuffId.Value))
+                        urgency -= 100;  // Critical debuff - highest priority
+                    else
+                        urgency -= 50;   // Low debuff - high priority
                 }
+                else if (value < needDef.LowThreshold)
+                {
+                    urgency -= 20;  // About to get a debuff
+                }
+
+                urgentNeeds.Add((needId, urgency));
             }
 
+            // Sort by urgency (lowest first = most urgent)
+            urgentNeeds.Sort((a, b) => a.urgency.CompareTo(b.urgency));
+
+            // Try to find an available object for any of our urgent needs
             EntityId? targetObject = null;
-            if (urgentNeedId != null)
+            foreach (var (needId, _) in urgentNeeds)
             {
-                targetObject = FindObjectForNeed(ctx, pawnId, urgentNeedId.Value);
+                targetObject = FindObjectForNeed(ctx, pawnId, needId);
+                if (targetObject != null)
+                    break;  // Found an available object!
             }
 
             if (targetObject != null)
@@ -483,6 +508,46 @@ public sealed class AISystem : ISystem
                     NeedSatisfactionAmount = objDef.NeedSatisfactionAmount,
                     DisplayName = $"Going to {objDef.Name}"
                 });
+            }
+            else if (urgentNeeds.Count > 0 && urgentNeeds[0].urgency < -50)
+            {
+                // We have critical needs but no available objects - wait near an object instead of wandering away
+                // This makes pawns "queue" for objects instead of wandering to their death
+                var waitTarget = FindAnyObjectForNeeds(ctx, pawnId, urgentNeeds.Select(n => n.needId).ToList());
+                if (waitTarget != null)
+                {
+                    // Wait by going to the object area (even if it's in use, we'll wait nearby)
+                    var objComp = ctx.Entities.Objects[waitTarget.Value];
+                    var objDef = ContentDatabase.Objects[objComp.ObjectDefId];
+                    var objPos = ctx.Entities.Positions[waitTarget.Value];
+                    
+                    // Find a spot near the object to wait
+                    var waitSpot = FindWaitingSpot(ctx, objPos.Coord, pawnId);
+                    if (waitSpot != null)
+                    {
+                        actionComp.ActionQueue.Enqueue(new ActionDef
+                        {
+                            Type = ActionType.MoveTo,
+                            TargetCoord = waitSpot,
+                            DisplayName = $"Waiting for {objDef.Name}"
+                        });
+                    }
+                    else
+                    {
+                        // Can't find waiting spot, just idle briefly
+                        actionComp.ActionQueue.Enqueue(new ActionDef
+                        {
+                            Type = ActionType.Idle,
+                            DurationTicks = 20,
+                            DisplayName = $"Waiting for {objDef.Name}"
+                        });
+                    }
+                }
+                else
+                {
+                    // No objects exist at all for our needs - wander
+                    WanderRandomly(ctx, pawnId, actionComp);
+                }
             }
             else
             {
@@ -552,5 +617,68 @@ public sealed class AISystem : ISystem
         }
 
         return best;
+    }
+
+    /// <summary>
+    /// Find any object (even if in use) that could satisfy one of the given needs.
+    /// Used for finding a place to wait when all relevant objects are busy.
+    /// </summary>
+    private EntityId? FindAnyObjectForNeeds(SimContext ctx, EntityId pawnId, List<int> needIds)
+    {
+        if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
+            return null;
+
+        EntityId? best = null;
+        int bestDist = int.MaxValue;
+
+        foreach (var objId in ctx.Entities.AllObjects())
+        {
+            var objComp = ctx.Entities.Objects[objId];
+            var objDef = ContentDatabase.Objects[objComp.ObjectDefId];
+
+            // Check if this object satisfies any of our needs
+            if (!objDef.SatisfiesNeedId.HasValue || !needIds.Contains(objDef.SatisfiesNeedId.Value)) 
+                continue;
+
+            if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos)) continue;
+
+            int dist = Math.Abs(pawnPos.Coord.X - objPos.Coord.X) +
+                       Math.Abs(pawnPos.Coord.Y - objPos.Coord.Y);
+
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                best = objId;
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>
+    /// Find a walkable tile near an object where a pawn can wait.
+    /// </summary>
+    private TileCoord? FindWaitingSpot(SimContext ctx, TileCoord objectPos, EntityId pawnId)
+    {
+        // Look for walkable tiles within 2 tiles of the object
+        for (int dx = -2; dx <= 2; dx++)
+        {
+            for (int dy = -2; dy <= 2; dy++)
+            {
+                if (dx == 0 && dy == 0) continue;  // Skip the object tile itself
+                
+                var candidate = new TileCoord(objectPos.X + dx, objectPos.Y + dy);
+                
+                if (!ctx.World.IsInBounds(candidate)) continue;
+                
+                var tile = ctx.World.GetTile(candidate);
+                if (tile.Walkable && !ctx.Entities.IsTileOccupiedByPawn(candidate, pawnId))
+                {
+                    return candidate;
+                }
+            }
+        }
+        
+        return null;
     }
 }

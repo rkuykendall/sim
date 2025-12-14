@@ -22,16 +22,20 @@ public class PawnLifecycleTests
 
     /// <summary>
     /// Scenario: A pawn uses a fridge, gets satisfied, wanders, then returns to the fridge
-    /// when hunger drops below threshold again.
+    /// when hunger drops and causes a debuff again.
     /// </summary>
     [Fact]
     public void Pawn_SatisfiesNeed_Wanders_ThenReturnsWhenNeedDrops()
     {
+        // Define debuff so AI knows when pawn is unhappy
         // Use fast decay so the test doesn't take forever
-        // 0.5 decay per tick means 100 -> 80 in 40 ticks, 100 -> 0 in 200 ticks
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 9, 0, 9)  // 10x10 world
-            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.5f)
+            .DefineBuff("Hungry", 100, "Hungry", -5)  // id=100, mood=-5
+            .DefineNeed("Hunger", NeedIdHunger, "Hunger", 
+                decayPerTick: 0.5f, 
+                lowThreshold: 35f,      // Gets "Hungry" debuff below 35
+                lowDebuffId: 100)
             .DefineObject("Fridge", ObjectIdFridge, "Fridge",
                 satisfiesNeedId: NeedIdHunger,
                 satisfactionAmount: 50f,
@@ -53,7 +57,7 @@ public class PawnLifecycleTests
         bool wentBackToFridge = false;
 
         _output.WriteLine("=== Pawn Lifecycle Test ===");
-        _output.WriteLine($"NeedSatisfiedThreshold is 80 - pawn should wander above 80, seek fridge below 80");
+        _output.WriteLine($"Pawn should wander when hunger >= 90 (no debuffs), seek fridge when hunger < 35 (debuff)");
 
         for (int tick = 0; tick < 500; tick++)
         {
@@ -81,7 +85,7 @@ public class PawnLifecycleTests
             }
 
             // Detect wandering (high hunger + wandering action)
-            if (hunger > 80 && actionName.Contains("Wander"))
+            if (hunger > 50 && actionName.Contains("Wander"))
             {
                 if (!wasWandering)
                 {
@@ -119,15 +123,19 @@ public class PawnLifecycleTests
     }
 
     /// <summary>
-    /// Test that verifies the exact threshold behavior - pawn should seek food when hunger drops below 80.
+    /// Test that verifies pawn seeks food when they have a debuff (hunger below lowThreshold).
     /// </summary>
     [Fact]
-    public void Pawn_SeeksFoodWhenBelowThreshold()
+    public void Pawn_SeeksFoodWhenHasDebuff()
     {
-        // Start at exactly 79 (just below threshold) - should immediately seek food
+        // Start below debuff threshold (35) - should immediately seek food
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 0)  // Simple 5x1 corridor
-            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.01f)  // Slow decay
+            .DefineBuff("Hungry", 100, "Hungry", -5)
+            .DefineNeed("Hunger", NeedIdHunger, "Hunger", 
+                decayPerTick: 0.01f,  // Slow decay
+                lowThreshold: 35f,
+                lowDebuffId: 100)
             .DefineObject("Fridge", ObjectIdFridge, "Fridge",
                 satisfiesNeedId: NeedIdHunger,
                 satisfactionAmount: 50f,
@@ -135,7 +143,7 @@ public class PawnLifecycleTests
             .AddObject(ObjectIdFridge, 4, 0)  // Fridge at end
             .AddPawn("TestPawn", 0, 0, new Dictionary<int, float>
             {
-                { NeedIdHunger, 79f }  // Just below threshold
+                { NeedIdHunger, 30f }  // Below debuff threshold of 35
             })
             .Build();
 
@@ -148,21 +156,25 @@ public class PawnLifecycleTests
         var actionComp = sim.Entities.Actions[pawnId.Value];
         var actionName = actionComp.CurrentAction?.DisplayName ?? actionComp.CurrentAction?.Type.ToString() ?? "none";
 
-        _output.WriteLine($"At hunger=79, action after 5 ticks: {actionName}");
+        _output.WriteLine($"At hunger=30 (below debuff threshold 35), action after 5 ticks: {actionName}");
 
         Assert.Contains("Fridge", actionName, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
-    /// Test that verifies pawn wanders when above threshold.
+    /// Test that verifies pawn wanders when needs are high (no debuffs).
     /// </summary>
     [Fact]
-    public void Pawn_WandersWhenAboveThreshold()
+    public void Pawn_WandersWhenNoDebuffs()
     {
-        // Start at exactly 81 (just above threshold) - should wander, not seek food
+        // Start at 95 (well above debuff threshold, and high enough not to bother) - should wander
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 0)  // Simple 5x1 corridor
-            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.001f)  // Very slow decay
+            .DefineBuff("Hungry", 100, "Hungry", -5)
+            .DefineNeed("Hunger", NeedIdHunger, "Hunger", 
+                decayPerTick: 0.001f,  // Very slow decay
+                lowThreshold: 35f,
+                lowDebuffId: 100)
             .DefineObject("Fridge", ObjectIdFridge, "Fridge",
                 satisfiesNeedId: NeedIdHunger,
                 satisfactionAmount: 50f,
@@ -170,7 +182,7 @@ public class PawnLifecycleTests
             .AddObject(ObjectIdFridge, 4, 0)  // Fridge at end
             .AddPawn("TestPawn", 0, 0, new Dictionary<int, float>
             {
-                { NeedIdHunger, 81f }  // Just above threshold
+                { NeedIdHunger, 95f }  // Well above threshold, no debuff
             })
             .Build();
 
@@ -183,7 +195,7 @@ public class PawnLifecycleTests
         var actionComp = sim.Entities.Actions[pawnId.Value];
         var actionName = actionComp.CurrentAction?.DisplayName ?? actionComp.CurrentAction?.Type.ToString() ?? "none";
 
-        _output.WriteLine($"At hunger=81, action after 5 ticks: {actionName}");
+        _output.WriteLine($"At hunger=95 (no debuff), action after 5 ticks: {actionName}");
 
         Assert.DoesNotContain("Fridge", actionName, StringComparison.OrdinalIgnoreCase);
     }
@@ -196,7 +208,11 @@ public class PawnLifecycleTests
     {
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 9, 0, 9)
-            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.3f)  // Moderate decay
+            .DefineBuff("Hungry", 100, "Hungry", -5)
+            .DefineNeed("Hunger", NeedIdHunger, "Hunger", 
+                decayPerTick: 0.3f,  // Moderate decay
+                lowThreshold: 35f,
+                lowDebuffId: 100)
             .DefineObject("Fridge", ObjectIdFridge, "Fridge",
                 satisfiesNeedId: NeedIdHunger,
                 satisfactionAmount: 60f,
