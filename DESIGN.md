@@ -38,7 +38,7 @@ The Godot client is just a viewer and input layer.
 
 Each pawn has:
 
-- Needs (hunger, energy, fun, social, comfort, hygiene)
+- Needs (hunger, energy, fun, social, hygiene)
 - Mood (a combined calculation of needs, buffs, traits, memories)
 - Traits (optimistic, neat, shy, ambitious)
 - Jobs and careers
@@ -143,7 +143,6 @@ Needs decay over time:
 - energy
 - fun
 - social
-- comfort
 - hygiene
 
 Low needs cause debuffs; satisfied needs may create buffs.

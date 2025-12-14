@@ -80,4 +80,18 @@ public sealed class EntityManager
         }
         return null;
     }
+
+    /// <summary>
+    /// Destroy an entity and remove all its components.
+    /// </summary>
+    public void Destroy(EntityId id)
+    {
+        Positions.Remove(id);
+        Pawns.Remove(id);
+        Needs.Remove(id);
+        Moods.Remove(id);
+        Buffs.Remove(id);
+        Actions.Remove(id);
+        Objects.Remove(id);
+    }
 }
