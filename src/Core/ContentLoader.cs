@@ -1,28 +1,16 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using MoonSharp.Interpreter;
 
 namespace SimGame.Core;
 
 /// <summary>
-/// Loads game content definitions from Lua files.
+/// Loads game content definitions from Lua files into a ContentRegistry.
 /// </summary>
 public static class ContentLoader
 {
-    private static Script? _script;
-    private static Dictionary<string, int> _buffNameToId = new();
-    private static Dictionary<string, int> _needNameToId = new();
-    private static Dictionary<string, int> _objectNameToId = new();
-    
-    // ID counters for auto-generation
-    private static int _nextBuffId = 1;
-    private static int _nextNeedId = 1;
-    private static int _nextObjectId = 1;
-
     /// <summary>
     /// Optional logging callback. Set to null to disable logging.
-    /// Defaults to Godot.GD.Print when running in Godot, null otherwise.
     /// </summary>
     public static Action<string>? Log { get; set; }
 
@@ -31,82 +19,25 @@ public static class ContentLoader
     /// </summary>
     public static Action<string>? LogError { get; set; }
 
-    public static void LoadAll(string contentPath)
+    /// <summary>
+    /// Load all content from Lua files and return a populated ContentRegistry.
+    /// </summary>
+    public static ContentRegistry LoadAll(string contentPath)
     {
-        _script = new Script();
-        _buffNameToId.Clear();
-        _needNameToId.Clear();
+        var registry = new ContentRegistry();
+        var script = new Script();
 
         // Load in order: buffs first (needs reference them), then needs, then objects
-        LoadBuffs(Path.Combine(contentPath, "core", "buffs.lua"));
-        LoadNeeds(Path.Combine(contentPath, "core", "needs.lua"));
-        LoadObjects(Path.Combine(contentPath, "core", "objects.lua"));
+        LoadBuffs(script, registry, Path.Combine(contentPath, "core", "buffs.lua"));
+        LoadNeeds(script, registry, Path.Combine(contentPath, "core", "needs.lua"));
+        LoadObjects(script, registry, Path.Combine(contentPath, "core", "objects.lua"));
 
-        Log?.Invoke($"ContentLoader: Loaded {ContentDatabase.Buffs.Count} buffs, {ContentDatabase.Needs.Count} needs, {ContentDatabase.Objects.Count} objects");
+        Log?.Invoke($"ContentLoader: Loaded {registry.Buffs.Count} buffs, {registry.Needs.Count} needs, {registry.Objects.Count} objects");
+
+        return registry;
     }
 
-    /// <summary>
-    /// Clear all loaded content. Useful for test isolation.
-    /// </summary>
-    public static void ClearAll()
-    {
-        ContentDatabase.Buffs.Clear();
-        ContentDatabase.Needs.Clear();
-        ContentDatabase.Objects.Clear();
-        _buffNameToId.Clear();
-        _needNameToId.Clear();
-        _objectNameToId.Clear();
-        _nextBuffId = 1;
-        _nextNeedId = 1;
-        _nextObjectId = 1;
-    }
-
-    /// <summary>
-    /// Register a buff definition directly (for testing without Lua files).
-    /// ID is auto-assigned if buff.Id is 0.
-    /// </summary>
-    public static void RegisterBuff(string key, BuffDef buff)
-    {
-        if (buff.Id == 0)
-            buff.Id = _nextBuffId++;
-        else if (buff.Id >= _nextBuffId)
-            _nextBuffId = buff.Id + 1;
-            
-        ContentDatabase.Buffs[buff.Id] = buff;
-        _buffNameToId[key] = buff.Id;
-    }
-
-    /// <summary>
-    /// Register a need definition directly (for testing without Lua files).
-    /// ID is auto-assigned if need.Id is 0.
-    /// </summary>
-    public static void RegisterNeed(string key, NeedDef need)
-    {
-        if (need.Id == 0)
-            need.Id = _nextNeedId++;
-        else if (need.Id >= _nextNeedId)
-            _nextNeedId = need.Id + 1;
-            
-        ContentDatabase.Needs[need.Id] = need;
-        _needNameToId[key] = need.Id;
-    }
-
-    /// <summary>
-    /// Register an object definition directly (for testing without Lua files).
-    /// ID is auto-assigned if obj.Id is 0.
-    /// </summary>
-    public static void RegisterObject(string key, ObjectDef obj)
-    {
-        if (obj.Id == 0)
-            obj.Id = _nextObjectId++;
-        else if (obj.Id >= _nextObjectId)
-            _nextObjectId = obj.Id + 1;
-            
-        ContentDatabase.Objects[obj.Id] = obj;
-        _objectNameToId[key] = obj.Id;
-    }
-
-    private static void LoadBuffs(string path)
+    private static void LoadBuffs(Script script, ContentRegistry registry, string path)
     {
         if (!File.Exists(path))
         {
@@ -114,9 +45,7 @@ public static class ContentLoader
             return;
         }
 
-        ContentDatabase.Buffs.Clear();
-
-        var result = _script!.DoFile(path);
+        var result = script.DoFile(path);
         var buffsTable = result.Table;
 
         foreach (var pair in buffsTable.Pairs)
@@ -124,22 +53,20 @@ public static class ContentLoader
             string key = pair.Key.String;
             var data = pair.Value.Table;
 
-            int id = _nextBuffId++;
             var buff = new BuffDef
             {
-                Id = id,
+                Id = 0, // Auto-assigned by registry
                 Name = data.Get("name").String,
                 MoodOffset = (float)data.Get("moodOffset").Number,
                 DurationTicks = (int)(data.Get("durationTicks").IsNil() ? 0 : data.Get("durationTicks").Number),
                 IsFromNeed = !data.Get("isFromNeed").IsNil() && data.Get("isFromNeed").Boolean
             };
 
-            ContentDatabase.Buffs[id] = buff;
-            _buffNameToId[key] = id;
+            registry.RegisterBuff(key, buff);
         }
     }
 
-    private static void LoadNeeds(string path)
+    private static void LoadNeeds(Script script, ContentRegistry registry, string path)
     {
         if (!File.Exists(path))
         {
@@ -147,9 +74,7 @@ public static class ContentLoader
             return;
         }
 
-        ContentDatabase.Needs.Clear();
-
-        var result = _script!.DoFile(path);
+        var result = script.DoFile(path);
         var needsTable = result.Table;
 
         foreach (var pair in needsTable.Pairs)
@@ -157,23 +82,21 @@ public static class ContentLoader
             string key = pair.Key.String;
             var data = pair.Value.Table;
 
-            int id = _nextNeedId++;
-            
             // Look up debuff IDs by name
             int? criticalDebuffId = null;
             int? lowDebuffId = null;
-            
+
             var criticalDebuffName = data.Get("criticalDebuff");
-            if (!criticalDebuffName.IsNil() && _buffNameToId.TryGetValue(criticalDebuffName.String, out var critId))
-                criticalDebuffId = critId;
-            
+            if (!criticalDebuffName.IsNil())
+                criticalDebuffId = registry.GetBuffId(criticalDebuffName.String);
+
             var lowDebuffName = data.Get("lowDebuff");
-            if (!lowDebuffName.IsNil() && _buffNameToId.TryGetValue(lowDebuffName.String, out var lowId))
-                lowDebuffId = lowId;
+            if (!lowDebuffName.IsNil())
+                lowDebuffId = registry.GetBuffId(lowDebuffName.String);
 
             var need = new NeedDef
             {
-                Id = id,
+                Id = 0, // Auto-assigned by registry
                 Name = data.Get("name").String,
                 DecayPerTick = (float)data.Get("decayPerTick").Number,
                 CriticalThreshold = (float)data.Get("criticalThreshold").Number,
@@ -182,12 +105,11 @@ public static class ContentLoader
                 LowDebuffId = lowDebuffId
             };
 
-            ContentDatabase.Needs[id] = need;
-            _needNameToId[key] = id;
+            registry.RegisterNeed(key, need);
         }
     }
 
-    private static void LoadObjects(string path)
+    private static void LoadObjects(Script script, ContentRegistry registry, string path)
     {
         if (!File.Exists(path))
         {
@@ -195,9 +117,7 @@ public static class ContentLoader
             return;
         }
 
-        ContentDatabase.Objects.Clear();
-
-        var result = _script!.DoFile(path);
+        var result = script.DoFile(path);
         var objectsTable = result.Table;
 
         foreach (var pair in objectsTable.Pairs)
@@ -205,23 +125,21 @@ public static class ContentLoader
             string key = pair.Key.String;
             var data = pair.Value.Table;
 
-            int id = _nextObjectId++;
-
             // Look up need ID by name
             int? satisfiesNeedId = null;
             var satisfiesNeedName = data.Get("satisfiesNeed");
-            if (!satisfiesNeedName.IsNil() && _needNameToId.TryGetValue(satisfiesNeedName.String, out var needId))
-                satisfiesNeedId = needId;
+            if (!satisfiesNeedName.IsNil())
+                satisfiesNeedId = registry.GetNeedId(satisfiesNeedName.String);
 
             // Look up buff ID by name
             int? grantsBuffId = null;
             var grantsBuffName = data.Get("grantsBuff");
-            if (!grantsBuffName.IsNil() && _buffNameToId.TryGetValue(grantsBuffName.String, out var buffId))
-                grantsBuffId = buffId;
+            if (!grantsBuffName.IsNil())
+                grantsBuffId = registry.GetBuffId(grantsBuffName.String);
 
             var obj = new ObjectDef
             {
-                Id = id,
+                Id = 0, // Auto-assigned by registry
                 Name = data.Get("name").String,
                 SatisfiesNeedId = satisfiesNeedId,
                 NeedSatisfactionAmount = (float)data.Get("satisfactionAmount").Number,
@@ -242,26 +160,7 @@ public static class ContentLoader
                 }
             }
 
-            ContentDatabase.Objects[id] = obj;
-            _objectNameToId[key] = id;
+            registry.RegisterObject(key, obj);
         }
     }
-
-    /// <summary>
-    /// Get a buff ID by its Lua key name.
-    /// </summary>
-    public static int? GetBuffId(string name) =>
-        _buffNameToId.TryGetValue(name, out var id) ? id : null;
-
-    /// <summary>
-    /// Get a need ID by its Lua key name.
-    /// </summary>
-    public static int? GetNeedId(string name) =>
-        _needNameToId.TryGetValue(name, out var id) ? id : null;
-
-    /// <summary>
-    /// Get an object ID by its Lua key name.
-    /// </summary>
-    public static int? GetObjectId(string name) =>
-        _objectNameToId.TryGetValue(name, out var id) ? id : null;
 }

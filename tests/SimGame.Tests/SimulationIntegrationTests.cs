@@ -137,11 +137,11 @@ public class SimulationIntegrationTests
         float initialHunger = sim.GetNeedValue(pawnId.Value, "Hunger");
         Assert.Equal(100f, initialHunger);
         
-        // Verify the need definition is in ContentDatabase
-        var needId = ContentLoader.GetNeedId("Hunger");
+        // Verify the need definition is in sim.Content
+        var needId = sim.Content.GetNeedId("Hunger");
         Assert.NotNull(needId);
-        Assert.True(ContentDatabase.Needs.ContainsKey(needId.Value), "Need should be registered");
-        var needDef = ContentDatabase.Needs[needId.Value];
+        Assert.True(sim.Content.Needs.ContainsKey(needId.Value), "Need should be registered");
+        var needDef = sim.Content.Needs[needId.Value];
         Assert.Equal(0.5f, needDef.DecayPerTick);
         
         sim.RunTicks(100);

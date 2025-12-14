@@ -72,9 +72,9 @@ public static class RenderSnapshotBuilder
                 else if (action.CurrentAction.Type == ActionType.UseObject && action.CurrentAction.TargetEntity.HasValue)
                 {
                     var targetId = action.CurrentAction.TargetEntity.Value;
-                    if (sim.Entities.Objects.TryGetValue(targetId, out var objComp))
+                    if (sim.Entities.Objects.TryGetValue(targetId, out var objComp) &&
+                        sim.Content.Objects.TryGetValue(objComp.ObjectDefId, out var objDef))
                     {
-                        var objDef = ContentDatabase.Objects[objComp.ObjectDefId];
                         actionName = $"Using {objDef.Name}";
                     }
                 }
@@ -123,7 +123,8 @@ public static class RenderSnapshotBuilder
 
             if (pos == null || obj == null) continue;
 
-            var objDef = ContentDatabase.Objects[obj.ObjectDefId];
+            if (!sim.Content.Objects.TryGetValue(obj.ObjectDefId, out var objDef))
+                continue;
 
             // Get name of pawn using this object
             string? usedByName = null;

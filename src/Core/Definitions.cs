@@ -64,15 +64,3 @@ public sealed class ActionDef
     public float NeedSatisfactionAmount;
     public string? DisplayName; // What to show in UI (e.g., "Going to Fridge", "Wandering")
 }
-
-/// <summary>
-/// Content database populated from Lua files.
-/// Use ContentLoader.LoadAll() to populate before starting simulation.
-/// </summary>
-public static class ContentDatabase
-{
-    // These are populated by ContentLoader from Lua files
-    public static readonly Dictionary<int, BuffDef> Buffs = new();
-    public static readonly Dictionary<int, NeedDef> Needs = new();
-    public static readonly Dictionary<int, ObjectDef> Objects = new();
-}

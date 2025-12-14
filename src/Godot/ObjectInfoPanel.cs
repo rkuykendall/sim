@@ -20,7 +20,7 @@ public partial class ObjectInfoPanel : PanelContainer
         Visible = false;
     }
 
-    public void ShowObject(RenderObject obj)
+    public void ShowObject(RenderObject obj, ContentRegistry content)
     {
         Visible = true;
 
@@ -41,10 +41,10 @@ public partial class ObjectInfoPanel : PanelContainer
             }
         }
 
-        if (_descriptionLabel != null && ContentDatabase.Objects.TryGetValue(obj.ObjectDefId, out var objDef))
+        if (_descriptionLabel != null && content.Objects.TryGetValue(obj.ObjectDefId, out var objDef))
         {
             string needName = "nothing";
-            if (objDef.SatisfiesNeedId.HasValue && ContentDatabase.Needs.TryGetValue(objDef.SatisfiesNeedId.Value, out var needDef))
+            if (objDef.SatisfiesNeedId.HasValue && content.Needs.TryGetValue(objDef.SatisfiesNeedId.Value, out var needDef))
                 needName = needDef.Name;
 
             _descriptionLabel.Text = $"Satisfies: {needName} (+{objDef.NeedSatisfactionAmount:0})";

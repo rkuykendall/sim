@@ -113,39 +113,39 @@ public sealed class TestSimulationBuilder
     /// </summary>
     public Simulation Build()
     {
-        // Clear any previous test content
-        ContentLoader.ClearAll();
+        // Create a fresh ContentRegistry for this test
+        var content = new ContentRegistry();
 
         // Register buffs first (needs reference them)
         foreach (var (key, buff) in _buffs)
         {
-            ContentLoader.RegisterBuff(key, buff);
+            content.RegisterBuff(key, buff);
         }
 
         // Register needs (with debuff references resolved)
         foreach (var (key, need, criticalDebuff, lowDebuff) in _needs)
         {
             if (criticalDebuff != null)
-                need.CriticalDebuffId = ContentLoader.GetBuffId(criticalDebuff);
+                need.CriticalDebuffId = content.GetBuffId(criticalDebuff);
             if (lowDebuff != null)
-                need.LowDebuffId = ContentLoader.GetBuffId(lowDebuff);
-            ContentLoader.RegisterNeed(key, need);
+                need.LowDebuffId = content.GetBuffId(lowDebuff);
+            content.RegisterNeed(key, need);
         }
 
         // Register objects (with need/buff references resolved)
         foreach (var (key, obj, satisfiesNeed, grantsBuff) in _objects)
         {
             if (satisfiesNeed != null)
-                obj.SatisfiesNeedId = ContentLoader.GetNeedId(satisfiesNeed);
+                obj.SatisfiesNeedId = content.GetNeedId(satisfiesNeed);
             if (grantsBuff != null)
-                obj.GrantsBuffId = ContentLoader.GetBuffId(grantsBuff);
-            ContentLoader.RegisterObject(key, obj);
+                obj.GrantsBuffId = content.GetBuffId(grantsBuff);
+            content.RegisterObject(key, obj);
         }
 
         // Convert object placements to use resolved IDs
         foreach (var (objectKey, x, y) in _objectPlacements)
         {
-            var objectId = ContentLoader.GetObjectId(objectKey);
+            var objectId = content.GetObjectId(objectKey);
             if (objectId.HasValue)
             {
                 _config.Objects.Add((objectId.Value, x, y));
@@ -158,7 +158,7 @@ public sealed class TestSimulationBuilder
             var needsById = new Dictionary<int, float>();
             foreach (var (needKey, value) in needsByName)
             {
-                var needId = ContentLoader.GetNeedId(needKey);
+                var needId = content.GetNeedId(needKey);
                 if (needId.HasValue)
                 {
                     needsById[needId.Value] = value;
@@ -173,8 +173,8 @@ public sealed class TestSimulationBuilder
             });
         }
 
-        // Create and return the simulation
-        return new Simulation(_config);
+        // Create and return the simulation with the content
+        return new Simulation(content, _config);
     }
 }
 
@@ -188,7 +188,7 @@ public static class SimulationTestExtensions
     /// </summary>
     public static float GetNeedValue(this Simulation sim, EntityId pawnId, string needKey)
     {
-        var needId = ContentLoader.GetNeedId(needKey);
+        var needId = sim.Content.GetNeedId(needKey);
         if (!needId.HasValue) return 0f;
         
         if (sim.Entities.Needs.TryGetValue(pawnId, out var needs) &&

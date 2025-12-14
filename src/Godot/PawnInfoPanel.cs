@@ -31,7 +31,7 @@ public partial class PawnInfoPanel : PanelContainer
         Visible = false;
     }
 
-    public void ShowPawn(RenderPawn pawn, NeedsComponent? needs, BuffComponent? buffs)
+    public void ShowPawn(RenderPawn pawn, NeedsComponent? needs, BuffComponent? buffs, ContentRegistry content)
     {
         Visible = true;
 
@@ -52,7 +52,7 @@ public partial class PawnInfoPanel : PanelContainer
         {
             foreach (var (needId, value) in needs.Needs)
             {
-                if (!ContentDatabase.Needs.TryGetValue(needId, out var needDef))
+                if (!content.Needs.TryGetValue(needId, out var needDef))
                     continue;
 
                 if (!_needBars.TryGetValue(needId, out var bar))
@@ -74,10 +74,10 @@ public partial class PawnInfoPanel : PanelContainer
         }
 
         // Update buffs
-        UpdateBuffsDisplay(buffs);
+        UpdateBuffsDisplay(buffs, content);
     }
 
-    private void UpdateBuffsDisplay(BuffComponent? buffs)
+    private void UpdateBuffsDisplay(BuffComponent? buffs, ContentRegistry content)
     {
         if (_buffsContainer == null) return;
 
@@ -101,7 +101,7 @@ public partial class PawnInfoPanel : PanelContainer
 
         foreach (var inst in buffs.ActiveBuffs)
         {
-            if (!ContentDatabase.Buffs.TryGetValue(inst.BuffDefId, out var buffDef))
+            if (!content.Buffs.TryGetValue(inst.BuffDefId, out var buffDef))
                 continue;
 
             var label = new Label

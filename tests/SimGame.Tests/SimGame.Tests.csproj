@@ -25,6 +25,7 @@
   <ItemGroup>
     <Compile Include="../../src/Core/Components.cs" Link="Core/Components.cs" />
     <Compile Include="../../src/Core/ContentLoader.cs" Link="Core/ContentLoader.cs" />
+    <Compile Include="../../src/Core/ContentRegistry.cs" Link="Core/ContentRegistry.cs" />
     <Compile Include="../../src/Core/Definitions.cs" Link="Core/Definitions.cs" />
     <Compile Include="../../src/Core/EntityManager.cs" Link="Core/EntityManager.cs" />
     <Compile Include="../../src/Core/Pathfinder.cs" Link="Core/Pathfinder.cs" />

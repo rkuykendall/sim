@@ -42,11 +42,11 @@ public partial class GameRoot : Node2D
 
     public override void _Ready()
     {
-        // Load content from Lua files before creating simulation
+        // Load content from Lua files and create simulation with it
         var contentPath = ProjectSettings.GlobalizePath("res://content");
-        ContentLoader.LoadAll(contentPath);
+        var content = ContentLoader.LoadAll(contentPath);
 
-        _sim = new Simulation();
+        _sim = new Simulation(content);
         _tickDelta = 1f / Simulation.TickRate;
         _pawnsRoot = GetNode<Node2D>(PawnsRootPath);
         _objectsRoot = GetNode<Node2D>(ObjectsRootPath);
@@ -229,7 +229,7 @@ public partial class GameRoot : Node2D
         {
             foreach (var obj in _lastSnapshot.Objects)
             {
-                if (ContentDatabase.Objects.TryGetValue(obj.ObjectDefId, out var objDef))
+                if (_sim.Content.Objects.TryGetValue(obj.ObjectDefId, out var objDef))
                 {
                     foreach (var (dx, dy) in objDef.UseAreas)
                     {
@@ -312,7 +312,7 @@ public partial class GameRoot : Node2D
         var entityId = new EntityId(_selectedPawnId.Value);
         _sim.Entities.Needs.TryGetValue(entityId, out var needs);
         _sim.Entities.Buffs.TryGetValue(entityId, out var buffs);
-        _infoPanel.ShowPawn(pawn, needs, buffs);
+        _infoPanel.ShowPawn(pawn, needs, buffs, _sim.Content);
     }
 
     private void SyncPawns(RenderSnapshot snapshot)
@@ -377,7 +377,7 @@ public partial class GameRoot : Node2D
             return;
         }
 
-        _objectInfoPanel.ShowObject(obj);
+        _objectInfoPanel.ShowObject(obj, _sim.Content);
     }
 
     private void UpdateTimeDisplay(RenderSnapshot snapshot)

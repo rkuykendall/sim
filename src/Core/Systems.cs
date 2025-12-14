@@ -54,6 +54,7 @@ public readonly struct SimContext
     public EntityManager Entities => Sim.Entities;
     public TimeService Time => Sim.Time;
     public Random Random => Sim.Random;
+    public ContentRegistry Content => Sim.Content;
 
     public SimContext(Simulation sim) => Sim = sim;
 }
@@ -73,11 +74,11 @@ public sealed class NeedsSystem : ISystem
             if (!ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs))
                 continue;
 
-            var energyNeedId = ContentLoader.GetNeedId("Energy");
+            var energyNeedId = ctx.Content.GetNeedId("Energy");
             
             foreach (var needId in needs.Needs.Keys.ToList())
             {
-                if (!ContentDatabase.Needs.TryGetValue(needId, out var needDef))
+                if (!ctx.Content.Needs.TryGetValue(needId, out var needDef))
                     continue;
 
                 // Calculate decay rate with time-of-day modifiers
@@ -159,7 +160,7 @@ public sealed class MoodSystem : ISystem
 
             foreach (var inst in buffComp.ActiveBuffs)
             {
-                if (ContentDatabase.Buffs.TryGetValue(inst.BuffDefId, out var buffDef))
+                if (ctx.Content.Buffs.TryGetValue(inst.BuffDefId, out var buffDef))
                     mood += buffDef.MoodOffset;
             }
 
@@ -338,7 +339,7 @@ public sealed class ActionSystem : ISystem
         if (!ctx.Entities.Positions.TryGetValue(targetId, out var objPos)) return;
         if (!ctx.Entities.Objects.TryGetValue(targetId, out var objCompCheck)) return;
         
-        var objDefForCheck = ContentDatabase.Objects[objCompCheck.ObjectDefId];
+        var objDefForCheck = ctx.Content.Objects[objCompCheck.ObjectDefId];
         
         // Check if pawn is in a valid use area for this object
         bool inUseArea = IsInUseArea(pawnPos.Coord, objPos.Coord, objDefForCheck);
@@ -374,7 +375,7 @@ public sealed class ActionSystem : ISystem
             objComp.UsedBy = pawnId;
             
             // Update display name to "Using X" now that we're actually using it
-            var objDef = ContentDatabase.Objects[objComp.ObjectDefId];
+            var objDef = ctx.Content.Objects[objComp.ObjectDefId];
             action.DisplayName = $"Using {objDef.Name}";
         }
 
@@ -395,17 +396,17 @@ public sealed class ActionSystem : ISystem
             // Grant buff from object if applicable
             if (objComp != null)
             {
-                var objDef = ContentDatabase.Objects[objComp.ObjectDefId];
-                if (objDef.GrantsBuffId.HasValue && ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs))
+                var objDef2 = ctx.Content.Objects[objComp.ObjectDefId];
+                if (objDef2.GrantsBuffId.HasValue && ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs))
                 {
-                    var buffDef = ContentDatabase.Buffs[objDef.GrantsBuffId.Value];
+                    var buffDef = ctx.Content.Buffs[objDef2.GrantsBuffId.Value];
                     
                     // Remove existing instance of this buff (refresh it)
-                    buffs.ActiveBuffs.RemoveAll(b => b.BuffDefId == objDef.GrantsBuffId.Value);
+                    buffs.ActiveBuffs.RemoveAll(b => b.BuffDefId == objDef2.GrantsBuffId.Value);
                     
                     buffs.ActiveBuffs.Add(new BuffInstance
                     {
-                        BuffDefId = objDef.GrantsBuffId.Value,
+                        BuffDefId = objDef2.GrantsBuffId.Value,
                         StartTick = ctx.Time.Tick,
                         EndTick = ctx.Time.Tick + buffDef.DurationTicks
                     });
@@ -500,7 +501,7 @@ public sealed class AISystem : ISystem
 
             foreach (var (needId, value) in needs.Needs)
             {
-                if (!ContentDatabase.Needs.TryGetValue(needId, out var needDef)) continue;
+                if (!ctx.Content.Needs.TryGetValue(needId, out var needDef)) continue;
                 
                 // Check if this need is causing a debuff
                 bool hasDebuffFromNeed = 
@@ -545,7 +546,7 @@ public sealed class AISystem : ISystem
             if (targetObject != null)
             {
                 var objComp = ctx.Entities.Objects[targetObject.Value];
-                var objDef = ContentDatabase.Objects[objComp.ObjectDefId];
+                var objDef = ctx.Content.Objects[objComp.ObjectDefId];
 
                 actionComp.ActionQueue.Enqueue(new ActionDef
                 {
@@ -566,7 +567,7 @@ public sealed class AISystem : ISystem
                 {
                     // Wait by going to the object area (even if it's in use, we'll wait nearby)
                     var objComp = ctx.Entities.Objects[waitTarget.Value];
-                    var objDef = ContentDatabase.Objects[objComp.ObjectDefId];
+                    var objDef = ctx.Content.Objects[objComp.ObjectDefId];
                     var objPos = ctx.Entities.Positions[waitTarget.Value];
                     
                     // Find a spot near the object to wait
@@ -647,7 +648,7 @@ public sealed class AISystem : ISystem
         foreach (var objId in ctx.Entities.AllObjects())
         {
             var objComp = ctx.Entities.Objects[objId];
-            var objDef = ContentDatabase.Objects[objComp.ObjectDefId];
+            var objDef = ctx.Content.Objects[objComp.ObjectDefId];
 
             if (objDef.SatisfiesNeedId != needId) continue;
             if (objComp.InUse) continue;
@@ -682,7 +683,7 @@ public sealed class AISystem : ISystem
         foreach (var objId in ctx.Entities.AllObjects())
         {
             var objComp = ctx.Entities.Objects[objId];
-            var objDef = ContentDatabase.Objects[objComp.ObjectDefId];
+            var objDef = ctx.Content.Objects[objComp.ObjectDefId];
 
             // Check if this object satisfies any of our needs
             if (!objDef.SatisfiesNeedId.HasValue || !needIds.Contains(objDef.SatisfiesNeedId.Value)) 

@@ -51,21 +51,24 @@ public sealed class Simulation
     public EntityManager Entities { get; } = new();
     public TimeService Time { get; } = new();
     public Random Random { get; }
+    public ContentRegistry Content { get; }
 
     private readonly SystemManager _systems = new();
 
     /// <summary>
-    /// Create a simulation with default configuration.
+    /// Create a simulation with content and default configuration.
     /// </summary>
-    public Simulation() : this(null)
+    public Simulation(ContentRegistry content) : this(content, null)
     {
     }
 
     /// <summary>
-    /// Create a simulation with custom configuration.
+    /// Create a simulation with content and custom configuration.
     /// </summary>
-    public Simulation(SimulationConfig? config)
+    public Simulation(ContentRegistry content, SimulationConfig? config)
     {
+        Content = content ?? throw new ArgumentNullException(nameof(content));
+
         // Initialize random number generator with optional seed
         Random = config?.Seed != null ? new Random(config.Seed.Value) : new Random();
 
@@ -143,7 +146,7 @@ public sealed class Simulation
         // Create a fridge
         var fridgeId = Entities.Create();
         Entities.Positions[fridgeId] = new PositionComponent { Coord = new TileCoord(2, 3) };
-        Entities.Objects[fridgeId] = new ObjectComponent { ObjectDefId = ContentLoader.GetObjectId("Fridge") ?? 0 };
+        Entities.Objects[fridgeId] = new ObjectComponent { ObjectDefId = Content.GetObjectId("Fridge") ?? 0 };
         World.GetTile(new TileCoord(2, 3)).Walkable = false;
 
         // Create beds (one per pawn)
@@ -152,20 +155,20 @@ public sealed class Simulation
         {
             var bedId = Entities.Create();
             Entities.Positions[bedId] = new PositionComponent { Coord = new TileCoord(x, y) };
-            Entities.Objects[bedId] = new ObjectComponent { ObjectDefId = ContentLoader.GetObjectId("Bed") ?? 0 };
+            Entities.Objects[bedId] = new ObjectComponent { ObjectDefId = Content.GetObjectId("Bed") ?? 0 };
             World.GetTile(new TileCoord(x, y)).Walkable = false;
         }
 
         // Create a TV for fun
         var tvId = Entities.Create();
         Entities.Positions[tvId] = new PositionComponent { Coord = new TileCoord(6, 2) };
-        Entities.Objects[tvId] = new ObjectComponent { ObjectDefId = ContentLoader.GetObjectId("TV") ?? 0 };
+        Entities.Objects[tvId] = new ObjectComponent { ObjectDefId = Content.GetObjectId("TV") ?? 0 };
         World.GetTile(new TileCoord(6, 2)).Walkable = false;
 
         // Create a shower for hygiene
         var showerId = Entities.Create();
         Entities.Positions[showerId] = new PositionComponent { Coord = new TileCoord(10, 5) };
-        Entities.Objects[showerId] = new ObjectComponent { ObjectDefId = ContentLoader.GetObjectId("Shower") ?? 0 };
+        Entities.Objects[showerId] = new ObjectComponent { ObjectDefId = Content.GetObjectId("Shower") ?? 0 };
         World.GetTile(new TileCoord(10, 5)).Walkable = false;
     }
 
@@ -191,11 +194,11 @@ public sealed class Simulation
             {
                 Needs = new Dictionary<int, float>
                 {
-                    { ContentLoader.GetNeedId("Hunger") ?? 0, hunger },
-                    { ContentLoader.GetNeedId("Energy") ?? 0, energy },
-                    { ContentLoader.GetNeedId("Fun") ?? 0, fun },
-                    { ContentLoader.GetNeedId("Social") ?? 0, social },
-                    { ContentLoader.GetNeedId("Hygiene") ?? 0, hygiene }
+                    { Content.GetNeedId("Hunger") ?? 0, hunger },
+                    { Content.GetNeedId("Energy") ?? 0, energy },
+                    { Content.GetNeedId("Fun") ?? 0, fun },
+                    { Content.GetNeedId("Social") ?? 0, social },
+                    { Content.GetNeedId("Hygiene") ?? 0, hygiene }
                 }
             };
             Entities.Buffs[id] = new BuffComponent();
