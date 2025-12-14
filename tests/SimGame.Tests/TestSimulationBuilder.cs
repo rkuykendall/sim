@@ -6,6 +6,7 @@ namespace SimGame.Tests;
 /// <summary>
 /// Helper class for setting up test scenarios.
 /// Provides a fluent API for building simulations in a black-box testing style.
+/// IDs are auto-generated - use string keys to reference content.
 /// </summary>
 public sealed class TestSimulationBuilder
 {
@@ -14,9 +15,11 @@ public sealed class TestSimulationBuilder
         SkipDefaultBootstrap = true
     };
 
-    private readonly List<(string Key, NeedDef Def)> _needs = new();
     private readonly List<(string Key, BuffDef Def)> _buffs = new();
-    private readonly List<(string Key, ObjectDef Def)> _objects = new();
+    private readonly List<(string Key, NeedDef Def, string? CriticalDebuff, string? LowDebuff)> _needs = new();
+    private readonly List<(string Key, ObjectDef Def, string? SatisfiesNeed, string? GrantsBuff)> _objects = new();
+    private readonly List<(string ObjectKey, int X, int Y)> _objectPlacements = new();
+    private readonly List<(string Name, int X, int Y, Dictionary<string, float> Needs)> _pawns = new();
 
     /// <summary>
     /// Set custom world bounds (default is a 5x5 world from 0,0 to 4,4).
@@ -28,36 +31,14 @@ public sealed class TestSimulationBuilder
     }
 
     /// <summary>
-    /// Define a need type that can be used by pawns and objects.
+    /// Define a buff that can be granted by objects or applied by needs.
+    /// ID is auto-generated.
     /// </summary>
-    public TestSimulationBuilder DefineNeed(string key, int id, string name, 
-        float decayPerTick = 0.02f,
-        float criticalThreshold = 15f,
-        float lowThreshold = 35f,
-        int? criticalDebuffId = null,
-        int? lowDebuffId = null)
-    {
-        _needs.Add((key, new NeedDef
-        {
-            Id = id,
-            Name = name,
-            DecayPerTick = decayPerTick,
-            CriticalThreshold = criticalThreshold,
-            LowThreshold = lowThreshold,
-            CriticalDebuffId = criticalDebuffId,
-            LowDebuffId = lowDebuffId
-        }));
-        return this;
-    }
-
-    /// <summary>
-    /// Define a buff that can be granted by objects.
-    /// </summary>
-    public TestSimulationBuilder DefineBuff(string key, int id, string name, float moodOffset, int durationTicks = 1000)
+    public TestSimulationBuilder DefineBuff(string key, string name, float moodOffset, int durationTicks = 1000)
     {
         _buffs.Add((key, new BuffDef
         {
-            Id = id,
+            Id = 0,  // Auto-generated
             Name = name,
             MoodOffset = moodOffset,
             DurationTicks = durationTicks
@@ -66,46 +47,64 @@ public sealed class TestSimulationBuilder
     }
 
     /// <summary>
-    /// Define an object type that can be placed in the world.
+    /// Define a need type that can be used by pawns and objects.
+    /// ID is auto-generated. Use buff key names for debuff references.
     /// </summary>
-    public TestSimulationBuilder DefineObject(string key, int id, string name, int? satisfiesNeedId = null, 
-        float satisfactionAmount = 50f, int interactionDuration = 20, int? grantsBuffId = null,
+    public TestSimulationBuilder DefineNeed(string key, string name, 
+        float decayPerTick = 0.02f,
+        float criticalThreshold = 15f,
+        float lowThreshold = 35f,
+        string? criticalDebuff = null,
+        string? lowDebuff = null)
+    {
+        _needs.Add((key, new NeedDef
+        {
+            Id = 0,  // Auto-generated
+            Name = name,
+            DecayPerTick = decayPerTick,
+            CriticalThreshold = criticalThreshold,
+            LowThreshold = lowThreshold
+        }, criticalDebuff, lowDebuff));
+        return this;
+    }
+
+    /// <summary>
+    /// Define an object type that can be placed in the world.
+    /// ID is auto-generated. Use key names for need/buff references.
+    /// </summary>
+    public TestSimulationBuilder DefineObject(string key, string name, 
+        string? satisfiesNeed = null, 
+        float satisfactionAmount = 50f, 
+        int interactionDuration = 20, 
+        string? grantsBuff = null,
         List<(int, int)>? useAreas = null)
     {
         _objects.Add((key, new ObjectDef
         {
-            Id = id,
+            Id = 0,  // Auto-generated
             Name = name,
-            SatisfiesNeedId = satisfiesNeedId,
             NeedSatisfactionAmount = satisfactionAmount,
             InteractionDurationTicks = interactionDuration,
-            GrantsBuffId = grantsBuffId,
             UseAreas = useAreas ?? new List<(int dx, int dy)> { (0, 1) }
-        }));
+        }, satisfiesNeed, grantsBuff));
         return this;
     }
 
     /// <summary>
-    /// Add an object instance to the world.
+    /// Add an object instance to the world by its key name.
     /// </summary>
-    public TestSimulationBuilder AddObject(int objectDefId, int x, int y)
+    public TestSimulationBuilder AddObject(string objectKey, int x, int y)
     {
-        _config.Objects.Add((objectDefId, x, y));
+        _objectPlacements.Add((objectKey, x, y));
         return this;
     }
 
     /// <summary>
-    /// Add a pawn to the world with specified needs.
+    /// Add a pawn to the world with specified needs (by need key names).
     /// </summary>
-    public TestSimulationBuilder AddPawn(string name, int x, int y, Dictionary<int, float> needs)
+    public TestSimulationBuilder AddPawn(string name, int x, int y, Dictionary<string, float> needs)
     {
-        _config.Pawns.Add(new PawnConfig
-        {
-            Name = name,
-            X = x,
-            Y = y,
-            Needs = needs
-        });
+        _pawns.Add((name, x, y, needs));
         return this;
     }
 
@@ -117,20 +116,61 @@ public sealed class TestSimulationBuilder
         // Clear any previous test content
         ContentLoader.ClearAll();
 
-        // Register all content definitions
+        // Register buffs first (needs reference them)
         foreach (var (key, buff) in _buffs)
         {
             ContentLoader.RegisterBuff(key, buff);
         }
 
-        foreach (var (key, need) in _needs)
+        // Register needs (with debuff references resolved)
+        foreach (var (key, need, criticalDebuff, lowDebuff) in _needs)
         {
+            if (criticalDebuff != null)
+                need.CriticalDebuffId = ContentLoader.GetBuffId(criticalDebuff);
+            if (lowDebuff != null)
+                need.LowDebuffId = ContentLoader.GetBuffId(lowDebuff);
             ContentLoader.RegisterNeed(key, need);
         }
 
-        foreach (var (key, obj) in _objects)
+        // Register objects (with need/buff references resolved)
+        foreach (var (key, obj, satisfiesNeed, grantsBuff) in _objects)
         {
+            if (satisfiesNeed != null)
+                obj.SatisfiesNeedId = ContentLoader.GetNeedId(satisfiesNeed);
+            if (grantsBuff != null)
+                obj.GrantsBuffId = ContentLoader.GetBuffId(grantsBuff);
             ContentLoader.RegisterObject(key, obj);
+        }
+
+        // Convert object placements to use resolved IDs
+        foreach (var (objectKey, x, y) in _objectPlacements)
+        {
+            var objectId = ContentLoader.GetObjectId(objectKey);
+            if (objectId.HasValue)
+            {
+                _config.Objects.Add((objectId.Value, x, y));
+            }
+        }
+
+        // Convert pawn needs to use resolved IDs
+        foreach (var (name, x, y, needsByName) in _pawns)
+        {
+            var needsById = new Dictionary<int, float>();
+            foreach (var (needKey, value) in needsByName)
+            {
+                var needId = ContentLoader.GetNeedId(needKey);
+                if (needId.HasValue)
+                {
+                    needsById[needId.Value] = value;
+                }
+            }
+            _config.Pawns.Add(new PawnConfig
+            {
+                Name = name,
+                X = x,
+                Y = y,
+                Needs = needsById
+            });
         }
 
         // Create and return the simulation
@@ -144,12 +184,15 @@ public sealed class TestSimulationBuilder
 public static class SimulationTestExtensions
 {
     /// <summary>
-    /// Get the need value for a pawn by entity ID.
+    /// Get the need value for a pawn by entity ID and need key name.
     /// </summary>
-    public static float GetNeedValue(this Simulation sim, EntityId pawnId, int needId)
+    public static float GetNeedValue(this Simulation sim, EntityId pawnId, string needKey)
     {
+        var needId = ContentLoader.GetNeedId(needKey);
+        if (!needId.HasValue) return 0f;
+        
         if (sim.Entities.Needs.TryGetValue(pawnId, out var needs) &&
-            needs.Needs.TryGetValue(needId, out var value))
+            needs.Needs.TryGetValue(needId.Value, out var value))
         {
             return value;
         }

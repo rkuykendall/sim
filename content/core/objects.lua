@@ -4,7 +4,6 @@
 
 Objects = {
     Fridge = {
-        id = 1,
         name = "Fridge",
         satisfiesNeed = "Hunger",
         satisfactionAmount = 50,
@@ -13,7 +12,6 @@ Objects = {
         useAreas = { {0, 1} }  -- stand in front (south)
     },
     Bed = {
-        id = 2,
         name = "Bed",
         satisfiesNeed = "Energy",
         satisfactionAmount = 80,
@@ -22,7 +20,6 @@ Objects = {
         useAreas = { {0, 0} }  -- on the bed itself
     },
     TV = {
-        id = 3,
         name = "TV",
         satisfiesNeed = "Fun",
         satisfactionAmount = 40,
@@ -31,7 +28,6 @@ Objects = {
         useAreas = { {0, 1}, {0, 2}, {-1, 1}, {1, 1}, {-1, 2}, {1, 2} }  -- viewing area in front
     },
     Shower = {
-        id = 4,
         name = "Shower",
         satisfiesNeed = "Hygiene",
         satisfactionAmount = 60,

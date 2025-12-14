@@ -13,6 +13,12 @@ public static class ContentLoader
     private static Script? _script;
     private static Dictionary<string, int> _buffNameToId = new();
     private static Dictionary<string, int> _needNameToId = new();
+    private static Dictionary<string, int> _objectNameToId = new();
+    
+    // ID counters for auto-generation
+    private static int _nextBuffId = 1;
+    private static int _nextNeedId = 1;
+    private static int _nextObjectId = 1;
 
     /// <summary>
     /// Optional logging callback. Set to null to disable logging.
@@ -49,32 +55,55 @@ public static class ContentLoader
         ContentDatabase.Objects.Clear();
         _buffNameToId.Clear();
         _needNameToId.Clear();
+        _objectNameToId.Clear();
+        _nextBuffId = 1;
+        _nextNeedId = 1;
+        _nextObjectId = 1;
     }
 
     /// <summary>
     /// Register a buff definition directly (for testing without Lua files).
+    /// ID is auto-assigned if buff.Id is 0.
     /// </summary>
     public static void RegisterBuff(string key, BuffDef buff)
     {
+        if (buff.Id == 0)
+            buff.Id = _nextBuffId++;
+        else if (buff.Id >= _nextBuffId)
+            _nextBuffId = buff.Id + 1;
+            
         ContentDatabase.Buffs[buff.Id] = buff;
         _buffNameToId[key] = buff.Id;
     }
 
     /// <summary>
     /// Register a need definition directly (for testing without Lua files).
+    /// ID is auto-assigned if need.Id is 0.
     /// </summary>
     public static void RegisterNeed(string key, NeedDef need)
     {
+        if (need.Id == 0)
+            need.Id = _nextNeedId++;
+        else if (need.Id >= _nextNeedId)
+            _nextNeedId = need.Id + 1;
+            
         ContentDatabase.Needs[need.Id] = need;
         _needNameToId[key] = need.Id;
     }
 
     /// <summary>
     /// Register an object definition directly (for testing without Lua files).
+    /// ID is auto-assigned if obj.Id is 0.
     /// </summary>
     public static void RegisterObject(string key, ObjectDef obj)
     {
+        if (obj.Id == 0)
+            obj.Id = _nextObjectId++;
+        else if (obj.Id >= _nextObjectId)
+            _nextObjectId = obj.Id + 1;
+            
         ContentDatabase.Objects[obj.Id] = obj;
+        _objectNameToId[key] = obj.Id;
     }
 
     private static void LoadBuffs(string path)
@@ -95,7 +124,7 @@ public static class ContentLoader
             string key = pair.Key.String;
             var data = pair.Value.Table;
 
-            int id = (int)data.Get("id").Number;
+            int id = _nextBuffId++;
             var buff = new BuffDef
             {
                 Id = id,
@@ -128,7 +157,7 @@ public static class ContentLoader
             string key = pair.Key.String;
             var data = pair.Value.Table;
 
-            int id = (int)data.Get("id").Number;
+            int id = _nextNeedId++;
             
             // Look up debuff IDs by name
             int? criticalDebuffId = null;
@@ -176,7 +205,7 @@ public static class ContentLoader
             string key = pair.Key.String;
             var data = pair.Value.Table;
 
-            int id = (int)data.Get("id").Number;
+            int id = _nextObjectId++;
 
             // Look up need ID by name
             int? satisfiesNeedId = null;
@@ -214,6 +243,7 @@ public static class ContentLoader
             }
 
             ContentDatabase.Objects[id] = obj;
+            _objectNameToId[key] = id;
         }
     }
 
@@ -228,4 +258,10 @@ public static class ContentLoader
     /// </summary>
     public static int? GetNeedId(string name) =>
         _needNameToId.TryGetValue(name, out var id) ? id : null;
+
+    /// <summary>
+    /// Get an object ID by its Lua key name.
+    /// </summary>
+    public static int? GetObjectId(string name) =>
+        _objectNameToId.TryGetValue(name, out var id) ? id : null;
 }

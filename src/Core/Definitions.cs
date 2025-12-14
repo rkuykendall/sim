@@ -75,16 +75,4 @@ public static class ContentDatabase
     public static readonly Dictionary<int, BuffDef> Buffs = new();
     public static readonly Dictionary<int, NeedDef> Needs = new();
     public static readonly Dictionary<int, ObjectDef> Objects = new();
-
-    // Convenience accessors for commonly-used IDs (looked up after Lua load)
-    public static int NeedHunger => ContentLoader.GetNeedId("Hunger") ?? 1;
-    public static int NeedEnergy => ContentLoader.GetNeedId("Energy") ?? 2;
-    public static int NeedFun => ContentLoader.GetNeedId("Fun") ?? 3;
-    public static int NeedSocial => ContentLoader.GetNeedId("Social") ?? 4;
-    public static int NeedHygiene => ContentLoader.GetNeedId("Hygiene") ?? 6;
-
-    public static int ObjectFridge => 1;
-    public static int ObjectBed => 2;
-    public static int ObjectTV => 3;
-    public static int ObjectShower => 4;
 }

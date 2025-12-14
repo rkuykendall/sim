@@ -72,6 +72,8 @@ public sealed class NeedsSystem : ISystem
             if (!ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs))
                 continue;
 
+            var energyNeedId = ContentLoader.GetNeedId("Energy");
+            
             foreach (var needId in needs.Needs.Keys.ToList())
             {
                 if (!ContentDatabase.Needs.TryGetValue(needId, out var needDef))
@@ -81,7 +83,7 @@ public sealed class NeedsSystem : ISystem
                 float decay = needDef.DecayPerTick;
 
                 // Energy decays faster at night (pawns get sleepy)
-                if (needId == ContentDatabase.NeedEnergy && isNight)
+                if (needId == energyNeedId && isNight)
                 {
                     decay *= isSleepTime ? 2.5f : 1.5f;
                 }
@@ -318,7 +320,7 @@ public sealed class ActionSystem : ISystem
             pos.Coord = actionComp.CurrentPath[actionComp.PathIndex];
         }
 
-        if (pos.Coord.X == target.X && pos.Coord.Y == target.Y)
+        if (pos.Coord == target)
         {
             actionComp.CurrentAction = null;
             actionComp.CurrentPath = null;
@@ -432,7 +434,7 @@ public sealed class ActionSystem : ISystem
         foreach (var (dx, dy) in objDef.UseAreas)
         {
             var useAreaCoord = new TileCoord(objCoord.X + dx, objCoord.Y + dy);
-            if (pawnCoord.X == useAreaCoord.X && pawnCoord.Y == useAreaCoord.Y)
+            if (pawnCoord == useAreaCoord)
                 return true;
         }
         return false;

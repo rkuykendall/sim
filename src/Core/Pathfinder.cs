@@ -19,7 +19,7 @@ public static class Pathfinder
         {
             var current = openSet.Dequeue();
 
-            if (current.X == goal.X && current.Y == goal.Y)
+            if (current == goal)
                 return ReconstructPath(cameFrom, current);
 
             foreach (var (dx, dy) in Directions)

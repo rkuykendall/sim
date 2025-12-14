@@ -10,10 +10,6 @@ namespace SimGame.Tests;
 /// </summary>
 public class SimulationIntegrationTests
 {
-    private const int NeedIdHunger = 1;
-    private const int ObjectIdFridge = 1;
-    private const int BuffIdGoodMeal = 201;
-
     /// <summary>
     /// Scenario: A pawn starts with low hunger next to a fridge.
     /// After running the simulation, the pawn should have eaten and have higher hunger.
@@ -25,25 +21,25 @@ public class SimulationIntegrationTests
         // The pawn has Hunger need at 0 (very hungry)
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 0)  // 5x1 world
-            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.02f)
-            .DefineBuff("GoodMeal", BuffIdGoodMeal, "Good Meal", moodOffset: 15, durationTicks: 2400)
-            .DefineObject("Fridge", ObjectIdFridge, "Fridge", 
-                satisfiesNeedId: NeedIdHunger, 
+            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.02f)
+            .DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400)
+            .DefineObject("Fridge", "Fridge", 
+                satisfiesNeed: "Hunger", 
                 satisfactionAmount: 50f, 
                 interactionDuration: 20,
-                grantsBuffId: BuffIdGoodMeal,
+                grantsBuff: "GoodMeal",
                 useAreas: new List<(int, int)> { (-1, 0) })  // West of fridge (works in 1D corridor)
-            .AddObject(ObjectIdFridge, 4, 0)  // Fridge at (4,0)
-            .AddPawn("TestPawn", 0, 0, new Dictionary<int, float> 
+            .AddObject("Fridge", 4, 0)  // Fridge at (4,0)
+            .AddPawn("TestPawn", 0, 0, new Dictionary<string, float> 
             { 
-                { NeedIdHunger, 0f }  // Starting with 0 hunger (very hungry)
+                { "Hunger", 0f }  // Starting with 0 hunger (very hungry)
             })
             .Build();
 
         var pawnId = sim.GetFirstPawn();
         Assert.NotNull(pawnId);
 
-        float initialHunger = sim.GetNeedValue(pawnId.Value, NeedIdHunger);
+        float initialHunger = sim.GetNeedValue(pawnId.Value, "Hunger");
         Assert.Equal(0f, initialHunger);
 
         // Act: Run simulation for enough ticks for the pawn to:
@@ -53,7 +49,7 @@ public class SimulationIntegrationTests
         sim.RunTicks(100);
 
         // Assert: Pawn should have eaten and have higher hunger
-        float finalHunger = sim.GetNeedValue(pawnId.Value, NeedIdHunger);
+        float finalHunger = sim.GetNeedValue(pawnId.Value, "Hunger");
         Assert.True(finalHunger > initialHunger, 
             $"Expected hunger to increase from {initialHunger}, but it was {finalHunger}");
         
@@ -71,18 +67,18 @@ public class SimulationIntegrationTests
         // Arrange: Create same world but with full hunger
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 0)
-            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.001f)  // Very slow decay
-            .DefineBuff("GoodMeal", BuffIdGoodMeal, "Good Meal", moodOffset: 15, durationTicks: 2400)
-            .DefineObject("Fridge", ObjectIdFridge, "Fridge",
-                satisfiesNeedId: NeedIdHunger,
+            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f)  // Very slow decay
+            .DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400)
+            .DefineObject("Fridge", "Fridge",
+                satisfiesNeed: "Hunger",
                 satisfactionAmount: 50f,
                 interactionDuration: 20,
-                grantsBuffId: BuffIdGoodMeal,
+                grantsBuff: "GoodMeal",
                 useAreas: new List<(int, int)> { (-1, 0) })  // West of fridge
-            .AddObject(ObjectIdFridge, 4, 0)
-            .AddPawn("TestPawn", 0, 0, new Dictionary<int, float>
+            .AddObject("Fridge", 4, 0)
+            .AddPawn("TestPawn", 0, 0, new Dictionary<string, float>
             {
-                { NeedIdHunger, 100f }  // Starting with full hunger
+                { "Hunger", 100f }  // Starting with full hunger
             })
             .Build();
 
@@ -98,7 +94,7 @@ public class SimulationIntegrationTests
         
         // Pawn might wander a bit but shouldn't be at the fridge (4,0) or adjacent (3,0)
         // They would only go there if they needed food
-        float hunger = sim.GetNeedValue(pawnId.Value, NeedIdHunger);
+        float hunger = sim.GetNeedValue(pawnId.Value, "Hunger");
         Assert.True(hunger > 95f, 
             $"Expected hunger to remain high (~100), but it was {hunger}");
     }
@@ -128,27 +124,29 @@ public class SimulationIntegrationTests
     {
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 4)
-            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.5f)  // Very fast decay for testing
-            .AddPawn("TestPawn", 2, 2, new Dictionary<int, float>
+            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.5f)  // Very fast decay for testing
+            .AddPawn("TestPawn", 2, 2, new Dictionary<string, float>
             {
-                { NeedIdHunger, 100f }
+                { "Hunger", 100f }
             })
             .Build();
 
         var pawnId = sim.GetFirstPawn();
         Assert.NotNull(pawnId);
 
-        float initialHunger = sim.GetNeedValue(pawnId.Value, NeedIdHunger);
+        float initialHunger = sim.GetNeedValue(pawnId.Value, "Hunger");
         Assert.Equal(100f, initialHunger);
         
         // Verify the need definition is in ContentDatabase
-        Assert.True(ContentDatabase.Needs.ContainsKey(NeedIdHunger), "Need should be registered");
-        var needDef = ContentDatabase.Needs[NeedIdHunger];
+        var needId = ContentLoader.GetNeedId("Hunger");
+        Assert.NotNull(needId);
+        Assert.True(ContentDatabase.Needs.ContainsKey(needId.Value), "Need should be registered");
+        var needDef = ContentDatabase.Needs[needId.Value];
         Assert.Equal(0.5f, needDef.DecayPerTick);
         
         sim.RunTicks(100);
 
-        float finalHunger = sim.GetNeedValue(pawnId.Value, NeedIdHunger);
+        float finalHunger = sim.GetNeedValue(pawnId.Value, "Hunger");
         Assert.True(finalHunger < initialHunger, 
             $"Expected hunger to decay from {initialHunger}, but it was {finalHunger}");
         
@@ -167,18 +165,18 @@ public class SimulationIntegrationTests
         // Arrange: Larger world with pawn far from fridge
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 9, 0, 0)  // 10x1 world
-            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.01f)
-            .DefineBuff("GoodMeal", BuffIdGoodMeal, "Good Meal", moodOffset: 15, durationTicks: 2400)
-            .DefineObject("Fridge", ObjectIdFridge, "Fridge",
-                satisfiesNeedId: NeedIdHunger,
+            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.01f)
+            .DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400)
+            .DefineObject("Fridge", "Fridge",
+                satisfiesNeed: "Hunger",
                 satisfactionAmount: 50f,
                 interactionDuration: 20,
-                grantsBuffId: BuffIdGoodMeal,
+                grantsBuff: "GoodMeal",
                 useAreas: new List<(int, int)> { (-1, 0) })  // West of fridge
-            .AddObject(ObjectIdFridge, 9, 0)  // Fridge at far end
-            .AddPawn("TestPawn", 0, 0, new Dictionary<int, float>
+            .AddObject("Fridge", 9, 0)  // Fridge at far end
+            .AddPawn("TestPawn", 0, 0, new Dictionary<string, float>
             {
-                { NeedIdHunger, 10f }  // Low hunger to trigger seeking food
+                { "Hunger", 10f }  // Low hunger to trigger seeking food
             })
             .Build();
 
@@ -190,7 +188,7 @@ public class SimulationIntegrationTests
         sim.RunTicks(200);
 
         // Assert: Pawn should have used the fridge
-        float finalHunger = sim.GetNeedValue(pawnId.Value, NeedIdHunger);
+        float finalHunger = sim.GetNeedValue(pawnId.Value, "Hunger");
         Assert.True(finalHunger > 40f,
             $"Expected pawn to have eaten (hunger > 40), but hunger was {finalHunger}");
     }

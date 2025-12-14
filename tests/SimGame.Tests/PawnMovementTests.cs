@@ -18,11 +18,6 @@ public class PawnMovementTests
         _output = output;
     }
 
-    private const int NeedIdHunger = 1;
-    private const int NeedIdEnergy = 2;
-    private const int ObjectIdFridge = 1;
-    private const int ObjectIdBed = 2;
-
     /// <summary>
     /// Scenario: Two pawns walk toward each other on a narrow corridor.
     /// They should not get permanently stuck.
@@ -34,15 +29,15 @@ public class PawnMovementTests
         // Both have low hunger and there's a fridge in the middle
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 9, 0, 0)  // 10x1 corridor
-            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.001f)
-            .DefineObject("Fridge", ObjectIdFridge, "Fridge",
-                satisfiesNeedId: NeedIdHunger,
+            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f)
+            .DefineObject("Fridge", "Fridge",
+                satisfiesNeed: "Hunger",
                 satisfactionAmount: 50f,
                 interactionDuration: 20,
                 useAreas: new List<(int, int)> { (-1, 0), (1, 0) })  // Both sides work in corridor
-            .AddObject(ObjectIdFridge, 5, 0)  // Fridge in middle
-            .AddPawn("LeftPawn", 0, 0, new Dictionary<int, float> { { NeedIdHunger, 10f } })
-            .AddPawn("RightPawn", 9, 0, new Dictionary<int, float> { { NeedIdHunger, 10f } })
+            .AddObject("Fridge", 5, 0)  // Fridge in middle
+            .AddPawn("LeftPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 10f } })
+            .AddPawn("RightPawn", 9, 0, new Dictionary<string, float> { { "Hunger", 10f } })
             .Build();
 
         var leftPawn = sim.GetPawnByName("LeftPawn");
@@ -109,16 +104,16 @@ public class PawnMovementTests
         // Each pawn wants to get to the fridge on the other side
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 3, 0, 0)  // 4x1: [Fridge][Pawn1][Pawn2][Fridge]
-            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.001f)
-            .DefineObject("Fridge", ObjectIdFridge, "Fridge",
-                satisfiesNeedId: NeedIdHunger,
+            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f)
+            .DefineObject("Fridge", "Fridge",
+                satisfiesNeed: "Hunger",
                 satisfactionAmount: 50f,
                 interactionDuration: 20,
                 useAreas: new List<(int, int)> { (1, 0), (-1, 0) })  // Use from either side
-            .AddObject(ObjectIdFridge, 0, 0)  // Fridge at left
-            .AddObject(ObjectIdFridge, 3, 0)  // Fridge at right
-            .AddPawn("Pawn1", 1, 0, new Dictionary<int, float> { { NeedIdHunger, 10f } })
-            .AddPawn("Pawn2", 2, 0, new Dictionary<int, float> { { NeedIdHunger, 10f } })
+            .AddObject("Fridge", 0, 0)  // Fridge at left
+            .AddObject("Fridge", 3, 0)  // Fridge at right (same type, different instance)
+            .AddPawn("Pawn1", 1, 0, new Dictionary<string, float> { { "Hunger", 10f } })
+            .AddPawn("Pawn2", 2, 0, new Dictionary<string, float> { { "Hunger", 10f } })
             .Build();
 
         var pawn1 = sim.GetPawnByName("Pawn1");
@@ -137,8 +132,8 @@ public class PawnMovementTests
         {
             sim.Tick();
 
-            var hunger1 = sim.GetNeedValue(pawn1.Value, NeedIdHunger);
-            var hunger2 = sim.GetNeedValue(pawn2.Value, NeedIdHunger);
+            var hunger1 = sim.GetNeedValue(pawn1.Value, "Hunger");
+            var hunger2 = sim.GetNeedValue(pawn2.Value, "Hunger");
 
             if (hunger1 > pawn1MaxHunger) { pawn1MaxHunger = hunger1; pawn1UsedFridge = true; }
             if (hunger2 > pawn2MaxHunger) { pawn2MaxHunger = hunger2; pawn2UsedFridge = true; }
@@ -167,14 +162,14 @@ public class PawnMovementTests
         // Arrange: 5x3 area - pawns have room to go around each other
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 2)  // 5x3 area
-            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.001f)
-            .DefineObject("Fridge", ObjectIdFridge, "Fridge",
-                satisfiesNeedId: NeedIdHunger,
+            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f)
+            .DefineObject("Fridge", "Fridge",
+                satisfiesNeed: "Hunger",
                 satisfactionAmount: 50f,
                 interactionDuration: 20)
-            .AddObject(ObjectIdFridge, 2, 1)  // Fridge in center
-            .AddPawn("TopPawn", 0, 0, new Dictionary<int, float> { { NeedIdHunger, 5f } })
-            .AddPawn("BottomPawn", 4, 2, new Dictionary<int, float> { { NeedIdHunger, 5f } })
+            .AddObject("Fridge", 2, 1)  // Fridge in center
+            .AddPawn("TopPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 5f } })
+            .AddPawn("BottomPawn", 4, 2, new Dictionary<string, float> { { "Hunger", 5f } })
             .Build();
 
         var topPawn = sim.GetPawnByName("TopPawn");
@@ -189,8 +184,8 @@ public class PawnMovementTests
         {
             sim.Tick();
 
-            var hunger1 = sim.GetNeedValue(topPawn.Value, NeedIdHunger);
-            var hunger2 = sim.GetNeedValue(bottomPawn.Value, NeedIdHunger);
+            var hunger1 = sim.GetNeedValue(topPawn.Value, "Hunger");
+            var hunger2 = sim.GetNeedValue(bottomPawn.Value, "Hunger");
 
             // Count how many times pawns get fed (hunger jumps up)
             if (hunger1 > 40) fedCount++;
@@ -205,8 +200,8 @@ public class PawnMovementTests
         }
 
         // Assert: Both pawns should have been fed at least once
-        var finalHunger1 = sim.GetNeedValue(topPawn.Value, NeedIdHunger);
-        var finalHunger2 = sim.GetNeedValue(bottomPawn.Value, NeedIdHunger);
+        var finalHunger1 = sim.GetNeedValue(topPawn.Value, "Hunger");
+        var finalHunger2 = sim.GetNeedValue(bottomPawn.Value, "Hunger");
         
         _output.WriteLine($"Final: Top hunger={finalHunger1:F1}, Bottom hunger={finalHunger2:F1}");
 
@@ -229,29 +224,29 @@ public class PawnMovementTests
         //    [ ][ ][ ][ ][ ][ ][ ]
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 6, 0, 2)  // 7x3 area
-            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.001f)
-            .DefineNeed("Energy", NeedIdEnergy, "Energy", decayPerTick: 0.001f)
-            .DefineObject("Fridge", ObjectIdFridge, "Fridge",
-                satisfiesNeedId: NeedIdHunger,
+            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f)
+            .DefineNeed("Energy", "Energy", decayPerTick: 0.001f)
+            .DefineObject("Fridge", "Fridge",
+                satisfiesNeed: "Hunger",
                 satisfactionAmount: 50f,
                 interactionDuration: 20)
-            .DefineObject("Bed", ObjectIdBed, "Bed",
-                satisfiesNeedId: NeedIdEnergy,
+            .DefineObject("Bed", "Bed",
+                satisfiesNeed: "Energy",
                 satisfactionAmount: 50f,
                 interactionDuration: 20)
-            .AddObject(ObjectIdFridge, 0, 0)  // Fridge at left
-            .AddObject(ObjectIdBed, 6, 0)     // Bed at right
+            .AddObject("Fridge", 0, 0)  // Fridge at left
+            .AddObject("Bed", 6, 0)     // Bed at right
             // Pawn1 is hungry (will go left to fridge)
-            .AddPawn("HungryPawn", 3, 0, new Dictionary<int, float> 
+            .AddPawn("HungryPawn", 3, 0, new Dictionary<string, float> 
             { 
-                { NeedIdHunger, 5f },   // Very hungry - will seek fridge
-                { NeedIdEnergy, 100f }  // Full energy
+                { "Hunger", 5f },   // Very hungry - will seek fridge
+                { "Energy", 100f }  // Full energy
             })
             // Pawn2 is tired (will go right to bed)
-            .AddPawn("TiredPawn", 4, 0, new Dictionary<int, float> 
+            .AddPawn("TiredPawn", 4, 0, new Dictionary<string, float> 
             { 
-                { NeedIdHunger, 100f },  // Full
-                { NeedIdEnergy, 5f }     // Very tired - will seek bed
+                { "Hunger", 100f },  // Full
+                { "Energy", 5f }     // Very tired - will seek bed
             })
             .Build();
 
@@ -278,8 +273,8 @@ public class PawnMovementTests
                 positionHistory.Add((hungryPos.Value, tiredPos.Value));
             }
 
-            var hunger = sim.GetNeedValue(hungryPawn.Value, NeedIdHunger);
-            var energy = sim.GetNeedValue(tiredPawn.Value, NeedIdEnergy);
+            var hunger = sim.GetNeedValue(hungryPawn.Value, "Hunger");
+            var energy = sim.GetNeedValue(tiredPawn.Value, "Energy");
 
             if (hunger > 40) hungryGotFed = true;
             if (energy > 40) tiredGotRested = true;
@@ -331,14 +326,14 @@ public class PawnMovementTests
         // Pawn2 blocks Pawn1 from reaching fridge
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 2, 0, 0)  // 3x1 corridor
-            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.001f)
-            .DefineObject("Fridge", ObjectIdFridge, "Fridge",
-                satisfiesNeedId: NeedIdHunger,
+            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f)
+            .DefineObject("Fridge", "Fridge",
+                satisfiesNeed: "Hunger",
                 satisfactionAmount: 50f,
                 interactionDuration: 20)
-            .AddObject(ObjectIdFridge, 0, 0)
-            .AddPawn("BlockedPawn", 1, 0, new Dictionary<int, float> { { NeedIdHunger, 5f } })   // Wants fridge
-            .AddPawn("BlockerPawn", 2, 0, new Dictionary<int, float> { { NeedIdHunger, 100f } }) // Doesn't need fridge
+            .AddObject("Fridge", 0, 0)
+            .AddPawn("BlockedPawn", 1, 0, new Dictionary<string, float> { { "Hunger", 5f } })   // Wants fridge
+            .AddPawn("BlockerPawn", 2, 0, new Dictionary<string, float> { { "Hunger", 100f } }) // Doesn't need fridge
             .Build();
 
         var blockedPawn = sim.GetPawnByName("BlockedPawn");
@@ -353,7 +348,7 @@ public class PawnMovementTests
         {
             sim.Tick();
 
-            var hunger = sim.GetNeedValue(blockedPawn.Value, NeedIdHunger);
+            var hunger = sim.GetNeedValue(blockedPawn.Value, "Hunger");
             if (hunger > 40) blockedGotFed = true;
 
             if (tick % 50 == 0)
@@ -384,15 +379,15 @@ public class PawnMovementTests
         // Arrange: 5x3 area with ONE shower, two pawns who both need hygiene
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 2)  // 5x3 area
-            .DefineNeed("Hygiene", 6, "Hygiene", decayPerTick: 0.001f)
-            .DefineObject("Shower", 4, "Shower",
-                satisfiesNeedId: 6,
+            .DefineNeed("Hygiene", "Hygiene", decayPerTick: 0.001f)
+            .DefineObject("Shower", "Shower",
+                satisfiesNeed: "Hygiene",
                 satisfactionAmount: 50f,
                 interactionDuration: 40)  // Long interaction
-            .AddObject(4, 2, 1)  // Shower at (2,1)
+            .AddObject("Shower", 2, 1)  // Shower at (2,1)
             // Both pawns want the shower
-            .AddPawn("Sam", 0, 1, new Dictionary<int, float> { { 6, 5f } })
-            .AddPawn("Jordan", 4, 1, new Dictionary<int, float> { { 6, 5f } })
+            .AddPawn("Sam", 0, 1, new Dictionary<string, float> { { "Hygiene", 5f } })
+            .AddPawn("Jordan", 4, 1, new Dictionary<string, float> { { "Hygiene", 5f } })
             .Build();
 
         var sam = sim.GetPawnByName("Sam");
@@ -416,8 +411,8 @@ public class PawnMovementTests
             if (samPos.HasValue) samPositions.Add(samPos.Value);
             if (jordanPos.HasValue) jordanPositions.Add(jordanPos.Value);
 
-            var samHygiene = sim.GetNeedValue(sam.Value, 6);
-            var jordanHygiene = sim.GetNeedValue(jordan.Value, 6);
+            var samHygiene = sim.GetNeedValue(sam.Value, "Hygiene");
+            var jordanHygiene = sim.GetNeedValue(jordan.Value, "Hygiene");
 
             if (samHygiene > 40) samShowered = true;
             if (jordanHygiene > 40) jordanShowered = true;

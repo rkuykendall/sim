@@ -17,9 +17,6 @@ public class UseAreasTests
         _output = output;
     }
 
-    private const int NeedIdHunger = 1;
-    private const int ObjectIdFridge = 1;
-
     /// <summary>
     /// Bug test: A pawn should only be able to use an object from its defined UseAreas.
     /// If UseAreas is {(0, 1)} (south of object), pawn should not use it from (0, -1) (north).
@@ -37,16 +34,16 @@ public class UseAreasTests
         // Arrange: Fridge at (2,0) with UseArea only at (0,1) meaning pawn must stand at (2,1)
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 2)  // 5x3 world
-            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.001f)
-            .DefineObject("Fridge", ObjectIdFridge, "Fridge",
-                satisfiesNeedId: NeedIdHunger,
+            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f)
+            .DefineObject("Fridge", "Fridge",
+                satisfiesNeed: "Hunger",
                 satisfactionAmount: 50f,
                 interactionDuration: 20,
                 useAreas: new List<(int, int)> { (0, 1) })  // Only usable from south (Y+1)
-            .AddObject(ObjectIdFridge, 2, 0)  // Fridge at (2,0)
-            .AddPawn("TestPawn", 0, 2, new Dictionary<int, float>
+            .AddObject("Fridge", 2, 0)  // Fridge at (2,0)
+            .AddPawn("TestPawn", 0, 2, new Dictionary<string, float>
             {
-                { NeedIdHunger, 10f }  // Very hungry - will seek fridge
+                { "Hunger", 10f }  // Very hungry - will seek fridge
             })
             .Build();
 
@@ -104,22 +101,19 @@ public class UseAreasTests
     [Fact]
     public void Pawn_PicksClosestUseArea_WhenMultipleAvailable()
     {
-        const int NeedIdFun = 3;
-        const int ObjectIdTV = 3;
-
         // Arrange: TV at (2,1) with multiple use areas
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 4)  // 5x5 world
-            .DefineNeed("Fun", NeedIdFun, "Fun", decayPerTick: 0.001f)
-            .DefineObject("TV", ObjectIdTV, "TV",
-                satisfiesNeedId: NeedIdFun,
+            .DefineNeed("Fun", "Fun", decayPerTick: 0.001f)
+            .DefineObject("TV", "TV",
+                satisfiesNeed: "Fun",
                 satisfactionAmount: 40f,
                 interactionDuration: 30,
                 useAreas: new List<(int, int)> { (-1, 0), (1, 0), (0, 1) })  // Left, right, and south
-            .AddObject(ObjectIdTV, 2, 1)  // TV at (2,1)
-            .AddPawn("TestPawn", 0, 4, new Dictionary<int, float>
+            .AddObject("TV", 2, 1)  // TV at (2,1)
+            .AddPawn("TestPawn", 0, 4, new Dictionary<string, float>
             {
-                { NeedIdFun, 10f }  // Low fun - will seek TV
+                { "Fun", 10f }  // Low fun - will seek TV
             })
             .Build();
 
@@ -179,19 +173,18 @@ public class UseAreasTests
         // Arrange: Fridge with single use area that's blocked by another object
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 2)
-            .DefineNeed("Hunger", NeedIdHunger, "Hunger", decayPerTick: 0.001f)
-            .DefineObject("Fridge", ObjectIdFridge, "Fridge",
-                satisfiesNeedId: NeedIdHunger,
+            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f)
+            .DefineObject("Fridge", "Fridge",
+                satisfiesNeed: "Hunger",
                 satisfactionAmount: 50f,
                 interactionDuration: 20,
                 useAreas: new List<(int, int)> { (0, 1) })
-            .DefineObject("Blocker", 99, "Blocker",
-                satisfiesNeedId: null)  // Non-interactable blocker
-            .AddObject(ObjectIdFridge, 2, 0)  // Fridge at (2,0)
-            .AddObject(99, 2, 1)              // Blocker at (2,1) - blocks the use area!
-            .AddPawn("TestPawn", 0, 2, new Dictionary<int, float>
+            .DefineObject("Blocker", "Blocker")  // Non-interactable blocker
+            .AddObject("Fridge", 2, 0)  // Fridge at (2,0)
+            .AddObject("Blocker", 2, 1)  // Blocker at (2,1) - blocks the use area!
+            .AddPawn("TestPawn", 0, 2, new Dictionary<string, float>
             {
-                { NeedIdHunger, 10f }
+                { "Hunger", 10f }
             })
             .Build();
 
@@ -201,7 +194,7 @@ public class UseAreasTests
         _output.WriteLine("=== Blocked UseArea Test ===");
         _output.WriteLine("Fridge at (2,0), UseArea at (2,1) is BLOCKED by another object");
 
-        float initialHunger = sim.GetNeedValue(pawnId.Value, NeedIdHunger);
+        float initialHunger = sim.GetNeedValue(pawnId.Value, "Hunger");
 
         // Act: Run simulation - pawn should NOT be able to use fridge
         for (int tick = 0; tick < 100; tick++)
@@ -210,7 +203,7 @@ public class UseAreasTests
         }
 
         // Assert: Hunger should have only decayed (not been satisfied)
-        float finalHunger = sim.GetNeedValue(pawnId.Value, NeedIdHunger);
+        float finalHunger = sim.GetNeedValue(pawnId.Value, "Hunger");
         
         // With decay of 0.001 per tick over 100 ticks, hunger drops by ~0.1
         // If pawn ate, hunger would jump up by 50

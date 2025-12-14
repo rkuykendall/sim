@@ -133,7 +133,7 @@ public sealed class Simulation
         // Create a fridge
         var fridgeId = Entities.Create();
         Entities.Positions[fridgeId] = new PositionComponent { Coord = new TileCoord(2, 3) };
-        Entities.Objects[fridgeId] = new ObjectComponent { ObjectDefId = ContentDatabase.ObjectFridge };
+        Entities.Objects[fridgeId] = new ObjectComponent { ObjectDefId = ContentLoader.GetObjectId("Fridge") ?? 0 };
         World.GetTile(new TileCoord(2, 3)).Walkable = false;
 
         // Create beds (one per pawn)
@@ -142,20 +142,20 @@ public sealed class Simulation
         {
             var bedId = Entities.Create();
             Entities.Positions[bedId] = new PositionComponent { Coord = new TileCoord(x, y) };
-            Entities.Objects[bedId] = new ObjectComponent { ObjectDefId = ContentDatabase.ObjectBed };
+            Entities.Objects[bedId] = new ObjectComponent { ObjectDefId = ContentLoader.GetObjectId("Bed") ?? 0 };
             World.GetTile(new TileCoord(x, y)).Walkable = false;
         }
 
         // Create a TV for fun
         var tvId = Entities.Create();
         Entities.Positions[tvId] = new PositionComponent { Coord = new TileCoord(6, 2) };
-        Entities.Objects[tvId] = new ObjectComponent { ObjectDefId = ContentDatabase.ObjectTV };
+        Entities.Objects[tvId] = new ObjectComponent { ObjectDefId = ContentLoader.GetObjectId("TV") ?? 0 };
         World.GetTile(new TileCoord(6, 2)).Walkable = false;
 
         // Create a shower for hygiene
         var showerId = Entities.Create();
         Entities.Positions[showerId] = new PositionComponent { Coord = new TileCoord(10, 5) };
-        Entities.Objects[showerId] = new ObjectComponent { ObjectDefId = ContentDatabase.ObjectShower };
+        Entities.Objects[showerId] = new ObjectComponent { ObjectDefId = ContentLoader.GetObjectId("Shower") ?? 0 };
         World.GetTile(new TileCoord(10, 5)).Walkable = false;
     }
 
@@ -181,11 +181,11 @@ public sealed class Simulation
             {
                 Needs = new Dictionary<int, float>
                 {
-                    { ContentDatabase.NeedHunger, hunger },
-                    { ContentDatabase.NeedEnergy, energy },
-                    { ContentDatabase.NeedFun, fun },
-                    { ContentDatabase.NeedSocial, social },
-                    { ContentDatabase.NeedHygiene, hygiene }
+                    { ContentLoader.GetNeedId("Hunger") ?? 0, hunger },
+                    { ContentLoader.GetNeedId("Energy") ?? 0, energy },
+                    { ContentLoader.GetNeedId("Fun") ?? 0, fun },
+                    { ContentLoader.GetNeedId("Social") ?? 0, social },
+                    { ContentLoader.GetNeedId("Hygiene") ?? 0, hygiene }
                 }
             };
             Entities.Buffs[id] = new BuffComponent();

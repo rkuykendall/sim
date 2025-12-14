@@ -36,8 +36,7 @@ public sealed class EntityManager
             if (excludePawn.HasValue && pawnId.Value == excludePawn.Value.Value)
                 continue;
 
-            if (Positions.TryGetValue(pawnId, out var pos) && 
-                pos.Coord.X == coord.X && pos.Coord.Y == coord.Y)
+            if (Positions.TryGetValue(pawnId, out var pos) && pos.Coord == coord)
             {
                 return true;
             }
@@ -74,8 +73,7 @@ public sealed class EntityManager
             if (excludePawn.HasValue && pawnId.Value == excludePawn.Value.Value)
                 continue;
 
-            if (Positions.TryGetValue(pawnId, out var pos) && 
-                pos.Coord.X == coord.X && pos.Coord.Y == coord.Y)
+            if (Positions.TryGetValue(pawnId, out var pos) && pos.Coord == coord)
             {
                 return pawnId;
             }
