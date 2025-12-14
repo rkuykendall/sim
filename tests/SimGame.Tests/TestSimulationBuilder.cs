@@ -145,11 +145,9 @@ public sealed class TestSimulationBuilder
         // Convert object placements to use resolved IDs
         foreach (var (objectKey, x, y) in _objectPlacements)
         {
-            var objectId = content.GetObjectId(objectKey);
-            if (objectId.HasValue)
-            {
-                _config.Objects.Add((objectId.Value, x, y));
-            }
+            var objectId = content.GetObjectId(objectKey)
+                ?? throw new InvalidOperationException($"Object '{objectKey}' not found. Did you forget to call DefineObject()?");
+            _config.Objects.Add((objectId, x, y));
         }
 
         // Convert pawn needs to use resolved IDs
@@ -158,11 +156,9 @@ public sealed class TestSimulationBuilder
             var needsById = new Dictionary<int, float>();
             foreach (var (needKey, value) in needsByName)
             {
-                var needId = content.GetNeedId(needKey);
-                if (needId.HasValue)
-                {
-                    needsById[needId.Value] = value;
-                }
+                var needId = content.GetNeedId(needKey)
+                    ?? throw new InvalidOperationException($"Need '{needKey}' not found. Did you forget to call DefineNeed()?");
+                needsById[needId] = value;
             }
             _config.Pawns.Add(new PawnConfig
             {

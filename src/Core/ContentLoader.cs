@@ -37,114 +37,91 @@ public static class ContentLoader
         return registry;
     }
 
-    private static void LoadBuffs(Script script, ContentRegistry registry, string path)
+    /// <summary>
+    /// Load a Lua file and iterate over its table entries.
+    /// Returns null if file doesn't exist.
+    /// </summary>
+    private static Table? LoadLuaTable(Script script, string path, string contentType)
     {
         if (!File.Exists(path))
         {
-            LogError?.Invoke($"ContentLoader: Buffs file not found: {path}");
-            return;
+            LogError?.Invoke($"ContentLoader: {contentType} file not found: {path}");
+            return null;
         }
+        return script.DoFile(path).Table;
+    }
 
-        var result = script.DoFile(path);
-        var buffsTable = result.Table;
+    /// <summary>
+    /// Resolve a reference from Lua data to a registered ID, with strict validation.
+    /// </summary>
+    private static int? ResolveReference(DynValue value, Func<string, int?> lookup, string contextKey, string fieldName)
+    {
+        if (value.IsNil()) return null;
+        
+        var name = value.String;
+        return lookup(name) 
+            ?? throw new InvalidOperationException($"'{contextKey}' references unknown {fieldName} '{name}'");
+    }
 
-        foreach (var pair in buffsTable.Pairs)
+    private static void LoadBuffs(Script script, ContentRegistry registry, string path)
+    {
+        var table = LoadLuaTable(script, path, "Buffs");
+        if (table == null) return;
+
+        foreach (var pair in table.Pairs)
         {
-            string key = pair.Key.String;
+            var key = pair.Key.String;
             var data = pair.Value.Table;
 
-            var buff = new BuffDef
+            registry.RegisterBuff(key, new BuffDef
             {
-                Id = 0, // Auto-assigned by registry
                 Name = data.Get("name").String,
                 MoodOffset = (float)data.Get("moodOffset").Number,
                 DurationTicks = (int)(data.Get("durationTicks").IsNil() ? 0 : data.Get("durationTicks").Number),
                 IsFromNeed = !data.Get("isFromNeed").IsNil() && data.Get("isFromNeed").Boolean
-            };
-
-            registry.RegisterBuff(key, buff);
+            });
         }
     }
 
     private static void LoadNeeds(Script script, ContentRegistry registry, string path)
     {
-        if (!File.Exists(path))
-        {
-            LogError?.Invoke($"ContentLoader: Needs file not found: {path}");
-            return;
-        }
+        var table = LoadLuaTable(script, path, "Needs");
+        if (table == null) return;
 
-        var result = script.DoFile(path);
-        var needsTable = result.Table;
-
-        foreach (var pair in needsTable.Pairs)
+        foreach (var pair in table.Pairs)
         {
-            string key = pair.Key.String;
+            var key = pair.Key.String;
             var data = pair.Value.Table;
 
-            // Look up debuff IDs by name
-            int? criticalDebuffId = null;
-            int? lowDebuffId = null;
-
-            var criticalDebuffName = data.Get("criticalDebuff");
-            if (!criticalDebuffName.IsNil())
-                criticalDebuffId = registry.GetBuffId(criticalDebuffName.String);
-
-            var lowDebuffName = data.Get("lowDebuff");
-            if (!lowDebuffName.IsNil())
-                lowDebuffId = registry.GetBuffId(lowDebuffName.String);
-
-            var need = new NeedDef
+            registry.RegisterNeed(key, new NeedDef
             {
-                Id = 0, // Auto-assigned by registry
                 Name = data.Get("name").String,
                 DecayPerTick = (float)data.Get("decayPerTick").Number,
                 CriticalThreshold = (float)data.Get("criticalThreshold").Number,
                 LowThreshold = (float)data.Get("lowThreshold").Number,
-                CriticalDebuffId = criticalDebuffId,
-                LowDebuffId = lowDebuffId
-            };
-
-            registry.RegisterNeed(key, need);
+                CriticalDebuffId = ResolveReference(data.Get("criticalDebuff"), registry.GetBuffId, key, "criticalDebuff"),
+                LowDebuffId = ResolveReference(data.Get("lowDebuff"), registry.GetBuffId, key, "lowDebuff")
+            });
         }
     }
 
     private static void LoadObjects(Script script, ContentRegistry registry, string path)
     {
-        if (!File.Exists(path))
-        {
-            LogError?.Invoke($"ContentLoader: Objects file not found: {path}");
-            return;
-        }
+        var table = LoadLuaTable(script, path, "Objects");
+        if (table == null) return;
 
-        var result = script.DoFile(path);
-        var objectsTable = result.Table;
-
-        foreach (var pair in objectsTable.Pairs)
+        foreach (var pair in table.Pairs)
         {
-            string key = pair.Key.String;
+            var key = pair.Key.String;
             var data = pair.Value.Table;
-
-            // Look up need ID by name
-            int? satisfiesNeedId = null;
-            var satisfiesNeedName = data.Get("satisfiesNeed");
-            if (!satisfiesNeedName.IsNil())
-                satisfiesNeedId = registry.GetNeedId(satisfiesNeedName.String);
-
-            // Look up buff ID by name
-            int? grantsBuffId = null;
-            var grantsBuffName = data.Get("grantsBuff");
-            if (!grantsBuffName.IsNil())
-                grantsBuffId = registry.GetBuffId(grantsBuffName.String);
 
             var obj = new ObjectDef
             {
-                Id = 0, // Auto-assigned by registry
                 Name = data.Get("name").String,
-                SatisfiesNeedId = satisfiesNeedId,
+                SatisfiesNeedId = ResolveReference(data.Get("satisfiesNeed"), registry.GetNeedId, key, "satisfiesNeed"),
                 NeedSatisfactionAmount = (float)data.Get("satisfactionAmount").Number,
                 InteractionDurationTicks = (int)data.Get("interactionDuration").Number,
-                GrantsBuffId = grantsBuffId
+                GrantsBuffId = ResolveReference(data.Get("grantsBuff"), registry.GetBuffId, key, "grantsBuff")
             };
 
             // Load use areas
@@ -154,9 +131,7 @@ public static class ContentLoader
                 foreach (var areaPair in useAreasData.Table.Pairs)
                 {
                     var areaTable = areaPair.Value.Table;
-                    int dx = (int)areaTable.Get(1).Number;
-                    int dy = (int)areaTable.Get(2).Number;
-                    obj.UseAreas.Add((dx, dy));
+                    obj.UseAreas.Add(((int)areaTable.Get(1).Number, (int)areaTable.Get(2).Number));
                 }
             }
 

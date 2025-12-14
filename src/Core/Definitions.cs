@@ -3,9 +3,9 @@ using System.Collections.Generic;
 namespace SimGame.Core;
 
 // Buff definition
-public sealed class BuffDef
+public sealed class BuffDef : IContentDef
 {
-    public int Id;
+    public int Id { get; set; }
     public string Name = "";
     public float MoodOffset;
     public int DurationTicks; // 0 = permanent (recalculated each tick based on conditions)
@@ -20,9 +20,9 @@ public sealed class BuffInstance
 }
 
 // Need definition
-public sealed class NeedDef
+public sealed class NeedDef : IContentDef
 {
-    public int Id;
+    public int Id { get; set; }
     public string Name = "";
     public float DecayPerTick = 0.05f; // 10x faster default
     public float CriticalThreshold = 20f;
@@ -32,9 +32,9 @@ public sealed class NeedDef
 }
 
 // Object/building definition
-public sealed class ObjectDef
+public sealed class ObjectDef : IContentDef
 {
-    public int Id;
+    public int Id { get; set; }
     public string Name = "";
     public bool Walkable = false;
     public bool Interactable = true;

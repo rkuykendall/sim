@@ -146,34 +146,51 @@ public sealed class Simulation
         // Create a fridge
         var fridgeId = Entities.Create();
         Entities.Positions[fridgeId] = new PositionComponent { Coord = new TileCoord(2, 3) };
-        Entities.Objects[fridgeId] = new ObjectComponent { ObjectDefId = Content.GetObjectId("Fridge") ?? 0 };
+        Entities.Objects[fridgeId] = new ObjectComponent { ObjectDefId = Content.GetObjectId("Fridge") 
+            ?? throw new InvalidOperationException("Required object 'Fridge' not found in content") };
         World.GetTile(new TileCoord(2, 3)).Walkable = false;
 
         // Create beds (one per pawn)
         var bedPositions = new[] { (8, 2), (8, 4), (8, 6), (8, 8) };
+        var bedObjectId = Content.GetObjectId("Bed") 
+            ?? throw new InvalidOperationException("Required object 'Bed' not found in content");
         foreach (var (x, y) in bedPositions)
         {
             var bedId = Entities.Create();
             Entities.Positions[bedId] = new PositionComponent { Coord = new TileCoord(x, y) };
-            Entities.Objects[bedId] = new ObjectComponent { ObjectDefId = Content.GetObjectId("Bed") ?? 0 };
+            Entities.Objects[bedId] = new ObjectComponent { ObjectDefId = bedObjectId };
             World.GetTile(new TileCoord(x, y)).Walkable = false;
         }
 
         // Create a TV for fun
         var tvId = Entities.Create();
         Entities.Positions[tvId] = new PositionComponent { Coord = new TileCoord(6, 2) };
-        Entities.Objects[tvId] = new ObjectComponent { ObjectDefId = Content.GetObjectId("TV") ?? 0 };
+        Entities.Objects[tvId] = new ObjectComponent { ObjectDefId = Content.GetObjectId("TV") 
+            ?? throw new InvalidOperationException("Required object 'TV' not found in content") };
         World.GetTile(new TileCoord(6, 2)).Walkable = false;
 
         // Create a shower for hygiene
         var showerId = Entities.Create();
         Entities.Positions[showerId] = new PositionComponent { Coord = new TileCoord(10, 5) };
-        Entities.Objects[showerId] = new ObjectComponent { ObjectDefId = Content.GetObjectId("Shower") ?? 0 };
+        Entities.Objects[showerId] = new ObjectComponent { ObjectDefId = Content.GetObjectId("Shower") 
+            ?? throw new InvalidOperationException("Required object 'Shower' not found in content") };
         World.GetTile(new TileCoord(10, 5)).Walkable = false;
     }
 
     private void BootstrapPawns()
     {
+        // Cache need IDs (fail fast if any are missing)
+        var hungerNeedId = Content.GetNeedId("Hunger") 
+            ?? throw new InvalidOperationException("Required need 'Hunger' not found in content");
+        var energyNeedId = Content.GetNeedId("Energy") 
+            ?? throw new InvalidOperationException("Required need 'Energy' not found in content");
+        var funNeedId = Content.GetNeedId("Fun") 
+            ?? throw new InvalidOperationException("Required need 'Fun' not found in content");
+        var socialNeedId = Content.GetNeedId("Social") 
+            ?? throw new InvalidOperationException("Required need 'Social' not found in content");
+        var hygieneNeedId = Content.GetNeedId("Hygiene") 
+            ?? throw new InvalidOperationException("Required need 'Hygiene' not found in content");
+
         // Pawn data: (name, age, x, y, hunger, energy, fun, social, hygiene)
         var pawnData = new[]
         {
@@ -194,11 +211,11 @@ public sealed class Simulation
             {
                 Needs = new Dictionary<int, float>
                 {
-                    { Content.GetNeedId("Hunger") ?? 0, hunger },
-                    { Content.GetNeedId("Energy") ?? 0, energy },
-                    { Content.GetNeedId("Fun") ?? 0, fun },
-                    { Content.GetNeedId("Social") ?? 0, social },
-                    { Content.GetNeedId("Hygiene") ?? 0, hygiene }
+                    { hungerNeedId, hunger },
+                    { energyNeedId, energy },
+                    { funNeedId, fun },
+                    { socialNeedId, social },
+                    { hygieneNeedId, hygiene }
                 }
             };
             Entities.Buffs[id] = new BuffComponent();
