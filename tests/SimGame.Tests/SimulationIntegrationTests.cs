@@ -192,4 +192,32 @@ public class SimulationIntegrationTests
         Assert.True(finalHunger > 40f,
             $"Expected pawn to have eaten (hunger > 40), but hunger was {finalHunger}");
     }
+
+    /// <summary>
+    /// Scenario: Destroying an object restores tile walkability.
+    /// </summary>
+    [Fact]
+    public void DestroyEntity_RestoresTileWalkability_ForObjects()
+    {
+        // Arrange: Create a world with an object
+        var sim = new TestSimulationBuilder()
+            .WithWorldBounds(0, 4, 0, 4)
+            .DefineNeed("Hunger", "Hunger")
+            .DefineObject("Fridge", "Fridge", satisfiesNeed: "Hunger")
+            .AddObject("Fridge", 2, 2)
+            .Build();
+
+        var objectId = sim.Entities.AllObjects().First();
+        var coord = new TileCoord(2, 2);
+
+        // Verify tile is not walkable before destruction
+        Assert.False(sim.World.GetTile(coord).Walkable, "Tile should not be walkable with object on it");
+
+        // Act: Destroy the object
+        sim.DestroyEntity(objectId);
+
+        // Assert: Tile should be walkable again
+        Assert.True(sim.World.GetTile(coord).Walkable, "Tile should be walkable after object destruction");
+        Assert.False(sim.Entities.Objects.ContainsKey(objectId), "Object should be removed from entities");
+    }
 }

@@ -124,6 +124,20 @@ public sealed class Simulation
     }
 
     /// <summary>
+    /// Destroy an entity and clean up world state (e.g., restore tile walkability for objects).
+    /// </summary>
+    public void DestroyEntity(EntityId id)
+    {
+        // If this is an object, restore tile walkability
+        if (Entities.Objects.ContainsKey(id) && Entities.Positions.TryGetValue(id, out var pos))
+        {
+            World.GetTile(pos.Coord).Walkable = true;
+        }
+
+        Entities.Destroy(id);
+    }
+
+    /// <summary>
     /// Create a pawn in the world with the specified configuration.
     /// </summary>
     public EntityId CreatePawn(PawnConfig config)

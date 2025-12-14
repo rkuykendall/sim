@@ -90,9 +90,10 @@ public sealed class EntityManager
     }
 
     /// <summary>
-    /// Destroy an entity and remove all its components.
+    /// Remove all components for an entity. Internal use only.
+    /// Use Simulation.DestroyEntity() for proper cleanup including world state.
     /// </summary>
-    public void Destroy(EntityId id)
+    internal void Destroy(EntityId id)
     {
         Positions.Remove(id);
         Pawns.Remove(id);
