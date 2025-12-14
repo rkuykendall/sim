@@ -53,6 +53,7 @@ public readonly struct SimContext
     public World World => Sim.World;
     public EntityManager Entities => Sim.Entities;
     public TimeService Time => Sim.Time;
+    public Random Random => Sim.Random;
 
     public SimContext(Simulation sim) => Sim = sim;
 }
@@ -172,7 +173,6 @@ public sealed class ActionSystem : ISystem
 {
     private const int MoveTicksPerTile = 10;
     private const int MaxBlockedTicks = 50;  // Give up on move after being blocked this long
-    private readonly Random _random = new();
 
     public void Tick(SimContext ctx)
     {
@@ -287,7 +287,7 @@ public sealed class ActionSystem : ISystem
                 if (actionComp.WaitUntilTick < 0)
                 {
                     // Wait a random amount of time (5-20 ticks) before trying to repath
-                    actionComp.WaitUntilTick = ctx.Time.Tick + _random.Next(5, 21);
+                    actionComp.WaitUntilTick = ctx.Time.Tick + ctx.Random.Next(5, 21);
                     return;
                 }
                 
@@ -477,8 +477,6 @@ public sealed class ActionSystem : ISystem
 // Utility AI - decides what action to take
 public sealed class AISystem : ISystem
 {
-    private readonly Random _random = new();
-    
     public void Tick(SimContext ctx)
     {
         foreach (var pawnId in ctx.Entities.AllPawns())
@@ -614,11 +612,11 @@ public sealed class AISystem : ISystem
 
         // Pick a random nearby tile to walk to
         var directions = new[] { (0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1) };
-        var shuffled = directions.OrderBy(_ => _random.Next()).ToArray();
+        var shuffled = directions.OrderBy(_ => ctx.Random.Next()).ToArray();
 
         foreach (var (dx, dy) in shuffled)
         {
-            int wanderDist = _random.Next(1, 4); // 1-3 tiles
+            int wanderDist = ctx.Random.Next(1, 4); // 1-3 tiles
             var target = new TileCoord(pos.Coord.X + dx * wanderDist, pos.Coord.Y + dy * wanderDist);
             
             // Check if target is in bounds, walkable, and not occupied

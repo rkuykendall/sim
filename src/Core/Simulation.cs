@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace SimGame.Core;
@@ -11,6 +12,11 @@ public sealed class SimulationConfig
     /// If true, skip all default world/pawn bootstrap and only use explicit config.
     /// </summary>
     public bool SkipDefaultBootstrap { get; set; } = false;
+
+    /// <summary>
+    /// Seed for the random number generator. If null, uses a random seed.
+    /// </summary>
+    public int? Seed { get; set; }
 
     /// <summary>
     /// Custom world bounds. If null, uses World defaults.
@@ -44,6 +50,7 @@ public sealed class Simulation
     public World World { get; }
     public EntityManager Entities { get; } = new();
     public TimeService Time { get; } = new();
+    public Random Random { get; }
 
     private readonly SystemManager _systems = new();
 
@@ -59,6 +66,9 @@ public sealed class Simulation
     /// </summary>
     public Simulation(SimulationConfig? config)
     {
+        // Initialize random number generator with optional seed
+        Random = config?.Seed != null ? new Random(config.Seed.Value) : new Random();
+
         // Create world with optional custom bounds
         if (config?.WorldBounds != null)
         {
