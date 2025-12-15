@@ -239,9 +239,9 @@ public sealed class Simulation
 
     public void Tick()
     {
-        Time.AdvanceTick();
         var ctx = new SimContext(this);
         _systems.TickAll(ctx);
+        Time.AdvanceTick();
     }
 
     public RenderSnapshot CreateRenderSnapshot()
