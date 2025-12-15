@@ -115,25 +115,27 @@ public static class ContentLoader
             var key = pair.Key.String;
             var data = pair.Value.Table;
 
-            var obj = new ObjectDef
-            {
-                Name = data.Get("name").String,
-                SatisfiesNeedId = ResolveReference(data.Get("satisfiesNeed"), registry.GetNeedId, key, "satisfiesNeed"),
-                NeedSatisfactionAmount = (float)data.Get("satisfactionAmount").Number,
-                InteractionDurationTicks = (int)data.Get("interactionDuration").Number,
-                GrantsBuffId = ResolveReference(data.Get("grantsBuff"), registry.GetBuffId, key, "grantsBuff")
-            };
-
-            // Load use areas
+            // Load use areas first
+            var useAreas = new List<(int dx, int dy)>();
             var useAreasData = data.Get("useAreas");
             if (!useAreasData.IsNil() && useAreasData.Type == DataType.Table)
             {
                 foreach (var areaPair in useAreasData.Table.Pairs)
                 {
                     var areaTable = areaPair.Value.Table;
-                    obj.UseAreas.Add(((int)areaTable.Get(1).Number, (int)areaTable.Get(2).Number));
+                    useAreas.Add(((int)areaTable.Get(1).Number, (int)areaTable.Get(2).Number));
                 }
             }
+
+            var obj = new ObjectDef
+            {
+                Name = data.Get("name").String,
+                SatisfiesNeedId = ResolveReference(data.Get("satisfiesNeed"), registry.GetNeedId, key, "satisfiesNeed"),
+                NeedSatisfactionAmount = (float)data.Get("satisfactionAmount").Number,
+                InteractionDurationTicks = (int)data.Get("interactionDuration").Number,
+                GrantsBuffId = ResolveReference(data.Get("grantsBuff"), registry.GetBuffId, key, "grantsBuff"),
+                UseAreas = useAreas
+            };
 
             registry.RegisterObject(key, obj);
         }

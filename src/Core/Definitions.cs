@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace SimGame.Core;
@@ -42,7 +43,7 @@ public sealed class ObjectDef : IContentDef
     public float NeedSatisfactionAmount { get; init; } = 30f;
     public int InteractionDurationTicks { get; init; } = 100;
     public int? GrantsBuffId { get; init; } // Buff to apply when interaction completes (set during content loading)
-    public List<(int dx, int dy)> UseAreas { get; init; } = new(); // Relative tile offsets where pawn can use this object
+    public IReadOnlyList<(int dx, int dy)> UseAreas { get; init; } = Array.Empty<(int, int)>(); // Relative tile offsets where pawn can use this object
 }
 
 // Action definition
