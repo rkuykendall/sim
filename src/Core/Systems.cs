@@ -677,11 +677,8 @@ public sealed class AISystem : ISystem
             int wanderDist = ctx.Random.Next(1, 4); // 1-3 tiles
             var target = new TileCoord(pos.Coord.X + dx * wanderDist, pos.Coord.Y + dy * wanderDist);
             
-            // Check if target is in bounds, walkable, and not occupied
-            if (!ctx.World.IsInBounds(target)) continue;
-            
-            var tile = ctx.World.GetTile(target);
-            if (tile.Walkable && !ctx.Entities.IsTileOccupiedByPawn(target, pawnId))
+            // Check if target is walkable and not occupied by another pawn
+            if (ctx.World.IsWalkable(target) && !ctx.Entities.IsTileOccupiedByPawn(target, pawnId))
             {
                 actionComp.ActionQueue.Enqueue(new ActionDef
                 {
@@ -775,10 +772,7 @@ public sealed class AISystem : ISystem
                 
                 var candidate = new TileCoord(objectPos.X + dx, objectPos.Y + dy);
                 
-                if (!ctx.World.IsInBounds(candidate)) continue;
-                
-                var tile = ctx.World.GetTile(candidate);
-                if (tile.Walkable && !ctx.Entities.IsTileOccupiedByPawn(candidate, pawnId))
+                if (ctx.World.IsWalkable(candidate) && !ctx.Entities.IsTileOccupiedByPawn(candidate, pawnId))
                 {
                     return candidate;
                 }

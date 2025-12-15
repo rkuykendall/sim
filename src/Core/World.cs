@@ -100,6 +100,12 @@ public sealed class World
     public bool IsInBounds(TileCoord coord) =>
         coord.X >= 0 && coord.X < Width && coord.Y >= 0 && coord.Y < Height;
 
+    /// <summary>
+    /// Check if a tile is walkable (in bounds and not blocked by terrain/objects).
+    /// </summary>
+    public bool IsWalkable(TileCoord coord) =>
+        IsInBounds(coord) && _tiles[coord.X, coord.Y].Walkable;
+
     public Tile GetTile(TileCoord coord)
     {
         if (!IsInBounds(coord))
