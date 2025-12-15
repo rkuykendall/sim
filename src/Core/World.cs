@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 namespace SimGame.Core;
 
@@ -17,79 +16,100 @@ public readonly struct TileCoord : IEquatable<TileCoord>
     public override string ToString() => $"({X}, {Y})";
 }
 
+/// <summary>
+/// A single tile in the world grid.
+/// </summary>
+/// <remarks>
+/// Tiles store terrain data (texture, walkability). Objects placed on tiles
+/// are separate entities tracked by EntityManager, not stored on the tile itself.
+/// When an object is placed, it may modify tile properties (e.g., Walkable = false).
+/// </remarks>
 public sealed class Tile
 {
-    public int TerrainTypeId;
-    public int? StructureId;
-    public bool Walkable = true;
-    public bool Buildable = true;
-    public bool Indoors = false;
+    /// <summary>ID of the terrain type (grass, dirt, wood floor, etc.) for rendering.</summary>
+    public int TerrainTypeId { get; set; }
+    
+    /// <summary>Whether pawns can walk through this tile. May be set false by terrain or placed objects.</summary>
+    public bool Walkable { get; set; } = true;
+    
+    /// <summary>Whether the player can place objects on this tile.</summary>
+    public bool Buildable { get; set; } = true;
+    
+    /// <summary>Whether this tile is indoors (affects weather, lighting, etc.).</summary>
+    public bool Indoors { get; set; }
 }
 
-public sealed class Chunk
-{
-    public const int ChunkSize = 32;
-    public readonly Tile[,] Tiles = new Tile[ChunkSize, ChunkSize];
-
-    public Chunk()
-    {
-        for (int x = 0; x < ChunkSize; x++)
-            for (int y = 0; y < ChunkSize; y++)
-                Tiles[x, y] = new Tile();
-    }
-}
-
+/// <summary>
+/// The game world - a fixed-size grid of tiles.
+/// </summary>
+/// <remarks>
+/// The world is a simple 2D array of tiles with defined bounds.
+/// Objects (furniture, walls) are stored as entities in EntityManager, not on tiles.
+/// Placing an object should update the tile's Walkable/Buildable properties as needed.
+/// </remarks>
 public sealed class World
 {
-    private readonly Dictionary<(int, int), Chunk> _chunks = new();
-
     // Default play area bounds (in tiles) - matches 640x360 viewport with 32px tiles
-    public const int DefaultMinX = 0;
-    public const int DefaultMaxX = 19;  // 640 / 32 = 20 tiles (0-19)
-    public const int DefaultMinY = 0;
-    public const int DefaultMaxY = 10;  // 360 / 32 = 11.25, use 11 tiles (0-10)
+    public const int DefaultWidth = 20;   // 640 / 32 = 20 tiles
+    public const int DefaultHeight = 11;  // 360 / 32 = 11.25, use 11 tiles
 
-    // Instance bounds (can be customized)
-    public int MinX { get; }
-    public int MaxX { get; }
-    public int MinY { get; }
-    public int MaxY { get; }
+    private readonly Tile[,] _tiles;
 
-    public World() : this(DefaultMinX, DefaultMaxX, DefaultMinY, DefaultMaxY)
+    /// <summary>Width of the world in tiles.</summary>
+    public int Width { get; }
+    
+    /// <summary>Height of the world in tiles.</summary>
+    public int Height { get; }
+
+    // Bounds for compatibility with existing code (0-based)
+    public int MinX => 0;
+    public int MaxX => Width - 1;
+    public int MinY => 0;
+    public int MaxY => Height - 1;
+
+    public World() : this(DefaultWidth, DefaultHeight)
     {
     }
 
-    public World(int minX, int maxX, int minY, int maxY)
+    public World(int width, int height)
     {
-        MinX = minX;
-        MaxX = maxX;
-        MinY = minY;
-        MaxY = maxY;
+        Width = width;
+        Height = height;
+        _tiles = new Tile[width, height];
+        
+        // Initialize all tiles
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                _tiles[x, y] = new Tile();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Constructor for compatibility with existing code that uses min/max bounds.
+    /// </summary>
+    public World(int minX, int maxX, int minY, int maxY)
+        : this(maxX - minX + 1, maxY - minY + 1)
+    {
+        if (minX != 0 || minY != 0)
+            throw new ArgumentException("Non-zero minimum bounds are not supported. Use width/height constructor.");
     }
 
     public bool IsInBounds(TileCoord coord) =>
-        coord.X >= MinX && coord.X <= MaxX && coord.Y >= MinY && coord.Y <= MaxY;
-
-    // Static version for backward compatibility (uses default bounds)
-    public static bool IsInBoundsStatic(TileCoord coord) =>
-        coord.X >= DefaultMinX && coord.X <= DefaultMaxX && coord.Y >= DefaultMinY && coord.Y <= DefaultMaxY;
-
-    public Chunk GetOrCreateChunk(int cx, int cy)
-    {
-        if (!_chunks.TryGetValue((cx, cy), out var chunk))
-        {
-            chunk = new Chunk();
-            _chunks[(cx, cy)] = chunk;
-        }
-        return chunk;
-    }
+        coord.X >= 0 && coord.X < Width && coord.Y >= 0 && coord.Y < Height;
 
     public Tile GetTile(TileCoord coord)
     {
-        int cx = (int)Math.Floor((double)coord.X / Chunk.ChunkSize);
-        int cy = (int)Math.Floor((double)coord.Y / Chunk.ChunkSize);
-        int lx = ((coord.X % Chunk.ChunkSize) + Chunk.ChunkSize) % Chunk.ChunkSize;
-        int ly = ((coord.Y % Chunk.ChunkSize) + Chunk.ChunkSize) % Chunk.ChunkSize;
-        return GetOrCreateChunk(cx, cy).Tiles[lx, ly];
+        if (!IsInBounds(coord))
+            throw new ArgumentOutOfRangeException(nameof(coord), $"Coordinate {coord} is out of bounds (0-{Width - 1}, 0-{Height - 1})");
+        
+        return _tiles[coord.X, coord.Y];
     }
+    
+    /// <summary>
+    /// Get a tile by x,y coordinates directly.
+    /// </summary>
+    public Tile GetTile(int x, int y) => GetTile(new TileCoord(x, y));
 }

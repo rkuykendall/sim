@@ -655,7 +655,6 @@ public sealed class AISystem : ISystem
             });
         }
     }
-    }
 
     private void WanderRandomly(SimContext ctx, EntityId pawnId, ActionComponent actionComp)
     {
