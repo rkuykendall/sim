@@ -114,13 +114,19 @@ public sealed class Simulation
     /// Create an object in the world at the specified position.
     /// </summary>
     /// <exception cref="ArgumentException">Thrown when objectDefId is not a valid object definition.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the tile is already occupied by another object.</exception>
     public EntityId CreateObject(int objectDefId, int x, int y)
     {
         if (!Content.Objects.ContainsKey(objectDefId))
             throw new ArgumentException($"Unknown object definition ID: {objectDefId}", nameof(objectDefId));
 
-        var id = Entities.Create();
         var coord = new TileCoord(x, y);
+        
+        // Check if tile is already occupied by an object
+        if (!World.GetTile(coord).Walkable)
+            throw new InvalidOperationException($"Cannot place object at ({x}, {y}): tile is already occupied");
+
+        var id = Entities.Create();
         Entities.Positions[id] = new PositionComponent { Coord = coord };
         Entities.Objects[id] = new ObjectComponent { ObjectDefId = objectDefId };
         World.GetTile(coord).Walkable = false;
