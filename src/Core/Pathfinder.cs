@@ -57,6 +57,9 @@ public static class Pathfinder
 
     private static List<TileCoord> ReconstructPath(Dictionary<TileCoord, TileCoord> cameFrom, TileCoord current)
     {
+        // Note: Path includes the start position (index 0) intentionally.
+        // ActionSystem uses path index as a timing mechanism where index 0 = current position,
+        // and movement progresses based on (ticksInAction / MoveTicksPerTile).
         var path = new List<TileCoord> { current };
         while (cameFrom.ContainsKey(current))
         {
