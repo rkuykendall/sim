@@ -17,7 +17,8 @@ Objects = {
         satisfactionAmount = 80,
         interactionDuration = 40,
         grantsBuff = "WellRested",
-        useAreas = { {0, 0} }  -- on the bed itself
+        walkable = true,  -- pawn stands on the bed to sleep
+        useAreas = { {0, 0} }
     },
     TV = {
         name = "TV",
@@ -33,7 +34,8 @@ Objects = {
         satisfactionAmount = 60,
         interactionDuration = 20,
         grantsBuff = "FeelingFresh",
-        useAreas = { {0, 0} }  -- in the shower
+        walkable = true,  -- pawn stands in the shower
+        useAreas = { {0, 0} }
     },
 }
 

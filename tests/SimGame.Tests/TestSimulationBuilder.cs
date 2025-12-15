@@ -77,12 +77,14 @@ public sealed class TestSimulationBuilder
         float satisfactionAmount = 50f, 
         int interactionDuration = 20, 
         string? grantsBuff = null,
-        List<(int, int)>? useAreas = null)
+        List<(int, int)>? useAreas = null,
+        bool walkable = false)
     {
         _objects.Add((key, new ObjectDef
         {
             Id = 0,  // Auto-generated
             Name = name,
+            Walkable = walkable,
             NeedSatisfactionAmount = satisfactionAmount,
             InteractionDurationTicks = interactionDuration,
             UseAreas = useAreas ?? new List<(int dx, int dy)> { (0, 1) }

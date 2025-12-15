@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using MoonSharp.Interpreter;
 
@@ -127,9 +128,14 @@ public static class ContentLoader
                 }
             }
 
+            // Load walkable property (defaults to false if not specified)
+            var walkableData = data.Get("walkable");
+            var walkable = !walkableData.IsNil() && walkableData.Boolean;
+
             var obj = new ObjectDef
             {
                 Name = data.Get("name").String,
+                Walkable = walkable,
                 SatisfiesNeedId = ResolveReference(data.Get("satisfiesNeed"), registry.GetNeedId, key, "satisfiesNeed"),
                 NeedSatisfactionAmount = (float)data.Get("satisfactionAmount").Number,
                 InteractionDurationTicks = (int)data.Get("interactionDuration").Number,

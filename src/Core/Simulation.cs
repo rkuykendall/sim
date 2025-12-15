@@ -128,6 +128,7 @@ public sealed class Simulation
         if (!Content.Objects.ContainsKey(objectDefId))
             throw new ArgumentException($"Unknown object definition ID: {objectDefId}", nameof(objectDefId));
 
+        var objDef = Content.Objects[objectDefId];
         var coord = new TileCoord(x, y);
         
         // Check if tile is already occupied by an object
@@ -137,7 +138,12 @@ public sealed class Simulation
         var id = Entities.Create();
         Entities.Positions[id] = new PositionComponent { Coord = coord };
         Entities.Objects[id] = new ObjectComponent { ObjectDefId = objectDefId };
-        World.GetTile(coord).Walkable = false;
+        
+        // Only block the tile if this object is not walkable (e.g., fridge blocks, bed doesn't)
+        if (!objDef.Walkable)
+        {
+            World.GetTile(coord).Walkable = false;
+        }
         return id;
     }
 
@@ -146,10 +152,15 @@ public sealed class Simulation
     /// </summary>
     public void DestroyEntity(EntityId id)
     {
-        // If this is an object, restore tile walkability
-        if (Entities.Objects.ContainsKey(id) && Entities.Positions.TryGetValue(id, out var pos))
+        // If this is a non-walkable object, restore tile walkability
+        if (Entities.Objects.TryGetValue(id, out var objComp) && 
+            Entities.Positions.TryGetValue(id, out var pos))
         {
-            World.GetTile(pos.Coord).Walkable = true;
+            var objDef = Content.Objects[objComp.ObjectDefId];
+            if (!objDef.Walkable)
+            {
+                World.GetTile(pos.Coord).Walkable = true;
+            }
         }
 
         Entities.Destroy(id);
@@ -184,37 +195,25 @@ public sealed class Simulation
     private void BootstrapWorld()
     {
         // Create a fridge
-        var fridgeId = Entities.Create();
-        Entities.Positions[fridgeId] = new PositionComponent { Coord = new TileCoord(2, 3) };
-        Entities.Objects[fridgeId] = new ObjectComponent { ObjectDefId = Content.GetObjectId("Fridge") 
-            ?? throw new InvalidOperationException("Required object 'Fridge' not found in content") };
-        World.GetTile(new TileCoord(2, 3)).Walkable = false;
+        CreateObject(Content.GetObjectId("Fridge") 
+            ?? throw new InvalidOperationException("Required object 'Fridge' not found in content"), 2, 3);
 
         // Create beds (one per pawn)
-        var bedPositions = new[] { (8, 2), (8, 4), (8, 6), (8, 8) };
         var bedObjectId = Content.GetObjectId("Bed") 
             ?? throw new InvalidOperationException("Required object 'Bed' not found in content");
+        var bedPositions = new[] { (8, 2), (8, 4), (8, 6), (8, 8) };
         foreach (var (x, y) in bedPositions)
         {
-            var bedId = Entities.Create();
-            Entities.Positions[bedId] = new PositionComponent { Coord = new TileCoord(x, y) };
-            Entities.Objects[bedId] = new ObjectComponent { ObjectDefId = bedObjectId };
-            World.GetTile(new TileCoord(x, y)).Walkable = false;
+            CreateObject(bedObjectId, x, y);
         }
 
         // Create a TV for fun
-        var tvId = Entities.Create();
-        Entities.Positions[tvId] = new PositionComponent { Coord = new TileCoord(6, 2) };
-        Entities.Objects[tvId] = new ObjectComponent { ObjectDefId = Content.GetObjectId("TV") 
-            ?? throw new InvalidOperationException("Required object 'TV' not found in content") };
-        World.GetTile(new TileCoord(6, 2)).Walkable = false;
+        CreateObject(Content.GetObjectId("TV") 
+            ?? throw new InvalidOperationException("Required object 'TV' not found in content"), 6, 2);
 
         // Create a shower for hygiene
-        var showerId = Entities.Create();
-        Entities.Positions[showerId] = new PositionComponent { Coord = new TileCoord(10, 5) };
-        Entities.Objects[showerId] = new ObjectComponent { ObjectDefId = Content.GetObjectId("Shower") 
-            ?? throw new InvalidOperationException("Required object 'Shower' not found in content") };
-        World.GetTile(new TileCoord(10, 5)).Walkable = false;
+        CreateObject(Content.GetObjectId("Shower") 
+            ?? throw new InvalidOperationException("Required object 'Shower' not found in content"), 10, 5);
     }
 
     private void BootstrapPawns()
