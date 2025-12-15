@@ -54,10 +54,4 @@ public sealed class ContentStore<T> where T : IContentDef
     /// </summary>
     public T? Get(int id) =>
         _byId.TryGetValue(id, out var def) ? def : default;
-
-    /// <summary>
-    /// Try to get a definition by ID.
-    /// </summary>
-    public bool TryGet(int id, out T? def) =>
-        _byId.TryGetValue(id, out def);
 }
