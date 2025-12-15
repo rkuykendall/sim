@@ -15,6 +15,10 @@ public partial class GameRoot : Node2D
     private readonly Dictionary<int, Node2D> _pawnNodes = new();
     private readonly Dictionary<int, Node2D> _objectNodes = new();
     
+    // Reusable collections for sync operations (avoid per-frame allocations)
+    private readonly HashSet<int> _activeIds = new();
+    private readonly List<int> _idsToRemove = new();
+    
     private int? _selectedPawnId = null;
     private int? _selectedObjectId = null;
     private bool _debugMode = false;
@@ -317,8 +321,12 @@ public partial class GameRoot : Node2D
 
     private void SyncPawns(RenderSnapshot snapshot)
     {
+        _activeIds.Clear();
+        
         foreach (var pawn in snapshot.Pawns)
         {
+            _activeIds.Add(pawn.Id.Value);
+            
             if (!_pawnNodes.TryGetValue(pawn.Id.Value, out var node))
             {
                 node = PawnScene.Instantiate<Node2D>();
@@ -339,12 +347,36 @@ public partial class GameRoot : Node2D
                 pv.SetSelected(pawn.Id.Value == _selectedPawnId);
             }
         }
+        
+        // Remove nodes for pawns that no longer exist
+        _idsToRemove.Clear();
+        foreach (var id in _pawnNodes.Keys)
+        {
+            if (!_activeIds.Contains(id))
+                _idsToRemove.Add(id);
+        }
+        foreach (var id in _idsToRemove)
+        {
+            _pawnNodes[id].QueueFree();
+            _pawnNodes.Remove(id);
+            
+            // Clear selection if the removed pawn was selected
+            if (_selectedPawnId == id)
+            {
+                _selectedPawnId = null;
+                _infoPanel?.Hide();
+            }
+        }
     }
 
     private void SyncObjects(RenderSnapshot snapshot)
     {
+        _activeIds.Clear();
+        
         foreach (var obj in snapshot.Objects)
         {
+            _activeIds.Add(obj.Id.Value);
+            
             if (!_objectNodes.TryGetValue(obj.Id.Value, out var node))
             {
                 node = ObjectScene?.Instantiate<Node2D>() ?? new Node2D();
@@ -360,6 +392,26 @@ public partial class GameRoot : Node2D
             if (node is ObjectView ov)
             {
                 ov.SetObjectInfo(obj.Name, obj.InUse);
+            }
+        }
+        
+        // Remove nodes for objects that no longer exist
+        _idsToRemove.Clear();
+        foreach (var id in _objectNodes.Keys)
+        {
+            if (!_activeIds.Contains(id))
+                _idsToRemove.Add(id);
+        }
+        foreach (var id in _idsToRemove)
+        {
+            _objectNodes[id].QueueFree();
+            _objectNodes.Remove(id);
+            
+            // Clear selection if the removed object was selected
+            if (_selectedObjectId == id)
+            {
+                _selectedObjectId = null;
+                _objectInfoPanel?.Hide();
             }
         }
     }
