@@ -24,6 +24,11 @@ public sealed class SimulationConfig
     public (int MinX, int MaxX, int MinY, int MaxY)? WorldBounds { get; set; }
 
     /// <summary>
+    /// Starting hour of day (0-23). If null, defaults to 8 (8:00 AM).
+    /// </summary>
+    public int? StartHour { get; set; }
+
+    /// <summary>
     /// Objects to place in the world: (ObjectDefId, X, Y)
     /// </summary>
     public List<(int ObjectDefId, int X, int Y)> Objects { get; set; } = new();
@@ -49,7 +54,7 @@ public sealed class Simulation
 
     public World World { get; }
     public EntityManager Entities { get; } = new();
-    public TimeService Time { get; } = new();
+    public TimeService Time { get; }
     public Random Random { get; }
     public ContentRegistry Content { get; }
 
@@ -68,6 +73,9 @@ public sealed class Simulation
     public Simulation(ContentRegistry content, SimulationConfig? config)
     {
         Content = content ?? throw new ArgumentNullException(nameof(content));
+
+        // Initialize time service with optional start hour
+        Time = new TimeService(config?.StartHour ?? TimeService.DefaultStartHour);
 
         // Initialize random number generator with optional seed
         Random = config?.Seed != null ? new Random(config.Seed.Value) : new Random();

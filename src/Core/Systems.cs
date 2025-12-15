@@ -30,9 +30,16 @@ public sealed class TimeService
     public const int HoursPerDay = 24;
     public const int TicksPerHour = TicksPerMinute * MinutesPerHour;
     public const int TicksPerDay = TicksPerHour * HoursPerDay;
+    public const int DefaultStartHour = 8;
 
-    // Starting time: 8:00 AM on day 1
-    public int Tick { get; private set; } = 8 * TicksPerHour;
+    public int Tick { get; private set; }
+
+    public TimeService() : this(DefaultStartHour) { }
+
+    public TimeService(int startHour)
+    {
+        Tick = startHour * TicksPerHour;
+    }
 
     public int TotalMinutes => Tick / TicksPerMinute;
     public int Minute => TotalMinutes % MinutesPerHour;
