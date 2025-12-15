@@ -113,8 +113,12 @@ public sealed class Simulation
     /// <summary>
     /// Create an object in the world at the specified position.
     /// </summary>
+    /// <exception cref="ArgumentException">Thrown when objectDefId is not a valid object definition.</exception>
     public EntityId CreateObject(int objectDefId, int x, int y)
     {
+        if (!Content.Objects.ContainsKey(objectDefId))
+            throw new ArgumentException($"Unknown object definition ID: {objectDefId}", nameof(objectDefId));
+
         var id = Entities.Create();
         var coord = new TileCoord(x, y);
         Entities.Positions[id] = new PositionComponent { Coord = coord };
@@ -140,8 +144,16 @@ public sealed class Simulation
     /// <summary>
     /// Create a pawn in the world with the specified configuration.
     /// </summary>
+    /// <exception cref="ArgumentException">Thrown when config contains invalid need IDs.</exception>
     public EntityId CreatePawn(PawnConfig config)
     {
+        // Validate all need IDs before creating the entity
+        foreach (var needId in config.Needs.Keys)
+        {
+            if (!Content.Needs.ContainsKey(needId))
+                throw new ArgumentException($"Unknown need definition ID: {needId}", nameof(config));
+        }
+
         var id = Entities.Create();
         var coord = new TileCoord(config.X, config.Y);
 
