@@ -499,125 +499,162 @@ public sealed class AISystem : ISystem
             if (!ctx.Entities.Actions.TryGetValue(pawnId, out var actionComp)) continue;
             if (!ctx.Entities.Needs.TryGetValue(pawnId, out var needs)) continue;
 
+            // Skip pawns that already have something to do
             if (actionComp.CurrentAction != null || actionComp.ActionQueue.Count > 0)
                 continue;
 
-            // Collect all needs that need attention, sorted by urgency
-            var urgentNeeds = new List<(int needId, float urgency)>();
-
-            // Get active debuffs to check which needs are causing problems
-            var activeDebuffIds = new HashSet<int>();
-            if (ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs))
-            {
-                foreach (var buff in buffs.ActiveBuffs)
-                    activeDebuffIds.Add(buff.BuffDefId);
-            }
-
-            foreach (var (needId, value) in needs.Needs)
-            {
-                if (!ctx.Content.Needs.TryGetValue(needId, out var needDef)) continue;
-                
-                // Check if this need is causing a debuff
-                bool hasDebuffFromNeed = 
-                    (needDef.CriticalDebuffId.HasValue && activeDebuffIds.Contains(needDef.CriticalDebuffId.Value)) ||
-                    (needDef.LowDebuffId.HasValue && activeDebuffIds.Contains(needDef.LowDebuffId.Value));
-                
-                // Skip needs that are high AND not causing debuffs
-                // (value >= 90 means using most objects would overflow/waste)
-                if (value >= 90f && !hasDebuffFromNeed) continue;
-
-                // Calculate urgency - lower value = more urgent
-                // Debuffs add significant urgency
-                float urgency = value;
-                if (hasDebuffFromNeed)
-                {
-                    // Having a debuff makes this very urgent
-                    if (needDef.CriticalDebuffId.HasValue && activeDebuffIds.Contains(needDef.CriticalDebuffId.Value))
-                        urgency -= 100;  // Critical debuff - highest priority
-                    else
-                        urgency -= 50;   // Low debuff - high priority
-                }
-                else if (value < needDef.LowThreshold)
-                {
-                    urgency -= 20;  // About to get a debuff
-                }
-
-                urgentNeeds.Add((needId, urgency));
-            }
-
-            // Sort by urgency (lowest first = most urgent)
-            urgentNeeds.Sort((a, b) => a.urgency.CompareTo(b.urgency));
-
-            // Try to find an available object for any of our urgent needs
-            EntityId? targetObject = null;
-            foreach (var (needId, _) in urgentNeeds)
-            {
-                targetObject = FindObjectForNeed(ctx, pawnId, needId);
-                if (targetObject != null)
-                    break;  // Found an available object!
-            }
-
-            if (targetObject != null)
-            {
-                var objComp = ctx.Entities.Objects[targetObject.Value];
-                var objDef = ctx.Content.Objects[objComp.ObjectDefId];
-
-                actionComp.ActionQueue.Enqueue(new ActionDef
-                {
-                    Type = ActionType.UseObject,
-                    TargetEntity = targetObject,
-                    DurationTicks = objDef.InteractionDurationTicks,
-                    SatisfiesNeedId = objDef.SatisfiesNeedId,
-                    NeedSatisfactionAmount = objDef.NeedSatisfactionAmount,
-                    DisplayName = $"Going to {objDef.Name}"
-                });
-            }
-            else if (urgentNeeds.Count > 0 && urgentNeeds[0].urgency < -50)
-            {
-                // We have critical needs but no available objects - wait near an object instead of wandering away
-                // This makes pawns "queue" for objects instead of wandering to their death
-                var waitTarget = FindAnyObjectForNeeds(ctx, pawnId, urgentNeeds.Select(n => n.needId).ToList());
-                if (waitTarget != null)
-                {
-                    // Wait by going to the object area (even if it's in use, we'll wait nearby)
-                    var objComp = ctx.Entities.Objects[waitTarget.Value];
-                    var objDef = ctx.Content.Objects[objComp.ObjectDefId];
-                    var objPos = ctx.Entities.Positions[waitTarget.Value];
-                    
-                    // Find a spot near the object to wait
-                    var waitSpot = FindWaitingSpot(ctx, objPos.Coord, pawnId);
-                    if (waitSpot != null)
-                    {
-                        actionComp.ActionQueue.Enqueue(new ActionDef
-                        {
-                            Type = ActionType.MoveTo,
-                            TargetCoord = waitSpot,
-                            DisplayName = $"Waiting for {objDef.Name}"
-                        });
-                    }
-                    else
-                    {
-                        // Can't find waiting spot, just idle briefly
-                        actionComp.ActionQueue.Enqueue(new ActionDef
-                        {
-                            Type = ActionType.Idle,
-                            DurationTicks = 20,
-                            DisplayName = $"Waiting for {objDef.Name}"
-                        });
-                    }
-                }
-                else
-                {
-                    // No objects exist at all for our needs - wander
-                    WanderRandomly(ctx, pawnId, actionComp);
-                }
-            }
-            else
-            {
-                // No urgent need or no object available - wander randomly
-                WanderRandomly(ctx, pawnId, actionComp);
-            }
+            DecideNextAction(ctx, pawnId, actionComp, needs);
         }
+    }
+
+    /// <summary>
+    /// Main decision entry point for a pawn that needs something to do.
+    /// </summary>
+    private void DecideNextAction(SimContext ctx, EntityId pawnId, ActionComponent actionComp, NeedsComponent needs)
+    {
+        var urgentNeeds = CalculateUrgentNeeds(ctx, pawnId, needs);
+
+        // Try to find an available object for any of our urgent needs
+        EntityId? targetObject = null;
+        foreach (var (needId, _) in urgentNeeds)
+        {
+            targetObject = FindObjectForNeed(ctx, pawnId, needId);
+            if (targetObject != null)
+                break;
+        }
+
+        if (targetObject != null)
+        {
+            QueueUseObject(ctx, actionComp, targetObject.Value);
+        }
+        else if (urgentNeeds.Count > 0 && urgentNeeds[0].urgency < -50)
+        {
+            // Critical needs but no available objects - wait near an object
+            QueueWaitForObject(ctx, pawnId, actionComp, urgentNeeds);
+        }
+        else
+        {
+            WanderRandomly(ctx, pawnId, actionComp);
+        }
+    }
+
+    /// <summary>
+    /// Calculate which needs require attention, sorted by urgency (most urgent first).
+    /// </summary>
+    private List<(int needId, float urgency)> CalculateUrgentNeeds(SimContext ctx, EntityId pawnId, NeedsComponent needs)
+    {
+        var urgentNeeds = new List<(int needId, float urgency)>();
+
+        // Get active debuffs to check which needs are causing problems
+        var activeDebuffIds = new HashSet<int>();
+        if (ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs))
+        {
+            foreach (var buff in buffs.ActiveBuffs)
+                activeDebuffIds.Add(buff.BuffDefId);
+        }
+
+        foreach (var (needId, value) in needs.Needs)
+        {
+            if (!ctx.Content.Needs.TryGetValue(needId, out var needDef)) continue;
+
+            float? urgency = CalculateNeedUrgency(needDef, value, activeDebuffIds);
+            if (urgency.HasValue)
+                urgentNeeds.Add((needId, urgency.Value));
+        }
+
+        // Sort by urgency (lowest first = most urgent)
+        urgentNeeds.Sort((a, b) => a.urgency.CompareTo(b.urgency));
+        return urgentNeeds;
+    }
+
+    /// <summary>
+    /// Calculate urgency for a single need. Returns null if the need doesn't require attention.
+    /// Lower values = more urgent.
+    /// </summary>
+    private float? CalculateNeedUrgency(NeedDef needDef, float value, HashSet<int> activeDebuffIds)
+    {
+        bool hasDebuffFromNeed =
+            (needDef.CriticalDebuffId.HasValue && activeDebuffIds.Contains(needDef.CriticalDebuffId.Value)) ||
+            (needDef.LowDebuffId.HasValue && activeDebuffIds.Contains(needDef.LowDebuffId.Value));
+
+        // Skip needs that are high AND not causing debuffs
+        if (value >= 90f && !hasDebuffFromNeed)
+            return null;
+
+        float urgency = value;
+        if (hasDebuffFromNeed)
+        {
+            // Having a debuff makes this very urgent
+            if (needDef.CriticalDebuffId.HasValue && activeDebuffIds.Contains(needDef.CriticalDebuffId.Value))
+                urgency -= 100;  // Critical debuff - highest priority
+            else
+                urgency -= 50;   // Low debuff - high priority
+        }
+        else if (value < needDef.LowThreshold)
+        {
+            urgency -= 20;  // About to get a debuff
+        }
+
+        return urgency;
+    }
+
+    /// <summary>
+    /// Queue an action to use a specific object.
+    /// </summary>
+    private void QueueUseObject(SimContext ctx, ActionComponent actionComp, EntityId targetObject)
+    {
+        var objComp = ctx.Entities.Objects[targetObject];
+        var objDef = ctx.Content.Objects[objComp.ObjectDefId];
+
+        actionComp.ActionQueue.Enqueue(new ActionDef
+        {
+            Type = ActionType.UseObject,
+            TargetEntity = targetObject,
+            DurationTicks = objDef.InteractionDurationTicks,
+            SatisfiesNeedId = objDef.SatisfiesNeedId,
+            NeedSatisfactionAmount = objDef.NeedSatisfactionAmount,
+            DisplayName = $"Going to {objDef.Name}"
+        });
+    }
+
+    /// <summary>
+    /// Queue an action to wait near an object when all relevant objects are in use.
+    /// </summary>
+    private void QueueWaitForObject(SimContext ctx, EntityId pawnId, ActionComponent actionComp, List<(int needId, float urgency)> urgentNeeds)
+    {
+        var waitTarget = FindAnyObjectForNeeds(ctx, pawnId, urgentNeeds.Select(n => n.needId).ToList());
+        if (waitTarget == null)
+        {
+            // No objects exist at all for our needs - wander
+            WanderRandomly(ctx, pawnId, actionComp);
+            return;
+        }
+
+        var objComp = ctx.Entities.Objects[waitTarget.Value];
+        var objDef = ctx.Content.Objects[objComp.ObjectDefId];
+        var objPos = ctx.Entities.Positions[waitTarget.Value];
+
+        var waitSpot = FindWaitingSpot(ctx, objPos.Coord, pawnId);
+        if (waitSpot != null)
+        {
+            actionComp.ActionQueue.Enqueue(new ActionDef
+            {
+                Type = ActionType.MoveTo,
+                TargetCoord = waitSpot,
+                DisplayName = $"Waiting for {objDef.Name}"
+            });
+        }
+        else
+        {
+            // Can't find waiting spot, just idle briefly
+            actionComp.ActionQueue.Enqueue(new ActionDef
+            {
+                Type = ActionType.Idle,
+                DurationTicks = 20,
+                DisplayName = $"Waiting for {objDef.Name}"
+            });
+        }
+    }
     }
 
     private void WanderRandomly(SimContext ctx, EntityId pawnId, ActionComponent actionComp)
