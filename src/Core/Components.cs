@@ -5,50 +5,50 @@ namespace SimGame.Core;
 // Position
 public sealed class PositionComponent
 {
-    public TileCoord Coord;
+    public TileCoord Coord { get; set; }
 }
 
 // Pawn identity
 public sealed class PawnComponent
 {
-    public string Name = "";
-    public int Age;
+    public string Name { get; set; } = "";
+    public int Age { get; set; }
 }
 
 // Needs (hunger, energy, etc.)
 public sealed class NeedsComponent
 {
-    public Dictionary<int, float> Needs = new(); // needId -> 0..100
+    public Dictionary<int, float> Needs { get; set; } = new(); // needId -> 0..100
 }
 
 // Mood
 public sealed class MoodComponent
 {
-    public float Mood; // -100..100
+    public float Mood { get; set; } // -100..100
 }
 
 // Active buffs
 public sealed class BuffComponent
 {
-    public List<BuffInstance> ActiveBuffs = new();
+    public List<BuffInstance> ActiveBuffs { get; set; } = new();
 }
 
 // Action queue
 public sealed class ActionComponent
 {
-    public ActionDef? CurrentAction = null;
-    public int ActionStartTick = 0;
-    public Queue<ActionDef> ActionQueue = new();
-    public List<TileCoord>? CurrentPath = null;
-    public int PathIndex = 0;
-    public int BlockedSinceTick = -1;  // Tick when pawn first got blocked, -1 = not blocked
-    public int WaitUntilTick = -1;     // Wait before repathing (randomized to break dance)
+    public ActionDef? CurrentAction { get; set; }
+    public int ActionStartTick { get; set; }
+    public Queue<ActionDef> ActionQueue { get; set; } = new();
+    public List<TileCoord>? CurrentPath { get; set; }
+    public int PathIndex { get; set; }
+    public int BlockedSinceTick { get; set; } = -1;  // Tick when pawn first got blocked, -1 = not blocked
+    public int WaitUntilTick { get; set; } = -1;     // Wait before repathing (randomized to break dance)
 }
 
 // World object (furniture, etc.)
 public sealed class ObjectComponent
 {
-    public int ObjectDefId;
-    public bool InUse = false;
-    public EntityId? UsedBy = null;
+    public int ObjectDefId { get; set; }
+    public bool InUse { get; set; }
+    public EntityId? UsedBy { get; set; }
 }
