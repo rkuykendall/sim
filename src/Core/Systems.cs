@@ -375,8 +375,22 @@ public sealed class ActionSystem : ISystem
             objComp.UsedBy = pawnId;
             
             // Update display name to "Using X" now that we're actually using it
+            // Create a new ActionDef since ActionDef is immutable
             var objDef = ctx.Content.Objects[objComp.ObjectDefId];
-            action.DisplayName = $"Using {objDef.Name}";
+            if (action.DisplayName != $"Using {objDef.Name}")
+            {
+                actionComp.CurrentAction = new ActionDef
+                {
+                    Type = action.Type,
+                    TargetCoord = action.TargetCoord,
+                    TargetEntity = action.TargetEntity,
+                    DurationTicks = action.DurationTicks,
+                    SatisfiesNeedId = action.SatisfiesNeedId,
+                    NeedSatisfactionAmount = action.NeedSatisfactionAmount,
+                    DisplayName = $"Using {objDef.Name}"
+                };
+                action = actionComp.CurrentAction;
+            }
         }
 
         int elapsed = ctx.Time.Tick - actionComp.ActionStartTick;
