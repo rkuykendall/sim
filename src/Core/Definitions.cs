@@ -27,8 +27,8 @@ public sealed class NeedDef : IContentDef
     public float DecayPerTick { get; init; } = 0.05f; // 10x faster default
     public float CriticalThreshold { get; init; } = 20f;
     public float LowThreshold { get; init; } = 40f;
-    public int? CriticalDebuffId { get; set; } // Buff applied when below critical (set during content loading)
-    public int? LowDebuffId { get; set; } // Buff applied when below low threshold (set during content loading)
+    public int? CriticalDebuffId { get; init; } // Buff applied when below critical (set during content loading)
+    public int? LowDebuffId { get; init; } // Buff applied when below low threshold (set during content loading)
 }
 
 // Object/building definition
@@ -38,10 +38,10 @@ public sealed class ObjectDef : IContentDef
     public string Name { get; init; } = "";
     public bool Walkable { get; init; } = false;
     public bool Interactable { get; init; } = true;
-    public int? SatisfiesNeedId { get; set; } // Set during content loading
+    public int? SatisfiesNeedId { get; init; } // Set during content loading
     public float NeedSatisfactionAmount { get; init; } = 30f;
     public int InteractionDurationTicks { get; init; } = 100;
-    public int? GrantsBuffId { get; set; } // Buff to apply when interaction completes (set during content loading)
+    public int? GrantsBuffId { get; init; } // Buff to apply when interaction completes (set during content loading)
     public List<(int dx, int dy)> UseAreas { get; init; } = new(); // Relative tile offsets where pawn can use this object
 }
 

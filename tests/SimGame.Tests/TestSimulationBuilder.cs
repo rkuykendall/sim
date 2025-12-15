@@ -125,21 +125,35 @@ public sealed class TestSimulationBuilder
         // Register needs (with debuff references resolved)
         foreach (var (key, need, criticalDebuff, lowDebuff) in _needs)
         {
-            if (criticalDebuff != null)
-                need.CriticalDebuffId = content.GetBuffId(criticalDebuff);
-            if (lowDebuff != null)
-                need.LowDebuffId = content.GetBuffId(lowDebuff);
-            content.RegisterNeed(key, need);
+            var resolvedNeed = new NeedDef
+            {
+                Id = need.Id,
+                Name = need.Name,
+                DecayPerTick = need.DecayPerTick,
+                CriticalThreshold = need.CriticalThreshold,
+                LowThreshold = need.LowThreshold,
+                CriticalDebuffId = criticalDebuff != null ? content.GetBuffId(criticalDebuff) : null,
+                LowDebuffId = lowDebuff != null ? content.GetBuffId(lowDebuff) : null
+            };
+            content.RegisterNeed(key, resolvedNeed);
         }
 
         // Register objects (with need/buff references resolved)
         foreach (var (key, obj, satisfiesNeed, grantsBuff) in _objects)
         {
-            if (satisfiesNeed != null)
-                obj.SatisfiesNeedId = content.GetNeedId(satisfiesNeed);
-            if (grantsBuff != null)
-                obj.GrantsBuffId = content.GetBuffId(grantsBuff);
-            content.RegisterObject(key, obj);
+            var resolvedObj = new ObjectDef
+            {
+                Id = obj.Id,
+                Name = obj.Name,
+                Walkable = obj.Walkable,
+                Interactable = obj.Interactable,
+                NeedSatisfactionAmount = obj.NeedSatisfactionAmount,
+                InteractionDurationTicks = obj.InteractionDurationTicks,
+                UseAreas = obj.UseAreas,
+                SatisfiesNeedId = satisfiesNeed != null ? content.GetNeedId(satisfiesNeed) : null,
+                GrantsBuffId = grantsBuff != null ? content.GetBuffId(grantsBuff) : null
+            };
+            content.RegisterObject(key, resolvedObj);
         }
 
         // Convert object placements to use resolved IDs
