@@ -6,10 +6,10 @@ namespace SimGame.Core;
 public sealed class BuffDef : IContentDef
 {
     public int Id { get; set; }
-    public string Name = "";
-    public float MoodOffset;
-    public int DurationTicks; // 0 = permanent (recalculated each tick based on conditions)
-    public bool IsFromNeed; // True if this buff is auto-applied based on need levels
+    public string Name { get; init; } = "";
+    public float MoodOffset { get; init; }
+    public int DurationTicks { get; init; } // 0 = permanent (recalculated each tick based on conditions)
+    public bool IsFromNeed { get; init; } // True if this buff is auto-applied based on need levels
 }
 
 public sealed class BuffInstance
@@ -23,26 +23,26 @@ public sealed class BuffInstance
 public sealed class NeedDef : IContentDef
 {
     public int Id { get; set; }
-    public string Name = "";
-    public float DecayPerTick = 0.05f; // 10x faster default
-    public float CriticalThreshold = 20f;
-    public float LowThreshold = 40f;
-    public int? CriticalDebuffId; // Buff applied when below critical
-    public int? LowDebuffId; // Buff applied when below low threshold
+    public string Name { get; init; } = "";
+    public float DecayPerTick { get; init; } = 0.05f; // 10x faster default
+    public float CriticalThreshold { get; init; } = 20f;
+    public float LowThreshold { get; init; } = 40f;
+    public int? CriticalDebuffId { get; set; } // Buff applied when below critical (set during content loading)
+    public int? LowDebuffId { get; set; } // Buff applied when below low threshold (set during content loading)
 }
 
 // Object/building definition
 public sealed class ObjectDef : IContentDef
 {
     public int Id { get; set; }
-    public string Name = "";
-    public bool Walkable = false;
-    public bool Interactable = true;
-    public int? SatisfiesNeedId;
-    public float NeedSatisfactionAmount = 30f;
-    public int InteractionDurationTicks = 100;
-    public int? GrantsBuffId; // Buff to apply when interaction completes
-    public List<(int dx, int dy)> UseAreas = new(); // Relative tile offsets where pawn can use this object
+    public string Name { get; init; } = "";
+    public bool Walkable { get; init; } = false;
+    public bool Interactable { get; init; } = true;
+    public int? SatisfiesNeedId { get; set; } // Set during content loading
+    public float NeedSatisfactionAmount { get; init; } = 30f;
+    public int InteractionDurationTicks { get; init; } = 100;
+    public int? GrantsBuffId { get; set; } // Buff to apply when interaction completes (set during content loading)
+    public List<(int dx, int dy)> UseAreas { get; init; } = new(); // Relative tile offsets where pawn can use this object
 }
 
 // Action definition
