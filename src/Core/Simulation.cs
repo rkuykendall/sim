@@ -154,7 +154,7 @@ public sealed class Simulation
     public void DestroyEntity(EntityId id)
     {
         // If this is a non-walkable object, restore tile walkability
-        if (Entities.Objects.TryGetValue(id, out var objComp) && 
+        if (Entities.Objects.TryGetValue(id, out var objComp) &&
             Entities.Positions.TryGetValue(id, out var pos))
         {
             var objDef = Content.Objects[objComp.ObjectDefId];
@@ -165,6 +165,48 @@ public sealed class Simulation
         }
 
         Entities.Destroy(id);
+    }
+
+    /// <summary>
+    /// Paint terrain at a tile, updating its properties based on the terrain definition.
+    /// </summary>
+    /// <exception cref="ArgumentException">Thrown when terrainDefId is not a valid terrain definition.</exception>
+    public void PaintTerrain(int x, int y, int terrainDefId)
+    {
+        if (!Content.Terrains.ContainsKey(terrainDefId))
+            throw new ArgumentException($"Unknown terrain definition ID: {terrainDefId}", nameof(terrainDefId));
+
+        var coord = new TileCoord(x, y);
+        if (!World.IsInBounds(coord))
+            return;
+
+        var tile = World.GetTile(coord);
+        var terrainDef = Content.Terrains[terrainDefId];
+
+        tile.TerrainTypeId = terrainDefId;
+        tile.Walkable = terrainDef.Walkable;
+        tile.Buildable = terrainDef.Buildable;
+        tile.Indoors = terrainDef.Indoors;
+    }
+
+    /// <summary>
+    /// Delete an object at the specified position (if any). Returns true if an object was deleted.
+    /// </summary>
+    public bool TryDeleteObject(int x, int y)
+    {
+        var coord = new TileCoord(x, y);
+
+        // Find object at this position
+        foreach (var objId in Entities.AllObjects())
+        {
+            if (Entities.Positions.TryGetValue(objId, out var pos) &&
+                pos.Coord == coord)
+            {
+                DestroyEntity(objId);
+                return true;
+            }
+        }
+        return false;
     }
 
     /// <summary>

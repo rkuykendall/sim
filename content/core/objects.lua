@@ -37,6 +37,36 @@ Objects = {
         walkable = true,  -- pawn stands in the shower
         useAreas = { {0, 0} }
     },
+
+    -- Walls (blocking objects)
+    Wall = {
+        name = "Wall",
+        walkable = false,      -- blocks movement
+        interactable = false,  -- cannot be used
+        useAreas = {}
+    },
+
+    -- Decorations (non-interactive, walkable)
+    Plant = {
+        name = "Plant",
+        walkable = true,       -- can walk through
+        interactable = false,  -- no interaction
+        useAreas = {}
+    },
+
+    Rug = {
+        name = "Rug",
+        walkable = true,
+        interactable = false,
+        useAreas = {}
+    },
+
+    Lamp = {
+        name = "Lamp",
+        walkable = true,
+        interactable = false,
+        useAreas = {}
+    },
 }
 
 return Objects

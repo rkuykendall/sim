@@ -28,12 +28,13 @@ public static class ContentLoader
         var registry = new ContentRegistry();
         var script = new Script();
 
-        // Load in order: buffs first (needs reference them), then needs, then objects
+        // Load in order: buffs first (needs reference them), then needs, then terrains, then objects
         LoadBuffs(script, registry, Path.Combine(contentPath, "core", "buffs.lua"));
         LoadNeeds(script, registry, Path.Combine(contentPath, "core", "needs.lua"));
+        LoadTerrains(script, registry, Path.Combine(contentPath, "core", "terrains.lua"));
         LoadObjects(script, registry, Path.Combine(contentPath, "core", "objects.lua"));
 
-        Log?.Invoke($"ContentLoader: Loaded {registry.Buffs.Count} buffs, {registry.Needs.Count} needs, {registry.Objects.Count} objects");
+        Log?.Invoke($"ContentLoader: Loaded {registry.Buffs.Count} buffs, {registry.Needs.Count} needs, {registry.Terrains.Count} terrains, {registry.Objects.Count} objects");
 
         return registry;
     }
@@ -102,6 +103,43 @@ public static class ContentLoader
                 LowThreshold = (float)data.Get("lowThreshold").Number,
                 CriticalDebuffId = ResolveReference(data.Get("criticalDebuff"), registry.GetBuffId, key, "criticalDebuff"),
                 LowDebuffId = ResolveReference(data.Get("lowDebuff"), registry.GetBuffId, key, "lowDebuff")
+            });
+        }
+    }
+
+    private static void LoadTerrains(Script script, ContentRegistry registry, string path)
+    {
+        var table = LoadLuaTable(script, path, "Terrains");
+        if (table == null) return;
+
+        foreach (var pair in table.Pairs)
+        {
+            var key = pair.Key.String;
+            var data = pair.Value.Table;
+
+            // Load walkable property (defaults to true if not specified)
+            var walkableData = data.Get("walkable");
+            var walkable = walkableData.IsNil() || walkableData.Boolean;
+
+            // Load buildable property (defaults to true if not specified)
+            var buildableData = data.Get("buildable");
+            var buildable = buildableData.IsNil() || buildableData.Boolean;
+
+            // Load indoors property (defaults to false if not specified)
+            var indoorsData = data.Get("indoors");
+            var indoors = !indoorsData.IsNil() && indoorsData.Boolean;
+
+            // Load sprite key (defaults to empty string if not specified)
+            var spriteKeyData = data.Get("spriteKey");
+            var spriteKey = spriteKeyData.IsNil() ? "" : spriteKeyData.String;
+
+            registry.RegisterTerrain(key, new TerrainDef
+            {
+                Name = data.Get("name").String,
+                Walkable = walkable,
+                Buildable = buildable,
+                Indoors = indoors,
+                SpriteKey = spriteKey
             });
         }
     }

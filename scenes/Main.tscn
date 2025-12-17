@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://main"]
+[gd_scene load_steps=9 format=3 uid="uid://main"]
 
 [ext_resource type="Script" path="res://src/Godot/GameRoot.cs" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/Pawn.tscn" id="2"]
@@ -6,22 +6,16 @@
 [ext_resource type="PackedScene" path="res://scenes/PawnInfoPanel.tscn" id="4"]
 [ext_resource type="PackedScene" path="res://scenes/ObjectInfoPanel.tscn" id="5"]
 [ext_resource type="PackedScene" path="res://scenes/TimeDisplay.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://scenes/BuildToolbar.tscn" id="7"]
 
 [node name="Main" type="Node2D"]
-
-[node name="NightOverlay" type="ColorRect" parent="."]
-z_index = 100
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_right = 800
-offset_bottom = 600
-mouse_filter = 2
-color = Color(0.05, 0.05, 0.15, 0)
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(320, 180)
 zoom = Vector2(1, 1)
+
+[node name="Tiles" type="Node2D" parent="."]
+z_index = -10
 
 [node name="Objects" type="Node2D" parent="."]
 
@@ -33,17 +27,32 @@ PawnScene = ExtResource("2")
 ObjectScene = ExtResource("3")
 PawnsRootPath = NodePath("../Pawns")
 ObjectsRootPath = NodePath("../Objects")
+TilesRootPath = NodePath("../Tiles")
 InfoPanelPath = NodePath("../UI/PawnInfoPanel")
 ObjectInfoPanelPath = NodePath("../UI/ObjectInfoPanel")
 TimeDisplayPath = NodePath("../UI/TimeDisplay")
-NightOverlayPath = NodePath("../NightOverlay")
+NightOverlayPath = NodePath("../UI/NightOverlay")
 CameraPath = NodePath("../Camera2D")
 UILayerPath = NodePath("../UI")
+ToolbarPath = NodePath("../UI/BuildToolbar")
 
 [node name="UI" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="NightOverlay" type="ColorRect" parent="UI"]
+z_index = 100
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 800
+offset_bottom = 600
+mouse_filter = 2
+color = Color(0.05, 0.05, 0.15, 0)
 
 [node name="PawnInfoPanel" parent="UI" instance=ExtResource("4")]
 
 [node name="ObjectInfoPanel" parent="UI" instance=ExtResource("5")]
 
 [node name="TimeDisplay" parent="UI" instance=ExtResource("6")]
+
+[node name="BuildToolbar" parent="UI" instance=ExtResource("7")]

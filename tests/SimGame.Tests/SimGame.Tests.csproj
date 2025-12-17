@@ -33,6 +33,7 @@
     <Compile Include="../../src/Core/RenderSnapshot.cs" Link="Core/RenderSnapshot.cs" />
     <Compile Include="../../src/Core/Simulation.cs" Link="Core/Simulation.cs" />
     <Compile Include="../../src/Core/Systems.cs" Link="Core/Systems.cs" />
+    <Compile Include="../../src/Core/TerrainDef.cs" Link="Core/TerrainDef.cs" />
     <Compile Include="../../src/Core/World.cs" Link="Core/World.cs" />
   </ItemGroup>
 </Project>
