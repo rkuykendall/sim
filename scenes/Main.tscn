@@ -1,6 +1,7 @@
-[gd_scene load_steps=9 format=3 uid="uid://main"]
+[gd_scene load_steps=10 format=3 uid="uid://main"]
 
 [ext_resource type="Script" path="res://src/Godot/GameRoot.cs" id="1"]
+[ext_resource type="Script" path="res://src/Godot/CameraController.cs" id="1_camera"]
 [ext_resource type="PackedScene" path="res://scenes/Pawn.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/Object.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/PawnInfoPanel.tscn" id="4"]
@@ -11,6 +12,7 @@
 [node name="Main" type="Node2D"]
 
 [node name="Camera2D" type="Camera2D" parent="."]
+script = ExtResource("1_camera")
 position = Vector2(320, 180)
 zoom = Vector2(1, 1)
 
