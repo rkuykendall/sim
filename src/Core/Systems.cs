@@ -1,8 +1,57 @@
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace SimGame.Core;
+
+// Passive social need gain when pawns are near each other
+public sealed class ProximitySocialSystem : ISystem
+{
+    private const float SocialGainPerTick = 0.15f;
+    private const int ProximityRadius = 2;
+
+    public void Tick(SimContext ctx)
+    {
+        var socialNeedIdNullable = ctx.Content.GetNeedId("Social");
+        if (!socialNeedIdNullable.HasValue)
+            return;
+        var socialNeedId = socialNeedIdNullable.Value;
+        // Build a dictionary of pawn positions
+        var pawnPositions = new Dictionary<EntityId, TileCoord>();
+        foreach (var pawnId in ctx.Entities.AllPawns())
+        {
+            if (ctx.Entities.Positions.TryGetValue(pawnId, out var pos))
+                pawnPositions[pawnId] = pos.Coord;
+        }
+
+        foreach (var kv in pawnPositions)
+        {
+            var pawnId = kv.Key;
+            var pos = kv.Value;
+            if (!ctx.Entities.Needs.TryGetValue(pawnId, out var needs))
+                continue;
+            if (!needs.Needs.ContainsKey(socialNeedId))
+                continue;
+
+            // Count other pawns within radius
+            int nearby = 0;
+            foreach (var other in pawnPositions)
+            {
+                if (other.Key == pawnId) continue;
+                int dist = Math.Abs(other.Value.X - pos.X) + Math.Abs(other.Value.Y - pos.Y);
+                if (dist <= ProximityRadius) nearby++;
+            }
+
+            if (nearby > 0)
+            {
+                needs.Needs[socialNeedId] = Math.Clamp(
+                    needs.Needs[socialNeedId] + SocialGainPerTick * nearby,
+                    0f, 100f);
+            }
+        }
+    }
+}
 
 public interface ISystem
 {

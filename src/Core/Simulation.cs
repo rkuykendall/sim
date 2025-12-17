@@ -92,6 +92,7 @@ public sealed class Simulation
         }
 
         _systems.Add(new NeedsSystem());
+        _systems.Add(new ProximitySocialSystem());
         _systems.Add(new BuffSystem());
         _systems.Add(new MoodSystem());
         _systems.Add(new ActionSystem());
