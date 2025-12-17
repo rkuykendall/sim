@@ -12,3 +12,6 @@ obj/
 # OS
 .DS_Store
 Thumbs.db
+
+# Reference materials and planning (not for version control)
+REFERENCE/
