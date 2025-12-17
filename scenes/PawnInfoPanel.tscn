@@ -6,7 +6,7 @@
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -115
+offset_left = -200
 offset_top = 5
 offset_right = -5
 offset_bottom = 200
