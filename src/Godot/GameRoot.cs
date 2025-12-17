@@ -137,7 +137,7 @@ public partial class GameRoot : Node2D
             // Handle build tool modes first
             if (BuildToolState.Mode == BuildToolMode.PlaceTerrain && BuildToolState.SelectedTerrainDefId.HasValue)
             {
-                _sim.PaintTerrain(tileCoord.X, tileCoord.Y, BuildToolState.SelectedTerrainDefId.Value);
+                _sim.PaintTerrain(tileCoord.X, tileCoord.Y, BuildToolState.SelectedTerrainDefId.Value, BuildToolState.SelectedColorIndex);
                 return; // Consume event
             }
 
@@ -145,7 +145,7 @@ public partial class GameRoot : Node2D
             {
                 try
                 {
-                    _sim.CreateObject(BuildToolState.SelectedObjectDefId.Value, tileCoord.X, tileCoord.Y);
+                    _sim.CreateObject(BuildToolState.SelectedObjectDefId.Value, tileCoord.X, tileCoord.Y, BuildToolState.SelectedColorIndex);
                 }
                 catch (System.InvalidOperationException)
                 {
@@ -240,7 +240,7 @@ public partial class GameRoot : Node2D
                 {
                     Position = new Vector2(x * TileSize, y * TileSize),
                     Size = new Vector2(TileSize, TileSize),
-                    Color = GetTerrainColor(tile.TerrainTypeId),
+                    Color = GameColorPalette.Colors[tile.ColorIndex],
                     MouseFilter = Control.MouseFilterEnum.Ignore  // Let clicks pass through to pawns/objects
                 };
                 _tilesRoot.AddChild(rect);
@@ -277,13 +277,14 @@ public partial class GameRoot : Node2D
         // Draw preview based on mode
         if (BuildToolState.Mode == BuildToolMode.PlaceTerrain && BuildToolState.SelectedTerrainDefId.HasValue)
         {
-            var color = GetTerrainColor(BuildToolState.SelectedTerrainDefId.Value);
+            var color = GameColorPalette.Colors[BuildToolState.SelectedColorIndex];
             color.A = 0.5f; // Semi-transparent
             DrawRect(rect, color, true);
         }
         else if (BuildToolState.Mode == BuildToolMode.PlaceObject && BuildToolState.SelectedObjectDefId.HasValue)
         {
-            var color = new Color(0.7f, 0.7f, 1.0f, 0.5f); // Light blue semi-transparent
+            var color = GameColorPalette.Colors[BuildToolState.SelectedColorIndex];
+            color.A = 0.5f; // Semi-transparent
             DrawRect(rect, color, true);
         }
         else if (BuildToolState.Mode == BuildToolMode.Delete)
@@ -461,7 +462,7 @@ public partial class GameRoot : Node2D
         foreach (var (coord, rect) in _tileNodes)
         {
             var tile = _sim.World.GetTile(coord);
-            rect.Color = GetTerrainColor(tile.TerrainTypeId);
+            rect.Color = GameColorPalette.Colors[tile.ColorIndex];
         }
     }
 
@@ -537,7 +538,7 @@ public partial class GameRoot : Node2D
 
             if (node is ObjectView ov)
             {
-                ov.SetObjectInfo(obj.Name, obj.InUse);
+                ov.SetObjectInfo(obj.Name, obj.InUse, obj.ColorIndex);
             }
         }
         

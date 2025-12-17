@@ -1,16 +1,28 @@
 using Godot;
+using SimGame.Godot;
 
 public partial class ObjectView : Node2D
 {
-    [Export] public Label NameLabel { get; set; } = null!;
-    [Export] public ColorRect Body { get; set; } = null!;
+    [Export] public Label? NameLabel { get; set; }
+    [Export] public ColorRect? Body { get; set; }
 
-    public void SetObjectInfo(string name, bool inUse)
+    public override void _Ready()
+    {
+        // Fallback: Get Body manually if export didn't wire up
+        if (Body == null)
+            Body = GetNodeOrNull<ColorRect>("Body");
+    }
+
+    public void SetObjectInfo(string name, bool inUse, int colorIndex)
     {
         if (NameLabel != null)
             NameLabel.Text = name;
 
         if (Body != null)
-            Body.Color = inUse ? Colors.Yellow : new Color(0.6f, 0.4f, 0.2f);
+        {
+            // Use palette color, brighten if in use
+            var baseColor = GameColorPalette.Colors[colorIndex];
+            Body.Color = inUse ? baseColor.Lightened(0.3f) : baseColor;
+        }
     }
 }

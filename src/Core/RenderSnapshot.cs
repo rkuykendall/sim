@@ -28,6 +28,7 @@ public sealed class RenderObject
     public string Name { get; init; } = "";
     public bool InUse { get; init; }
     public string? UsedByName { get; init; }
+    public int ColorIndex { get; init; }
 }
 
 public sealed class RenderTime
@@ -142,7 +143,8 @@ public static class RenderSnapshotBuilder
                 ObjectDefId = obj.ObjectDefId,
                 Name = objDef.Name,
                 InUse = obj.InUse,
-                UsedByName = usedByName
+                UsedByName = usedByName,
+                ColorIndex = obj.ColorIndex
             });
         }
 

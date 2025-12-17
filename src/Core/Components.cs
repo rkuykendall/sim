@@ -51,4 +51,5 @@ public sealed class ObjectComponent
     public int ObjectDefId { get; set; }
     public bool InUse { get; set; }
     public EntityId? UsedBy { get; set; }
+    public int ColorIndex { get; set; } = 0; // Index into color palette
 }

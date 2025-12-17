@@ -1,0 +1,101 @@
+[gd_scene load_steps=2 format=3 uid="uid://buildtoolbar"]
+
+[ext_resource type="Script" path="res://src/Godot/BuildToolbar.cs" id="1"]
+
+[node name="BuildToolbar" type="PanelContainer"]
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 5.0
+offset_right = 155.0
+offset_bottom = -5.0
+script = ExtResource("1")
+SelectButtonPath = NodePath("MarginContainer/VBoxContainer/Tools/SelectButton")
+PlaceObjectButtonPath = NodePath("MarginContainer/VBoxContainer/Tools/PlaceObjectButton")
+PlaceTerrainButtonPath = NodePath("MarginContainer/VBoxContainer/Tools/PlaceTerrainButton")
+DeleteButtonPath = NodePath("MarginContainer/VBoxContainer/Tools/DeleteButton")
+ObjectListPath = NodePath("MarginContainer/VBoxContainer/ObjectScroll/ObjectList")
+TerrainListPath = NodePath("MarginContainer/VBoxContainer/TerrainScroll/TerrainList")
+ColorPaletteContainerPath = NodePath("MarginContainer/VBoxContainer/ColorPaletteContainer")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="ToolsLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Tools"
+
+[node name="Tools" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="SelectButton" type="Button" parent="MarginContainer/VBoxContainer/Tools"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+text = "S"
+
+[node name="PlaceObjectButton" type="Button" parent="MarginContainer/VBoxContainer/Tools"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+text = "O"
+
+[node name="PlaceTerrainButton" type="Button" parent="MarginContainer/VBoxContainer/Tools"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+text = "T"
+
+[node name="DeleteButton" type="Button" parent="MarginContainer/VBoxContainer/Tools"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+text = "X"
+
+[node name="Separator1" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ColorsLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Colors"
+
+[node name="ColorPaletteContainer" type="GridContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+columns = 4
+
+[node name="Separator2" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ObjectsLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Objects"
+
+[node name="ObjectScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+
+[node name="ObjectList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/ObjectScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Separator3" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="TerrainLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Terrain"
+
+[node name="TerrainScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+
+[node name="TerrainList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/TerrainScroll"]
+layout_mode = 2
+size_flags_horizontal = 3

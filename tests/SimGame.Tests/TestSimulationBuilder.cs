@@ -18,6 +18,7 @@ public sealed class TestSimulationBuilder
     private readonly List<(string Key, BuffDef Def)> _buffs = new();
     private readonly List<(string Key, NeedDef Def, string? CriticalDebuff, string? LowDebuff)> _needs = new();
     private readonly List<(string Key, ObjectDef Def, string? SatisfiesNeed, string? GrantsBuff)> _objects = new();
+    private readonly List<(string Key, TerrainDef Def)> _terrains = new();
     private readonly List<(string ObjectKey, int X, int Y)> _objectPlacements = new();
     private readonly List<(string Name, int X, int Y, Dictionary<string, float> Needs)> _pawns = new();
 
@@ -93,6 +94,28 @@ public sealed class TestSimulationBuilder
     }
 
     /// <summary>
+    /// Define a terrain type that can be painted on tiles.
+    /// ID is auto-generated.
+    /// </summary>
+    public TestSimulationBuilder DefineTerrain(string key, string name,
+        bool walkable = true,
+        bool buildable = true,
+        bool indoors = false,
+        string spriteKey = "")
+    {
+        _terrains.Add((key, new TerrainDef
+        {
+            Id = 0,  // Auto-generated
+            Name = name,
+            Walkable = walkable,
+            Buildable = buildable,
+            Indoors = indoors,
+            SpriteKey = spriteKey
+        }));
+        return this;
+    }
+
+    /// <summary>
     /// Add an object instance to the world by its key name.
     /// </summary>
     public TestSimulationBuilder AddObject(string objectKey, int x, int y)
@@ -156,6 +179,12 @@ public sealed class TestSimulationBuilder
                 GrantsBuffId = grantsBuff != null ? content.GetBuffId(grantsBuff) : null
             };
             content.RegisterObject(key, resolvedObj);
+        }
+
+        // Register terrains
+        foreach (var (key, terrain) in _terrains)
+        {
+            content.RegisterTerrain(key, terrain);
         }
 
         // Convert object placements to use resolved IDs

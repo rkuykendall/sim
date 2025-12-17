@@ -124,22 +124,26 @@ public sealed class Simulation
     /// </summary>
     /// <exception cref="ArgumentException">Thrown when objectDefId is not a valid object definition.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the tile is already occupied by another object.</exception>
-    public EntityId CreateObject(int objectDefId, int x, int y)
+    public EntityId CreateObject(int objectDefId, int x, int y, int colorIndex = 0)
     {
         if (!Content.Objects.ContainsKey(objectDefId))
             throw new ArgumentException($"Unknown object definition ID: {objectDefId}", nameof(objectDefId));
 
         var objDef = Content.Objects[objectDefId];
         var coord = new TileCoord(x, y);
-        
+
         // Check if tile is already occupied by an object
         if (!World.GetTile(coord).Walkable)
             throw new InvalidOperationException($"Cannot place object at ({x}, {y}): tile is already occupied");
 
         var id = Entities.Create();
         Entities.Positions[id] = new PositionComponent { Coord = coord };
-        Entities.Objects[id] = new ObjectComponent { ObjectDefId = objectDefId };
-        
+        Entities.Objects[id] = new ObjectComponent
+        {
+            ObjectDefId = objectDefId,
+            ColorIndex = colorIndex
+        };
+
         // Only block the tile if this object is not walkable (e.g., fridge blocks, bed doesn't)
         if (!objDef.Walkable)
         {
@@ -171,7 +175,7 @@ public sealed class Simulation
     /// Paint terrain at a tile, updating its properties based on the terrain definition.
     /// </summary>
     /// <exception cref="ArgumentException">Thrown when terrainDefId is not a valid terrain definition.</exception>
-    public void PaintTerrain(int x, int y, int terrainDefId)
+    public void PaintTerrain(int x, int y, int terrainDefId, int colorIndex = 0)
     {
         if (!Content.Terrains.ContainsKey(terrainDefId))
             throw new ArgumentException($"Unknown terrain definition ID: {terrainDefId}", nameof(terrainDefId));
@@ -187,6 +191,7 @@ public sealed class Simulation
         tile.Walkable = terrainDef.Walkable;
         tile.Buildable = terrainDef.Buildable;
         tile.Indoors = terrainDef.Indoors;
+        tile.ColorIndex = colorIndex;
     }
 
     /// <summary>
@@ -237,26 +242,31 @@ public sealed class Simulation
 
     private void BootstrapWorld()
     {
-        // Create a fridge
-        CreateObject(Content.GetObjectId("Fridge") 
-            ?? throw new InvalidOperationException("Required object 'Fridge' not found in content"), 2, 3);
+        // Create a fridge (blue)
+        CreateObject(Content.GetObjectId("Fridge")
+            ?? throw new InvalidOperationException("Required object 'Fridge' not found in content"), 2, 3, colorIndex: 5);
 
-        // Create beds (one per pawn)
-        var bedObjectId = Content.GetObjectId("Bed") 
+        // Create beds with different colors
+        var bedObjectId = Content.GetObjectId("Bed")
             ?? throw new InvalidOperationException("Required object 'Bed' not found in content");
-        var bedPositions = new[] { (8, 2), (8, 4), (8, 6), (8, 8) };
-        foreach (var (x, y) in bedPositions)
+        var bedPositions = new[] {
+            (8, 2, 1),  // Brown bed
+            (8, 4, 6),  // Red bed
+            (8, 6, 8),  // Purple bed
+            (8, 8, 9)   // Orange bed
+        };
+        foreach (var (x, y, color) in bedPositions)
         {
-            CreateObject(bedObjectId, x, y);
+            CreateObject(bedObjectId, x, y, colorIndex: color);
         }
 
-        // Create a TV for fun
-        CreateObject(Content.GetObjectId("TV") 
-            ?? throw new InvalidOperationException("Required object 'TV' not found in content"), 6, 2);
+        // Create a TV (dark gray)
+        CreateObject(Content.GetObjectId("TV")
+            ?? throw new InvalidOperationException("Required object 'TV' not found in content"), 6, 2, colorIndex: 4);
 
-        // Create a shower for hygiene
-        CreateObject(Content.GetObjectId("Shower") 
-            ?? throw new InvalidOperationException("Required object 'Shower' not found in content"), 10, 5);
+        // Create a shower (white)
+        CreateObject(Content.GetObjectId("Shower")
+            ?? throw new InvalidOperationException("Required object 'Shower' not found in content"), 10, 5, colorIndex: 11);
     }
 
     private void BootstrapPawns()
