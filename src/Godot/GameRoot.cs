@@ -313,6 +313,9 @@ public partial class GameRoot : Node2D
                 _tileNodes[coord] = tileNode;
             }
         }
+
+        // Update all tiles to calculate autotile variants for paths
+        SyncTiles();
     }
 
     private Color GetTerrainColor(int terrainTypeId)
@@ -578,11 +581,41 @@ public partial class GameRoot : Node2D
             return;
         }
 
+        // Get the new texture for this terrain
+        var newTexture = SpriteResourceManager.GetTexture(terrainDef.SpriteKey);
+
         // Update whichever child exists (Sprite2D or ColorRect)
         var sprite = tileNode.GetNodeOrNull<Sprite2D>("Sprite2D");
         if (sprite != null)
         {
             sprite.Modulate = color;
+
+            // Check if we need to change the texture type (e.g., switching to/from path)
+            bool needsAtlas = terrainDef.IsPath;
+            bool hasAtlas = sprite.Texture is AtlasTexture;
+
+            if (needsAtlas && !hasAtlas && newTexture != null)
+            {
+                // Switch to atlas texture for path autotiling
+                var newAtlas = new AtlasTexture
+                {
+                    Atlas = newTexture,
+                    Region = new Rect2(0, 0, 16, 16)
+                };
+                sprite.Texture = newAtlas;
+                sprite.Scale = new Vector2(2, 2);
+            }
+            else if (!needsAtlas && hasAtlas && newTexture != null)
+            {
+                // Switch from atlas back to regular texture
+                sprite.Texture = newTexture;
+                sprite.Scale = new Vector2(2, 2);
+            }
+            else if (!needsAtlas && !hasAtlas && newTexture != null && sprite.Texture != newTexture)
+            {
+                // Update regular texture if it changed
+                sprite.Texture = newTexture;
+            }
 
             // Update autotiling for path tiles
             if (terrainDef.IsPath && sprite.Texture is AtlasTexture atlasTexture)

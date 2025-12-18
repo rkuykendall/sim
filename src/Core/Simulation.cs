@@ -103,6 +103,23 @@ public sealed class Simulation
             }
         }
 
+        // Add a 3x3 path grid for testing autotiling (center-left of world)
+        var pathTerrainId = Content.GetTerrainId("Path");
+        if (pathTerrainId.HasValue)
+        {
+            int startX = 5;
+            int startY = 4;
+            for (int dx = 0; dx < 3; dx++)
+            {
+                for (int dy = 0; dy < 3; dy++)
+                {
+                    var tile = World.GetTile(startX + dx, startY + dy);
+                    tile.TerrainTypeId = pathTerrainId.Value;
+                    tile.ColorIndex = 0; // Use first color
+                }
+            }
+        }
+
         _systems.Add(new NeedsSystem());
         _systems.Add(new ProximitySocialSystem());
         _systems.Add(new BuffSystem());
