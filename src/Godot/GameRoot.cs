@@ -302,22 +302,6 @@ public partial class GameRoot : Node2D
         SyncTiles();
     }
 
-    private Color GetTerrainColor(int terrainTypeId)
-    {
-        // Map terrain IDs to colors
-        // 0 = Grass (default), 1 = Dirt, 2 = Concrete, 3 = WoodFloor, 4 = Stone, 5 = Water
-        return terrainTypeId switch
-        {
-            0 => new Color(0.2f, 0.6f, 0.2f),     // Grass - green
-            1 => new Color(0.5f, 0.3f, 0.1f),     // Dirt - brown
-            2 => new Color(0.7f, 0.7f, 0.7f),     // Concrete - light gray
-            3 => new Color(0.8f, 0.6f, 0.3f),     // Wood floor - light brown
-            4 => new Color(0.4f, 0.4f, 0.4f),     // Stone - dark gray
-            5 => new Color(0.2f, 0.4f, 0.8f),     // Water - blue
-            _ => Colors.White
-        };
-    }
-
     private void DrawHoverPreview(TileCoord coord)
     {
         var rect = new Rect2(
