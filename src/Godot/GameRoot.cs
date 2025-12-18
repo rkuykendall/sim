@@ -235,79 +235,103 @@ public partial class GameRoot : Node2D
 
     private void InitializeTileNodes()
     {
-        for (int x = 0; x < _sim.World.Width; x++)
+        // Create display tiles for dual-grid system
+        // Display grid extends one tile beyond world grid on right and bottom edges
+        // Display tiles are positioned at intersections (offset by -0.5 tiles)
+        for (int x = 0; x <= _sim.World.Width; x++)
         {
-            for (int y = 0; y < _sim.World.Height; y++)
+            for (int y = 0; y <= _sim.World.Height; y++)
             {
                 var coord = new TileCoord(x, y);
-                var tile = _sim.World.GetTile(coord);
 
                 // Create container node for tile (can hold both ColorRect and Sprite2D)
+                // Position at intersection of world tiles (offset by -0.5 tiles)
                 var tileNode = new Node2D
                 {
-                    Position = new Vector2(x * TileSize, y * TileSize),
+                    Position = new Vector2((x - 0.5f) * TileSize, (y - 0.5f) * TileSize),
                     Name = $"Tile_{x}_{y}"
                 };
                 _tilesRoot.AddChild(tileNode);
 
-                // Get terrain definition to check for sprite
-                Texture2D? texture = null;
-                TerrainDef? terrainDef = null;
-                if (_sim.Content.Terrains.TryGetValue(tile.TerrainTypeId, out terrainDef))
-                {
-                    texture = SpriteResourceManager.GetTexture(terrainDef.SpriteKey);
-                }
-                else
-                {
-                    GD.PushWarning($"Tile ({x},{y}): TerrainID={tile.TerrainTypeId} not found in registry");
-                }
+                // For display tiles outside the world boundary, we need to determine the appropriate visual
+                // based on the neighboring world tiles
+                bool isInWorld = x < _sim.World.Width && y < _sim.World.Height;
 
-                if (texture != null && terrainDef != null)
+                if (isInWorld)
                 {
-                    // Use sprite
-                    var sprite = new Sprite2D
-                    {
-                        Name = "Sprite2D",
-                        Centered = false,  // Position from top-left
-                        Modulate = GameColorPalette.Colors[tile.ColorIndex]
-                    };
+                    var tile = _sim.World.GetTile(coord);
 
-                    // Handle path autotiling
-                    if (terrainDef.IsPath)
+                    // Get terrain definition to check for sprite
+                    Texture2D? texture = null;
+                    TerrainDef? terrainDef = null;
+                    if (_sim.Content.Terrains.TryGetValue(tile.TerrainTypeId, out terrainDef))
                     {
-                        // Use AtlasTexture to show specific tile from atlas
-                        var atlasTexture = new AtlasTexture
-                        {
-                            Atlas = texture,
-                            Region = new Rect2(0, 0, 16, 16)  // Will be updated in SyncTiles
-                        };
-                        sprite.Texture = atlasTexture;
-                        sprite.Scale = new Vector2(2, 2);  // Scale 16x16 to 32x32
+                        texture = SpriteResourceManager.GetTexture(terrainDef.SpriteKey);
                     }
                     else
                     {
-                        // Regular sprite
-                        sprite.Texture = texture;
-                        // Scale 16x16 sprite to 32x32 tile
-                        if (texture.GetWidth() == 16)
-                        {
-                            sprite.Scale = new Vector2(2, 2);
-                        }
+                        GD.PushWarning($"Tile ({x},{y}): TerrainID={tile.TerrainTypeId} not found in registry");
                     }
 
-                    tileNode.AddChild(sprite);
+                    if (texture != null && terrainDef != null)
+                    {
+                        // Use sprite
+                        var sprite = new Sprite2D
+                        {
+                            Name = "Sprite2D",
+                            Centered = false,  // Position from top-left
+                            Modulate = GameColorPalette.Colors[tile.ColorIndex]
+                        };
+
+                        // Handle path autotiling
+                        if (terrainDef.IsPath)
+                        {
+                            // Use AtlasTexture to show specific tile from atlas
+                            var atlasTexture = new AtlasTexture
+                            {
+                                Atlas = texture,
+                                Region = new Rect2(0, 0, 16, 16)  // Will be updated in SyncTiles
+                            };
+                            sprite.Texture = atlasTexture;
+                            sprite.Scale = new Vector2(2, 2);  // Scale 16x16 to 32x32
+                        }
+                        else
+                        {
+                            // Regular sprite
+                            sprite.Texture = texture;
+                            // Scale 16x16 sprite to 32x32 tile
+                            if (texture.GetWidth() == 16)
+                            {
+                                sprite.Scale = new Vector2(2, 2);
+                            }
+                        }
+
+                        tileNode.AddChild(sprite);
+                    }
+                    else
+                    {
+                        // Fallback to ColorRect (legacy rendering)
+                        var rect = new ColorRect
+                        {
+                            Name = "ColorRect",
+                            Size = new Vector2(TileSize, TileSize),
+                            Color = GameColorPalette.Colors[tile.ColorIndex],
+                            MouseFilter = Control.MouseFilterEnum.Ignore
+                        };
+                        tileNode.AddChild(rect);
+                    }
                 }
                 else
                 {
-                    // Fallback to ColorRect (legacy rendering)
-                    var rect = new ColorRect
+                    // For edge tiles outside world boundaries, create an invisible placeholder
+                    // These will be updated by autotiling to show proper path edges
+                    var sprite = new Sprite2D
                     {
-                        Name = "ColorRect",
-                        Size = new Vector2(TileSize, TileSize),
-                        Color = GameColorPalette.Colors[tile.ColorIndex],
-                        MouseFilter = Control.MouseFilterEnum.Ignore
+                        Name = "Sprite2D",
+                        Centered = false,
+                        Visible = false  // Will be made visible if needed by autotiling
                     };
-                    tileNode.AddChild(rect);
+                    tileNode.AddChild(sprite);
                 }
 
                 _tileNodes[coord] = tileNode;
@@ -535,36 +559,49 @@ public partial class GameRoot : Node2D
     }
 
     /// <summary>
-    /// Update a specific tile and its neighbors (for autotiling).
-    /// Call this when painting terrain instead of full SyncTiles() for better performance.
+    /// Update display tiles affected by a world tile change.
+    /// In the dual-grid system, painting world tile at (x,y) affects 4 display tiles:
+    /// (x,y), (x+1,y), (x,y+1), (x+1,y+1)
     /// </summary>
     private void UpdateTileAndNeighbors(TileCoord coord)
     {
-        // Update the tile itself
-        UpdateSingleTile(coord);
+        // Update the 4 display tiles that depend on this world tile
+        // This matches the reference implementation's setDisplayTile() function
+        var displayOffsets = new[] {
+            new TileCoord(0, 0),    // (x, y)
+            new TileCoord(1, 0),    // (x+1, y)
+            new TileCoord(0, 1),    // (x, y+1)
+            new TileCoord(1, 1)     // (x+1, y+1)
+        };
 
-        // Update 8 neighbors for autotiling edge cases
-        for (int dx = -1; dx <= 1; dx++)
+        foreach (var offset in displayOffsets)
         {
-            for (int dy = -1; dy <= 1; dy++)
+            var displayCoord = new TileCoord(coord.X + offset.X, coord.Y + offset.Y);
+            if (_tileNodes.ContainsKey(displayCoord))
             {
-                if (dx == 0 && dy == 0) continue;
-                var neighborCoord = new TileCoord(coord.X + dx, coord.Y + dy);
-                if (_sim.World.IsInBounds(neighborCoord))
-                {
-                    UpdateSingleTile(neighborCoord);
-                }
+                UpdateSingleTile(displayCoord);
             }
         }
     }
 
     /// <summary>
     /// Update a single tile's appearance based on its current state.
+    /// Handles both world tiles and edge display tiles in the dual-grid system.
     /// </summary>
     private void UpdateSingleTile(TileCoord coord)
     {
         if (!_tileNodes.TryGetValue(coord, out var tileNode))
             return;
+
+        bool isInWorld = coord.X < _sim.World.Width && coord.Y < _sim.World.Height;
+
+        if (!isInWorld)
+        {
+            // This is an edge display tile outside world boundaries
+            // Update it with autotiling based on neighboring world tiles
+            UpdateEdgeDisplayTile(coord, tileNode);
+            return;
+        }
 
         var tile = _sim.World.GetTile(coord);
         var color = GameColorPalette.Colors[tile.ColorIndex];
@@ -639,6 +676,78 @@ public partial class GameRoot : Node2D
             {
                 rect.Color = color;
             }
+        }
+    }
+
+    /// <summary>
+    /// Update an edge display tile that exists outside the world boundaries.
+    /// These tiles are part of the dual-grid display system.
+    /// </summary>
+    private void UpdateEdgeDisplayTile(TileCoord coord, Node2D tileNode)
+    {
+        var sprite = tileNode.GetNodeOrNull<Sprite2D>("Sprite2D");
+        if (sprite == null)
+            return;
+
+        // Check if any neighboring world tile is a path - if so, we need to display this edge tile
+        bool hasPathNeighbor = false;
+        int pathTerrainId = -1;
+        Texture2D? pathTexture = null;
+
+        // Check the 4 world tiles that this display tile depends on
+        var checkCoords = new[] {
+            new TileCoord(coord.X - 1, coord.Y - 1),  // topLeft
+            new TileCoord(coord.X, coord.Y - 1),      // topRight
+            new TileCoord(coord.X - 1, coord.Y),      // bottomLeft
+            new TileCoord(coord.X, coord.Y)           // bottomRight
+        };
+
+        foreach (var checkCoord in checkCoords)
+        {
+            if (_sim.World.IsInBounds(checkCoord))
+            {
+                var tile = _sim.World.GetTile(checkCoord);
+                if (_sim.Content.Terrains.TryGetValue(tile.TerrainTypeId, out var terrainDef) && terrainDef.IsPath)
+                {
+                    hasPathNeighbor = true;
+                    pathTerrainId = tile.TerrainTypeId;
+                    pathTexture = SpriteResourceManager.GetTexture(terrainDef.SpriteKey);
+                    break;
+                }
+            }
+        }
+
+        if (hasPathNeighbor && pathTexture != null)
+        {
+            // Setup atlas texture if needed
+            if (sprite.Texture is not AtlasTexture)
+            {
+                var newAtlas = new AtlasTexture
+                {
+                    Atlas = pathTexture,
+                    Region = new Rect2(0, 0, 16, 16)
+                };
+                sprite.Texture = newAtlas;
+                sprite.Scale = new Vector2(2, 2);
+                sprite.Visible = true;
+            }
+
+            // Calculate autotile variant
+            if (sprite.Texture is AtlasTexture atlasTexture)
+            {
+                var atlasCoord = PathAutotiler.CalculateTileVariant(_sim.World, coord, pathTerrainId);
+                atlasTexture.Region = new Rect2(
+                    atlasCoord.X * 16,
+                    atlasCoord.Y * 16,
+                    16,
+                    16
+                );
+            }
+        }
+        else
+        {
+            // No path neighbors, hide this edge tile
+            sprite.Visible = false;
         }
     }
 
