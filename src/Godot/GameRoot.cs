@@ -260,11 +260,12 @@ public partial class GameRoot : Node2D
                 tileNode.AddChild(baseLayer);
 
                 // Create 4 sprites for world tile quadrants
+                // Each quadrant is 16x16 (half of 32x32 tile)
                 var positions = new[] {
-                    (new Vector2(-8, -8), "TopLeft"),
-                    (new Vector2(8, -8), "TopRight"),
-                    (new Vector2(-8, 8), "BottomLeft"),
-                    (new Vector2(8, 8), "BottomRight")
+                    (new Vector2(8, 8), "TopLeft"),
+                    (new Vector2(24, 8), "TopRight"),
+                    (new Vector2(8, 24), "BottomLeft"),
+                    (new Vector2(24, 24), "BottomRight")
                 };
 
                 foreach (var (pos, name) in positions)
@@ -274,7 +275,6 @@ public partial class GameRoot : Node2D
                         Name = name,
                         Position = pos,
                         Centered = true,
-                        Scale = new Vector2(2, 2),
                         Visible = false
                     };
                     baseLayer.AddChild(sprite);
