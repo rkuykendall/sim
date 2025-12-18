@@ -294,6 +294,14 @@ public partial class GameRoot : Node2D
                     Centered = false,
                     Visible = false
                 };
+
+                // Apply shader to make pure black pixels transparent
+                var shader = GD.Load<Shader>("res://shaders/black_transparent.gdshader");
+                if (shader != null)
+                {
+                    overlaySprite.Material = new ShaderMaterial { Shader = shader };
+                }
+
                 overlayLayer.AddChild(overlaySprite);
 
                 _tileNodes[coord] = tileNode;
