@@ -251,7 +251,7 @@ public partial class GameRoot : Node2D
                 };
                 _tilesRoot.AddChild(tileNode);
 
-                // Base layer for flat terrains (4 quadrants)
+                // Base layer for flat terrains
                 var baseLayer = new Node2D
                 {
                     Name = "BaseLayer",
@@ -259,26 +259,16 @@ public partial class GameRoot : Node2D
                 };
                 tileNode.AddChild(baseLayer);
 
-                // Create 4 sprites for world tile quadrants
-                // Each quadrant is 16x16 (half of 32x32 tile)
-                var positions = new[] {
-                    (new Vector2(8, 8), "TopLeft"),
-                    (new Vector2(24, 8), "TopRight"),
-                    (new Vector2(8, 24), "BottomLeft"),
-                    (new Vector2(24, 24), "BottomRight")
-                };
-
-                foreach (var (pos, name) in positions)
+                // Single sprite for full-tile textures (16x16 scaled to 32x32)
+                var fullTileSprite = new Sprite2D
                 {
-                    var sprite = new Sprite2D
-                    {
-                        Name = name,
-                        Position = pos,
-                        Centered = true,
-                        Visible = false
-                    };
-                    baseLayer.AddChild(sprite);
-                }
+                    Name = "FullTileSprite",
+                    Position = new Vector2(TileSize, TileSize), // Offset to align with world tile center
+                    Centered = true,
+                    Visible = false,
+                    Scale = new Vector2(2, 2) // Scale 16x16 texture to 32x32
+                };
+                baseLayer.AddChild(fullTileSprite);
 
                 // Overlay layer for autotiled paths
                 var overlayLayer = new Node2D
@@ -567,52 +557,41 @@ public partial class GameRoot : Node2D
     }
 
     /// <summary>
-    /// Update the base layer which renders 4 world tile quadrants for flat terrains.
+    /// Update the base layer which renders full-tile textures for flat terrains.
+    /// In dual-grid system, display tile at coord shows the world tile at the same coord.
     /// </summary>
     private void UpdateBaseLayer(TileCoord coord, Node2D tileNode)
     {
         var baseLayer = tileNode.GetNode<Node2D>("BaseLayer");
+        var sprite = baseLayer.GetNode<Sprite2D>("FullTileSprite");
 
-        // Map display tile quadrants to world tiles
-        var quadrants = new[] {
-            (coord.X - 1, coord.Y - 1, "TopLeft"),
-            (coord.X, coord.Y - 1, "TopRight"),
-            (coord.X - 1, coord.Y, "BottomLeft"),
-            (coord.X, coord.Y, "BottomRight")
-        };
-
-        foreach (var (worldX, worldY, spriteName) in quadrants)
+        // Check if this world tile exists and should be rendered
+        if (!_sim.World.IsInBounds(coord))
         {
-            var sprite = baseLayer.GetNode<Sprite2D>(spriteName);
-            var worldCoord = new TileCoord(worldX, worldY);
+            sprite.Visible = false;
+            return;
+        }
 
-            if (!_sim.World.IsInBounds(worldCoord))
-            {
-                sprite.Visible = false;
-                continue;
-            }
+        var tile = _sim.World.GetTile(coord);
 
-            var tile = _sim.World.GetTile(worldCoord);
+        // Skip if terrain is a path (paths render in overlay layer)
+        if (_sim.Content.Terrains.TryGetValue(tile.TerrainTypeId, out var terrainDef) && terrainDef.IsPath)
+        {
+            sprite.Visible = false;
+            return;
+        }
 
-            // Skip if terrain is a path (paths render in overlay layer)
-            if (_sim.Content.Terrains.TryGetValue(tile.TerrainTypeId, out var terrainDef) && terrainDef.IsPath)
-            {
-                sprite.Visible = false;
-                continue;
-            }
-
-            // Render flat terrain using its sprite key
-            var flatTexture = SpriteResourceManager.GetTexture(terrainDef?.SpriteKey ?? "grass");
-            if (flatTexture != null)
-            {
-                sprite.Texture = flatTexture;
-                sprite.Modulate = GameColorPalette.Colors[tile.ColorIndex];
-                sprite.Visible = true;
-            }
-            else
-            {
-                sprite.Visible = false;
-            }
+        // Render flat terrain using its sprite key
+        var flatTexture = SpriteResourceManager.GetTexture(terrainDef?.SpriteKey ?? "grass");
+        if (flatTexture != null)
+        {
+            sprite.Texture = flatTexture;
+            sprite.Modulate = GameColorPalette.Colors[tile.ColorIndex];
+            sprite.Visible = true;
+        }
+        else
+        {
+            sprite.Visible = false;
         }
     }
 
