@@ -98,7 +98,8 @@ public partial class GameRoot : Node2D
 
         var snapshot = _sim.CreateRenderSnapshot();
         _lastSnapshot = snapshot;
-        SyncTiles();
+        // Note: SyncTiles() removed from main loop for performance
+        // Tiles are now updated only when they change (via UpdateTileAndNeighbors after PaintTerrain)
         SyncPawns(snapshot);
         SyncObjects(snapshot);
         UpdateInfoPanel(snapshot);
@@ -138,6 +139,10 @@ public partial class GameRoot : Node2D
             if (BuildToolState.Mode == BuildToolMode.PlaceTerrain && BuildToolState.SelectedTerrainDefId.HasValue)
             {
                 _sim.PaintTerrain(tileCoord.X, tileCoord.Y, BuildToolState.SelectedTerrainDefId.Value, BuildToolState.SelectedColorIndex);
+
+                // Update this tile and its neighbors (for path autotiling)
+                UpdateTileAndNeighbors(tileCoord);
+
                 return; // Consume event
             }
 
@@ -262,6 +267,7 @@ public partial class GameRoot : Node2D
                     // Use sprite
                     var sprite = new Sprite2D
                     {
+                        Name = "Sprite2D",
                         Centered = false,  // Position from top-left
                         Modulate = GameColorPalette.Colors[tile.ColorIndex]
                     };
@@ -296,6 +302,7 @@ public partial class GameRoot : Node2D
                     // Fallback to ColorRect (legacy rendering)
                     var rect = new ColorRect
                     {
+                        Name = "ColorRect",
                         Size = new Vector2(TileSize, TileSize),
                         Color = GameColorPalette.Colors[tile.ColorIndex],
                         MouseFilter = Control.MouseFilterEnum.Ignore
