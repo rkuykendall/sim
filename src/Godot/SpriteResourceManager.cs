@@ -26,6 +26,9 @@ public static class SpriteResourceManager
 		// Path autotile atlas
 		["path"] = "res://sprites/tiles/path_grid.png",
 
+		// Wall autotiling (future - requires wall_grid.png asset)
+		// ["wall"] = "res://sprites/objects/wall_grid.png",
+
 		// Object sprites
 		["object_base"] = "res://sprites/objects/object_texture.png",
 	};

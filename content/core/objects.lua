@@ -48,7 +48,8 @@ Objects = {
         walkable = false,      -- blocks movement
         interactable = false,  -- cannot be used
         useAreas = {},
-        spriteKey = "object_base"
+        spriteKey = "object_base",
+        isAutoTiled = false    -- Enable when wall_grid.png is ready
     },
 
     -- Decorations (non-interactive, walkable)
