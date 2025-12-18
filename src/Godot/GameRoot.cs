@@ -15,7 +15,7 @@ public partial class GameRoot : Node2D
 
     private readonly Dictionary<int, Node2D> _pawnNodes = new();
     private readonly Dictionary<int, Node2D> _objectNodes = new();
-    private readonly Dictionary<TileCoord, ColorRect> _tileNodes = new();
+    private readonly Dictionary<TileCoord, Node2D> _tileNodes = new();
 
     // Reusable collections for sync operations (avoid per-frame allocations)
     private readonly HashSet<int> _activeIds = new();
@@ -236,15 +236,74 @@ public partial class GameRoot : Node2D
             {
                 var coord = new TileCoord(x, y);
                 var tile = _sim.World.GetTile(coord);
-                var rect = new ColorRect
+
+                // Create container node for tile (can hold both ColorRect and Sprite2D)
+                var tileNode = new Node2D
                 {
                     Position = new Vector2(x * TileSize, y * TileSize),
-                    Size = new Vector2(TileSize, TileSize),
-                    Color = GameColorPalette.Colors[tile.ColorIndex],
-                    MouseFilter = Control.MouseFilterEnum.Ignore  // Let clicks pass through to pawns/objects
+                    Name = $"Tile_{x}_{y}"
                 };
-                _tilesRoot.AddChild(rect);
-                _tileNodes[coord] = rect;
+                _tilesRoot.AddChild(tileNode);
+
+                // Get terrain definition to check for sprite
+                Texture2D? texture = null;
+                TerrainDef? terrainDef = null;
+                if (_sim.Content.Terrains.TryGetValue(tile.TerrainTypeId, out terrainDef))
+                {
+                    texture = SpriteResourceManager.GetTexture(terrainDef.SpriteKey);
+                }
+                else
+                {
+                    GD.PushWarning($"Tile ({x},{y}): TerrainID={tile.TerrainTypeId} not found in registry");
+                }
+
+                if (texture != null && terrainDef != null)
+                {
+                    // Use sprite
+                    var sprite = new Sprite2D
+                    {
+                        Centered = false,  // Position from top-left
+                        Modulate = GameColorPalette.Colors[tile.ColorIndex]
+                    };
+
+                    // Handle path autotiling
+                    if (terrainDef.IsPath)
+                    {
+                        // Use AtlasTexture to show specific tile from atlas
+                        var atlasTexture = new AtlasTexture
+                        {
+                            Atlas = texture,
+                            Region = new Rect2(0, 0, 16, 16)  // Will be updated in SyncTiles
+                        };
+                        sprite.Texture = atlasTexture;
+                        sprite.Scale = new Vector2(2, 2);  // Scale 16x16 to 32x32
+                    }
+                    else
+                    {
+                        // Regular sprite
+                        sprite.Texture = texture;
+                        // Scale 16x16 sprite to 32x32 tile
+                        if (texture.GetWidth() == 16)
+                        {
+                            sprite.Scale = new Vector2(2, 2);
+                        }
+                    }
+
+                    tileNode.AddChild(sprite);
+                }
+                else
+                {
+                    // Fallback to ColorRect (legacy rendering)
+                    var rect = new ColorRect
+                    {
+                        Size = new Vector2(TileSize, TileSize),
+                        Color = GameColorPalette.Colors[tile.ColorIndex],
+                        MouseFilter = Control.MouseFilterEnum.Ignore
+                    };
+                    tileNode.AddChild(rect);
+                }
+
+                _tileNodes[coord] = tileNode;
             }
         }
     }
@@ -459,10 +518,87 @@ public partial class GameRoot : Node2D
     private void SyncTiles()
     {
         // Update all tile colors based on current terrain state
-        foreach (var (coord, rect) in _tileNodes)
+        foreach (var (coord, tileNode) in _tileNodes)
         {
-            var tile = _sim.World.GetTile(coord);
-            rect.Color = GameColorPalette.Colors[tile.ColorIndex];
+            UpdateSingleTile(coord);
+        }
+    }
+
+    /// <summary>
+    /// Update a specific tile and its neighbors (for autotiling).
+    /// Call this when painting terrain instead of full SyncTiles() for better performance.
+    /// </summary>
+    private void UpdateTileAndNeighbors(TileCoord coord)
+    {
+        // Update the tile itself
+        UpdateSingleTile(coord);
+
+        // Update 8 neighbors for autotiling edge cases
+        for (int dx = -1; dx <= 1; dx++)
+        {
+            for (int dy = -1; dy <= 1; dy++)
+            {
+                if (dx == 0 && dy == 0) continue;
+                var neighborCoord = new TileCoord(coord.X + dx, coord.Y + dy);
+                if (_sim.World.IsInBounds(neighborCoord))
+                {
+                    UpdateSingleTile(neighborCoord);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Update a single tile's appearance based on its current state.
+    /// </summary>
+    private void UpdateSingleTile(TileCoord coord)
+    {
+        if (!_tileNodes.TryGetValue(coord, out var tileNode))
+            return;
+
+        var tile = _sim.World.GetTile(coord);
+        var color = GameColorPalette.Colors[tile.ColorIndex];
+
+        // Try to get terrain definition
+        if (!_sim.Content.Terrains.TryGetValue(tile.TerrainTypeId, out var terrainDef))
+        {
+            // If terrain def not found, just update color without sprite logic
+            var rect = tileNode.GetNodeOrNull<ColorRect>("ColorRect");
+            if (rect != null)
+            {
+                rect.Color = color;
+            }
+            return;
+        }
+
+        // Update whichever child exists (Sprite2D or ColorRect)
+        var sprite = tileNode.GetNodeOrNull<Sprite2D>("Sprite2D");
+        if (sprite != null)
+        {
+            sprite.Modulate = color;
+
+            // Update autotiling for path tiles
+            if (terrainDef.IsPath && sprite.Texture is AtlasTexture atlasTexture)
+            {
+                // Calculate which tile variant to show
+                var atlasCoord = PathAutotiler.CalculateTileVariant(_sim.World, coord, tile.TerrainTypeId);
+
+                // Update atlas region (each tile is 16x16 in a 4x4 grid)
+                atlasTexture.Region = new Rect2(
+                    atlasCoord.X * 16,
+                    atlasCoord.Y * 16,
+                    16,
+                    16
+                );
+            }
+        }
+        else
+        {
+            var rect = tileNode.GetNodeOrNull<ColorRect>("ColorRect");
+            if (rect != null)
+            {
+                rect.Color = color;
+            }
         }
     }
 
@@ -529,6 +665,19 @@ public partial class GameRoot : Node2D
                 node = ObjectScene?.Instantiate<Node2D>() ?? new Node2D();
                 _objectsRoot.AddChild(node);
                 _objectNodes.Add(obj.Id.Value, node);
+
+                // Initialize with sprite if object has one
+                if (node is ObjectView ovInit)
+                {
+                    if (_sim.Content.Objects.TryGetValue(obj.ObjectDefId, out var objDef))
+                    {
+                        var texture = SpriteResourceManager.GetTexture(objDef.SpriteKey);
+                        if (texture != null)
+                        {
+                            ovInit.InitializeWithSprite(texture);
+                        }
+                    }
+                }
             }
 
             node.Position = new Vector2(

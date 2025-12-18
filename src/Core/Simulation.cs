@@ -91,6 +91,18 @@ public sealed class Simulation
             World = new World();
         }
 
+        // Initialize all tiles with default terrain (Grass)
+        // Terrain IDs start at 1, so we need to set a default instead of leaving them at 0
+        var defaultTerrainId = Content.GetTerrainId("Grass") ?? 1;
+        for (int x = 0; x < World.Width; x++)
+        {
+            for (int y = 0; y < World.Height; y++)
+            {
+                var tile = World.GetTile(x, y);
+                tile.TerrainTypeId = defaultTerrainId;
+            }
+        }
+
         _systems.Add(new NeedsSystem());
         _systems.Add(new ProximitySocialSystem());
         _systems.Add(new BuffSystem());

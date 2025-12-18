@@ -9,7 +9,8 @@ Objects = {
         satisfactionAmount = 50,
         interactionDuration = 20,
         grantsBuff = "GoodMeal",
-        useAreas = { {0, 1} }  -- stand in front (south)
+        useAreas = { {0, 1} },  -- stand in front (south)
+        spriteKey = "object_base"
     },
     Bed = {
         name = "Bed",
@@ -18,7 +19,8 @@ Objects = {
         interactionDuration = 40,
         grantsBuff = "WellRested",
         walkable = true,  -- pawn stands on the bed to sleep
-        useAreas = { {0, 0} }
+        useAreas = { {0, 0} },
+        spriteKey = "object_base"
     },
     TV = {
         name = "TV",
@@ -26,7 +28,8 @@ Objects = {
         satisfactionAmount = 40,
         interactionDuration = 30,
         grantsBuff = "HadFun",
-        useAreas = { {0, 1}, {0, 2}, {-1, 1}, {1, 1}, {-1, 2}, {1, 2} }  -- viewing area in front
+        useAreas = { {0, 1}, {0, 2}, {-1, 1}, {1, 1}, {-1, 2}, {1, 2} },  -- viewing area in front
+        spriteKey = "object_base"
     },
     Shower = {
         name = "Shower",
@@ -35,7 +38,8 @@ Objects = {
         interactionDuration = 20,
         grantsBuff = "FeelingFresh",
         walkable = true,  -- pawn stands in the shower
-        useAreas = { {0, 0} }
+        useAreas = { {0, 0} },
+        spriteKey = "object_base"
     },
 
     -- Walls (blocking objects)
@@ -43,7 +47,8 @@ Objects = {
         name = "Wall",
         walkable = false,      -- blocks movement
         interactable = false,  -- cannot be used
-        useAreas = {}
+        useAreas = {},
+        spriteKey = "object_base"
     },
 
     -- Decorations (non-interactive, walkable)
@@ -51,21 +56,24 @@ Objects = {
         name = "Plant",
         walkable = true,       -- can walk through
         interactable = false,  -- no interaction
-        useAreas = {}
+        useAreas = {},
+        spriteKey = "object_base"
     },
 
     Rug = {
         name = "Rug",
         walkable = true,
         interactable = false,
-        useAreas = {}
+        useAreas = {},
+        spriteKey = "object_base"
     },
 
     Lamp = {
         name = "Lamp",
         walkable = true,
         interactable = false,
-        useAreas = {}
+        useAreas = {},
+        spriteKey = "object_base"
     },
 }
 

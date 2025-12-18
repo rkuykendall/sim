@@ -133,13 +133,18 @@ public static class ContentLoader
             var spriteKeyData = data.Get("spriteKey");
             var spriteKey = spriteKeyData.IsNil() ? "" : spriteKeyData.String;
 
+            // Load isPath property (defaults to false if not specified)
+            var isPathData = data.Get("isPath");
+            var isPath = !isPathData.IsNil() && isPathData.Boolean;
+
             registry.RegisterTerrain(key, new TerrainDef
             {
                 Name = data.Get("name").String,
                 Walkable = walkable,
                 Buildable = buildable,
                 Indoors = indoors,
-                SpriteKey = spriteKey
+                SpriteKey = spriteKey,
+                IsPath = isPath
             });
         }
     }
@@ -170,6 +175,10 @@ public static class ContentLoader
             var walkableData = data.Get("walkable");
             var walkable = !walkableData.IsNil() && walkableData.Boolean;
 
+            // Load sprite key (defaults to empty string if not specified)
+            var spriteKeyData = data.Get("spriteKey");
+            var spriteKey = spriteKeyData.IsNil() ? "" : spriteKeyData.String;
+
             var obj = new ObjectDef
             {
                 Name = data.Get("name").String,
@@ -178,7 +187,8 @@ public static class ContentLoader
                 NeedSatisfactionAmount = (float)data.Get("satisfactionAmount").Number,
                 InteractionDurationTicks = (int)data.Get("interactionDuration").Number,
                 GrantsBuffId = ResolveReference(data.Get("grantsBuff"), registry.GetBuffId, key, "grantsBuff"),
-                UseAreas = useAreas
+                UseAreas = useAreas,
+                SpriteKey = spriteKey
             };
 
             registry.RegisterObject(key, obj);

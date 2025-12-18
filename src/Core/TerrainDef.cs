@@ -11,4 +11,5 @@ public sealed class TerrainDef : IContentDef
     public bool Buildable { get; init; } = true;
     public bool Indoors { get; init; } = false;
     public string SpriteKey { get; init; } = "";
+    public bool IsPath { get; init; } = false; // Indicates terrain uses autotiling
 }

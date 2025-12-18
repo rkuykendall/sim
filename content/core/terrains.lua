@@ -43,6 +43,14 @@ Terrains = {
         buildable = false,
         indoors = false,
         spriteKey = "water"
+    },
+    Path = {
+        name = "Path",
+        walkable = true,
+        buildable = true,
+        indoors = false,
+        spriteKey = "path",
+        isPath = true  -- Enables autotiling with dual-grid edge detection
     }
 }
 
