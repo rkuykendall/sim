@@ -14,23 +14,29 @@ public static class SpriteResourceManager
 	// Sprite key to resource path mapping
 	private static readonly Dictionary<string, string> _spritePathMap = new()
 	{
-		// Tile sprites - all terrain types use the same flat texture for now
-		["flat_texture"] = "res://sprites/tiles/flat_texture.png",
-		["grass"] = "res://sprites/tiles/flat_texture.png",
-		["dirt"] = "res://sprites/tiles/flat_texture.png",
-		["concrete"] = "res://sprites/tiles/flat_texture.png",
-		["wood_floor"] = "res://sprites/tiles/flat_texture.png",
-		["stone"] = "res://sprites/tiles/flat_texture.png",
-		["water"] = "res://sprites/tiles/flat_texture.png",
+		// Tile sprites
+		["grass"] = "res://sprites/tiles/grass.png",
+		["dirt"] = "res://sprites/tiles/dirt.png",
+		["concrete"] = "res://sprites/tiles/concrete.png",
+		["wood_floor"] = "res://sprites/tiles/wood_floor.png",
+		["stone"] = "res://sprites/tiles/stone.png",
+		["water"] = "res://sprites/tiles/water.png",
 
 		// Path autotile atlas
 		["path"] = "res://sprites/tiles/path_grid.png",
 
 		// Wall autotiling (future - requires wall_grid.png asset)
 		// ["wall"] = "res://sprites/objects/wall_grid.png",
+		["wall"] = "res://sprites/objects/wall.png",
 
 		// Object sprites
-		["object_base"] = "res://sprites/objects/object_texture.png",
+		["fridge"] = "res://sprites/objects/fridge.png",
+		["bed"] = "res://sprites/objects/bed.png",
+		["tv"] = "res://sprites/objects/tv.png",
+		["shower"] = "res://sprites/objects/shower.png",
+		["plant"] = "res://sprites/objects/plant.png",
+		["rug"] = "res://sprites/objects/rug.png",
+		["lamp"] = "res://sprites/objects/lamp.png",
 	};
 
 	/// <summary>

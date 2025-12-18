@@ -581,8 +581,6 @@ public partial class GameRoot : Node2D
             (coord.X, coord.Y, "BottomRight")
         };
 
-        var flatTexture = SpriteResourceManager.GetTexture("grass"); // flat_texture.png
-
         foreach (var (worldX, worldY, spriteName) in quadrants)
         {
             var sprite = baseLayer.GetNode<Sprite2D>(spriteName);
@@ -603,7 +601,8 @@ public partial class GameRoot : Node2D
                 continue;
             }
 
-            // Render flat terrain
+            // Render flat terrain using its sprite key
+            var flatTexture = SpriteResourceManager.GetTexture(terrainDef?.SpriteKey ?? "grass");
             if (flatTexture != null)
             {
                 sprite.Texture = flatTexture;

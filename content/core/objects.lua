@@ -10,7 +10,7 @@ Objects = {
         interactionDuration = 20,
         grantsBuff = "GoodMeal",
         useAreas = { {0, 1} },  -- stand in front (south)
-        spriteKey = "object_base"
+        spriteKey = "fridge"
     },
     Bed = {
         name = "Bed",
@@ -20,7 +20,7 @@ Objects = {
         grantsBuff = "WellRested",
         walkable = true,  -- pawn stands on the bed to sleep
         useAreas = { {0, 0} },
-        spriteKey = "object_base"
+        spriteKey = "bed"
     },
     TV = {
         name = "TV",
@@ -29,7 +29,7 @@ Objects = {
         interactionDuration = 30,
         grantsBuff = "HadFun",
         useAreas = { {0, 1}, {0, 2}, {-1, 1}, {1, 1}, {-1, 2}, {1, 2} },  -- viewing area in front
-        spriteKey = "object_base"
+        spriteKey = "tv"
     },
     Shower = {
         name = "Shower",
@@ -39,7 +39,7 @@ Objects = {
         grantsBuff = "FeelingFresh",
         walkable = true,  -- pawn stands in the shower
         useAreas = { {0, 0} },
-        spriteKey = "object_base"
+        spriteKey = "shower"
     },
 
     -- Walls (blocking objects)
@@ -48,7 +48,7 @@ Objects = {
         walkable = false,      -- blocks movement
         interactable = false,  -- cannot be used
         useAreas = {},
-        spriteKey = "object_base",
+        spriteKey = "wall",
         isAutoTiled = false    -- Enable when wall_grid.png is ready
     },
 
@@ -58,7 +58,7 @@ Objects = {
         walkable = true,       -- can walk through
         interactable = false,  -- no interaction
         useAreas = {},
-        spriteKey = "object_base"
+        spriteKey = "plant"
     },
 
     Rug = {
@@ -66,7 +66,7 @@ Objects = {
         walkable = true,
         interactable = false,
         useAreas = {},
-        spriteKey = "object_base"
+        spriteKey = "rug"
     },
 
     Lamp = {
@@ -74,7 +74,7 @@ Objects = {
         walkable = true,
         interactable = false,
         useAreas = {},
-        spriteKey = "object_base"
+        spriteKey = "lamp"
     },
 }
 
