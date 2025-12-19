@@ -4,12 +4,8 @@
 [ext_resource type="PackedScene" uid="uid://previewsquare" path="res://scenes/PreviewSquare.tscn" id="2"]
 
 [node name="BuildToolbar" type="PanelContainer"]
-anchors_preset = 9
-anchor_bottom = 1.0
 offset_left = 5.0
 offset_top = 5.0
-offset_right = 205.0
-offset_bottom = -5.0
 script = ExtResource("1")
 SelectPreviewPath = NodePath("MarginContainer/VBoxContainer/SelectSection/CenterContainer/SelectPreview")
 PreviewSquarePath = NodePath("MarginContainer/VBoxContainer/PreviewSection/CenterContainer/PreviewSquare")
@@ -30,27 +26,14 @@ layout_mode = 2
 [node name="SelectSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/SelectSection"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 10
-text = "Select"
-
 [node name="CenterContainer" type="CenterContainer" parent="MarginContainer/VBoxContainer/SelectSection"]
 layout_mode = 2
 
 [node name="SelectPreview" parent="MarginContainer/VBoxContainer/SelectSection/CenterContainer" instance=ExtResource("2")]
 layout_mode = 2
 
-[node name="Separator1b" type="HSeparator" parent="MarginContainer/VBoxContainer"]
-layout_mode = 2
-
 [node name="PreviewSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-
-[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/PreviewSection"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 10
-text = "Current"
 
 [node name="CenterContainer" type="CenterContainer" parent="MarginContainer/VBoxContainer/PreviewSection"]
 layout_mode = 2
@@ -58,16 +41,8 @@ layout_mode = 2
 [node name="PreviewSquare" parent="MarginContainer/VBoxContainer/PreviewSection/CenterContainer" instance=ExtResource("2")]
 layout_mode = 2
 
-[node name="Separator2" type="HSeparator" parent="MarginContainer/VBoxContainer"]
-layout_mode = 2
-
 [node name="ObjectSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-
-[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/ObjectSection"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 10
-text = "Object"
 
 [node name="CenterContainer" type="CenterContainer" parent="MarginContainer/VBoxContainer/ObjectSection"]
 layout_mode = 2
@@ -75,16 +50,8 @@ layout_mode = 2
 [node name="ObjectPreview" parent="MarginContainer/VBoxContainer/ObjectSection/CenterContainer" instance=ExtResource("2")]
 layout_mode = 2
 
-[node name="Separator3" type="HSeparator" parent="MarginContainer/VBoxContainer"]
-layout_mode = 2
-
 [node name="TerrainSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-
-[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/TerrainSection"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 10
-text = "Terrain"
 
 [node name="CenterContainer" type="CenterContainer" parent="MarginContainer/VBoxContainer/TerrainSection"]
 layout_mode = 2
@@ -92,16 +59,8 @@ layout_mode = 2
 [node name="TerrainPreview" parent="MarginContainer/VBoxContainer/TerrainSection/CenterContainer" instance=ExtResource("2")]
 layout_mode = 2
 
-[node name="Separator4" type="HSeparator" parent="MarginContainer/VBoxContainer"]
-layout_mode = 2
-
 [node name="DeleteSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-
-[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/DeleteSection"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 10
-text = "Delete"
 
 [node name="CenterContainer" type="CenterContainer" parent="MarginContainer/VBoxContainer/DeleteSection"]
 layout_mode = 2
