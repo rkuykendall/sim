@@ -31,6 +31,9 @@ public partial class GameRoot : Node2D
     private TileCoord? _hoveredTile = null;
     private RenderSnapshot? _lastSnapshot = null;
 
+    // Track mouse button state for drag painting
+    private bool _isPaintingTerrain = false;
+
     [Export] public PackedScene PawnScene { get; set; } = null!;
     [Export] public PackedScene ObjectScene { get; set; } = null!;
     [Export] public NodePath PawnsRootPath { get; set; } = ".";
@@ -161,22 +164,32 @@ public partial class GameRoot : Node2D
             }
         }
 
-        if (@event is InputEventMouseButton mb && mb.Pressed && mb.ButtonIndex == MouseButton.Left)
+        if (@event is InputEventMouseButton mb)
         {
             var localPos = GetLocalMousePosition();
             var tileCoord = ScreenToTileCoord(localPos);
 
-            // Handle build tool modes first
-            if (BuildToolState.Mode == BuildToolMode.PlaceTerrain && BuildToolState.SelectedTerrainDefId.HasValue)
+            if (mb.ButtonIndex == MouseButton.Left)
             {
-                _sim.PaintTerrain(tileCoord.X, tileCoord.Y, BuildToolState.SelectedTerrainDefId.Value, BuildToolState.SelectedColorIndex);
-
-                // Update this tile and its neighbors (for path autotiling)
-                UpdateTileAndNeighbors(tileCoord);
-
-                return; // Consume event
+                if (mb.Pressed)
+                {
+                    // Start painting terrain on mouse down
+                    if (BuildToolState.Mode == BuildToolMode.PlaceTerrain && BuildToolState.SelectedTerrainDefId.HasValue)
+                    {
+                        _isPaintingTerrain = true;
+                        _sim.PaintTerrain(tileCoord.X, tileCoord.Y, BuildToolState.SelectedTerrainDefId.Value, BuildToolState.SelectedColorIndex);
+                        UpdateTileAndNeighbors(tileCoord);
+                        return;
+                    }
+                }
+                else
+                {
+                    // Stop painting terrain on mouse up
+                    _isPaintingTerrain = false;
+                }
             }
 
+            // Handle object placement and selection as before
             if (BuildToolState.Mode == BuildToolMode.PlaceObject && BuildToolState.SelectedObjectDefId.HasValue)
             {
                 try
@@ -253,6 +266,19 @@ public partial class GameRoot : Node2D
             _selectedObjectId = null;
             _infoPanel?.Hide();
             _objectInfoPanel?.Hide();
+        }
+
+        // Handle mouse motion for drag painting (outside mouse button handler)
+        if (@event is InputEventMouseMotion)
+        {
+            if (_isPaintingTerrain && BuildToolState.Mode == BuildToolMode.PlaceTerrain && BuildToolState.SelectedTerrainDefId.HasValue)
+            {
+                var localPos = GetLocalMousePosition();
+                var tileCoord = ScreenToTileCoord(localPos);
+                _sim.PaintTerrain(tileCoord.X, tileCoord.Y, BuildToolState.SelectedTerrainDefId.Value, BuildToolState.SelectedColorIndex);
+                UpdateTileAndNeighbors(tileCoord);
+                return;
+            }
         }
     }
 
