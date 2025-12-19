@@ -9,18 +9,18 @@ public partial class BuildToolbar : PanelContainer
     [Export] public NodePath PreviewSquarePath { get; set; } = "";
     [Export] public NodePath ObjectPreviewPath { get; set; } = "";
     [Export] public NodePath TerrainPreviewPath { get; set; } = "";
+    [Export] public NodePath DeletePreviewPath { get; set; } = "";
     [Export] public NodePath SelectButtonPath { get; set; } = "";
     [Export] public NodePath PlaceObjectButtonPath { get; set; } = "";
     [Export] public NodePath PlaceTerrainButtonPath { get; set; } = "";
-    [Export] public NodePath DeleteButtonPath { get; set; } = "";
 
     private PreviewSquare? _previewSquare;
     private PreviewSquare? _objectPreview;
     private PreviewSquare? _terrainPreview;
+    private PreviewSquare? _deletePreview;
     private Button? _selectButton;
     private Button? _placeObjectButton;
     private Button? _placeTerrainButton;
-    private Button? _deleteButton;
     private ContentRegistry? _content;
     private ColorPickerModal? _colorPickerModal;
     private ContentPickerModal? _objectPickerModal;
@@ -40,14 +40,15 @@ public partial class BuildToolbar : PanelContainer
         if (!string.IsNullOrEmpty(TerrainPreviewPath))
             _terrainPreview = GetNodeOrNull<PreviewSquare>(TerrainPreviewPath);
 
+        if (!string.IsNullOrEmpty(DeletePreviewPath))
+            _deletePreview = GetNodeOrNull<PreviewSquare>(DeletePreviewPath);
+
         if (!string.IsNullOrEmpty(SelectButtonPath))
             _selectButton = GetNodeOrNull<Button>(SelectButtonPath);
         if (!string.IsNullOrEmpty(PlaceObjectButtonPath))
             _placeObjectButton = GetNodeOrNull<Button>(PlaceObjectButtonPath);
         if (!string.IsNullOrEmpty(PlaceTerrainButtonPath))
             _placeTerrainButton = GetNodeOrNull<Button>(PlaceTerrainButtonPath);
-        if (!string.IsNullOrEmpty(DeleteButtonPath))
-            _deleteButton = GetNodeOrNull<Button>(DeleteButtonPath);
 
         // Connect tool button signals
         if (_selectButton != null)
@@ -60,8 +61,6 @@ public partial class BuildToolbar : PanelContainer
             _placeObjectButton.Pressed += OnPlaceObjectClicked;
         if (_placeTerrainButton != null)
             _placeTerrainButton.Pressed += OnPlaceTerrainClicked;
-        if (_deleteButton != null)
-            _deleteButton.Pressed += OnDeleteClicked;
 
         // Connect preview square clicks
         if (_previewSquare != null)
@@ -75,6 +74,10 @@ public partial class BuildToolbar : PanelContainer
         if (_terrainPreview != null)
         {
             _terrainPreview.Pressed += OnTerrainPreviewClicked;
+        }
+        if (_deletePreview != null)
+        {
+            _deletePreview.Pressed += OnDeletePreviewClicked;
         }
 
         // Initialize previews with default color before content loads
@@ -94,6 +97,9 @@ public partial class BuildToolbar : PanelContainer
 
         if (_terrainPreview == null && !string.IsNullOrEmpty(TerrainPreviewPath))
             _terrainPreview = GetNodeOrNull<PreviewSquare>(TerrainPreviewPath);
+
+        if (_deletePreview == null && !string.IsNullOrEmpty(DeletePreviewPath))
+            _deletePreview = GetNodeOrNull<PreviewSquare>(DeletePreviewPath);
 
         var uiLayer = GetNode<CanvasLayer>("/root/Main/UI");
 
@@ -147,6 +153,15 @@ public partial class BuildToolbar : PanelContainer
             _terrainPickerModal.PopulateGrid("Select Terrain", items, BuildToolState.SelectedColorIndex);
             _terrainPickerModal.Show();
         }
+    }
+
+    private void OnDeletePreviewClicked()
+    {
+        BuildToolState.Mode = BuildToolMode.Delete;
+        BuildToolState.SelectedObjectDefId = null;
+        BuildToolState.SelectedTerrainDefId = null;
+        HighlightToolButton(null); // No tool button highlighted for delete preview
+        UpdateAllPreviews();
     }
 
     private void OnColorSelected(int colorIndex)
@@ -205,6 +220,53 @@ public partial class BuildToolbar : PanelContainer
             isObjectPreview: false,
             isTerrainPreview: true
         );
+
+        // Update delete preview
+        _deletePreview?.UpdatePreview(
+            BuildToolState.SelectedColorIndex,
+            null,
+            null,
+            _content,
+            isObjectPreview: false,
+            isTerrainPreview: false,
+            isDeletePreview: true
+        );
+
+        // Highlight the active preview based on current mode
+        HighlightActivePreview();
+    }
+
+    private void HighlightActivePreview()
+    {
+        // Reset all preview highlights
+        if (_previewSquare != null)
+            _previewSquare.Modulate = Colors.White;
+        if (_objectPreview != null)
+            _objectPreview.Modulate = Colors.White;
+        if (_terrainPreview != null)
+            _terrainPreview.Modulate = Colors.White;
+        if (_deletePreview != null)
+            _deletePreview.Modulate = Colors.White;
+
+        // Highlight the active preview based on mode
+        switch (BuildToolState.Mode)
+        {
+            case BuildToolMode.PlaceObject:
+                if (_objectPreview != null)
+                    _objectPreview.Modulate = new Color(0.7f, 1.0f, 0.7f); // Light green tint
+                break;
+            case BuildToolMode.PlaceTerrain:
+                if (_terrainPreview != null)
+                    _terrainPreview.Modulate = new Color(0.7f, 1.0f, 0.7f); // Light green tint
+                break;
+            case BuildToolMode.Delete:
+                if (_deletePreview != null)
+                    _deletePreview.Modulate = new Color(0.7f, 1.0f, 0.7f); // Light green tint
+                break;
+            case BuildToolMode.Select:
+                // No preview is highlighted in select mode
+                break;
+        }
     }
 
     private void OnSelectClicked()
@@ -229,15 +291,6 @@ public partial class BuildToolbar : PanelContainer
         BuildToolState.Mode = BuildToolMode.PlaceTerrain;
         BuildToolState.SelectedObjectDefId = null;
         HighlightToolButton(_placeTerrainButton);
-        UpdateAllPreviews();
-    }
-
-    private void OnDeleteClicked()
-    {
-        BuildToolState.Mode = BuildToolMode.Delete;
-        BuildToolState.SelectedObjectDefId = null;
-        BuildToolState.SelectedTerrainDefId = null;
-        HighlightToolButton(_deleteButton);
         UpdateAllPreviews();
     }
 

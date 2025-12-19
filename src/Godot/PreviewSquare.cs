@@ -48,7 +48,8 @@ public partial class PreviewSquare : Button
     /// <param name="content">Content registry for looking up definitions</param>
     /// <param name="isObjectPreview">True if this is the object preview (shows generic-object.png when null)</param>
     /// <param name="isTerrainPreview">True if this is the terrain preview (shows generic-terrain.png when null)</param>
-    public void UpdatePreview(int colorIndex, int? objectDefId, int? terrainDefId, ContentRegistry? content, bool isObjectPreview = false, bool isTerrainPreview = false)
+    /// <param name="isDeletePreview">True if this is the delete preview (shows delete.png)</param>
+    public void UpdatePreview(int colorIndex, int? objectDefId, int? terrainDefId, ContentRegistry? content, bool isObjectPreview = false, bool isTerrainPreview = false, bool isDeletePreview = false)
     {
         if (_colorRect == null || _textureRect == null)
             return;
@@ -83,6 +84,10 @@ public partial class PreviewSquare : Button
         else if (texture == null && isTerrainPreview)
         {
             texture = GD.Load<Texture2D>("res://sprites/generic-terrain.png");
+        }
+        else if (texture == null && isDeletePreview)
+        {
+            texture = GD.Load<Texture2D>("res://sprites/delete.png");
         }
 
         if (texture != null)
