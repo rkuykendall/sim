@@ -52,9 +52,9 @@ public sealed class Tile
 /// </remarks>
 public sealed class World
 {
-    // Default play area bounds (in tiles) - matches 640x360 viewport with 32px tiles
-    public const int DefaultWidth = 20;   // 640 / 32 = 20 tiles
-    public const int DefaultHeight = 11;  // 360 / 32 = 11.25, use 11 tiles
+    // Default play area bounds (in tiles) - doubled for larger world
+    public const int DefaultWidth = 40;   // 40 tiles
+    public const int DefaultHeight = 22;  // 22 tiles
 
     private readonly Tile[,] _tiles;
 

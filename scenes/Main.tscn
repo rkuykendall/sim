@@ -14,7 +14,7 @@
 [node name="Camera2D" type="Camera2D" parent="."]
 script = ExtResource("1_camera")
 position = Vector2(320, 180)
-zoom = Vector2(1, 1)
+zoom = Vector2(2, 2)
 
 [node name="Tiles" type="Node2D" parent="."]
 z_index = -10
