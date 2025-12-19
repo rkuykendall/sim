@@ -1,22 +1,23 @@
-[gd_scene load_steps=2 format=3 uid="uid://buildtoolbar"]
+[gd_scene load_steps=3 format=3 uid="uid://buildtoolbar"]
 
 [ext_resource type="Script" path="res://src/Godot/BuildToolbar.cs" id="1"]
+[ext_resource type="PackedScene" uid="uid://previewsquare" path="res://scenes/PreviewSquare.tscn" id="2"]
 
 [node name="BuildToolbar" type="PanelContainer"]
 anchors_preset = 9
 anchor_bottom = 1.0
 offset_left = 5.0
 offset_top = 5.0
-offset_right = 155.0
+offset_right = 205.0
 offset_bottom = -5.0
 script = ExtResource("1")
 SelectButtonPath = NodePath("MarginContainer/VBoxContainer/Tools/SelectButton")
 PlaceObjectButtonPath = NodePath("MarginContainer/VBoxContainer/Tools/PlaceObjectButton")
 PlaceTerrainButtonPath = NodePath("MarginContainer/VBoxContainer/Tools/PlaceTerrainButton")
 DeleteButtonPath = NodePath("MarginContainer/VBoxContainer/Tools/DeleteButton")
-ObjectListPath = NodePath("MarginContainer/VBoxContainer/ObjectScroll/ObjectList")
-TerrainListPath = NodePath("MarginContainer/VBoxContainer/TerrainScroll/TerrainList")
-ColorPaletteContainerPath = NodePath("MarginContainer/VBoxContainer/ColorPaletteContainer")
+PreviewSquarePath = NodePath("MarginContainer/VBoxContainer/PreviewSection/CenterContainer/PreviewSquare")
+ObjectPreviewPath = NodePath("MarginContainer/VBoxContainer/ObjectSection/CenterContainer/ObjectPreview")
+TerrainPreviewPath = NodePath("MarginContainer/VBoxContainer/TerrainSection/CenterContainer/TerrainPreview")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
@@ -59,43 +60,50 @@ text = "X"
 [node name="Separator1" type="HSeparator" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="ColorsLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+[node name="PreviewSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/PreviewSection"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
-text = "Colors"
+text = "Current"
 
-[node name="ColorPaletteContainer" type="GridContainer" parent="MarginContainer/VBoxContainer"]
+[node name="CenterContainer" type="CenterContainer" parent="MarginContainer/VBoxContainer/PreviewSection"]
 layout_mode = 2
-columns = 4
+
+[node name="PreviewSquare" parent="MarginContainer/VBoxContainer/PreviewSection/CenterContainer" instance=ExtResource("2")]
+layout_mode = 2
 
 [node name="Separator2" type="HSeparator" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="ObjectsLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+[node name="ObjectSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/ObjectSection"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
-text = "Objects"
+text = "Object"
 
-[node name="ObjectScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 150)
+[node name="CenterContainer" type="CenterContainer" parent="MarginContainer/VBoxContainer/ObjectSection"]
 layout_mode = 2
 
-[node name="ObjectList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/ObjectScroll"]
+[node name="ObjectPreview" parent="MarginContainer/VBoxContainer/ObjectSection/CenterContainer" instance=ExtResource("2")]
 layout_mode = 2
-size_flags_horizontal = 3
 
 [node name="Separator3" type="HSeparator" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="TerrainLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+[node name="TerrainSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/TerrainSection"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "Terrain"
 
-[node name="TerrainScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 150)
+[node name="CenterContainer" type="CenterContainer" parent="MarginContainer/VBoxContainer/TerrainSection"]
 layout_mode = 2
 
-[node name="TerrainList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/TerrainScroll"]
+[node name="TerrainPreview" parent="MarginContainer/VBoxContainer/TerrainSection/CenterContainer" instance=ExtResource("2")]
 layout_mode = 2
-size_flags_horizontal = 3

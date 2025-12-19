@@ -6,38 +6,39 @@ namespace SimGame.Godot;
 
 public partial class BuildToolbar : PanelContainer
 {
-    [Export] public NodePath ObjectListPath { get; set; } = "";
-    [Export] public NodePath TerrainListPath { get; set; } = "";
-    [Export] public NodePath ColorPaletteContainerPath { get; set; } = "";
+    [Export] public NodePath PreviewSquarePath { get; set; } = "";
+    [Export] public NodePath ObjectPreviewPath { get; set; } = "";
+    [Export] public NodePath TerrainPreviewPath { get; set; } = "";
     [Export] public NodePath SelectButtonPath { get; set; } = "";
     [Export] public NodePath PlaceObjectButtonPath { get; set; } = "";
     [Export] public NodePath PlaceTerrainButtonPath { get; set; } = "";
     [Export] public NodePath DeleteButtonPath { get; set; } = "";
 
-    private VBoxContainer? _objectList;
-    private VBoxContainer? _terrainList;
-    private GridContainer? _colorPaletteContainer;
+    private PreviewSquare? _previewSquare;
+    private PreviewSquare? _objectPreview;
+    private PreviewSquare? _terrainPreview;
     private Button? _selectButton;
     private Button? _placeObjectButton;
     private Button? _placeTerrainButton;
     private Button? _deleteButton;
     private ContentRegistry? _content;
+    private ColorPickerModal? _colorPickerModal;
+    private ContentPickerModal? _objectPickerModal;
+    private ContentPickerModal? _terrainPickerModal;
 
     private Button? _activeToolButton = null;
-    private Button? _activeContentButton = null;
-    private Button? _activeColorButton = null;
 
     public override void _Ready()
     {
         // Get node references
-        if (!string.IsNullOrEmpty(ObjectListPath))
-            _objectList = GetNodeOrNull<VBoxContainer>(ObjectListPath);
+        if (!string.IsNullOrEmpty(PreviewSquarePath))
+            _previewSquare = GetNodeOrNull<PreviewSquare>(PreviewSquarePath);
 
-        if (!string.IsNullOrEmpty(TerrainListPath))
-            _terrainList = GetNodeOrNull<VBoxContainer>(TerrainListPath);
+        if (!string.IsNullOrEmpty(ObjectPreviewPath))
+            _objectPreview = GetNodeOrNull<PreviewSquare>(ObjectPreviewPath);
 
-        if (!string.IsNullOrEmpty(ColorPaletteContainerPath))
-            _colorPaletteContainer = GetNodeOrNull<GridContainer>(ColorPaletteContainerPath);
+        if (!string.IsNullOrEmpty(TerrainPreviewPath))
+            _terrainPreview = GetNodeOrNull<PreviewSquare>(TerrainPreviewPath);
 
         if (!string.IsNullOrEmpty(SelectButtonPath))
             _selectButton = GetNodeOrNull<Button>(SelectButtonPath);
@@ -61,6 +62,20 @@ public partial class BuildToolbar : PanelContainer
             _placeTerrainButton.Pressed += OnPlaceTerrainClicked;
         if (_deleteButton != null)
             _deleteButton.Pressed += OnDeleteClicked;
+
+        // Connect preview square clicks
+        if (_previewSquare != null)
+        {
+            _previewSquare.Pressed += OnColorPreviewClicked;
+        }
+        if (_objectPreview != null)
+        {
+            _objectPreview.Pressed += OnObjectPreviewClicked;
+        }
+        if (_terrainPreview != null)
+        {
+            _terrainPreview.Pressed += OnTerrainPreviewClicked;
+        }
     }
 
     public void Initialize(ContentRegistry content)
@@ -68,66 +83,119 @@ public partial class BuildToolbar : PanelContainer
         _content = content;
 
         // Ensure nodes are loaded (in case Initialize is called before _Ready)
-        if (_objectList == null && !string.IsNullOrEmpty(ObjectListPath))
-            _objectList = GetNodeOrNull<VBoxContainer>(ObjectListPath);
+        if (_previewSquare == null && !string.IsNullOrEmpty(PreviewSquarePath))
+            _previewSquare = GetNodeOrNull<PreviewSquare>(PreviewSquarePath);
 
-        if (_terrainList == null && !string.IsNullOrEmpty(TerrainListPath))
-            _terrainList = GetNodeOrNull<VBoxContainer>(TerrainListPath);
+        if (_objectPreview == null && !string.IsNullOrEmpty(ObjectPreviewPath))
+            _objectPreview = GetNodeOrNull<PreviewSquare>(ObjectPreviewPath);
 
-        if (_colorPaletteContainer == null && !string.IsNullOrEmpty(ColorPaletteContainerPath))
-            _colorPaletteContainer = GetNodeOrNull<GridContainer>(ColorPaletteContainerPath);
+        if (_terrainPreview == null && !string.IsNullOrEmpty(TerrainPreviewPath))
+            _terrainPreview = GetNodeOrNull<PreviewSquare>(TerrainPreviewPath);
 
-        PopulateColorPalette();
-        PopulateObjectList();
-        PopulateTerrainList();
+        var uiLayer = GetNode<CanvasLayer>("/root/Main/UI");
+
+        // Create color picker modal
+        var colorModalScene = GD.Load<PackedScene>("res://scenes/ColorPickerModal.tscn");
+        _colorPickerModal = colorModalScene.Instantiate<ColorPickerModal>();
+        _colorPickerModal.ColorSelected += OnColorSelected;
+        _colorPickerModal.Visible = false;
+        _colorPickerModal.ZIndex = 1000;
+        uiLayer.AddChild(_colorPickerModal);
+
+        // Create object picker modal
+        var objectModalScene = GD.Load<PackedScene>("res://scenes/ContentPickerModal.tscn");
+        _objectPickerModal = objectModalScene.Instantiate<ContentPickerModal>();
+        _objectPickerModal.ItemSelected += OnObjectSelected;
+        _objectPickerModal.Visible = false;
+        _objectPickerModal.ZIndex = 1000;
+        uiLayer.AddChild(_objectPickerModal);
+
+        // Create terrain picker modal
+        var terrainModalScene = GD.Load<PackedScene>("res://scenes/ContentPickerModal.tscn");
+        _terrainPickerModal = terrainModalScene.Instantiate<ContentPickerModal>();
+        _terrainPickerModal.ItemSelected += OnTerrainSelected;
+        _terrainPickerModal.Visible = false;
+        _terrainPickerModal.ZIndex = 1000;
+        uiLayer.AddChild(_terrainPickerModal);
+
+        UpdateAllPreviews();
     }
 
-    private void PopulateObjectList()
+    private void OnColorPreviewClicked()
     {
-        if (_objectList == null || _content == null)
-            return;
+        _colorPickerModal?.Show();
+    }
 
-        // Clear existing buttons
-        foreach (var child in _objectList.GetChildren())
+    private void OnObjectPreviewClicked()
+    {
+        if (_objectPickerModal != null && _content != null)
         {
-            child.QueueFree();
-        }
-
-        // Create button for each ObjectDef
-        foreach (var (id, objDef) in _content.Objects.OrderBy(kv => kv.Value.Name))
-        {
-            var button = new Button
-            {
-                Text = objDef.Name,
-                CustomMinimumSize = new Vector2(0, 30)
-            };
-            button.Pressed += () => OnObjectSelected(id, button);
-            _objectList.AddChild(button);
+            var items = _content.Objects.Select(kv => (kv.Key, kv.Value.SpriteKey, kv.Value.Name));
+            _objectPickerModal.PopulateGrid("Select Object", items, BuildToolState.SelectedColorIndex);
+            _objectPickerModal.Show();
         }
     }
 
-    private void PopulateTerrainList()
+    private void OnTerrainPreviewClicked()
     {
-        if (_terrainList == null || _content == null)
-            return;
-
-        // Clear existing buttons
-        foreach (var child in _terrainList.GetChildren())
+        if (_terrainPickerModal != null && _content != null)
         {
-            child.QueueFree();
+            var items = _content.Terrains.Select(kv => (kv.Key, kv.Value.SpriteKey, kv.Value.Name));
+            _terrainPickerModal.PopulateGrid("Select Terrain", items, BuildToolState.SelectedColorIndex);
+            _terrainPickerModal.Show();
         }
+    }
 
-        // Create button for each TerrainDef
-        foreach (var (id, terrainDef) in _content.Terrains.OrderBy(kv => kv.Value.Name))
-        {
-            var button = new Button
-            {
-                Text = terrainDef.Name,
-                CustomMinimumSize = new Vector2(0, 30)
-            };
-            button.Pressed += () => OnTerrainSelected(id, button);
-            _terrainList.AddChild(button);
-        }
+    private void OnColorSelected(int colorIndex)
+    {
+        BuildToolState.SelectedColorIndex = colorIndex;
+        _colorPickerModal?.Hide();
+        UpdateAllPreviews();
+    }
+
+    private void OnObjectSelected(int objectDefId)
+    {
+        BuildToolState.Mode = BuildToolMode.PlaceObject;
+        BuildToolState.SelectedObjectDefId = objectDefId;
+        BuildToolState.SelectedTerrainDefId = null;
+        HighlightToolButton(_placeObjectButton);
+        UpdateAllPreviews();
+    }
+
+    private void OnTerrainSelected(int terrainDefId)
+    {
+        BuildToolState.Mode = BuildToolMode.PlaceTerrain;
+        BuildToolState.SelectedTerrainDefId = terrainDefId;
+        BuildToolState.SelectedObjectDefId = null;
+        HighlightToolButton(_placeTerrainButton);
+        UpdateAllPreviews();
+    }
+
+    private void UpdateAllPreviews()
+    {
+        // Update color preview
+        _previewSquare?.UpdatePreview(
+            BuildToolState.SelectedColorIndex,
+            null,
+            null,
+            _content
+        );
+
+        // Update object preview
+        _objectPreview?.UpdatePreview(
+            BuildToolState.SelectedColorIndex,
+            BuildToolState.SelectedObjectDefId,
+            null,
+            _content
+        );
+
+        // Update terrain preview
+        _terrainPreview?.UpdatePreview(
+            BuildToolState.SelectedColorIndex,
+            null,
+            BuildToolState.SelectedTerrainDefId,
+            _content
+        );
     }
 
     private void OnSelectClicked()
@@ -136,7 +204,7 @@ public partial class BuildToolbar : PanelContainer
         BuildToolState.SelectedObjectDefId = null;
         BuildToolState.SelectedTerrainDefId = null;
         HighlightToolButton(_selectButton);
-        ClearContentHighlight();
+        UpdateAllPreviews();
     }
 
     private void OnPlaceObjectClicked()
@@ -144,6 +212,7 @@ public partial class BuildToolbar : PanelContainer
         BuildToolState.Mode = BuildToolMode.PlaceObject;
         BuildToolState.SelectedTerrainDefId = null;
         HighlightToolButton(_placeObjectButton);
+        UpdateAllPreviews();
     }
 
     private void OnPlaceTerrainClicked()
@@ -151,6 +220,7 @@ public partial class BuildToolbar : PanelContainer
         BuildToolState.Mode = BuildToolMode.PlaceTerrain;
         BuildToolState.SelectedObjectDefId = null;
         HighlightToolButton(_placeTerrainButton);
+        UpdateAllPreviews();
     }
 
     private void OnDeleteClicked()
@@ -159,25 +229,7 @@ public partial class BuildToolbar : PanelContainer
         BuildToolState.SelectedObjectDefId = null;
         BuildToolState.SelectedTerrainDefId = null;
         HighlightToolButton(_deleteButton);
-        ClearContentHighlight();
-    }
-
-    private void OnObjectSelected(int objectDefId, Button button)
-    {
-        BuildToolState.Mode = BuildToolMode.PlaceObject;
-        BuildToolState.SelectedObjectDefId = objectDefId;
-        BuildToolState.SelectedTerrainDefId = null;
-        HighlightToolButton(_placeObjectButton);
-        HighlightContentButton(button);
-    }
-
-    private void OnTerrainSelected(int terrainDefId, Button button)
-    {
-        BuildToolState.Mode = BuildToolMode.PlaceTerrain;
-        BuildToolState.SelectedTerrainDefId = terrainDefId;
-        BuildToolState.SelectedObjectDefId = null;
-        HighlightToolButton(_placeTerrainButton);
-        HighlightContentButton(button);
+        UpdateAllPreviews();
     }
 
     private void HighlightToolButton(Button? button)
@@ -193,96 +245,6 @@ public partial class BuildToolbar : PanelContainer
         {
             button.Modulate = new Color(0.7f, 1.0f, 0.7f); // Light green tint
             _activeToolButton = button;
-        }
-    }
-
-    private void HighlightContentButton(Button? button)
-    {
-        // Remove highlight from previous content button
-        if (_activeContentButton != null)
-        {
-            _activeContentButton.Modulate = Colors.White;
-        }
-
-        // Highlight new button
-        if (button != null)
-        {
-            button.Modulate = new Color(0.7f, 1.0f, 0.7f); // Light green tint
-            _activeContentButton = button;
-        }
-    }
-
-    private void ClearContentHighlight()
-    {
-        if (_activeContentButton != null)
-        {
-            _activeContentButton.Modulate = Colors.White;
-            _activeContentButton = null;
-        }
-    }
-
-    private void PopulateColorPalette()
-    {
-        if (_colorPaletteContainer == null)
-            return;
-
-        // Clear existing buttons
-        foreach (var child in _colorPaletteContainer.GetChildren())
-        {
-            child.QueueFree();
-        }
-
-        // Create button for each color in palette
-        for (int i = 0; i < GameColorPalette.Colors.Length; i++)
-        {
-            int colorIndex = i; // Capture for lambda
-            var button = new Button
-            {
-                CustomMinimumSize = new Vector2(32, 32),
-                Text = ""
-            };
-
-            // Create a ColorRect as background to show the color
-            var colorRect = new ColorRect
-            {
-                Color = GameColorPalette.Colors[i],
-                MouseFilter = Control.MouseFilterEnum.Ignore
-            };
-            colorRect.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-            button.AddChild(colorRect);
-            button.MoveChild(colorRect, 0); // Move to back
-
-            button.Pressed += () => OnColorSelected(colorIndex, button);
-            _colorPaletteContainer.AddChild(button);
-
-            // Highlight the first color by default
-            if (i == 0)
-            {
-                _activeColorButton = button;
-                HighlightColorButton(button);
-            }
-        }
-    }
-
-    private void OnColorSelected(int colorIndex, Button button)
-    {
-        BuildToolState.SelectedColorIndex = colorIndex;
-        HighlightColorButton(button);
-    }
-
-    private void HighlightColorButton(Button? button)
-    {
-        // Remove highlight from previous color button
-        if (_activeColorButton != null)
-        {
-            _activeColorButton.Modulate = Colors.White;
-        }
-
-        // Highlight new button
-        if (button != null)
-        {
-            button.Modulate = new Color(1.3f, 1.3f, 1.3f); // Brighten
-            _activeColorButton = button;
         }
     }
 }

@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://previewsquare"]
+
+[ext_resource type="Script" path="res://src/Godot/PreviewSquare.cs" id="1"]
+
+[node name="PreviewSquare" type="Button"]
+custom_minimum_size = Vector2(96, 96)
+tooltip_text = "Click to change color"
+script = ExtResource("1")
