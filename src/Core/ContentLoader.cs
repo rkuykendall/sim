@@ -222,9 +222,9 @@ public static class ContentLoader
                 var yaml = File.ReadAllText(file);
                 var paletteData = deserializer.Deserialize<PaletteYaml>(yaml);
 
-                if (paletteData.Colors.Count != 12)
+                if (paletteData.Colors.Count < 1)
                 {
-                    LogError?.Invoke($"ColorPalette '{Path.GetFileNameWithoutExtension(file)}' must have exactly 12 colors (has {paletteData.Colors.Count})");
+                    LogError?.Invoke($"ColorPalette '{Path.GetFileNameWithoutExtension(file)}' must have at least 1 color (has {paletteData.Colors.Count})");
                     continue;
                 }
 

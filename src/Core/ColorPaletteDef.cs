@@ -26,7 +26,7 @@ public sealed class ColorPaletteDef : IContentDef
     public IReadOnlyList<ColorDef> Colors { get; init; } = Array.Empty<ColorDef>();
 
     /// <summary>
-    /// Returns true if this palette has exactly 12 colors (required for gameplay).
+    /// Returns true if this palette has at least 1 color (required for gameplay).
     /// </summary>
-    public bool IsValid => Colors.Count == 12;
+    public bool IsValid => Colors.Count >= 1;
 }

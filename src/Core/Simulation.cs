@@ -278,9 +278,14 @@ public sealed class Simulation
 
     private void BootstrapWorld()
     {
+        // Get palette size for safe color indexing
+        int paletteSize = 1;
+        if (Content.ColorPalettes.TryGetValue(SelectedPaletteId, out var paletteDef))
+            paletteSize = paletteDef.Colors.Count;
+
         // Create a fridge (blue)
         CreateObject(Content.GetObjectId("Fridge")
-            ?? throw new InvalidOperationException("Required object 'Fridge' not found in content"), 2, 3, colorIndex: 5);
+            ?? throw new InvalidOperationException("Required object 'Fridge' not found in content"), 2, 3, colorIndex: GetSafeColorIndex(5, paletteSize));
 
         // Create beds with different colors
         var bedObjectId = Content.GetObjectId("Bed")
@@ -293,16 +298,16 @@ public sealed class Simulation
         };
         foreach (var (x, y, color) in bedPositions)
         {
-            CreateObject(bedObjectId, x, y, colorIndex: color);
+            CreateObject(bedObjectId, x, y, colorIndex: GetSafeColorIndex(color, paletteSize));
         }
 
         // Create a TV (dark gray)
         CreateObject(Content.GetObjectId("TV")
-            ?? throw new InvalidOperationException("Required object 'TV' not found in content"), 6, 2, colorIndex: 4);
+            ?? throw new InvalidOperationException("Required object 'TV' not found in content"), 6, 2, colorIndex: GetSafeColorIndex(4, paletteSize));
 
         // Create a shower (white)
         CreateObject(Content.GetObjectId("Shower")
-            ?? throw new InvalidOperationException("Required object 'Shower' not found in content"), 10, 5, colorIndex: 11);
+            ?? throw new InvalidOperationException("Required object 'Shower' not found in content"), 10, 5, colorIndex: GetSafeColorIndex(11, paletteSize));
     }
 
     private void BootstrapPawns()
@@ -365,6 +370,15 @@ public sealed class Simulation
         var rng = new Random(seed);
         var paletteIds = content.ColorPalettes.Keys.ToArray();
         return paletteIds[rng.Next(paletteIds.Length)];
+    }
+
+    /// <summary>
+    /// Example: When initializing test/demo objects, assign color indices safely.
+    /// </summary>
+    private int GetSafeColorIndex(int requestedIndex, int paletteSize)
+    {
+        if (paletteSize < 1) return 0;
+        return requestedIndex % paletteSize;
     }
 
     public void Tick()
