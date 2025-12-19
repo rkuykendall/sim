@@ -49,7 +49,8 @@ public partial class PreviewSquare : Button
     /// <param name="isObjectPreview">True if this is the object preview (shows generic-object.png when null)</param>
     /// <param name="isTerrainPreview">True if this is the terrain preview (shows generic-terrain.png when null)</param>
     /// <param name="isDeletePreview">True if this is the delete preview (shows delete.png)</param>
-    public void UpdatePreview(int colorIndex, int? objectDefId, int? terrainDefId, ContentRegistry? content, bool isObjectPreview = false, bool isTerrainPreview = false, bool isDeletePreview = false)
+    /// <param name="isSelectPreview">True if this is the select preview (shows select.png)</param>
+    public void UpdatePreview(int colorIndex, int? objectDefId, int? terrainDefId, ContentRegistry? content, bool isObjectPreview = false, bool isTerrainPreview = false, bool isDeletePreview = false, bool isSelectPreview = false)
     {
         if (_colorRect == null || _textureRect == null)
             return;
@@ -77,7 +78,11 @@ public partial class PreviewSquare : Button
         }
 
         // Show generic icons when nothing is selected
-        if (texture == null && isObjectPreview)
+        if (texture == null && isSelectPreview)
+        {
+            texture = GD.Load<Texture2D>("res://sprites/select.png");
+        }
+        else if (texture == null && isObjectPreview)
         {
             texture = GD.Load<Texture2D>("res://sprites/generic-object.png");
         }

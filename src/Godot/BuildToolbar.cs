@@ -6,31 +6,28 @@ namespace SimGame.Godot;
 
 public partial class BuildToolbar : PanelContainer
 {
+    [Export] public NodePath SelectPreviewPath { get; set; } = "";
     [Export] public NodePath PreviewSquarePath { get; set; } = "";
     [Export] public NodePath ObjectPreviewPath { get; set; } = "";
     [Export] public NodePath TerrainPreviewPath { get; set; } = "";
     [Export] public NodePath DeletePreviewPath { get; set; } = "";
-    [Export] public NodePath SelectButtonPath { get; set; } = "";
-    [Export] public NodePath PlaceObjectButtonPath { get; set; } = "";
-    [Export] public NodePath PlaceTerrainButtonPath { get; set; } = "";
 
+    private PreviewSquare? _selectPreview;
     private PreviewSquare? _previewSquare;
     private PreviewSquare? _objectPreview;
     private PreviewSquare? _terrainPreview;
     private PreviewSquare? _deletePreview;
-    private Button? _selectButton;
-    private Button? _placeObjectButton;
-    private Button? _placeTerrainButton;
     private ContentRegistry? _content;
     private ColorPickerModal? _colorPickerModal;
     private ContentPickerModal? _objectPickerModal;
     private ContentPickerModal? _terrainPickerModal;
 
-    private Button? _activeToolButton = null;
-
     public override void _Ready()
     {
         // Get node references
+        if (!string.IsNullOrEmpty(SelectPreviewPath))
+            _selectPreview = GetNodeOrNull<PreviewSquare>(SelectPreviewPath);
+
         if (!string.IsNullOrEmpty(PreviewSquarePath))
             _previewSquare = GetNodeOrNull<PreviewSquare>(PreviewSquarePath);
 
@@ -43,26 +40,11 @@ public partial class BuildToolbar : PanelContainer
         if (!string.IsNullOrEmpty(DeletePreviewPath))
             _deletePreview = GetNodeOrNull<PreviewSquare>(DeletePreviewPath);
 
-        if (!string.IsNullOrEmpty(SelectButtonPath))
-            _selectButton = GetNodeOrNull<Button>(SelectButtonPath);
-        if (!string.IsNullOrEmpty(PlaceObjectButtonPath))
-            _placeObjectButton = GetNodeOrNull<Button>(PlaceObjectButtonPath);
-        if (!string.IsNullOrEmpty(PlaceTerrainButtonPath))
-            _placeTerrainButton = GetNodeOrNull<Button>(PlaceTerrainButtonPath);
-
-        // Connect tool button signals
-        if (_selectButton != null)
-        {
-            _selectButton.Pressed += OnSelectClicked;
-            _activeToolButton = _selectButton; // Default
-            HighlightToolButton(_selectButton);
-        }
-        if (_placeObjectButton != null)
-            _placeObjectButton.Pressed += OnPlaceObjectClicked;
-        if (_placeTerrainButton != null)
-            _placeTerrainButton.Pressed += OnPlaceTerrainClicked;
-
         // Connect preview square clicks
+        if (_selectPreview != null)
+        {
+            _selectPreview.Pressed += OnSelectPreviewClicked;
+        }
         if (_previewSquare != null)
         {
             _previewSquare.Pressed += OnColorPreviewClicked;
@@ -89,6 +71,9 @@ public partial class BuildToolbar : PanelContainer
         _content = content;
 
         // Ensure nodes are loaded (in case Initialize is called before _Ready)
+        if (_selectPreview == null && !string.IsNullOrEmpty(SelectPreviewPath))
+            _selectPreview = GetNodeOrNull<PreviewSquare>(SelectPreviewPath);
+
         if (_previewSquare == null && !string.IsNullOrEmpty(PreviewSquarePath))
             _previewSquare = GetNodeOrNull<PreviewSquare>(PreviewSquarePath);
 
@@ -130,6 +115,14 @@ public partial class BuildToolbar : PanelContainer
         UpdateAllPreviews();
     }
 
+    private void OnSelectPreviewClicked()
+    {
+        BuildToolState.Mode = BuildToolMode.Select;
+        BuildToolState.SelectedObjectDefId = null;
+        BuildToolState.SelectedTerrainDefId = null;
+        UpdateAllPreviews();
+    }
+
     private void OnColorPreviewClicked()
     {
         _colorPickerModal?.Show();
@@ -160,7 +153,6 @@ public partial class BuildToolbar : PanelContainer
         BuildToolState.Mode = BuildToolMode.Delete;
         BuildToolState.SelectedObjectDefId = null;
         BuildToolState.SelectedTerrainDefId = null;
-        HighlightToolButton(null); // No tool button highlighted for delete preview
         UpdateAllPreviews();
     }
 
@@ -176,7 +168,6 @@ public partial class BuildToolbar : PanelContainer
         BuildToolState.Mode = BuildToolMode.PlaceObject;
         BuildToolState.SelectedObjectDefId = objectDefId;
         BuildToolState.SelectedTerrainDefId = null;
-        HighlightToolButton(_placeObjectButton);
         UpdateAllPreviews();
     }
 
@@ -185,12 +176,23 @@ public partial class BuildToolbar : PanelContainer
         BuildToolState.Mode = BuildToolMode.PlaceTerrain;
         BuildToolState.SelectedTerrainDefId = terrainDefId;
         BuildToolState.SelectedObjectDefId = null;
-        HighlightToolButton(_placeTerrainButton);
         UpdateAllPreviews();
     }
 
     private void UpdateAllPreviews()
     {
+        // Update select preview
+        _selectPreview?.UpdatePreview(
+            BuildToolState.SelectedColorIndex,
+            null,
+            null,
+            _content,
+            isObjectPreview: false,
+            isTerrainPreview: false,
+            isDeletePreview: false,
+            isSelectPreview: true
+        );
+
         // Update color preview
         _previewSquare?.UpdatePreview(
             BuildToolState.SelectedColorIndex,
@@ -239,6 +241,8 @@ public partial class BuildToolbar : PanelContainer
     private void HighlightActivePreview()
     {
         // Reset all preview highlights
+        if (_selectPreview != null)
+            _selectPreview.Modulate = Colors.White;
         if (_previewSquare != null)
             _previewSquare.Modulate = Colors.White;
         if (_objectPreview != null)
@@ -251,6 +255,10 @@ public partial class BuildToolbar : PanelContainer
         // Highlight the active preview based on mode
         switch (BuildToolState.Mode)
         {
+            case BuildToolMode.Select:
+                if (_selectPreview != null)
+                    _selectPreview.Modulate = new Color(0.7f, 1.0f, 0.7f); // Light green tint
+                break;
             case BuildToolMode.PlaceObject:
                 if (_objectPreview != null)
                     _objectPreview.Modulate = new Color(0.7f, 1.0f, 0.7f); // Light green tint
@@ -263,50 +271,6 @@ public partial class BuildToolbar : PanelContainer
                 if (_deletePreview != null)
                     _deletePreview.Modulate = new Color(0.7f, 1.0f, 0.7f); // Light green tint
                 break;
-            case BuildToolMode.Select:
-                // No preview is highlighted in select mode
-                break;
-        }
-    }
-
-    private void OnSelectClicked()
-    {
-        BuildToolState.Mode = BuildToolMode.Select;
-        BuildToolState.SelectedObjectDefId = null;
-        BuildToolState.SelectedTerrainDefId = null;
-        HighlightToolButton(_selectButton);
-        UpdateAllPreviews();
-    }
-
-    private void OnPlaceObjectClicked()
-    {
-        BuildToolState.Mode = BuildToolMode.PlaceObject;
-        BuildToolState.SelectedTerrainDefId = null;
-        HighlightToolButton(_placeObjectButton);
-        UpdateAllPreviews();
-    }
-
-    private void OnPlaceTerrainClicked()
-    {
-        BuildToolState.Mode = BuildToolMode.PlaceTerrain;
-        BuildToolState.SelectedObjectDefId = null;
-        HighlightToolButton(_placeTerrainButton);
-        UpdateAllPreviews();
-    }
-
-    private void HighlightToolButton(Button? button)
-    {
-        // Remove highlight from previous button
-        if (_activeToolButton != null)
-        {
-            _activeToolButton.Modulate = Colors.White;
-        }
-
-        // Highlight new button
-        if (button != null)
-        {
-            button.Modulate = new Color(0.7f, 1.0f, 0.7f); // Light green tint
-            _activeToolButton = button;
         }
     }
 }
