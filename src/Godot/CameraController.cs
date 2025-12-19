@@ -28,12 +28,12 @@ public partial class CameraController : Camera2D
     {
         if (Input.IsActionJustPressed("camera_zoom_in"))
         {
-            _zoomTarget *= 1.1f;
+            _zoomTarget *= 2f;
         }
 
         if (Input.IsActionJustPressed("camera_zoom_out"))
         {
-            _zoomTarget *= 0.9f;
+            _zoomTarget *= 0.5f;
         }
 
         // Use Slerp for smooth interpolated zooming

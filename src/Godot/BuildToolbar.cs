@@ -76,6 +76,9 @@ public partial class BuildToolbar : PanelContainer
         {
             _terrainPreview.Pressed += OnTerrainPreviewClicked;
         }
+
+        // Initialize previews with default color before content loads
+        UpdateAllPreviews();
     }
 
     public void Initialize(ContentRegistry content)
@@ -178,7 +181,9 @@ public partial class BuildToolbar : PanelContainer
             BuildToolState.SelectedColorIndex,
             null,
             null,
-            _content
+            _content,
+            isObjectPreview: false,
+            isTerrainPreview: false
         );
 
         // Update object preview
@@ -186,7 +191,9 @@ public partial class BuildToolbar : PanelContainer
             BuildToolState.SelectedColorIndex,
             BuildToolState.SelectedObjectDefId,
             null,
-            _content
+            _content,
+            isObjectPreview: true,
+            isTerrainPreview: false
         );
 
         // Update terrain preview
@@ -194,7 +201,9 @@ public partial class BuildToolbar : PanelContainer
             BuildToolState.SelectedColorIndex,
             null,
             BuildToolState.SelectedTerrainDefId,
-            _content
+            _content,
+            isObjectPreview: false,
+            isTerrainPreview: true
         );
     }
 

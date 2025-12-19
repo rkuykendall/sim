@@ -46,7 +46,9 @@ public partial class PreviewSquare : Button
     /// <param name="objectDefId">Selected object ID, or null</param>
     /// <param name="terrainDefId">Selected terrain ID, or null</param>
     /// <param name="content">Content registry for looking up definitions</param>
-    public void UpdatePreview(int colorIndex, int? objectDefId, int? terrainDefId, ContentRegistry? content)
+    /// <param name="isObjectPreview">True if this is the object preview (shows generic-object.png when null)</param>
+    /// <param name="isTerrainPreview">True if this is the terrain preview (shows generic-terrain.png when null)</param>
+    public void UpdatePreview(int colorIndex, int? objectDefId, int? terrainDefId, ContentRegistry? content, bool isObjectPreview = false, bool isTerrainPreview = false)
     {
         if (_colorRect == null || _textureRect == null)
             return;
@@ -73,6 +75,16 @@ public partial class PreviewSquare : Button
             texture = GD.Load<Texture2D>("res://sprites/unknown.png");
         }
 
+        // Show generic icons when nothing is selected
+        if (texture == null && isObjectPreview)
+        {
+            texture = GD.Load<Texture2D>("res://sprites/generic-object.png");
+        }
+        else if (texture == null && isTerrainPreview)
+        {
+            texture = GD.Load<Texture2D>("res://sprites/generic-terrain.png");
+        }
+
         if (texture != null)
         {
             // Show sprite with color modulation
@@ -83,7 +95,7 @@ public partial class PreviewSquare : Button
         }
         else
         {
-            // Show solid color only
+            // Show solid color only (for color preview)
             _colorRect.Color = baseColor;
             _colorRect.Visible = true;
             _textureRect.Visible = false;
