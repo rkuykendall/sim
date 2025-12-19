@@ -4,8 +4,6 @@
 
 [node name="Pawn" type="Node2D"]
 script = ExtResource("1")
-NameLabelPath = NodePath("NameLabel")
-ActionLabelPath = NodePath("ActionLabel")
 BodyPath = NodePath("Body")
 
 [node name="Body" type="ColorRect" parent="."]

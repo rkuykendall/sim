@@ -37,6 +37,9 @@ public static class SpriteResourceManager
 		["plant"] = "res://sprites/objects/plant.png",
 		["rug"] = "res://sprites/objects/rug.png",
 		["lamp"] = "res://sprites/objects/lamp.png",
+
+		// Character sprites
+		["character_walk"] = "res://sprites/characters/character_walk.png",
 	};
 
 	/// <summary>

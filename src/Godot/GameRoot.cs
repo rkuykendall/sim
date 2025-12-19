@@ -25,6 +25,9 @@ public partial class GameRoot : Node2D
     private Color[] _currentPalette = Enumerable.Repeat(Colors.White, 12).ToArray();
     private int _currentPaletteId = -1; // Track which palette is currently loaded
 
+    // Character sprite for pawns
+    private Texture2D? _characterSprite = null;
+
     private int? _selectedPawnId = null;
     private int? _selectedObjectId = null;
     private bool _debugMode = false;
@@ -66,6 +69,10 @@ public partial class GameRoot : Node2D
 
         _sim = new Simulation(content);
         _tickDelta = 1f / Simulation.TickRate;
+
+        // Load character sprite
+        _characterSprite = SpriteResourceManager.GetTexture("character_walk");
+
         _pawnsRoot = GetNode<Node2D>(PawnsRootPath);
         _objectsRoot = GetNode<Node2D>(ObjectsRootPath);
         _tilesRoot = GetNode<Node2D>(TilesRootPath);
@@ -722,18 +729,23 @@ public partial class GameRoot : Node2D
                 node = PawnScene.Instantiate<Node2D>();
                 _pawnsRoot.AddChild(node);
                 _pawnNodes.Add(pawn.Id.Value, node);
+
+                // Initialize with sprite if available
+                if (node is PawnView pawnView && _characterSprite != null)
+                {
+                    pawnView.InitializeWithSprite(_characterSprite);
+                }
             }
 
-            node.Position = new Vector2(
+            var targetPosition = new Vector2(
                 pawn.X * TileSize + TileSize / 2,
                 pawn.Y * TileSize + TileSize / 2
             );
 
             if (node is PawnView pv)
             {
+                pv.SetTargetPosition(targetPosition);
                 pv.SetMood(pawn.Mood);
-                pv.SetNameLabel(pawn.Name);
-                pv.SetAction(pawn.CurrentAction);
                 pv.SetSelected(pawn.Id.Value == _selectedPawnId);
             }
         }
