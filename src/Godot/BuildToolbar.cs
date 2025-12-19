@@ -21,6 +21,7 @@ public partial class BuildToolbar : PanelContainer
     private ColorPickerModal? _colorPickerModal;
     private ContentPickerModal? _objectPickerModal;
     private ContentPickerModal? _terrainPickerModal;
+    private Color[] _currentPalette = System.Linq.Enumerable.Repeat(Colors.White, 12).ToArray();
 
     public override void _Ready()
     {
@@ -115,6 +116,16 @@ public partial class BuildToolbar : PanelContainer
         UpdateAllPreviews();
     }
 
+    /// <summary>
+    /// Update the current color palette. Should be called when the palette changes.
+    /// </summary>
+    public void UpdatePalette(Color[] palette)
+    {
+        _currentPalette = palette;
+        _colorPickerModal?.PopulateColorGrid(palette);
+        UpdateAllPreviews();
+    }
+
     private void OnSelectPreviewClicked()
     {
         BuildToolState.Mode = BuildToolMode.Select;
@@ -133,7 +144,7 @@ public partial class BuildToolbar : PanelContainer
         if (_objectPickerModal != null && _content != null)
         {
             var items = _content.Objects.Select(kv => (kv.Key, kv.Value.SpriteKey, kv.Value.Name));
-            _objectPickerModal.PopulateGrid("Select Object", items, BuildToolState.SelectedColorIndex);
+            _objectPickerModal.PopulateGrid("Select Object", items, BuildToolState.SelectedColorIndex, _currentPalette);
             _objectPickerModal.Show();
         }
     }
@@ -143,7 +154,7 @@ public partial class BuildToolbar : PanelContainer
         if (_terrainPickerModal != null && _content != null)
         {
             var items = _content.Terrains.Select(kv => (kv.Key, kv.Value.SpriteKey, kv.Value.Name));
-            _terrainPickerModal.PopulateGrid("Select Terrain", items, BuildToolState.SelectedColorIndex);
+            _terrainPickerModal.PopulateGrid("Select Terrain", items, BuildToolState.SelectedColorIndex, _currentPalette);
             _terrainPickerModal.Show();
         }
     }
@@ -187,6 +198,7 @@ public partial class BuildToolbar : PanelContainer
             null,
             null,
             _content,
+            _currentPalette,
             isObjectPreview: false,
             isTerrainPreview: false,
             isDeletePreview: false,
@@ -199,6 +211,7 @@ public partial class BuildToolbar : PanelContainer
             null,
             null,
             _content,
+            _currentPalette,
             isObjectPreview: false,
             isTerrainPreview: false
         );
@@ -209,6 +222,7 @@ public partial class BuildToolbar : PanelContainer
             BuildToolState.SelectedObjectDefId,
             null,
             _content,
+            _currentPalette,
             isObjectPreview: true,
             isTerrainPreview: false
         );
@@ -219,6 +233,7 @@ public partial class BuildToolbar : PanelContainer
             null,
             BuildToolState.SelectedTerrainDefId,
             _content,
+            _currentPalette,
             isObjectPreview: false,
             isTerrainPreview: true
         );
@@ -229,6 +244,7 @@ public partial class BuildToolbar : PanelContainer
             null,
             null,
             _content,
+            _currentPalette,
             isObjectPreview: false,
             isTerrainPreview: false,
             isDeletePreview: true

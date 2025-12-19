@@ -14,25 +14,30 @@ public enum BuildToolMode
 }
 
 /// <summary>
-/// Kidpix-style limited color palette.
+/// Utility class for converting Core color definitions to Godot.Color for rendering.
 /// </summary>
 public static class GameColorPalette
 {
-    public static readonly Color[] Colors = new Color[]
+    /// <summary>
+    /// Convert a Core ColorDef to Godot.Color.
+    /// </summary>
+    public static Color ToGodotColor(Core.ColorDef colorDef)
     {
-        new Color(0.2f, 0.6f, 0.2f),   // 0: Green (grass)
-        new Color(0.5f, 0.3f, 0.1f),   // 1: Brown (dirt)
-        new Color(0.7f, 0.7f, 0.7f),   // 2: Light Gray (concrete)
-        new Color(0.8f, 0.6f, 0.3f),   // 3: Tan (wood)
-        new Color(0.4f, 0.4f, 0.4f),   // 4: Dark Gray (stone)
-        new Color(0.2f, 0.4f, 0.8f),   // 5: Blue (water)
-        new Color(0.9f, 0.2f, 0.2f),   // 6: Red
-        new Color(1.0f, 0.8f, 0.2f),   // 7: Yellow
-        new Color(0.6f, 0.3f, 0.6f),   // 8: Purple
-        new Color(1.0f, 0.5f, 0.3f),   // 9: Orange
-        new Color(0.2f, 0.8f, 0.8f),   // 10: Cyan
-        new Color(0.95f, 0.95f, 0.95f) // 11: White
-    };
+        return new Color(colorDef.R, colorDef.G, colorDef.B);
+    }
+
+    /// <summary>
+    /// Convert a list of Core ColorDefs to Godot.Color array.
+    /// </summary>
+    public static Color[] ToGodotColors(System.Collections.Generic.IReadOnlyList<Core.ColorDef> palette)
+    {
+        var colors = new Color[palette.Count];
+        for (int i = 0; i < palette.Count; i++)
+        {
+            colors[i] = ToGodotColor(palette[i]);
+        }
+        return colors;
+    }
 }
 
 /// <summary>

@@ -47,7 +47,7 @@ public partial class ContentPickerModal : Control
     /// <summary>
     /// Populate the grid with sprite icons from the provided items.
     /// </summary>
-    public void PopulateGrid(string title, IEnumerable<(int id, string spriteKey, string name)> items, int currentColorIndex)
+    public void PopulateGrid(string title, IEnumerable<(int id, string spriteKey, string name)> items, int currentColorIndex, Color[] palette)
     {
         if (_titleLabel != null)
         {
@@ -63,7 +63,7 @@ public partial class ContentPickerModal : Control
             child.QueueFree();
         }
 
-        var currentColor = GameColorPalette.Colors[currentColorIndex];
+        var currentColor = palette[currentColorIndex];
 
         // Create button for each item
         foreach (var (id, spriteKey, name) in items.OrderBy(x => x.name))

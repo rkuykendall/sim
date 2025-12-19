@@ -45,6 +45,7 @@ public sealed class RenderSnapshot
     public IReadOnlyList<RenderPawn> Pawns { get; init; } = Array.Empty<RenderPawn>();
     public IReadOnlyList<RenderObject> Objects { get; init; } = Array.Empty<RenderObject>();
     public RenderTime Time { get; init; } = new();
+    public IReadOnlyList<ColorDef> ColorPalette { get; init; } = Array.Empty<ColorDef>();
 }
 
 public static class RenderSnapshotBuilder
@@ -157,6 +158,17 @@ public static class RenderSnapshotBuilder
             TimeString = sim.Time.TimeString
         };
 
-        return new RenderSnapshot { Pawns = pawns, Objects = objects, Time = time };
+        // Get the selected color palette
+        var colorPalette = sim.Content.ColorPalettes.TryGetValue(sim.SelectedPaletteId, out var palette)
+            ? palette.Colors
+            : Array.Empty<ColorDef>();
+
+        return new RenderSnapshot
+        {
+            Pawns = pawns,
+            Objects = objects,
+            Time = time,
+            ColorPalette = colorPalette
+        };
     }
 }

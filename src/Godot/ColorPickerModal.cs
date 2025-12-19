@@ -24,23 +24,35 @@ public partial class ColorPickerModal : Control
         // Set to full screen
         SetAnchorsPreset(LayoutPreset.FullRect);
 
+        // Block all input from passing through the modal
+        MouseFilter = MouseFilterEnum.Stop;
+
         // Get node references
         if (!string.IsNullOrEmpty(BackgroundPath))
-            _background = GetNodeOrNull<ColorRect>(BackgroundPath);
-
-        if (!string.IsNullOrEmpty(ColorGridPath))
-            _colorGrid = GetNodeOrNull<GridContainer>(ColorGridPath);
-
-        // Connect background click to close
-        if (_background != null)
         {
-            _background.GuiInput += OnBackgroundInput;
+            _background = GetNodeOrNull<ColorRect>(BackgroundPath);
+            // Background should not block input to buttons
+            if (_background != null)
+            {
+                _background.MouseFilter = MouseFilterEnum.Ignore;
+            }
         }
 
-        PopulateColorGrid();
+        if (!string.IsNullOrEmpty(ColorGridPath))
+        {
+            _colorGrid = GetNodeOrNull<GridContainer>(ColorGridPath);
+            // Grid uses default MouseFilter (Pass) to allow buttons to receive input
+        }
+
+        // Handle clicks on the modal itself (outside the color grid) to close
+        GuiInput += OnModalInput;
     }
 
-    private void PopulateColorGrid()
+    /// <summary>
+    /// Populate the color grid with buttons for each color in the palette.
+    /// Should be called by the parent (e.g., BuildToolbar) with the current palette.
+    /// </summary>
+    public void PopulateColorGrid(Color[] palette)
     {
         if (_colorGrid == null)
             return;
@@ -52,19 +64,20 @@ public partial class ColorPickerModal : Control
         }
 
         // Create button for each color in palette
-        for (int i = 0; i < GameColorPalette.Colors.Length; i++)
+        for (int i = 0; i < palette.Length; i++)
         {
             int colorIndex = i; // Capture for lambda
             var button = new Button
             {
                 CustomMinimumSize = new Vector2(64, 64),
-                Text = ""
+                Text = "",
+                FocusMode = FocusModeEnum.None // Prevent focus issues
             };
 
             // Create a ColorRect as background to show the color
             var colorRect = new ColorRect
             {
-                Color = GameColorPalette.Colors[i],
+                Color = palette[i],
                 MouseFilter = MouseFilterEnum.Ignore
             };
             colorRect.SetAnchorsPreset(LayoutPreset.FullRect);
@@ -82,12 +95,23 @@ public partial class ColorPickerModal : Control
         Hide();
     }
 
-    private void OnBackgroundInput(InputEvent @event)
+    private void OnModalInput(InputEvent @event)
     {
         if (@event is InputEventMouseButton mouseButton)
         {
             if (mouseButton.Pressed && mouseButton.ButtonIndex == MouseButton.Left)
             {
+                // Check if the click was on the color grid or any of its children
+                if (_colorGrid != null)
+                {
+                    var gridRect = _colorGrid.GetGlobalRect();
+                    if (gridRect.HasPoint(mouseButton.GlobalPosition))
+                    {
+                        // Click was inside the grid, don't close
+                        return;
+                    }
+                }
+
                 Hide();
             }
         }

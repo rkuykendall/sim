@@ -19,10 +19,12 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="MoonSharp" Version="2.0.0" />
+    <PackageReference Include="YamlDotNet" Version="15.1.0" />
   </ItemGroup>
 
   <!-- Include Core source files directly to avoid Godot dependency -->
   <ItemGroup>
+    <Compile Include="../../src/Core/ColorPaletteDef.cs" Link="Core/ColorPaletteDef.cs" />
     <Compile Include="../../src/Core/Components.cs" Link="Core/Components.cs" />
     <Compile Include="../../src/Core/ContentLoader.cs" Link="Core/ContentLoader.cs" />
     <Compile Include="../../src/Core/ContentRegistry.cs" Link="Core/ContentRegistry.cs" />

@@ -13,6 +13,7 @@ public sealed class ContentRegistry
     private readonly ContentStore<NeedDef> _needs = new();
     private readonly ContentStore<ObjectDef> _objects = new();
     private readonly ContentStore<TerrainDef> _terrains = new();
+    private readonly ContentStore<ColorPaletteDef> _colorPalettes = new();
 
     /// <summary>All registered buff definitions by ID.</summary>
     public IReadOnlyDictionary<int, BuffDef> Buffs => _buffs.ById;
@@ -26,6 +27,9 @@ public sealed class ContentRegistry
     /// <summary>All registered terrain definitions by ID.</summary>
     public IReadOnlyDictionary<int, TerrainDef> Terrains => _terrains.ById;
 
+    /// <summary>All registered color palette definitions by ID.</summary>
+    public IReadOnlyDictionary<int, ColorPaletteDef> ColorPalettes => _colorPalettes.ById;
+
     /// <summary>Register a buff definition. ID is auto-assigned if buff.Id is 0.</summary>
     public void RegisterBuff(string key, BuffDef buff) => _buffs.Register(key, buff);
 
@@ -38,6 +42,9 @@ public sealed class ContentRegistry
     /// <summary>Register a terrain definition. ID is auto-assigned if terrain.Id is 0.</summary>
     public void RegisterTerrain(string key, TerrainDef terrain) => _terrains.Register(key, terrain);
 
+    /// <summary>Register a color palette definition. ID is auto-assigned if palette.Id is 0.</summary>
+    public void RegisterColorPalette(string key, ColorPaletteDef palette) => _colorPalettes.Register(key, palette);
+
     /// <summary>Get a buff ID by its key name.</summary>
     public int? GetBuffId(string name) => _buffs.GetId(name);
 
@@ -49,4 +56,7 @@ public sealed class ContentRegistry
 
     /// <summary>Get a terrain ID by its key name.</summary>
     public int? GetTerrainId(string name) => _terrains.GetId(name);
+
+    /// <summary>Get a color palette ID by its key name.</summary>
+    public int? GetColorPaletteId(string name) => _colorPalettes.GetId(name);
 }

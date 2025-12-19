@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using MoonSharp.Interpreter;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace SimGame.Core;
 
@@ -21,12 +24,15 @@ public static class ContentLoader
     public static Action<string>? LogError { get; set; }
 
     /// <summary>
-    /// Load all content from Lua files and return a populated ContentRegistry.
+    /// Load all content from YAML and Lua files and return a populated ContentRegistry.
     /// </summary>
     public static ContentRegistry LoadAll(string contentPath)
     {
         var registry = new ContentRegistry();
         var script = new Script();
+
+        // Load color palettes first (no dependencies)
+        LoadColorPalettes(registry, Path.Combine(contentPath, "palettes"));
 
         // Load in order: buffs first (needs reference them), then needs, then terrains, then objects
         LoadBuffs(script, registry, Path.Combine(contentPath, "core", "buffs.lua"));
@@ -34,7 +40,7 @@ public static class ContentLoader
         LoadTerrains(script, registry, Path.Combine(contentPath, "core", "terrains.lua"));
         LoadObjects(script, registry, Path.Combine(contentPath, "core", "objects.lua"));
 
-        Log?.Invoke($"ContentLoader: Loaded {registry.Buffs.Count} buffs, {registry.Needs.Count} needs, {registry.Terrains.Count} terrains, {registry.Objects.Count} objects");
+        Log?.Invoke($"ContentLoader: Loaded {registry.ColorPalettes.Count} color palettes, {registry.Buffs.Count} buffs, {registry.Needs.Count} needs, {registry.Terrains.Count} terrains, {registry.Objects.Count} objects");
 
         return registry;
     }
@@ -193,5 +199,73 @@ public static class ContentLoader
 
             registry.RegisterObject(key, obj);
         }
+    }
+
+    private static void LoadColorPalettes(ContentRegistry registry, string palettesPath)
+    {
+        if (!Directory.Exists(palettesPath))
+        {
+            LogError?.Invoke($"ContentLoader: Palettes directory not found: {palettesPath}");
+            return;
+        }
+
+        var deserializer = new DeserializerBuilder()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .Build();
+
+        var paletteFiles = Directory.GetFiles(palettesPath, "*.yaml");
+
+        foreach (var file in paletteFiles)
+        {
+            try
+            {
+                var yaml = File.ReadAllText(file);
+                var paletteData = deserializer.Deserialize<PaletteYaml>(yaml);
+
+                if (paletteData.Colors.Count != 12)
+                {
+                    LogError?.Invoke($"ColorPalette '{Path.GetFileNameWithoutExtension(file)}' must have exactly 12 colors (has {paletteData.Colors.Count})");
+                    continue;
+                }
+
+                var palette = new ColorPaletteDef
+                {
+                    Name = paletteData.Name,
+                    Description = paletteData.Description ?? "",
+                    Colors = paletteData.Colors.Select(c => new ColorDef
+                    {
+                        Name = c.Name,
+                        R = c.R,
+                        G = c.G,
+                        B = c.B
+                    }).ToList()
+                };
+
+                var key = Path.GetFileNameWithoutExtension(file);
+                registry.RegisterColorPalette(key, palette);
+            }
+            catch (Exception ex)
+            {
+                LogError?.Invoke($"ContentLoader: Failed to load palette {file}: {ex.Message}");
+            }
+        }
+
+        Log?.Invoke($"ContentLoader: Loaded {registry.ColorPalettes.Count} color palettes");
+    }
+
+    // YAML deserialization classes
+    private sealed class PaletteYaml
+    {
+        public string Name { get; set; } = "";
+        public string? Description { get; set; }
+        public List<ColorYaml> Colors { get; set; } = new();
+    }
+
+    private sealed class ColorYaml
+    {
+        public string Name { get; set; } = "";
+        public float R { get; set; }
+        public float G { get; set; }
+        public float B { get; set; }
     }
 }

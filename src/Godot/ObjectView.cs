@@ -46,12 +46,12 @@ public partial class ObjectView : Node2D
         _usesSprite = true;
     }
 
-    public void SetObjectInfo(string name, bool inUse, int colorIndex)
+    public void SetObjectInfo(string name, bool inUse, int colorIndex, Color[] palette)
     {
         if (NameLabel != null)
             NameLabel.Text = name;
 
-        var baseColor = GameColorPalette.Colors[colorIndex];
+        var baseColor = palette[colorIndex];
         var displayColor = inUse ? baseColor.Lightened(0.3f) : baseColor;
 
         if (_usesSprite && _sprite != null)

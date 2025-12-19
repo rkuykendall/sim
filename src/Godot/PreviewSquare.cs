@@ -42,20 +42,21 @@ public partial class PreviewSquare : Button
     /// <summary>
     /// Updates the preview to show the current color and selected sprite.
     /// </summary>
-    /// <param name="colorIndex">Index into GameColorPalette</param>
+    /// <param name="colorIndex">Index into color palette</param>
     /// <param name="objectDefId">Selected object ID, or null</param>
     /// <param name="terrainDefId">Selected terrain ID, or null</param>
     /// <param name="content">Content registry for looking up definitions</param>
+    /// <param name="palette">Current color palette</param>
     /// <param name="isObjectPreview">True if this is the object preview (shows generic-object.png when null)</param>
     /// <param name="isTerrainPreview">True if this is the terrain preview (shows generic-terrain.png when null)</param>
     /// <param name="isDeletePreview">True if this is the delete preview (shows delete.png)</param>
     /// <param name="isSelectPreview">True if this is the select preview (shows select.png)</param>
-    public void UpdatePreview(int colorIndex, int? objectDefId, int? terrainDefId, ContentRegistry? content, bool isObjectPreview = false, bool isTerrainPreview = false, bool isDeletePreview = false, bool isSelectPreview = false)
+    public void UpdatePreview(int colorIndex, int? objectDefId, int? terrainDefId, ContentRegistry? content, Color[] palette, bool isObjectPreview = false, bool isTerrainPreview = false, bool isDeletePreview = false, bool isSelectPreview = false)
     {
         if (_colorRect == null || _textureRect == null)
             return;
 
-        var baseColor = GameColorPalette.Colors[colorIndex];
+        var baseColor = palette[colorIndex];
         Texture2D? texture = null;
 
         // Determine which sprite to show

@@ -20,7 +20,11 @@ public partial class GameRoot : Node2D
     // Reusable collections for sync operations (avoid per-frame allocations)
     private readonly HashSet<int> _activeIds = new();
     private readonly List<int> _idsToRemove = new();
-    
+
+    // Current color palette from snapshot (fallback to white if empty)
+    private Color[] _currentPalette = Enumerable.Repeat(Colors.White, 12).ToArray();
+    private int _currentPaletteId = -1; // Track which palette is currently loaded
+
     private int? _selectedPawnId = null;
     private int? _selectedObjectId = null;
     private bool _debugMode = false;
@@ -49,6 +53,7 @@ public partial class GameRoot : Node2D
     private ColorRect? _nightOverlay;
     private Camera2D? _camera;
     private CanvasLayer? _uiLayer;
+    private BuildToolbar? _toolbar;
 
     public override void _Ready()
     {
@@ -62,8 +67,23 @@ public partial class GameRoot : Node2D
         _objectsRoot = GetNode<Node2D>(ObjectsRootPath);
         _tilesRoot = GetNode<Node2D>(TilesRootPath);
 
+        // Initialize palette immediately so tiles render with correct colors
+        var initialSnapshot = _sim.CreateRenderSnapshot();
+        _currentPalette = GameColorPalette.ToGodotColors(initialSnapshot.ColorPalette);
+        // Don't set _currentPaletteId yet - let _Process() call UpdatePalette on first frame
+        // when the ColorPickerModal is actually ready
+
         // Create tile visualization nodes
         InitializeTileNodes();
+
+        // Do an initial sync of all tiles to show the world
+        for (int x = 0; x <= _sim.World.Width; x++)
+        {
+            for (int y = 0; y <= _sim.World.Height; y++)
+            {
+                UpdateSingleTile(new TileCoord(x, y));
+            }
+        }
 
         if (!string.IsNullOrEmpty(InfoPanelPath))
             _infoPanel = GetNodeOrNull<PawnInfoPanel>(InfoPanelPath);
@@ -81,8 +101,10 @@ public partial class GameRoot : Node2D
         // Initialize build toolbar
         if (!string.IsNullOrEmpty(ToolbarPath))
         {
-            var toolbar = GetNodeOrNull<BuildToolbar>(ToolbarPath);
-            toolbar?.Initialize(_sim.Content);
+            _toolbar = GetNodeOrNull<BuildToolbar>(ToolbarPath);
+            _toolbar?.Initialize(_sim.Content);
+            // Don't call UpdatePalette here - modal isn't ready yet
+            // _Process() will call it on first frame
         }
     }
 
@@ -98,6 +120,15 @@ public partial class GameRoot : Node2D
 
         var snapshot = _sim.CreateRenderSnapshot();
         _lastSnapshot = snapshot;
+
+        // Update current palette from snapshot (only when it changes)
+        if (_sim.SelectedPaletteId != _currentPaletteId)
+        {
+            _currentPalette = GameColorPalette.ToGodotColors(snapshot.ColorPalette);
+            _currentPaletteId = _sim.SelectedPaletteId;
+            _toolbar?.UpdatePalette(_currentPalette);
+        }
+
         // Note: SyncTiles() removed from main loop for performance
         // Tiles are now updated only when they change (via UpdateTileAndNeighbors after PaintTerrain)
         SyncPawns(snapshot);
@@ -314,13 +345,13 @@ public partial class GameRoot : Node2D
         // Draw preview based on mode
         if (BuildToolState.Mode == BuildToolMode.PlaceTerrain && BuildToolState.SelectedTerrainDefId.HasValue)
         {
-            var color = GameColorPalette.Colors[BuildToolState.SelectedColorIndex];
+            var color = _currentPalette[BuildToolState.SelectedColorIndex];
             color.A = 0.5f; // Semi-transparent
             DrawRect(rect, color, true);
         }
         else if (BuildToolState.Mode == BuildToolMode.PlaceObject && BuildToolState.SelectedObjectDefId.HasValue)
         {
-            var color = GameColorPalette.Colors[BuildToolState.SelectedColorIndex];
+            var color = _currentPalette[BuildToolState.SelectedColorIndex];
             color.A = 0.5f; // Semi-transparent
             DrawRect(rect, color, true);
         }
@@ -570,7 +601,7 @@ public partial class GameRoot : Node2D
         if (flatTexture != null)
         {
             sprite.Texture = flatTexture;
-            sprite.Modulate = GameColorPalette.Colors[tile.ColorIndex];
+            sprite.Modulate = _currentPalette[tile.ColorIndex];
             sprite.Visible = true;
         }
         else
@@ -610,7 +641,7 @@ public partial class GameRoot : Node2D
                     hasPathNeighbor = true;
                     pathTerrainId = tile.TerrainTypeId;
                     pathTexture = SpriteResourceManager.GetTexture(terrainDef.SpriteKey);
-                    pathColor = GameColorPalette.Colors[tile.ColorIndex];
+                    pathColor = _currentPalette[tile.ColorIndex];
                     break;
                 }
             }
@@ -737,7 +768,7 @@ public partial class GameRoot : Node2D
 
             if (node is ObjectView ov)
             {
-                ov.SetObjectInfo(obj.Name, obj.InUse, obj.ColorIndex);
+                ov.SetObjectInfo(obj.Name, obj.InUse, obj.ColorIndex, _currentPalette);
             }
         }
         

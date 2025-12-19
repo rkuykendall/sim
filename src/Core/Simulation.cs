@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SimGame.Core;
 
@@ -57,6 +58,8 @@ public sealed class Simulation
     public TimeService Time { get; }
     public Random Random { get; }
     public ContentRegistry Content { get; }
+    public int Seed { get; }
+    public int SelectedPaletteId { get; }
 
     private readonly SystemManager _systems = new();
 
@@ -77,8 +80,12 @@ public sealed class Simulation
         // Initialize time service with optional start hour
         Time = new TimeService(config?.StartHour ?? TimeService.DefaultStartHour);
 
-        // Initialize random number generator with optional seed
-        Random = config?.Seed != null ? new Random(config.Seed.Value) : new Random();
+        // Store seed for deterministic behavior (use Environment.TickCount if not provided)
+        Seed = config?.Seed ?? Environment.TickCount;
+        Random = new Random(Seed);
+
+        // Select color palette deterministically based on seed
+        SelectedPaletteId = SelectColorPalette(content, Seed);
 
         // Create world with optional custom bounds
         if (config?.WorldBounds != null)
@@ -342,6 +349,22 @@ public sealed class Simulation
             Entities.Buffs[id] = new BuffComponent();
             Entities.Actions[id] = new ActionComponent();
         }
+    }
+
+    /// <summary>
+    /// Select a color palette deterministically based on the world seed.
+    /// Uses a separate Random instance to avoid affecting the main simulation RNG.
+    /// </summary>
+    private int SelectColorPalette(ContentRegistry content, int seed)
+    {
+        if (content.ColorPalettes.Count == 0)
+            throw new InvalidOperationException(
+                "No color palettes loaded. Ensure content/palettes/*.yaml files exist.");
+
+        // Use seed to deterministically select a palette
+        var rng = new Random(seed);
+        var paletteIds = content.ColorPalettes.Keys.ToArray();
+        return paletteIds[rng.Next(paletteIds.Length)];
     }
 
     public void Tick()
