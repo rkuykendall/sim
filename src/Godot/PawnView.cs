@@ -60,7 +60,8 @@ public partial class PawnView : Node2D
         _sprite = new AnimatedSprite2D
         {
             Centered = true,
-            Name = "Sprite"
+            Name = "Sprite",
+            Scale = new Vector2(2f, 2f)  // Scale 16x16 sprite to 32x32
         };
 
         // Create sprite frames for animation
