@@ -98,38 +98,6 @@ public sealed class Simulation
             World = new World();
         }
 
-        // Initialize all tiles with default terrain (Grass)
-        // Terrain IDs start at 1, so we need to set a default instead of leaving them at 0
-        // Find the terrain ID for "Grass" by key or SpriteKey
-        var defaultTerrainId = Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "grass" || kv.Key.ToString() == "Grass").Key;
-        if (defaultTerrainId == 0) defaultTerrainId = 1;
-        for (int x = 0; x < World.Width; x++)
-        {
-            for (int y = 0; y < World.Height; y++)
-            {
-                var tile = World.GetTile(x, y);
-                tile.TerrainTypeId = defaultTerrainId;
-            }
-        }
-
-        // Add a 3x3 path grid for testing autotiling (center-left of world)
-        // Find the terrain ID for "Path" by key or SpriteKey
-        var pathTerrainId = Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "path" || kv.Key.ToString() == "Path").Key;
-        if (pathTerrainId != 0)
-        {
-            int startX = 5;
-            int startY = 4;
-            for (int dx = 0; dx < 3; dx++)
-            {
-                for (int dy = 0; dy < 3; dy++)
-                {
-                    var tile = World.GetTile(startX + dx, startY + dy);
-                    tile.TerrainTypeId = pathTerrainId;
-                    tile.ColorIndex = 0; // Use first color
-                }
-            }
-        }
-
         _systems.Add(new NeedsSystem());
         _systems.Add(new ProximitySocialSystem());
         _systems.Add(new BuffSystem());
@@ -139,7 +107,6 @@ public sealed class Simulation
 
         if (config == null || !config.SkipDefaultBootstrap)
         {
-            BootstrapWorld();
             BootstrapPawns();
         }
 
@@ -289,40 +256,6 @@ public sealed class Simulation
         Entities.Actions[id] = new ActionComponent();
 
         return id;
-    }
-
-    private void BootstrapWorld()
-    {
-        // Get palette size for safe color indexing
-        int paletteSize = 1;
-        if (Content.ColorPalettes.TryGetValue(SelectedPaletteId, out var paletteDef))
-            paletteSize = paletteDef.Colors.Count;
-
-        // Create a fridge (blue)
-        CreateObject(Content.GetObjectId("Fridge")
-            ?? throw new InvalidOperationException("Required object 'Fridge' not found in content"), 2, 3, colorIndex: GetSafeColorIndex(5, paletteSize));
-
-        // Create beds with different colors
-        var bedObjectId = Content.GetObjectId("Bed")
-            ?? throw new InvalidOperationException("Required object 'Bed' not found in content");
-        var bedPositions = new[] {
-            (8, 2, 1),  // Brown bed
-            (8, 4, 6),  // Red bed
-            (8, 6, 8),  // Purple bed
-            (8, 8, 9)   // Orange bed
-        };
-        foreach (var (x, y, color) in bedPositions)
-        {
-            CreateObject(bedObjectId, x, y, colorIndex: GetSafeColorIndex(color, paletteSize));
-        }
-
-        // Create a TV (dark gray)
-        CreateObject(Content.GetObjectId("TV")
-            ?? throw new InvalidOperationException("Required object 'TV' not found in content"), 6, 2, colorIndex: GetSafeColorIndex(4, paletteSize));
-
-        // Create a shower (white)
-        CreateObject(Content.GetObjectId("Shower")
-            ?? throw new InvalidOperationException("Required object 'Shower' not found in content"), 10, 5, colorIndex: GetSafeColorIndex(11, paletteSize));
     }
 
     private void BootstrapPawns()

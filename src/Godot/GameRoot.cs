@@ -636,7 +636,7 @@ public partial class GameRoot : Node2D
         }
 
         // Render flat terrain using its sprite key
-        var flatTexture = SpriteResourceManager.GetTexture(terrainDef?.SpriteKey ?? "grass");
+        var flatTexture = SpriteResourceManager.GetTexture(terrainDef?.SpriteKey ?? "flat");
         if (flatTexture != null)
         {
             sprite.Texture = flatTexture;
