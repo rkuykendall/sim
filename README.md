@@ -30,7 +30,6 @@ godot
 └── project.godot      # Godot project config
 ```
 
-
 ## Running Tests
 
 To run the automated test suite (unit and integration tests):

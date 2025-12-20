@@ -1,89 +1,134 @@
 -- Palettes.lua: All palettes as arrays of hex codes. Color names are included as comments.
 
 Palettes = {
-    Autumn = {
-        -- Forest Green
-        "#338033",
-        -- Rust Brown
-        "#994D1A",
-        -- Warm Gray
-        "#B3A699",
-        -- Golden
-        "#E6B34D",
-        -- Charcoal
-        "#4D4D4D",
-        -- Steel Blue
-        "#6680B3",
-        -- Crimson
-        "#CC3333",
-        -- Amber
-        "#FFBF00",
-        -- Plum
-        "#B34D80",
-        -- Burnt Orange
-        "#E6731A",
-        -- Teal
-        "#33B3B3",
-        -- Cream
-        "#F2E5CC"
-    },
-    Default = {
-        -- Grass Green
-        "#339933",
-        -- Dirt Brown
-        "#7F4D1A",
-        -- Light Gray
-        "#B3B3B3",
-        -- Tan
-        "#CC9933",
-        -- Dark Gray
-        "#666666",
-        -- Blue
-        "#3366CC",
-        -- Red
-        "#E63333",
-        -- Yellow
-        "#FFD433",
-        -- Purple
-        "#994D99",
-        -- Orange
-        "#FF993D",
-        -- Cyan
-        "#33CCCC",
-        -- White
-        "#F2F2F2"
+    Islands = {
+        "#8fde5d",
+        "#3ca370",
+        "#ffe478",
+        "#ffb570",
+        "#4b5bab",
+        "#964253",
+        "#c2c2d1",
+        "#ffffeb",
     },
     Ocean = {
-        -- Sea Green
         "#339980",
-        -- Sand
-        "#CCB380",
-        -- Pearl Gray
-        "#BFC8CC",
-        -- Driftwood
         "#B3A699",
-        -- Slate
-        "#667380",
-        -- Deep Blue
         "#1A4DB3",
-        -- Coral
         "#FF8066",
-        -- Sunshine
         "#FFE64D",
-        -- Lavender
         "#997FCC",
-        -- Peach
         "#FFB380",
-        -- Aqua
         "#4DFFE5",
-        -- Sea Foam
-        "#E5F2F2"
+    },
+    LavaGB = {
+        "#4a2480",
+        "#ff8e80",
+        "#c53a9d",
+    },
+    Curiosities = {
+        "#46425e",
+        "#15788c",
+        "#00b9be",
+        "#ffeecc",
+        "#ffb0a3",
+        "#ff6973",
+    },
+    Pollen8 = {
+        "#ffe7d6",
+        "#72dcbb",
+        "#34acba",
+        "#73464c",
+        "#ab5675",
+        "#ee6a7c",
+        "#ffa7a5",
+        "#ffe07e",
+    },
+    Capp5 = {
+        "#66a1ff",
+        "#6b61ff",
+        "#fadda2",
+        "#8ecde6",
+        "#f0eff4",
+    },
+    PastelQT = {
+        "#f6edcd",
+        "#a8c8a6",
+        "#6d8d8a",
+        "#655057",
+        "#cb8175",
+        "#e2a97e",
+        "#f0cf8e",
+    },
+    Hydrangea11 = {
+        "#413652",
+        "#6f577e",
+        "#986f9c",
+        "#c090a7",
+        "#d4beb8",
+        "#eae4dd",
+        "#c9d4b8",
+        "#90c0a0",
+        "#6f919c",
+        "#62778c",
+        "#575f7e",
+    },
+    Soybeachy8 = {
+        "#e55388",
+        "#e57d88",
+        "#e59f88",
+        "#e5d988",
+        "#e3d5cc",
+        "#bad5cc",
+        "#6dd5cc",
+        "#5ac5cc",
+    },
+    CheesePalettePalette = {
+        "#391513",
+        "#ffd860",
+        "#a82200",
+        "#ff7700",
+        "#d68b67",
+        "#6f7844",
+        "#dfd6ca",
+        "#2a6671",
+        "#88ac97",
+        "#f01b0f",
+    },
+    Retrocal8 = {
+        "#74a33f",
+        "#6eb8a8",
+        "#2a584f",
+        "#fcffc0",
+        "#c6505a",
+        "#2f142f",
+        "#774448",
+        "#ee9c5d",
+    },
+    Blessing = {
+        "#74569b",
+        "#96fbc7",
+        "#f7ffae",
+        "#ffb3cb",
+        "#d8bfd8",
+    },
+    RustGold8 = {
+        "#202020",
+        "#f6cd26",
+        "#ac6b26",
+        "#563226",
+        "#331c17",
+        "#bb7f57",
+        "#725956",
+        "#393939",
+    },
+    MidnightAblaze = {
+        "#460e2b",
+        "#ff8274",
+        "#d53c6a",
     },
     Pocket = {
-        -- Light
         "#E6E6B3",
-        -- Dark
-        "#33261F"
     }
 }
 
