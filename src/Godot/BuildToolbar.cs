@@ -102,10 +102,10 @@ public partial class BuildToolbar : HBoxContainer
             {
                 Button toolButton = row switch
                 {
-                    0 => CreateToolButton("select.png", BuildToolMode.Select, "Select"),
-                    1 => CreatePaintToolButton(),
-                    2 => CreateToolButton("generic-object.png", BuildToolMode.PlaceObject, "Place Object"),
-                    3 => CreateToolButton("delete.png", BuildToolMode.Delete, "Delete"),
+                    0 => CreatePaintToolButton(),
+                    1 => CreateToolButton("generic-object.png", BuildToolMode.PlaceObject, "Place Object"),
+                    2 => CreateToolButton("delete.png", BuildToolMode.Delete, "Delete"),
+                    3 => CreateToolButton("select.png", BuildToolMode.Select, "Select"),
                     _ => new Button()
                 };
                 _toolsGrid?.AddChild(toolButton);
@@ -317,8 +317,8 @@ public partial class BuildToolbar : HBoxContainer
             var mode = GetToolModeForButtonIndex(i);
             var isActive = mode == BuildToolState.Mode;
 
-            // Special handling for Paint button (PreviewSquare)
-            if (button is PreviewSquare paintPreview && i == 1)
+            // Always update the paint tool button (PreviewSquare)
+            if (button is PreviewSquare paintPreview)
             {
                 paintPreview.UpdatePreview(
                     BuildToolState.SelectedColorIndex,
@@ -392,11 +392,11 @@ public partial class BuildToolbar : HBoxContainer
     {
         return index switch
         {
-            0 => BuildToolMode.Select,
-            1 => BuildToolMode.PlaceTerrain,
-            2 => BuildToolMode.PlaceObject,
-            3 => BuildToolMode.Delete,
-            _ => BuildToolMode.Select
+            0 => BuildToolMode.PlaceTerrain,
+            1 => BuildToolMode.PlaceObject,
+            2 => BuildToolMode.Delete,
+            3 => BuildToolMode.Select,
+            _ => BuildToolMode.PlaceTerrain
         };
     }
 }

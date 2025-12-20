@@ -7,10 +7,10 @@ namespace SimGame.Godot;
 /// </summary>
 public enum BuildToolMode
 {
-    Select,      // Default: click to select pawns/objects (existing behavior)
-    PlaceObject, // Place objects (fridge, bed, walls, decorations, etc.)
+    PlaceObject, // Default: Place objects (fridge, bed, walls, decorations, etc.)
     PlaceTerrain,// Paint terrain tiles
-    Delete       // Remove objects
+    Delete,      // Remove objects
+    Select       // Click to select pawns/objects (existing behavior)
 }
 
 /// <summary>
@@ -45,7 +45,7 @@ public static class GameColorPalette
 /// </summary>
 public static class BuildToolState
 {
-    public static BuildToolMode Mode { get; set; } = BuildToolMode.Select;
+    public static BuildToolMode Mode { get; set; } = BuildToolMode.PlaceTerrain;
     public static int? SelectedObjectDefId { get; set; } = null;
     public static int? SelectedTerrainDefId { get; set; } = null;
     public static int SelectedColorIndex { get; set; } = 0; // Default to green
