@@ -2,6 +2,20 @@
 -- Terrains define the properties of tile types
 
 Terrains = {
+    Flat = {
+        name = "Flat",
+        walkable = true,
+        buildable = true,
+        indoors = false,
+        spriteKey = "flat"
+    },
+    Block = {
+        name = "Block",
+        walkable = false,
+        buildable = false,
+        indoors = false,
+        spriteKey = "block"
+    },
     Grass = {
         name = "Grass",
         walkable = true,
@@ -43,6 +57,14 @@ Terrains = {
         buildable = false,
         indoors = false,
         spriteKey = "water"
+    },
+    Brick = {
+        name = "Brick",
+        walkable = false,
+        buildable = true,
+        indoors = false,
+        spriteKey = "brick",
+        isPath = false
     },
     Path = {
         name = "Path",
