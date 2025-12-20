@@ -24,6 +24,7 @@ public partial class SpriteIconButton : Button
         // Create TextureRect for displaying the sprite
         _textureRect = new TextureRect
         {
+            Name = "TextureRect",
             ExpandMode = TextureRect.ExpandModeEnum.FitWidth,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             MouseFilter = MouseFilterEnum.Ignore
