@@ -3,11 +3,12 @@
 [ext_resource type="Script" path="res://src/Godot/BuildToolbar.cs" id="1"]
 
 [node name="BuildToolbar" type="HBoxContainer"]
-anchors_preset = 9
+anchors_preset = 15
+anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 5.0
 offset_top = 5.0
-offset_right = 1075.0
+offset_right = -210.0
 offset_bottom = -5.0
 script = ExtResource("1")
 LeftPanelPath = NodePath("LeftPanel/MarginContainer/ToolsGrid")
