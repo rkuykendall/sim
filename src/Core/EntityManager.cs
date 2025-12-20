@@ -26,13 +26,17 @@ public sealed class EntityManager
     /// <summary>
     /// Factory method to create a pawn with all required components.
     /// </summary>
-    public EntityId CreatePawn(string name, int age, TileCoord position, Dictionary<int, float> needs)
+    /// <param name="position">The position to place the pawn</param>
+    /// <param name="name">The pawn's name (defaults to "Pawn")</param>
+    /// <param name="age">The pawn's age (defaults to 1)</param>
+    /// <param name="needs">The pawn's needs (defaults to empty dictionary)</param>
+    public EntityId CreatePawn(TileCoord position, string name = "Pawn", int age = 1, Dictionary<int, float>? needs = null)
     {
         var id = Create();
         Pawns[id] = new PawnComponent { Name = name, Age = age };
         Positions[id] = new PositionComponent { Coord = position };
         Moods[id] = new MoodComponent { Mood = 0 };
-        Needs[id] = new NeedsComponent { Needs = new Dictionary<int, float>(needs) };
+        Needs[id] = new NeedsComponent { Needs = needs != null ? new Dictionary<int, float>(needs) : new Dictionary<int, float>() };
         Buffs[id] = new BuffComponent();
         Actions[id] = new ActionComponent();
         return id;

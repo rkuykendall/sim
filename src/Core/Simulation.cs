@@ -240,44 +240,70 @@ public sealed class Simulation
         }
 
         var coord = new TileCoord(config.X, config.Y);
-        return Entities.CreatePawn(config.Name, config.Age, coord, config.Needs);
+        return Entities.CreatePawn(coord, config.Name, config.Age, config.Needs);
+    }
+
+    /// <summary>
+    /// Create a pawn with default values at a random walkable location.
+    /// </summary>
+    /// <param name="name">The pawn's name (defaults to "Pawn")</param>
+    /// <param name="age">The pawn's age (defaults to 1)</param>
+    /// <returns>The created entity ID</returns>
+    /// <exception cref="InvalidOperationException">Thrown when no walkable tiles are available.</exception>
+    public EntityId CreatePawn(string name = "Pawn", int age = 1)
+    {
+        var position = GetRandomWalkableTile()
+            ?? throw new InvalidOperationException("No walkable tiles available to spawn pawn");
+
+        return Entities.CreatePawn(position, name, age, GetFullNeeds());
+    }
+
+    /// <summary>
+    /// Creates a dictionary of all needs initialized to full (100f).
+    /// </summary>
+    private Dictionary<int, float> GetFullNeeds()
+    {
+        var needs = new Dictionary<int, float>();
+        foreach (var needId in Content.Needs.Keys)
+        {
+            needs[needId] = 100f;
+        }
+        return needs;
+    }
+
+    /// <summary>
+    /// Finds a random walkable tile that is not occupied by a pawn.
+    /// </summary>
+    /// <returns>A random unoccupied walkable tile coordinate, or null if none available.</returns>
+    private TileCoord? GetRandomWalkableTile()
+    {
+        var occupiedTiles = Entities.GetOccupiedTiles();
+        var walkableTiles = new List<TileCoord>();
+
+        for (int x = 0; x < World.Width; x++)
+        {
+            for (int y = 0; y < World.Height; y++)
+            {
+                var coord = new TileCoord(x, y);
+                if (World.IsWalkable(coord) && !occupiedTiles.Contains(coord))
+                {
+                    walkableTiles.Add(coord);
+                }
+            }
+        }
+
+        if (walkableTiles.Count == 0)
+            return null;
+
+        return walkableTiles[Random.Next(walkableTiles.Count)];
     }
 
     private void BootstrapPawns()
     {
-        // Cache need IDs (fail fast if any are missing)
-        var hungerNeedId = Content.GetNeedId("Hunger") 
-            ?? throw new InvalidOperationException("Required need 'Hunger' not found in content");
-        var energyNeedId = Content.GetNeedId("Energy") 
-            ?? throw new InvalidOperationException("Required need 'Energy' not found in content");
-        var funNeedId = Content.GetNeedId("Fun") 
-            ?? throw new InvalidOperationException("Required need 'Fun' not found in content");
-        var socialNeedId = Content.GetNeedId("Social") 
-            ?? throw new InvalidOperationException("Required need 'Social' not found in content");
-        var hygieneNeedId = Content.GetNeedId("Hygiene") 
-            ?? throw new InvalidOperationException("Required need 'Hygiene' not found in content");
-
-        // Pawn data: (name, age, x, y, hunger, energy, fun, social, hygiene)
-        var pawnData = new[]
+        // Create 4 pawns at random locations with default values
+        for (int i = 0; i < 4; i++)
         {
-            ("Alex", 25, 5, 5, 70f, 60f, 50f, 80f, 65f),
-            ("Jordan", 32, 3, 7, 55f, 75f, 40f, 60f, 70f),
-            ("Sam", 28, 9, 3, 80f, 45f, 65f, 50f, 85f),
-            ("Riley", 22, 7, 9, 60f, 55f, 75f, 70f, 50f),
-        };
-
-        foreach (var (name, age, x, y, hunger, energy, fun, social, hygiene) in pawnData)
-        {
-            var needs = new Dictionary<int, float>
-            {
-                { hungerNeedId, hunger },
-                { energyNeedId, energy },
-                { funNeedId, fun },
-                { socialNeedId, social },
-                { hygieneNeedId, hygiene }
-            };
-
-            Entities.CreatePawn(name, age, new TileCoord(x, y), needs);
+            CreatePawn();
         }
     }
 
