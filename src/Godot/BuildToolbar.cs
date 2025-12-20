@@ -370,10 +370,10 @@ public partial class BuildToolbar : PanelContainer
                 // Update color modulation on sprite buttons
                 if (button is SpriteIconButton spriteBtn)
                 {
-                    var texture = spriteBtn.GetNode<TextureRect>("TextureRect")?.Texture;
-                    if (texture != null)
+                    var textureRect = spriteBtn.GetNodeOrNull<TextureRect>("TextureRect");
+                    if (textureRect?.Texture != null)
                     {
-                        spriteBtn.SetSprite(texture, _currentPalette[BuildToolState.SelectedColorIndex]);
+                        spriteBtn.SetSprite(textureRect.Texture, _currentPalette[BuildToolState.SelectedColorIndex]);
                     }
                 }
             }
@@ -414,7 +414,7 @@ public partial class BuildToolbar : PanelContainer
             button.SetSelected(isSelected);
 
             // Update color modulation
-            var textureRect = button.GetNode<TextureRect>("TextureRect");
+            var textureRect = button.GetNodeOrNull<TextureRect>("TextureRect");
             if (textureRect?.Texture != null)
             {
                 button.SetSprite(textureRect.Texture, _currentPalette[BuildToolState.SelectedColorIndex]);
