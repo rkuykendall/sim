@@ -100,7 +100,9 @@ public sealed class Simulation
 
         // Initialize all tiles with default terrain (Grass)
         // Terrain IDs start at 1, so we need to set a default instead of leaving them at 0
-        var defaultTerrainId = Content.GetTerrainId("Grass") ?? 1;
+        // Find the terrain ID for "Grass" by key or SpriteKey
+        var defaultTerrainId = Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "grass" || kv.Key.ToString() == "Grass").Key;
+        if (defaultTerrainId == 0) defaultTerrainId = 1;
         for (int x = 0; x < World.Width; x++)
         {
             for (int y = 0; y < World.Height; y++)
@@ -111,8 +113,9 @@ public sealed class Simulation
         }
 
         // Add a 3x3 path grid for testing autotiling (center-left of world)
-        var pathTerrainId = Content.GetTerrainId("Path");
-        if (pathTerrainId.HasValue)
+        // Find the terrain ID for "Path" by key or SpriteKey
+        var pathTerrainId = Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "path" || kv.Key.ToString() == "Path").Key;
+        if (pathTerrainId != 0)
         {
             int startX = 5;
             int startY = 4;
@@ -121,7 +124,7 @@ public sealed class Simulation
                 for (int dy = 0; dy < 3; dy++)
                 {
                     var tile = World.GetTile(startX + dx, startY + dy);
-                    tile.TerrainTypeId = pathTerrainId.Value;
+                    tile.TerrainTypeId = pathTerrainId;
                     tile.ColorIndex = 0; // Use first color
                 }
             }

@@ -4,7 +4,6 @@
 
 Objects = {
     Fridge = {
-        name = "Fridge",
         satisfiesNeed = "Hunger",
         satisfactionAmount = 50,
         interactionDuration = 20,
@@ -13,7 +12,6 @@ Objects = {
         spriteKey = "fridge"
     },
     Bed = {
-        name = "Bed",
         satisfiesNeed = "Energy",
         satisfactionAmount = 80,
         interactionDuration = 40,
@@ -23,7 +21,6 @@ Objects = {
         spriteKey = "bed"
     },
     TV = {
-        name = "TV",
         satisfiesNeed = "Fun",
         satisfactionAmount = 40,
         interactionDuration = 30,
@@ -32,7 +29,6 @@ Objects = {
         spriteKey = "tv"
     },
     Shower = {
-        name = "Shower",
         satisfiesNeed = "Hygiene",
         satisfactionAmount = 60,
         interactionDuration = 20,
@@ -44,7 +40,6 @@ Objects = {
 
     -- Walls (blocking objects)
     Wall = {
-        name = "Wall",
         walkable = false,      -- blocks movement
         interactable = false,  -- cannot be used
         useAreas = {},
@@ -54,7 +49,6 @@ Objects = {
 
     -- Decorations (non-interactive, walkable)
     Plant = {
-        name = "Plant",
         walkable = true,       -- can walk through
         interactable = false,  -- no interaction
         useAreas = {},
@@ -62,7 +56,6 @@ Objects = {
     },
 
     Rug = {
-        name = "Rug",
         walkable = true,
         interactable = false,
         useAreas = {},
@@ -70,7 +63,6 @@ Objects = {
     },
 
     Lamp = {
-        name = "Lamp",
         walkable = true,
         interactable = false,
         useAreas = {},

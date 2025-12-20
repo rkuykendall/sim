@@ -59,16 +59,16 @@ public class ColorPaletteTests
             .DefineTerrain("Stone", "Stone", walkable: true)
             .Build();
 
-        var stoneDefId = sim.Content.GetTerrainId("Stone");
-        Assert.NotNull(stoneDefId);
+        var stoneDefId = sim.Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "stone").Key;
+        Assert.True(stoneDefId != 0);
 
         // Act: Paint terrain with color index 4 (dark gray)
-        sim.PaintTerrain(3, 3, stoneDefId.Value, colorIndex: 4);
+        sim.PaintTerrain(3, 3, stoneDefId, colorIndex: 4);
 
         // Assert: Verify the color index is stored
         var tile = sim.World.GetTile(new TileCoord(3, 3));
         Assert.Equal(4, tile.ColorIndex);
-        Assert.Equal(stoneDefId.Value, tile.TerrainTypeId);
+            Assert.Equal(stoneDefId, tile.TerrainTypeId);
     }
 
     [Fact]
@@ -81,16 +81,16 @@ public class ColorPaletteTests
             .DefineTerrain("Concrete", "Concrete", walkable: true)
             .Build();
 
-        var concreteDefId = sim.Content.GetTerrainId("Concrete");
-        Assert.NotNull(concreteDefId);
+        var concreteDefId = sim.Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "concrete").Key;
+        Assert.True(concreteDefId != 0);
 
         // Act: Paint terrain without specifying color index
-        sim.PaintTerrain(2, 2, concreteDefId.Value);
+        sim.PaintTerrain(2, 2, concreteDefId);
 
         // Assert: Verify the color index defaults to 0 (green)
         var tile = sim.World.GetTile(new TileCoord(2, 2));
         Assert.Equal(0, tile.ColorIndex);
-        Assert.Equal(concreteDefId.Value, tile.TerrainTypeId);
+            Assert.Equal(concreteDefId, tile.TerrainTypeId);
     }
 
     [Fact]
@@ -163,21 +163,21 @@ public class ColorPaletteTests
             .DefineTerrain("Grass", "Grass", walkable: true)
             .Build();
 
-        var grassDefId = sim.Content.GetTerrainId("Grass");
-        Assert.NotNull(grassDefId);
+        var grassDefId = sim.Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "grass").Key;
+        Assert.True(grassDefId != 0);
 
         var coord = new TileCoord(2, 2);
 
         // Act: Paint the same tile with different colors
-        sim.PaintTerrain(2, 2, grassDefId.Value, colorIndex: 1); // Brown
+        sim.PaintTerrain(2, 2, grassDefId, colorIndex: 1); // Brown
         var tile1 = sim.World.GetTile(coord);
         Assert.Equal(1, tile1.ColorIndex);
 
-        sim.PaintTerrain(2, 2, grassDefId.Value, colorIndex: 6); // Red
+        sim.PaintTerrain(2, 2, grassDefId, colorIndex: 6); // Red
         var tile2 = sim.World.GetTile(coord);
         Assert.Equal(6, tile2.ColorIndex);
 
-        sim.PaintTerrain(2, 2, grassDefId.Value, colorIndex: 10); // Cyan
+        sim.PaintTerrain(2, 2, grassDefId, colorIndex: 10); // Cyan
         var tile3 = sim.World.GetTile(coord);
         Assert.Equal(10, tile3.ColorIndex);
     }

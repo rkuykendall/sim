@@ -145,7 +145,6 @@ public static class ContentLoader
 
             registry.RegisterTerrain(key, new TerrainDef
             {
-                Name = data.Get("name").String,
                 Walkable = walkable,
                 Buildable = buildable,
                 Indoors = indoors,
@@ -187,7 +186,6 @@ public static class ContentLoader
 
             var obj = new ObjectDef
             {
-                Name = data.Get("name").String,
                 Walkable = walkable,
                 SatisfiesNeedId = ResolveReference(data.Get("satisfiesNeed"), registry.GetNeedId, key, "satisfiesNeed"),
                 NeedSatisfactionAmount = (float)data.Get("satisfactionAmount").Number,

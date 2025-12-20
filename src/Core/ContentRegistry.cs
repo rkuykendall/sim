@@ -54,8 +54,6 @@ public sealed class ContentRegistry
     /// <summary>Get an object ID by its key name.</summary>
     public int? GetObjectId(string name) => _objects.GetId(name);
 
-    /// <summary>Get a terrain ID by its key name.</summary>
-    public int? GetTerrainId(string name) => _terrains.GetId(name);
 
     /// <summary>Get a color palette ID by its key name.</summary>
     public int? GetColorPaletteId(string name) => _colorPalettes.GetId(name);

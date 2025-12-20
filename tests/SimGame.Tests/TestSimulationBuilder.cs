@@ -106,7 +106,6 @@ public sealed class TestSimulationBuilder
         _terrains.Add((key, new TerrainDef
         {
             Id = 0,  // Auto-generated
-            Name = name,
             Walkable = walkable,
             Buildable = buildable,
             Indoors = indoors,

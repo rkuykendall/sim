@@ -188,9 +188,9 @@ public partial class BuildToolbar : HBoxContainer
                 break;
 
             case BuildToolMode.PlaceTerrain:
-                foreach (var (id, def) in _content.Terrains.OrderBy(kv => kv.Value.Name))
+                foreach (var (id, def) in _content.Terrains.OrderBy(kv => kv.Key))
                 {
-                    optionsList.Add((id, def.SpriteKey, def.Name, false));
+                    optionsList.Add((id, def.SpriteKey, id.ToString(), false));
                 }
                 break;
         }
@@ -366,7 +366,7 @@ public partial class BuildToolbar : HBoxContainer
             }
             else if (BuildToolState.Mode == BuildToolMode.PlaceTerrain && BuildToolState.SelectedTerrainDefId.HasValue)
             {
-                var terrains = _content?.Terrains.OrderBy(kv => kv.Value.Name).ToList();
+                var terrains = _content?.Terrains.OrderBy(kv => kv.Key).ToList();
                 if (terrains != null)
                 {
                     var index = _optionButtons.IndexOf(button);
