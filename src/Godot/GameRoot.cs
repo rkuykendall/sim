@@ -540,8 +540,14 @@ public partial class GameRoot : Node2D
 
     private void UpdateInfoPanel(RenderSnapshot snapshot)
     {
-        if (_infoPanel == null || !_selectedPawnId.HasValue)
+        if (_infoPanel == null)
             return;
+
+        if (!_selectedPawnId.HasValue)
+        {
+            _infoPanel.Hide();
+            return;
+        }
 
         var pawn = snapshot.Pawns.FirstOrDefault(p => p.Id.Value == _selectedPawnId.Value);
         if (pawn == null)
@@ -833,8 +839,14 @@ public partial class GameRoot : Node2D
 
     private void UpdateObjectInfoPanel(RenderSnapshot snapshot)
     {
-        if (_objectInfoPanel == null || !_selectedObjectId.HasValue)
+        if (_objectInfoPanel == null)
             return;
+
+        if (!_selectedObjectId.HasValue)
+        {
+            _objectInfoPanel.Hide();
+            return;
+        }
 
         var obj = snapshot.Objects.FirstOrDefault(o => o.Id.Value == _selectedObjectId.Value);
         if (obj == null)
@@ -849,7 +861,19 @@ public partial class GameRoot : Node2D
 
     private void UpdateTimeDisplay(RenderSnapshot snapshot)
     {
-        _timeDisplay?.UpdateTime(snapshot.Time);
+        if (_timeDisplay == null)
+            return;
+
+        // Show TimeDisplay when nothing is selected, hide when something is selected
+        if (!_selectedPawnId.HasValue && !_selectedObjectId.HasValue)
+        {
+            _timeDisplay.Show();
+            _timeDisplay.UpdateTime(snapshot.Time);
+        }
+        else
+        {
+            _timeDisplay.Hide();
+        }
     }
 
     private void UpdateNightOverlay(RenderSnapshot snapshot)

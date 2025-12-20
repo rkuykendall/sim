@@ -3,13 +3,13 @@
 [ext_resource type="Script" path="res://src/Godot/TimeDisplay.cs" id="1"]
 
 [node name="TimeDisplay" type="PanelContainer"]
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -45
-offset_top = 5
-offset_right = 45
-offset_bottom = 25
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -205
+offset_top = 0
+offset_right = 0
+offset_bottom = 60
 script = ExtResource("1")
 TimeLabelPath = NodePath("MarginContainer/TimeLabel")
 

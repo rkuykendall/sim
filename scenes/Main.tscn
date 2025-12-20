@@ -56,6 +56,5 @@ color = Color(0.05, 0.05, 0.15, 0)
 [node name="ObjectInfoPanel" parent="UI" instance=ExtResource("5")]
 
 [node name="TimeDisplay" parent="UI" instance=ExtResource("6")]
-visible = false
 
 [node name="BuildToolbar" parent="UI" instance=ExtResource("7")]
