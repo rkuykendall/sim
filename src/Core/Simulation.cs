@@ -53,6 +53,11 @@ public sealed class Simulation
 {
     public const int TickRate = 20;
 
+    /// <summary>
+    /// Spawn a new pawn every in-game day (if under max pawns).
+    /// </summary>
+    private const int PawnSpawnInterval = TimeService.TicksPerDay;
+
     public World World { get; }
     public EntityManager Entities { get; } = new();
     public TimeService Time { get; }
@@ -104,11 +109,6 @@ public sealed class Simulation
         _systems.Add(new MoodSystem());
         _systems.Add(new ActionSystem());
         _systems.Add(new AISystem());
-
-        if (config == null || !config.SkipDefaultBootstrap)
-        {
-            BootstrapPawns();
-        }
 
         // Apply custom configuration
         if (config != null)
@@ -259,6 +259,11 @@ public sealed class Simulation
     }
 
     /// <summary>
+    /// Gets the maximum number of pawns allowed in the simulation.
+    /// </summary>
+    public int GetMaxPawns() => 5;
+
+    /// <summary>
     /// Creates a dictionary of all needs initialized to full (100f).
     /// </summary>
     private Dictionary<int, float> GetFullNeeds()
@@ -298,15 +303,6 @@ public sealed class Simulation
         return walkableTiles[Random.Next(walkableTiles.Count)];
     }
 
-    private void BootstrapPawns()
-    {
-        // Create 4 pawns at random locations with default values
-        for (int i = 0; i < 4; i++)
-        {
-            CreatePawn();
-        }
-    }
-
     /// <summary>
     /// Select a color palette deterministically based on the world seed.
     /// Uses a separate Random instance to avoid affecting the main simulation RNG.
@@ -337,6 +333,23 @@ public sealed class Simulation
         var ctx = new SimContext(this);
         _systems.TickAll(ctx);
         Time.AdvanceTick();
+
+        // Spawn new pawns at intervals if under the maximum
+        if (Time.Tick % PawnSpawnInterval == 0)
+        {
+            var currentPawnCount = Entities.AllPawns().Count();
+            if (currentPawnCount < GetMaxPawns())
+            {
+                try
+                {
+                    CreatePawn();
+                }
+                catch (InvalidOperationException)
+                {
+                    // No walkable tiles available, skip spawning
+                }
+            }
+        }
     }
 
     public RenderSnapshot CreateRenderSnapshot()

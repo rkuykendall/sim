@@ -209,24 +209,4 @@ public class ColorPaletteTests
         Assert.Single(snapshot.Objects);
         Assert.Equal(5, snapshot.Objects[0].ColorIndex);
     }
-
-    [Fact]
-    public void BootstrappedObjects_HaveVariedColors()
-    {
-        // Arrange & Act: Create simulation with default bootstrap
-        var content = ContentLoader.LoadAll(System.IO.Path.Combine(
-            System.IO.Directory.GetCurrentDirectory(),
-            "../../../../../content"
-        ));
-        var sim = new Simulation(content);
-
-        // Assert: Bootstrapped objects should have intentionally varied colors (for debugging/demo)
-        // This ensures the color system works out of the box
-        var snapshot = sim.CreateRenderSnapshot();
-        Assert.True(snapshot.Objects.Count > 0, "Should have bootstrapped objects");
-
-        // Verify at least some objects have non-zero colors (proves color system is working)
-        var coloredObjects = snapshot.Objects.Where(o => o.ColorIndex != 0).ToList();
-        Assert.True(coloredObjects.Count > 0, "Should have some colored objects in bootstrap");
-    }
 }
