@@ -1,3 +1,5 @@
+
+using System;
 using Godot;
 using SimGame.Core;
 using System.Collections.Generic;
@@ -7,6 +9,16 @@ namespace SimGame.Godot;
 
 public partial class BuildToolbar : HBoxContainer
 {
+    public void SetDebugMode(bool debugMode)
+    {
+        if (_debugMode != debugMode)
+        {
+            _debugMode = debugMode;
+            CreateColorAndToolButtons();
+            RebuildOptions();
+            UpdateAllButtons();
+        }
+    }
     [Export] public NodePath LeftPanelPath { get; set; } = "";
     [Export] public NodePath OptionsContainerPath { get; set; } = "";
 
@@ -28,9 +40,11 @@ public partial class BuildToolbar : HBoxContainer
             _optionsContainer = GetNodeOrNull<FlowContainer>(OptionsContainerPath);
     }
 
-    public void Initialize(ContentRegistry content)
+    private bool _debugMode = false;
+    public void Initialize(ContentRegistry content, bool debugMode = false)
     {
         _content = content;
+        _debugMode = debugMode;
 
         if (_toolsGrid == null && !string.IsNullOrEmpty(LeftPanelPath))
             _toolsGrid = GetNodeOrNull<GridContainer>(LeftPanelPath);
@@ -73,7 +87,18 @@ public partial class BuildToolbar : HBoxContainer
 
         // Calculate max rows needed
         int colorRows = _currentPalette.Length;
-        int toolRows = 4;
+        // Determine which tools to show
+        var toolDefs = new List<(Func<Button> create, BuildToolMode mode)>
+        {
+            (() => CreatePaintToolButton(), BuildToolMode.PlaceTerrain),
+            (() => CreateToolButton("generic-object.png", BuildToolMode.PlaceObject, "Place Object"), BuildToolMode.PlaceObject),
+            (() => CreateToolButton("delete.png", BuildToolMode.Delete, "Delete"), BuildToolMode.Delete)
+        };
+        if (_debugMode)
+        {
+            toolDefs.Add((() => CreateToolButton("select.png", BuildToolMode.Select, "Select"), BuildToolMode.Select));
+        }
+        int toolRows = toolDefs.Count;
         int totalRows = System.Math.Max(colorRows, toolRows);
 
         // Create buttons row by row (GridContainer with 2 columns fills left-to-right)
@@ -100,14 +125,8 @@ public partial class BuildToolbar : HBoxContainer
             // Column 1: Tool button
             if (row < toolRows)
             {
-                Button toolButton = row switch
-                {
-                    0 => CreatePaintToolButton(),
-                    1 => CreateToolButton("generic-object.png", BuildToolMode.PlaceObject, "Place Object"),
-                    2 => CreateToolButton("delete.png", BuildToolMode.Delete, "Delete"),
-                    3 => CreateToolButton("select.png", BuildToolMode.Select, "Select"),
-                    _ => new Button()
-                };
+                var (create, _) = toolDefs[row];
+                Button toolButton = create();
                 _toolsGrid?.AddChild(toolButton);
                 _toolButtons.Add(toolButton);
             }
@@ -390,13 +409,17 @@ public partial class BuildToolbar : HBoxContainer
 
     private BuildToolMode GetToolModeForButtonIndex(int index)
     {
-        return index switch
+        // Map index to tool mode based on which tools are visible
+        var toolModes = new List<BuildToolMode>
         {
-            0 => BuildToolMode.PlaceTerrain,
-            1 => BuildToolMode.PlaceObject,
-            2 => BuildToolMode.Delete,
-            3 => BuildToolMode.Select,
-            _ => BuildToolMode.PlaceTerrain
+            BuildToolMode.PlaceTerrain,
+            BuildToolMode.PlaceObject,
+            BuildToolMode.Delete
         };
+        if (_debugMode)
+            toolModes.Add(BuildToolMode.Select);
+        if (index >= 0 && index < toolModes.Count)
+            return toolModes[index];
+        return BuildToolMode.PlaceTerrain;
     }
 }

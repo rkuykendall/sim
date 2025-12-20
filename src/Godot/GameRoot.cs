@@ -60,7 +60,7 @@ public partial class GameRoot : Node2D
     private Camera2D? _camera;
     private CanvasLayer? _uiLayer;
     private BuildToolbar? _toolbar;
-
+    private bool DebugMode => _debugMode;
     public override void _Ready()
     {
         // Load content from Lua files and create simulation with it
@@ -112,7 +112,7 @@ public partial class GameRoot : Node2D
         if (!string.IsNullOrEmpty(ToolbarPath))
         {
             _toolbar = GetNodeOrNull<BuildToolbar>(ToolbarPath);
-            _toolbar?.Initialize(_sim.Content);
+            _toolbar?.Initialize(_sim.Content, DebugMode);
             // Don't call UpdatePalette here - modal isn't ready yet
             // _Process() will call it on first frame
         }
@@ -166,6 +166,7 @@ public partial class GameRoot : Node2D
             {
                 _debugMode = !_debugMode;
                 GD.Print($"Debug mode: {_debugMode}");
+                _toolbar?.SetDebugMode(_debugMode);
                 QueueRedraw();
                 return;
             }
