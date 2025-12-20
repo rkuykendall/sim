@@ -5,11 +5,13 @@ using System.Linq;
 
 namespace SimGame.Godot;
 
-public partial class BuildToolbar : PanelContainer
+public partial class BuildToolbar : HBoxContainer
 {
-    [Export] public NodePath GridContainerPath { get; set; } = "";
+    [Export] public NodePath LeftPanelPath { get; set; } = "";
+    [Export] public NodePath OptionsContainerPath { get; set; } = "";
 
-    private GridContainer? _gridContainer;
+    private GridContainer? _toolsGrid;
+    private FlowContainer? _optionsContainer;
     private ContentRegistry? _content;
     private Color[] _currentPalette = Enumerable.Repeat(Colors.White, 12).ToArray();
 
@@ -17,145 +19,102 @@ public partial class BuildToolbar : PanelContainer
     private readonly List<Button> _toolButtons = new();
     private readonly List<SpriteIconButton> _optionButtons = new();
 
-    private const int GRID_COLUMNS = 6;
-
     public override void _Ready()
     {
-        if (!string.IsNullOrEmpty(GridContainerPath))
-            _gridContainer = GetNodeOrNull<GridContainer>(GridContainerPath);
+        if (!string.IsNullOrEmpty(LeftPanelPath))
+            _toolsGrid = GetNodeOrNull<GridContainer>(LeftPanelPath);
+
+        if (!string.IsNullOrEmpty(OptionsContainerPath))
+            _optionsContainer = GetNodeOrNull<FlowContainer>(OptionsContainerPath);
     }
 
     public void Initialize(ContentRegistry content)
     {
         _content = content;
 
-        if (_gridContainer == null && !string.IsNullOrEmpty(GridContainerPath))
-            _gridContainer = GetNodeOrNull<GridContainer>(GridContainerPath);
+        if (_toolsGrid == null && !string.IsNullOrEmpty(LeftPanelPath))
+            _toolsGrid = GetNodeOrNull<GridContainer>(LeftPanelPath);
 
-        if (_gridContainer == null)
+        if (_optionsContainer == null && !string.IsNullOrEmpty(OptionsContainerPath))
+            _optionsContainer = GetNodeOrNull<FlowContainer>(OptionsContainerPath);
+
+        if (_toolsGrid == null || _optionsContainer == null)
         {
-            GD.PrintErr("BuildToolbar: GridContainer not found!");
+            GD.PrintErr("BuildToolbar: Required containers not found!");
             return;
         }
 
-        RebuildEntireGrid();
+        CreateColorAndToolButtons();
+        RebuildOptions();
         UpdateAllButtons();
     }
 
     public void UpdatePalette(Color[] palette)
     {
         _currentPalette = palette;
-        // Rebuild grid if color count changed
-        RebuildEntireGrid();
+        // Rebuild left panel if color count changed
+        CreateColorAndToolButtons();
         UpdateAllButtons();
     }
 
-    private void PositionInGrid(int row, int col, Control node)
-    {
-        if (_gridContainer == null) return;
-
-        int targetPosition = row * GRID_COLUMNS + col;
-        int currentChildCount = _gridContainer.GetChildCount();
-
-        // Add spacer nodes to reach target position
-        while (currentChildCount < targetPosition)
-        {
-            var spacer = new Control { CustomMinimumSize = new Vector2(96, 96) };
-            _gridContainer.AddChild(spacer);
-            currentChildCount++;
-        }
-
-        _gridContainer.AddChild(node);
-    }
-
-    private void RebuildEntireGrid()
+    private void CreateColorAndToolButtons()
     {
         // Clear existing buttons
         _colorButtons.Clear();
         _toolButtons.Clear();
-        foreach (var button in _optionButtons)
-        {
-            button.QueueFree();
-        }
-        _optionButtons.Clear();
 
-        // Clear the grid
-        if (_gridContainer != null)
+        if (_toolsGrid != null)
         {
-            foreach (Node child in _gridContainer.GetChildren())
+            foreach (Node child in _toolsGrid.GetChildren())
             {
                 child.QueueFree();
             }
         }
 
-        // Get options list based on current mode
-        var optionsList = GetCurrentOptions();
-
-        // Calculate number of rows needed (max of colors or option rows)
+        // Calculate max rows needed
         int colorRows = _currentPalette.Length;
-        int optionRows = (optionsList.Count + 3) / 4; // 4 options per row, round up
-        int totalRows = System.Math.Max(colorRows, optionRows);
+        int toolRows = 4;
+        int totalRows = System.Math.Max(colorRows, toolRows);
 
-        // Create grid in position order: row by row, left to right
+        // Create buttons row by row (GridContainer with 2 columns fills left-to-right)
         for (int row = 0; row < totalRows; row++)
         {
-            for (int col = 0; col < 6; col++)
+            // Column 0: Color button
+            if (row < colorRows)
             {
-                Control? nodeToAdd = null;
+                var colorIndex = row;
+                var colorButton = new PreviewSquare
+                {
+                    CustomMinimumSize = new Vector2(96, 96)
+                };
+                colorButton.Pressed += () => OnColorSelected(colorIndex);
+                _toolsGrid?.AddChild(colorButton);
+                _colorButtons.Add(colorButton);
+            }
+            else
+            {
+                // Spacer if we have more tools than colors
+                _toolsGrid?.AddChild(new Control { CustomMinimumSize = new Vector2(96, 96) });
+            }
 
-                if (col == 0 && row < colorRows)
+            // Column 1: Tool button
+            if (row < toolRows)
+            {
+                Button toolButton = row switch
                 {
-                    // Color button
-                    var colorIndex = row;
-                    var colorButton = new PreviewSquare
-                    {
-                        CustomMinimumSize = new Vector2(96, 96)
-                    };
-                    colorButton.Pressed += () => OnColorSelected(colorIndex);
-                    _colorButtons.Add(colorButton);
-                    nodeToAdd = colorButton;
-                }
-                else if (col == 1 && row < 4)
-                {
-                    // Tool button
-                    Button toolButton = row switch
-                    {
-                        0 => CreateToolButton("select.png", BuildToolMode.Select, "Select"),
-                        1 => CreatePaintToolButton(),
-                        2 => CreateToolButton("generic-object.png", BuildToolMode.PlaceObject, "Place Object"),
-                        3 => CreateToolButton("delete.png", BuildToolMode.Delete, "Delete"),
-                        _ => new Button()
-                    };
-                    _toolButtons.Add(toolButton);
-                    nodeToAdd = toolButton;
-                }
-                else if (col >= 2 && col < 6)
-                {
-                    // Option button
-                    int optionIndex = row * 4 + (col - 2);
-                    if (optionIndex < optionsList.Count)
-                    {
-                        var (id, spriteKey, name, isObject) = optionsList[optionIndex];
-                        var optionButton = CreateOptionButtonDirect(id, spriteKey, name, isObject);
-                        _optionButtons.Add(optionButton);
-                        nodeToAdd = optionButton;
-                    }
-                    else
-                    {
-                        // Spacer for empty option slot
-                        nodeToAdd = new Control { CustomMinimumSize = new Vector2(96, 96) };
-                    }
-                }
-                else
-                {
-                    // Spacer
-                    nodeToAdd = new Control { CustomMinimumSize = new Vector2(96, 96) };
-                }
-
-                if (nodeToAdd != null && _gridContainer != null)
-                {
-                    _gridContainer.AddChild(nodeToAdd);
-                }
+                    0 => CreateToolButton("select.png", BuildToolMode.Select, "Select"),
+                    1 => CreatePaintToolButton(),
+                    2 => CreateToolButton("generic-object.png", BuildToolMode.PlaceObject, "Place Object"),
+                    3 => CreateToolButton("delete.png", BuildToolMode.Delete, "Delete"),
+                    _ => new Button()
+                };
+                _toolsGrid?.AddChild(toolButton);
+                _toolButtons.Add(toolButton);
+            }
+            else
+            {
+                // Spacer if we have more colors than tools
+                _toolsGrid?.AddChild(new Control { CustomMinimumSize = new Vector2(96, 96) });
             }
         }
 
@@ -177,31 +136,107 @@ public partial class BuildToolbar : PanelContainer
         return paintBtn;
     }
 
-    private List<(int id, string spriteKey, string name, bool isObject)> GetCurrentOptions()
+    private SpriteIconButton CreateToolButton(string spriteKey, BuildToolMode mode, string tooltip)
     {
-        var options = new List<(int, string, string, bool)>();
+        var button = new SpriteIconButton
+        {
+            CustomMinimumSize = new Vector2(96, 96),
+            TooltipText = tooltip
+        };
+
+        var texture = GD.Load<Texture2D>($"res://sprites/{spriteKey}");
+        if (texture != null)
+        {
+            button.SetSprite(texture, _currentPalette[BuildToolState.SelectedColorIndex]);
+        }
+
+        button.Pressed += () => OnToolSelected(mode);
+
+        return button;
+    }
+
+    private void RebuildOptions()
+    {
+        // Clear existing option buttons
+        foreach (var button in _optionButtons)
+        {
+            button.QueueFree();
+        }
+        _optionButtons.Clear();
+
+        if (_optionsContainer != null)
+        {
+            foreach (Node child in _optionsContainer.GetChildren())
+            {
+                child.QueueFree();
+            }
+        }
 
         if (_content == null)
-            return options;
+            return;
+
+        // Get options list based on current mode
+        var optionsList = new List<(int id, string spriteKey, string name, bool isObject)>();
 
         switch (BuildToolState.Mode)
         {
             case BuildToolMode.PlaceObject:
                 foreach (var (id, def) in _content.Objects.OrderBy(kv => kv.Value.Name))
                 {
-                    options.Add((id, def.SpriteKey, def.Name, true));
+                    optionsList.Add((id, def.SpriteKey, def.Name, true));
                 }
                 break;
 
             case BuildToolMode.PlaceTerrain:
                 foreach (var (id, def) in _content.Terrains.OrderBy(kv => kv.Value.Name))
                 {
-                    options.Add((id, def.SpriteKey, def.Name, false));
+                    optionsList.Add((id, def.SpriteKey, def.Name, false));
                 }
                 break;
         }
 
-        return options;
+        // Create option buttons
+        foreach (var (id, spriteKey, name, isObject) in optionsList)
+        {
+            var button = CreateOptionButton(id, spriteKey, name, isObject);
+            _optionButtons.Add(button);
+            _optionsContainer?.AddChild(button);
+        }
+
+        // Auto-select first option if none selected
+        if (optionsList.Count > 0)
+        {
+            if (BuildToolState.Mode == BuildToolMode.PlaceObject && !BuildToolState.SelectedObjectDefId.HasValue)
+            {
+                OnObjectOptionSelected(optionsList[0].id);
+            }
+            else if (BuildToolState.Mode == BuildToolMode.PlaceTerrain && !BuildToolState.SelectedTerrainDefId.HasValue)
+            {
+                OnTerrainOptionSelected(optionsList[0].id);
+            }
+        }
+    }
+
+    private SpriteIconButton CreateOptionButton(int id, string spriteKey, string name, bool isObject)
+    {
+        var button = new SpriteIconButton
+        {
+            CustomMinimumSize = new Vector2(96, 96),
+            TooltipText = name
+        };
+
+        var texture = SpriteResourceManager.GetTexture(spriteKey);
+        if (texture != null)
+        {
+            button.SetSprite(texture, _currentPalette[BuildToolState.SelectedColorIndex]);
+        }
+
+        if (isObject)
+            button.Pressed += () => OnObjectOptionSelected(id);
+        else
+            button.Pressed += () => OnTerrainOptionSelected(id);
+
+        return button;
     }
 
     private void UpdateColorButton(int colorIndex)
@@ -230,48 +265,6 @@ public partial class BuildToolbar : PanelContainer
         }
     }
 
-
-    private SpriteIconButton CreateToolButton(string spriteKey, BuildToolMode mode, string tooltip)
-    {
-        var button = new SpriteIconButton
-        {
-            CustomMinimumSize = new Vector2(96, 96),
-            TooltipText = tooltip
-        };
-
-        var texture = GD.Load<Texture2D>($"res://sprites/{spriteKey}");
-        if (texture != null)
-        {
-            button.SetSprite(texture, _currentPalette[BuildToolState.SelectedColorIndex]);
-        }
-
-        button.Pressed += () => OnToolSelected(mode);
-
-        return button;
-    }
-
-    private SpriteIconButton CreateOptionButtonDirect(int id, string spriteKey, string name, bool isObject)
-    {
-        var button = new SpriteIconButton
-        {
-            CustomMinimumSize = new Vector2(96, 96),
-            TooltipText = name
-        };
-
-        var texture = SpriteResourceManager.GetTexture(spriteKey);
-        if (texture != null)
-        {
-            button.SetSprite(texture, _currentPalette[BuildToolState.SelectedColorIndex]);
-        }
-
-        if (isObject)
-            button.Pressed += () => OnObjectOptionSelected(id);
-        else
-            button.Pressed += () => OnTerrainOptionSelected(id);
-
-        return button;
-    }
-
     private void OnColorSelected(int colorIndex)
     {
         BuildToolState.SelectedColorIndex = colorIndex;
@@ -289,30 +282,8 @@ public partial class BuildToolbar : PanelContainer
             BuildToolState.SelectedTerrainDefId = null;
         }
 
-        // Rebuild entire grid with new options
-        RebuildEntireGrid();
-
-        // Auto-select first option if switching to a tool with options
-        if (_content != null)
-        {
-            if (mode == BuildToolMode.PlaceObject && !BuildToolState.SelectedObjectDefId.HasValue)
-            {
-                var firstObject = _content.Objects.OrderBy(kv => kv.Value.Name).FirstOrDefault();
-                if (firstObject.Value != null)
-                {
-                    OnObjectOptionSelected(firstObject.Key);
-                }
-            }
-            else if (mode == BuildToolMode.PlaceTerrain && !BuildToolState.SelectedTerrainDefId.HasValue)
-            {
-                var firstTerrain = _content.Terrains.OrderBy(kv => kv.Value.Name).FirstOrDefault();
-                if (firstTerrain.Value != null)
-                {
-                    OnTerrainOptionSelected(firstTerrain.Key);
-                }
-            }
-        }
-
+        // Rebuild options
+        RebuildOptions();
         UpdateAllButtons();
     }
 
@@ -387,7 +358,6 @@ public partial class BuildToolbar : PanelContainer
             if (BuildToolState.Mode == BuildToolMode.PlaceObject && BuildToolState.SelectedObjectDefId.HasValue)
             {
                 // Check if this button's ID matches the selected object
-                // We need to track IDs somehow - for now use index matching
                 var objects = _content?.Objects.OrderBy(kv => kv.Value.Name).ToList();
                 if (objects != null)
                 {
