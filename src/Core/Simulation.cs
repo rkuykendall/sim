@@ -148,13 +148,7 @@ public sealed class Simulation
             paletteSize = paletteDef.Colors.Count;
         int safeColorIndex = GetSafeColorIndex(colorIndex, paletteSize);
 
-        var id = Entities.Create();
-        Entities.Positions[id] = new PositionComponent { Coord = coord };
-        Entities.Objects[id] = new ObjectComponent
-        {
-            ObjectDefId = objectDefId,
-            ColorIndex = safeColorIndex
-        };
+        var id = Entities.CreateObject(coord, objectDefId, safeColorIndex);
 
         // Only block the tile if this object is not walkable (e.g., fridge blocks, bed doesn't)
         if (!objDef.Walkable)
@@ -245,17 +239,8 @@ public sealed class Simulation
                 throw new ArgumentException($"Unknown need definition ID: {needId}", nameof(config));
         }
 
-        var id = Entities.Create();
         var coord = new TileCoord(config.X, config.Y);
-
-        Entities.Pawns[id] = new PawnComponent { Name = config.Name, Age = config.Age };
-        Entities.Positions[id] = new PositionComponent { Coord = coord };
-        Entities.Moods[id] = new MoodComponent { Mood = 0 };
-        Entities.Needs[id] = new NeedsComponent { Needs = new Dictionary<int, float>(config.Needs) };
-        Entities.Buffs[id] = new BuffComponent();
-        Entities.Actions[id] = new ActionComponent();
-
-        return id;
+        return Entities.CreatePawn(config.Name, config.Age, coord, config.Needs);
     }
 
     private void BootstrapPawns()
@@ -283,24 +268,16 @@ public sealed class Simulation
 
         foreach (var (name, age, x, y, hunger, energy, fun, social, hygiene) in pawnData)
         {
-            var id = Entities.Create();
-
-            Entities.Pawns[id] = new PawnComponent { Name = name, Age = age };
-            Entities.Positions[id] = new PositionComponent { Coord = new TileCoord(x, y) };
-            Entities.Moods[id] = new MoodComponent { Mood = 0 };
-            Entities.Needs[id] = new NeedsComponent
+            var needs = new Dictionary<int, float>
             {
-                Needs = new Dictionary<int, float>
-                {
-                    { hungerNeedId, hunger },
-                    { energyNeedId, energy },
-                    { funNeedId, fun },
-                    { socialNeedId, social },
-                    { hygieneNeedId, hygiene }
-                }
+                { hungerNeedId, hunger },
+                { energyNeedId, energy },
+                { funNeedId, fun },
+                { socialNeedId, social },
+                { hygieneNeedId, hygiene }
             };
-            Entities.Buffs[id] = new BuffComponent();
-            Entities.Actions[id] = new ActionComponent();
+
+            Entities.CreatePawn(name, age, new TileCoord(x, y), needs);
         }
     }
 

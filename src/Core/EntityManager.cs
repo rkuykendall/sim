@@ -23,6 +23,36 @@ public sealed class EntityManager
 
     public EntityId Create() => new EntityId(_nextId++);
 
+    /// <summary>
+    /// Factory method to create a pawn with all required components.
+    /// </summary>
+    public EntityId CreatePawn(string name, int age, TileCoord position, Dictionary<int, float> needs)
+    {
+        var id = Create();
+        Pawns[id] = new PawnComponent { Name = name, Age = age };
+        Positions[id] = new PositionComponent { Coord = position };
+        Moods[id] = new MoodComponent { Mood = 0 };
+        Needs[id] = new NeedsComponent { Needs = new Dictionary<int, float>(needs) };
+        Buffs[id] = new BuffComponent();
+        Actions[id] = new ActionComponent();
+        return id;
+    }
+
+    /// <summary>
+    /// Factory method to create an object with all required components.
+    /// </summary>
+    public EntityId CreateObject(TileCoord position, int objectDefId, int colorIndex)
+    {
+        var id = Create();
+        Positions[id] = new PositionComponent { Coord = position };
+        Objects[id] = new ObjectComponent
+        {
+            ObjectDefId = objectDefId,
+            ColorIndex = colorIndex
+        };
+        return id;
+    }
+
     public readonly Dictionary<EntityId, PositionComponent> Positions = new();
     public readonly Dictionary<EntityId, PawnComponent> Pawns = new();
     public readonly Dictionary<EntityId, NeedsComponent> Needs = new();
