@@ -75,13 +75,10 @@ Palettes = {
     },
     Soybeachy8 = {
         "#e55388",
-        "#e57d88",
         "#e59f88",
         "#e5d988",
         "#e3d5cc",
-        "#bad5cc",
         "#6dd5cc",
-        "#5ac5cc",
     },
     CheesePalettePalette = {
         "#391513",
