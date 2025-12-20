@@ -112,4 +112,67 @@ public partial class PreviewSquare : Button
             _textureRect.Visible = false;
         }
     }
+
+    /// <summary>
+    /// Sets the selection state of the button, showing a visual highlight.
+    /// </summary>
+    /// <param name="selected">True to show selected state</param>
+    public void SetSelected(bool selected)
+    {
+        if (selected)
+        {
+            // Show white outline border
+            var styleBox = new StyleBoxFlat
+            {
+                BorderColor = Colors.White,
+                BorderWidthLeft = 3,
+                BorderWidthRight = 3,
+                BorderWidthTop = 3,
+                BorderWidthBottom = 3,
+                DrawCenter = false
+            };
+            AddThemeStyleboxOverride("normal", styleBox);
+            AddThemeStyleboxOverride("hover", styleBox);
+            AddThemeStyleboxOverride("pressed", styleBox);
+
+            // Inset both rects to leave room for border
+            if (_colorRect != null)
+            {
+                _colorRect.OffsetLeft = 3;
+                _colorRect.OffsetTop = 3;
+                _colorRect.OffsetRight = -3;
+                _colorRect.OffsetBottom = -3;
+            }
+            if (_textureRect != null)
+            {
+                _textureRect.OffsetLeft = 3;
+                _textureRect.OffsetTop = 3;
+                _textureRect.OffsetRight = -3;
+                _textureRect.OffsetBottom = -3;
+            }
+        }
+        else
+        {
+            // Remove outline
+            RemoveThemeStyleboxOverride("normal");
+            RemoveThemeStyleboxOverride("hover");
+            RemoveThemeStyleboxOverride("pressed");
+
+            // Reset both rects to full size
+            if (_colorRect != null)
+            {
+                _colorRect.OffsetLeft = 0;
+                _colorRect.OffsetTop = 0;
+                _colorRect.OffsetRight = 0;
+                _colorRect.OffsetBottom = 0;
+            }
+            if (_textureRect != null)
+            {
+                _textureRect.OffsetLeft = 0;
+                _textureRect.OffsetTop = 0;
+                _textureRect.OffsetRight = 0;
+                _textureRect.OffsetBottom = 0;
+            }
+        }
+    }
 }

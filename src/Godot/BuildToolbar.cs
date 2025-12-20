@@ -258,10 +258,9 @@ public partial class BuildToolbar : HBoxContainer
                 isSelectPreview: false
             );
 
-            // Highlight selected color
-            button.Modulate = (colorIndex == BuildToolState.SelectedColorIndex)
-                ? new Color(0.7f, 1.0f, 0.7f)
-                : Colors.White;
+            // Highlight selected color with white outline
+            bool isSelected = colorIndex == BuildToolState.SelectedColorIndex;
+            preview.SetSelected(isSelected);
         }
     }
 
@@ -332,21 +331,18 @@ public partial class BuildToolbar : HBoxContainer
                     isDeletePreview: false,
                     isSelectPreview: false
                 );
-                button.Modulate = isActive ? new Color(0.7f, 1.0f, 0.7f) : Colors.White;
+                paintPreview.SetSelected(isActive);
             }
-            else
+            // Handle sprite icon buttons (Select, Object, Delete)
+            else if (button is SpriteIconButton spriteBtn)
             {
-                button.Modulate = isActive ? new Color(0.7f, 1.0f, 0.7f) : Colors.White;
-
-                // Update color modulation on sprite buttons
-                if (button is SpriteIconButton spriteBtn)
+                // Update color modulation
+                var textureRect = spriteBtn.GetNodeOrNull<TextureRect>("TextureRect");
+                if (textureRect?.Texture != null)
                 {
-                    var textureRect = spriteBtn.GetNodeOrNull<TextureRect>("TextureRect");
-                    if (textureRect?.Texture != null)
-                    {
-                        spriteBtn.SetSprite(textureRect.Texture, _currentPalette[BuildToolState.SelectedColorIndex]);
-                    }
+                    spriteBtn.SetSprite(textureRect.Texture, _currentPalette[BuildToolState.SelectedColorIndex]);
                 }
+                spriteBtn.SetSelected(isActive);
             }
         }
 

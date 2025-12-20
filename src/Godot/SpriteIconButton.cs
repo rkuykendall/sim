@@ -81,12 +81,44 @@ public partial class SpriteIconButton : Button
 
         if (selected)
         {
-            // Brighten the button to show selection
-            Modulate = new Color(1.2f, 1.2f, 1.2f);
+            // Show white outline border
+            var styleBox = new StyleBoxFlat
+            {
+                BorderColor = Colors.White,
+                BorderWidthLeft = 3,
+                BorderWidthRight = 3,
+                BorderWidthTop = 3,
+                BorderWidthBottom = 3,
+                DrawCenter = false
+            };
+            AddThemeStyleboxOverride("normal", styleBox);
+            AddThemeStyleboxOverride("hover", styleBox);
+            AddThemeStyleboxOverride("pressed", styleBox);
+
+            // Inset TextureRect to leave room for border
+            if (_textureRect != null)
+            {
+                _textureRect.OffsetLeft = 3;
+                _textureRect.OffsetTop = 3;
+                _textureRect.OffsetRight = -3;
+                _textureRect.OffsetBottom = -3;
+            }
         }
         else
         {
-            Modulate = Colors.White;
+            // Remove outline
+            RemoveThemeStyleboxOverride("normal");
+            RemoveThemeStyleboxOverride("hover");
+            RemoveThemeStyleboxOverride("pressed");
+
+            // Reset TextureRect to full size
+            if (_textureRect != null)
+            {
+                _textureRect.OffsetLeft = 0;
+                _textureRect.OffsetTop = 0;
+                _textureRect.OffsetRight = 0;
+                _textureRect.OffsetBottom = 0;
+            }
         }
     }
 }
