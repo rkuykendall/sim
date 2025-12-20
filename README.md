@@ -30,6 +30,23 @@ godot
 └── project.godot      # Godot project config
 ```
 
+
+## Running Tests
+
+To run the automated test suite (unit and integration tests):
+
+```bash
+dotnet test
+```
+
+This will build and execute all tests in the solution, including those in `tests/SimGame.Tests/`. You can also run tests for a specific project or file:
+
+```bash
+dotnet test tests/SimGame.Tests/SimGame.Tests.csproj
+```
+
+For more options, see the [dotnet test documentation](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-test).
+
 ## Architecture
 
 The simulation runs independently of rendering at 20 ticks/second. Godot receives read-only `RenderSnapshot` data each frame. See `DESIGN.md` for details.

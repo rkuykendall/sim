@@ -12,7 +12,8 @@ public sealed class TestSimulationBuilder
 {
     private readonly SimulationConfig _config = new()
     {
-        SkipDefaultBootstrap = true
+        SkipDefaultBootstrap = true,
+        Seed = 12345 // Fixed seed to ensure deterministic palette selection
     };
 
     private readonly List<(string Key, BuffDef Def)> _buffs = new();
@@ -97,7 +98,7 @@ public sealed class TestSimulationBuilder
     /// Define a terrain type that can be painted on tiles.
     /// ID is auto-generated.
     /// </summary>
-    public TestSimulationBuilder DefineTerrain(string key, string name,
+    public TestSimulationBuilder DefineTerrain(string key,
         bool walkable = true,
         bool buildable = true,
         bool indoors = false,
@@ -140,10 +141,10 @@ public sealed class TestSimulationBuilder
         // Create a fresh ContentRegistry for this test
         var content = new ContentRegistry();
 
-        // Register a default test color palette (required for simulation creation)
+        // Register only the test color palette to ensure it is always selected
         var testPalette = new ColorPaletteDef
         {
-            Name = "Test Palette",
+            Name = "test",
             Colors = new List<ColorDef>
             {
                 new ColorDef { Name = "Green", R = 0.2f, G = 0.6f, B = 0.2f },

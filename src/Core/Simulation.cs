@@ -175,12 +175,18 @@ public sealed class Simulation
         if (!World.GetTile(coord).Walkable)
             throw new InvalidOperationException($"Cannot place object at ({x}, {y}): tile is already occupied");
 
+        // Clamp colorIndex to palette size
+        int paletteSize = 1;
+        if (Content.ColorPalettes.TryGetValue(SelectedPaletteId, out var paletteDef))
+            paletteSize = paletteDef.Colors.Count;
+        int safeColorIndex = GetSafeColorIndex(colorIndex, paletteSize);
+
         var id = Entities.Create();
         Entities.Positions[id] = new PositionComponent { Coord = coord };
         Entities.Objects[id] = new ObjectComponent
         {
             ObjectDefId = objectDefId,
-            ColorIndex = colorIndex
+            ColorIndex = safeColorIndex
         };
 
         // Only block the tile if this object is not walkable (e.g., fridge blocks, bed doesn't)
@@ -226,11 +232,17 @@ public sealed class Simulation
         var tile = World.GetTile(coord);
         var terrainDef = Content.Terrains[terrainDefId];
 
+        // Clamp colorIndex to palette size
+        int paletteSize = 1;
+        if (Content.ColorPalettes.TryGetValue(SelectedPaletteId, out var paletteDef))
+            paletteSize = paletteDef.Colors.Count;
+        int safeColorIndex = GetSafeColorIndex(colorIndex, paletteSize);
+
         tile.TerrainTypeId = terrainDefId;
         tile.Walkable = terrainDef.Walkable;
         tile.Buildable = terrainDef.Buildable;
         tile.Indoors = terrainDef.Indoors;
-        tile.ColorIndex = colorIndex;
+        tile.ColorIndex = safeColorIndex;
     }
 
     /// <summary>
@@ -367,7 +379,7 @@ public sealed class Simulation
     {
         if (content.ColorPalettes.Count == 0)
             throw new InvalidOperationException(
-                "No color palettes loaded. Ensure content/palettes/*.yaml files exist.");
+                "No color palettes loaded. Ensure content/core/palettes.lua exists and is valid.");
 
         // Use seed to deterministically select a palette
         var rng = new Random(seed);

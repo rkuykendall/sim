@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MoonSharp.Interpreter;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace SimGame.Core;
 
@@ -24,7 +22,7 @@ public static class ContentLoader
     public static Action<string>? LogError { get; set; }
 
     /// <summary>
-    /// Load all content from YAML and Lua files and return a populated ContentRegistry.
+    /// Load all content from Lua files and return a populated ContentRegistry.
     /// </summary>
     public static ContentRegistry LoadAll(string contentPath)
     {
@@ -32,7 +30,7 @@ public static class ContentLoader
         var script = new Script();
 
         // Load color palettes first (no dependencies)
-        LoadColorPalettes(registry, Path.Combine(contentPath, "palettes"));
+        LoadColorPalettes(registry, contentPath);
 
         // Load in order: buffs first (needs reference them), then needs, then terrains, then objects
         LoadBuffs(script, registry, Path.Combine(contentPath, "core", "buffs.lua"));
@@ -201,69 +199,75 @@ public static class ContentLoader
 
     private static void LoadColorPalettes(ContentRegistry registry, string palettesPath)
     {
-        if (!Directory.Exists(palettesPath))
+        // Load Lua palettes from core/palettes.lua
+        var palettesLuaPath = Path.Combine(palettesPath, "core", "palettes.lua");
+        if (!File.Exists(palettesLuaPath))
         {
-            LogError?.Invoke($"ContentLoader: Palettes directory not found: {palettesPath}");
+            LogError?.Invoke($"ContentLoader: Palettes file not found: {palettesLuaPath}");
             return;
         }
 
-        var deserializer = new DeserializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .Build();
-
-        var paletteFiles = Directory.GetFiles(palettesPath, "*.yaml");
-
-        foreach (var file in paletteFiles)
+        var script = new Script();
+        Table? palettesTable = null;
+        try
         {
-            try
-            {
-                var yaml = File.ReadAllText(file);
-                var paletteData = deserializer.Deserialize<PaletteYaml>(yaml);
-
-                if (paletteData.Colors.Count < 1)
-                {
-                    LogError?.Invoke($"ColorPalette '{Path.GetFileNameWithoutExtension(file)}' must have at least 1 color (has {paletteData.Colors.Count})");
-                    continue;
-                }
-
-                var palette = new ColorPaletteDef
-                {
-                    Name = paletteData.Name,
-                    Description = paletteData.Description ?? "",
-                    Colors = paletteData.Colors.Select(c => new ColorDef
-                    {
-                        Name = c.Name,
-                        R = c.R,
-                        G = c.G,
-                        B = c.B
-                    }).ToList()
-                };
-
-                var key = Path.GetFileNameWithoutExtension(file);
-                registry.RegisterColorPalette(key, palette);
-            }
-            catch (Exception ex)
-            {
-                LogError?.Invoke($"ContentLoader: Failed to load palette {file}: {ex.Message}");
-            }
+            palettesTable = script.DoFile(palettesLuaPath).Table;
+        }
+        catch (Exception ex)
+        {
+            LogError?.Invoke($"ContentLoader: Failed to load palettes.lua: {ex.Message}");
+            return;
+        }
+        if (palettesTable == null)
+        {
+            LogError?.Invoke($"ContentLoader: palettes.lua did not return a table");
+            return;
         }
 
+        foreach (var palettePair in palettesTable.Pairs)
+        {
+            var key = palettePair.Key.String;
+            var colorArray = palettePair.Value.Table;
+            if (colorArray == null)
+                continue;
+            var colors = new List<ColorDef>();
+            foreach (var colorValue in colorArray.Values)
+            {
+                var hex = colorValue.CastToString();
+                if (string.IsNullOrWhiteSpace(hex))
+                    continue;
+                try
+                {
+                    // Parse hex string (e.g. #RRGGBB)
+                    if (hex.StartsWith("#") && hex.Length == 7)
+                    {
+                        var r = Convert.ToInt32(hex.Substring(1, 2), 16) / 255f;
+                        var g = Convert.ToInt32(hex.Substring(3, 2), 16) / 255f;
+                        var b = Convert.ToInt32(hex.Substring(5, 2), 16) / 255f;
+                        colors.Add(new ColorDef { Name = "", R = r, G = g, B = b });
+                    }
+                    else
+                    {
+                        LogError?.Invoke($"ColorPalette '{key}' has invalid hex color: {hex}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogError?.Invoke($"ColorPalette '{key}' failed to parse color '{hex}': {ex.Message}");
+                }
+            }
+            if (colors.Count < 1)
+            {
+                LogError?.Invoke($"ColorPalette '{key}' must have at least 1 color (has {colors.Count})");
+                continue;
+            }
+            var palette = new ColorPaletteDef
+            {
+                Name = key,
+                Colors = colors
+            };
+            registry.RegisterColorPalette(key, palette);
+        }
         Log?.Invoke($"ContentLoader: Loaded {registry.ColorPalettes.Count} color palettes");
-    }
-
-    // YAML deserialization classes
-    private sealed class PaletteYaml
-    {
-        public string Name { get; set; } = "";
-        public string? Description { get; set; }
-        public List<ColorYaml> Colors { get; set; } = new();
-    }
-
-    private sealed class ColorYaml
-    {
-        public string Name { get; set; } = "";
-        public float R { get; set; }
-        public float G { get; set; }
-        public float B { get; set; }
     }
 }

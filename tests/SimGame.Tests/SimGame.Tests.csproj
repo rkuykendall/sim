@@ -19,7 +19,6 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="MoonSharp" Version="2.0.0" />
-    <PackageReference Include="YamlDotNet" Version="15.1.0" />
   </ItemGroup>
 
   <!-- Include Core source files directly to avoid Godot dependency -->

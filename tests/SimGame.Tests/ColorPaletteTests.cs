@@ -55,8 +55,8 @@ public class ColorPaletteTests
         // Arrange
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 5, 0, 5)
-            .DefineTerrain("Grass", "Grass", walkable: true)
-            .DefineTerrain("Stone", "Stone", walkable: true)
+            .DefineTerrain("Grass", walkable: true, spriteKey: "grass")
+            .DefineTerrain("Stone", walkable: true, spriteKey: "stone")
             .Build();
 
         var stoneDefId = sim.Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "stone").Key;
@@ -77,8 +77,8 @@ public class ColorPaletteTests
         // Arrange
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 5, 0, 5)
-            .DefineTerrain("Grass", "Grass", walkable: true)
-            .DefineTerrain("Concrete", "Concrete", walkable: true)
+            .DefineTerrain("Grass", walkable: true, spriteKey: "grass")
+            .DefineTerrain("Concrete", walkable: true, spriteKey: "concrete")
             .Build();
 
         var concreteDefId = sim.Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "concrete").Key;
@@ -160,7 +160,7 @@ public class ColorPaletteTests
         // Arrange
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 5, 0, 5)
-            .DefineTerrain("Grass", "Grass", walkable: true)
+            .DefineTerrain("Grass",  walkable: true, spriteKey: "grass")
             .Build();
 
         var grassDefId = sim.Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "grass").Key;
