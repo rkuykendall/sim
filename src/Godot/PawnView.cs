@@ -103,6 +103,17 @@ public partial class PawnView : Node2D
     }
 
     /// <summary>
+    /// Set the initial visual position without tweening.
+    /// Used when spawning pawns to position them at an entry point.
+    /// </summary>
+    public void SetInitialPosition(Vector2 position)
+    {
+        _visualPosition = position;
+        Position = position;
+        _lastPosition = position;
+    }
+
+    /// <summary>
     /// Set the target position for smooth interpolation.
     /// </summary>
     public void SetTargetPosition(Vector2 target)

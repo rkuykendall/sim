@@ -722,15 +722,62 @@ public partial class GameRoot : Node2D
         }
     }
 
+    /// <summary>
+    /// Calculate the entry position for a pawn spawning at the given tile coordinates.
+    /// Places the pawn one tile outside the nearest edge.
+    /// </summary>
+    private Vector2 CalculateEntryPosition(int tileX, int tileY)
+    {
+        var worldWidth = _sim.World.Width;
+        var worldHeight = _sim.World.Height;
+
+        // Center position of the spawn tile
+        var centerX = tileX * TileSize + TileSize / 2;
+        var centerY = tileY * TileSize + TileSize / 2;
+
+        // Determine which edge(s) the pawn is on and offset accordingly
+        // If on multiple edges (corner), choose the offset that makes most sense
+
+        bool onLeftEdge = tileX == 0;
+        bool onRightEdge = tileX == worldWidth - 1;
+        bool onTopEdge = tileY == 0;
+        bool onBottomEdge = tileY == worldHeight - 1;
+
+        // Corners: offset diagonally
+        if (onLeftEdge && onTopEdge)
+            return new Vector2(centerX - TileSize, centerY - TileSize);
+        if (onRightEdge && onTopEdge)
+            return new Vector2(centerX + TileSize, centerY - TileSize);
+        if (onLeftEdge && onBottomEdge)
+            return new Vector2(centerX - TileSize, centerY + TileSize);
+        if (onRightEdge && onBottomEdge)
+            return new Vector2(centerX + TileSize, centerY + TileSize);
+
+        // Single edges
+        if (onLeftEdge)
+            return new Vector2(centerX - TileSize, centerY);
+        if (onRightEdge)
+            return new Vector2(centerX + TileSize, centerY);
+        if (onTopEdge)
+            return new Vector2(centerX, centerY - TileSize);
+        if (onBottomEdge)
+            return new Vector2(centerX, centerY + TileSize);
+
+        // Fallback (should not happen if spawning only on edges)
+        return new Vector2(centerX, centerY);
+    }
+
     private void SyncPawns(RenderSnapshot snapshot)
     {
         _activeIds.Clear();
-        
+
         foreach (var pawn in snapshot.Pawns)
         {
             _activeIds.Add(pawn.Id.Value);
-            
-            if (!_pawnNodes.TryGetValue(pawn.Id.Value, out var node))
+
+            bool isNewPawn = !_pawnNodes.TryGetValue(pawn.Id.Value, out var node);
+
+            if (isNewPawn)
             {
                 node = PawnScene.Instantiate<Node2D>();
                 _pawnsRoot.AddChild(node);
@@ -750,6 +797,13 @@ public partial class GameRoot : Node2D
 
             if (node is PawnView pv)
             {
+                // For new pawns, calculate entry position from nearest edge
+                if (isNewPawn)
+                {
+                    var entryPosition = CalculateEntryPosition(pawn.X, pawn.Y);
+                    pv.SetInitialPosition(entryPosition);
+                }
+
                 pv.SetTargetPosition(targetPosition);
                 pv.SetMood(pawn.Mood);
                 pv.SetSelected(pawn.Id.Value == _selectedPawnId);

@@ -56,7 +56,7 @@ public sealed class Simulation
     /// <summary>
     /// Spawn a new pawn every in-game day (if under max pawns).
     /// </summary>
-    private const int PawnSpawnInterval = TimeService.TicksPerDay;
+    private const int PawnSpawnInterval = TimeService.TicksPerDay / 48;
 
     public World World { get; }
     public EntityManager Entities { get; } = new();
@@ -277,9 +277,10 @@ public sealed class Simulation
     }
 
     /// <summary>
-    /// Finds a random walkable tile that is not occupied by a pawn.
+    /// Finds a random walkable edge tile that is not occupied by a pawn.
+    /// Edge tiles are on the borders of the world (x=0, x=Width-1, y=0, or y=Height-1).
     /// </summary>
-    /// <returns>A random unoccupied walkable tile coordinate, or null if none available.</returns>
+    /// <returns>A random unoccupied walkable edge tile coordinate, or null if none available.</returns>
     private TileCoord? GetRandomWalkableTile()
     {
         var occupiedTiles = Entities.GetOccupiedTiles();
@@ -289,6 +290,11 @@ public sealed class Simulation
         {
             for (int y = 0; y < World.Height; y++)
             {
+                // Only consider edge tiles
+                bool isEdge = x == 0 || x == World.Width - 1 || y == 0 || y == World.Height - 1;
+                if (!isEdge)
+                    continue;
+
                 var coord = new TileCoord(x, y);
                 if (World.IsWalkable(coord) && !occupiedTiles.Contains(coord))
                 {
