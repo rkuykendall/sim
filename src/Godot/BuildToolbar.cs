@@ -95,6 +95,7 @@ public partial class BuildToolbar : HBoxContainer
             (() => CreatePaintToolButton(), BuildToolMode.PlaceTerrain),
             (() => CreateFillSquareToolButton(), BuildToolMode.FillSquare),
             (() => CreateOutlineSquareToolButton(), BuildToolMode.OutlineSquare),
+            (() => CreateFloodFillToolButton(), BuildToolMode.FloodFill),
             (() => CreateToolButton("generic-object.png", BuildToolMode.PlaceObject, "Place Object"), BuildToolMode.PlaceObject),
             (() => CreateToolButton("delete.png", BuildToolMode.Delete, "Delete"), BuildToolMode.Delete)
         };
@@ -149,7 +150,7 @@ public partial class BuildToolbar : HBoxContainer
         }
     }
 
-    private Button CreatePaintToolButton()
+    private Button CreatePaintToolButton ()
     {
         var paintBtn = new PreviewSquare
         {
@@ -215,6 +216,7 @@ public partial class BuildToolbar : HBoxContainer
             case BuildToolMode.PlaceTerrain:
             case BuildToolMode.FillSquare:
             case BuildToolMode.OutlineSquare:
+            case BuildToolMode.FloodFill:
                 foreach (var (id, def) in _content.Terrains.OrderBy(kv => kv.Key))
                 {
                     optionsList.Add((id, def.SpriteKey, id.ToString(), false));
@@ -416,6 +418,22 @@ public partial class BuildToolbar : HBoxContainer
                 button.SetSprite(textureRect.Texture, _currentPalette[BuildToolState.SelectedColorIndex]);
             }
         }
+    }
+
+    private Button CreateFloodFillToolButton()
+    {
+        var fillBtn = new SpriteIconButton
+        {
+            CustomMinimumSize = new Vector2(96, 96),
+            TooltipText = "Flood Fill"
+        };
+        var texture = GD.Load<Texture2D>("res://sprites/fill.png");
+        if (texture != null)
+        {
+            fillBtn.SetSprite(texture, _currentPalette[BuildToolState.SelectedColorIndex]);
+        }
+        fillBtn.Pressed += () => OnToolSelected(BuildToolMode.FloodFill);
+        return fillBtn;
     }
 
     private Button CreateFillSquareToolButton()

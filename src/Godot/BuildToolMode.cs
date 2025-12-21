@@ -11,6 +11,7 @@ public enum BuildToolMode
     PlaceTerrain,// Paint terrain tiles (single tile)
     FillSquare,  // Click and drag to fill a rectangle
     OutlineSquare, // Click and drag to draw only the outline of a rectangle
+    FloodFill,   // Fill all connected matching tiles
     Delete,      // Remove objects
     Select       // Click to select pawns/objects (existing behavior)
 }
