@@ -103,6 +103,9 @@ public sealed class Simulation
             World = new World();
         }
 
+        // Initialize all tiles with Flat terrain as the default base
+        InitializeWorldTerrain();
+
         _systems.Add(new NeedsSystem());
         _systems.Add(new ProximitySocialSystem());
         _systems.Add(new BuffSystem());
@@ -121,6 +124,38 @@ public sealed class Simulation
             foreach (var pawnConfig in config.Pawns)
             {
                 CreatePawn(pawnConfig);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Initialize all world tiles with Flat terrain as the default base terrain.
+    /// </summary>
+    private void InitializeWorldTerrain()
+    {
+        // Find the Flat terrain (sprite key "flat")
+        var flatTerrainId = Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "flat").Key;
+
+        // If no "flat" terrain found, use terrain ID 0 as fallback
+        if (flatTerrainId == 0 && !Content.Terrains.ContainsKey(0))
+        {
+            // No valid terrain to initialize with - tiles will remain at default (0)
+            return;
+        }
+
+        // Initialize all tiles to Flat terrain
+        for (int x = 0; x < World.Width; x++)
+        {
+            for (int y = 0; y < World.Height; y++)
+            {
+                var tile = World.GetTile(x, y);
+                tile.BaseTerrainTypeId = flatTerrainId;
+
+                // Set walkability based on terrain definition
+                if (Content.Terrains.TryGetValue(flatTerrainId, out var terrainDef))
+                {
+                    tile.Walkable = terrainDef.Walkable;
+                }
             }
         }
     }
