@@ -6,10 +6,6 @@ Terrains = {
         walkable = true,
         spriteKey = "flat"
     },
-    Block = {
-        walkable = false,
-        spriteKey = "block"
-    },
     Grass = {
         walkable = true,
         spriteKey = "grass"
@@ -30,19 +26,23 @@ Terrains = {
         walkable = true,
         spriteKey = "stone"
     },
-    Water = {
-        walkable = false,
-        spriteKey = "water"
-    },
-    Brick = {
-        walkable = false,
-        spriteKey = "brick",
-    },
     Path = {
         walkable = true,
         spriteKey = "path",
         isAutotiling = true
     }
+    Water = {
+        walkable = false,
+        spriteKey = "water"
+    },
+    Block = {
+        walkable = false,
+        spriteKey = "block"
+    },
+    Brick = {
+        walkable = false,
+        spriteKey = "brick",
+    },
 }
 
 return Terrains
