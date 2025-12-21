@@ -13,7 +13,7 @@
 
 [node name="Camera2D" type="Camera2D" parent="."]
 script = ExtResource("1_camera")
-position = Vector2(320, 180)
+position = Vector2(640, 360)
 zoom = Vector2(2, 2)
 
 [node name="Tiles" type="Node2D" parent="."]
