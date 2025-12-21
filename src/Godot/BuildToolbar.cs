@@ -232,16 +232,18 @@ public partial class BuildToolbar : HBoxContainer
             _optionsContainer?.AddChild(button);
         }
 
-        // Auto-select first option if none selected
+        // Auto-select first option if none selected, but do not trigger if already selected
         if (optionsList.Count > 0)
         {
             if (BuildToolState.Mode == BuildToolMode.PlaceObject && !BuildToolState.SelectedObjectDefId.HasValue)
             {
-                OnObjectOptionSelected(optionsList[0].id);
+                BuildToolState.SelectedObjectDefId = optionsList[0].id;
+                UpdateAllButtons();
             }
             else if (BuildToolState.Mode == BuildToolMode.PlaceTerrain && !BuildToolState.SelectedTerrainDefId.HasValue)
             {
-                OnTerrainOptionSelected(optionsList[0].id);
+                BuildToolState.SelectedTerrainDefId = optionsList[0].id;
+                UpdateAllButtons();
             }
         }
     }
@@ -325,7 +327,9 @@ public partial class BuildToolbar : HBoxContainer
 
     private void OnTerrainOptionSelected(int terrainDefId)
     {
-        BuildToolState.Mode = BuildToolMode.PlaceTerrain;
+        // Only set mode if not already PlaceTerrain to avoid resetting tool
+        if (BuildToolState.Mode != BuildToolMode.PlaceTerrain)
+            BuildToolState.Mode = BuildToolMode.PlaceTerrain;
         BuildToolState.SelectedTerrainDefId = terrainDefId;
         BuildToolState.SelectedObjectDefId = null;
         UpdateAllButtons();
