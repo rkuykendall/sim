@@ -33,7 +33,6 @@ public sealed class Tile
     public bool Walkable { get; set; } = true;
 
     /// <summary>Whether the player can place objects on this tile.</summary>
-    public bool Buildable { get; set; } = true;
 
 
     /// <summary>Index into color palette for this tile's visual appearance.</summary>
@@ -46,7 +45,7 @@ public sealed class Tile
 /// <remarks>
 /// The world is a simple 2D array of tiles with defined bounds.
 /// Objects (furniture, walls) are stored as entities in EntityManager, not on tiles.
-/// Placing an object should update the tile's Walkable/Buildable properties as needed.
+/// Placing an object should update the tile's Walkable properties as needed.
 /// </remarks>
 public sealed class World
 {

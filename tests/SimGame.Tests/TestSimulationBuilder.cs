@@ -100,14 +100,12 @@ public sealed class TestSimulationBuilder
     /// </summary>
     public TestSimulationBuilder DefineTerrain(string key,
         bool walkable = true,
-        bool buildable = true,
         string spriteKey = "")
     {
         _terrains.Add((key, new TerrainDef
         {
             Id = 0,  // Auto-generated
             Walkable = walkable,
-            Buildable = buildable,
             SpriteKey = spriteKey
         }));
         return this;

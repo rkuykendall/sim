@@ -125,9 +125,6 @@ public static class ContentLoader
             var walkableData = data.Get("walkable");
             var walkable = walkableData.IsNil() || walkableData.Boolean;
 
-            // Load buildable property (defaults to true if not specified)
-            var buildableData = data.Get("buildable");
-            var buildable = buildableData.IsNil() || buildableData.Boolean;
 
 
             // Load sprite key (defaults to empty string if not specified)
@@ -141,7 +138,6 @@ public static class ContentLoader
             registry.RegisterTerrain(key, new TerrainDef
             {
                 Walkable = walkable,
-                Buildable = buildable,
                 SpriteKey = spriteKey,
                 IsPath = isPath
             });
