@@ -433,22 +433,32 @@ public partial class BuildToolbar : HBoxContainer
 
     private Button CreateFillSquareToolButton()
     {
-        var fillBtn = new PreviewSquare
+        var fillBtn = new SpriteIconButton
         {
             CustomMinimumSize = new Vector2(96, 96),
             TooltipText = "Fill Square"
         };
+        var texture = GD.Load<Texture2D>("res://sprites/box.png");
+        if (texture != null)
+        {
+            fillBtn.SetSprite(texture, _currentPalette[BuildToolState.SelectedColorIndex]);
+        }
         fillBtn.Pressed += () => OnToolSelected(BuildToolMode.FillSquare);
         return fillBtn;
     }
 
     private Button CreateOutlineSquareToolButton()
     {
-        var outlineBtn = new PreviewSquare
+        var outlineBtn = new SpriteIconButton
         {
             CustomMinimumSize = new Vector2(96, 96),
             TooltipText = "Outline Square"
         };
+        var texture = GD.Load<Texture2D>("res://sprites/square.png");
+        if (texture != null)
+        {
+            outlineBtn.SetSprite(texture, _currentPalette[BuildToolState.SelectedColorIndex]);
+        }
         outlineBtn.Pressed += () => OnToolSelected(BuildToolMode.OutlineSquare);
         return outlineBtn;
     }
