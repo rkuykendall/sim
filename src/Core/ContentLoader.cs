@@ -129,9 +129,6 @@ public static class ContentLoader
             var buildableData = data.Get("buildable");
             var buildable = buildableData.IsNil() || buildableData.Boolean;
 
-            // Load indoors property (defaults to false if not specified)
-            var indoorsData = data.Get("indoors");
-            var indoors = !indoorsData.IsNil() && indoorsData.Boolean;
 
             // Load sprite key (defaults to empty string if not specified)
             var spriteKeyData = data.Get("spriteKey");
@@ -145,7 +142,6 @@ public static class ContentLoader
             {
                 Walkable = walkable,
                 Buildable = buildable,
-                Indoors = indoors,
                 SpriteKey = spriteKey,
                 IsPath = isPath
             });

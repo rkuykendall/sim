@@ -202,7 +202,6 @@ public sealed class Simulation
         tile.TerrainTypeId = terrainDefId;
         tile.Walkable = terrainDef.Walkable;
         tile.Buildable = terrainDef.Buildable;
-        tile.Indoors = terrainDef.Indoors;
         tile.ColorIndex = safeColorIndex;
     }
 

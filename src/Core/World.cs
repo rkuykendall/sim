@@ -35,8 +35,6 @@ public sealed class Tile
     /// <summary>Whether the player can place objects on this tile.</summary>
     public bool Buildable { get; set; } = true;
 
-    /// <summary>Whether this tile is indoors (affects weather, lighting, etc.).</summary>
-    public bool Indoors { get; set; }
 
     /// <summary>Index into color palette for this tile's visual appearance.</summary>
     public int ColorIndex { get; set; } = 0; // Default to first color

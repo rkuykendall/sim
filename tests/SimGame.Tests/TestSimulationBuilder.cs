@@ -101,7 +101,6 @@ public sealed class TestSimulationBuilder
     public TestSimulationBuilder DefineTerrain(string key,
         bool walkable = true,
         bool buildable = true,
-        bool indoors = false,
         string spriteKey = "")
     {
         _terrains.Add((key, new TerrainDef
@@ -109,7 +108,6 @@ public sealed class TestSimulationBuilder
             Id = 0,  // Auto-generated
             Walkable = walkable,
             Buildable = buildable,
-            Indoors = indoors,
             SpriteKey = spriteKey
         }));
         return this;
