@@ -629,15 +629,15 @@ public partial class GameRoot : Node2D
 
         var tile = _sim.World.GetTile(coord);
 
-        // Skip if terrain is a path (paths render in overlay layer)
-        if (_sim.Content.Terrains.TryGetValue(tile.TerrainTypeId, out var terrainDef) && terrainDef.IsPath)
+        // Always render base terrain (overlay will render on top if present)
+        if (!_sim.Content.Terrains.TryGetValue(tile.BaseTerrainTypeId, out var terrainDef))
         {
             sprite.Visible = false;
             return;
         }
 
         // Render flat terrain using its sprite key
-        var flatTexture = SpriteResourceManager.GetTexture(terrainDef?.SpriteKey ?? "flat");
+        var flatTexture = SpriteResourceManager.GetTexture(terrainDef.SpriteKey);
         if (flatTexture != null)
         {
             sprite.Texture = flatTexture;
@@ -676,12 +676,14 @@ public partial class GameRoot : Node2D
             if (_sim.World.IsInBounds(neighborCoord))
             {
                 var tile = _sim.World.GetTile(neighborCoord);
-                if (_sim.Content.Terrains.TryGetValue(tile.TerrainTypeId, out var terrainDef) && terrainDef.IsPath)
+                if (tile.OverlayTerrainTypeId.HasValue &&
+                    _sim.Content.Terrains.TryGetValue(tile.OverlayTerrainTypeId.Value, out var terrainDef) &&
+                    terrainDef.IsAutotiling)
                 {
                     hasPathNeighbor = true;
-                    pathTerrainId = tile.TerrainTypeId;
+                    pathTerrainId = tile.OverlayTerrainTypeId.Value;
                     pathTexture = SpriteResourceManager.GetTexture(terrainDef.SpriteKey);
-                    pathColor = _currentPalette[tile.ColorIndex];
+                    pathColor = _currentPalette[tile.OverlayColorIndex];
                     break;
                 }
             }

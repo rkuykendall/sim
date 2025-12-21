@@ -23,11 +23,15 @@ public readonly struct TileCoord : IEquatable<TileCoord>
 /// Tiles store terrain data (texture, walkability). Objects placed on tiles
 /// are separate entities tracked by EntityManager, not stored on the tile itself.
 /// When an object is placed, it may modify tile properties (e.g., Walkable = false).
+/// Tiles now support layering with a base terrain (always visible) and optional overlay terrain (autotiling paths, etc.)
 /// </remarks>
 public sealed class Tile
 {
-    /// <summary>ID of the terrain type (grass, dirt, wood floor, etc.) for rendering.</summary>
-    public int TerrainTypeId { get; set; }
+    /// <summary>ID of the base terrain type (grass, dirt, wood floor, etc.) - always renders underneath.</summary>
+    public int BaseTerrainTypeId { get; set; }
+
+    /// <summary>ID of the optional overlay terrain type (paths, etc.) - renders on top with transparency.</summary>
+    public int? OverlayTerrainTypeId { get; set; } = null;
 
     /// <summary>Whether pawns can walk through this tile. May be set false by terrain or placed objects.</summary>
     public bool Walkable { get; set; } = true;
@@ -35,8 +39,11 @@ public sealed class Tile
     /// <summary>Whether the player can place objects on this tile.</summary>
 
 
-    /// <summary>Index into color palette for this tile's visual appearance.</summary>
+    /// <summary>Index into color palette for base terrain's visual appearance.</summary>
     public int ColorIndex { get; set; } = 0; // Default to first color
+
+    /// <summary>Index into color palette for overlay terrain's visual appearance.</summary>
+    public int OverlayColorIndex { get; set; } = 0; // Default to first color
 }
 
 /// <summary>

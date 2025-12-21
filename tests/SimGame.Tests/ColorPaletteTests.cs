@@ -68,7 +68,7 @@ public class ColorPaletteTests
         // Assert: Verify the color index is stored
         var tile = sim.World.GetTile(new TileCoord(3, 3));
         Assert.Equal(4, tile.ColorIndex);
-            Assert.Equal(stoneDefId, tile.TerrainTypeId);
+            Assert.Equal(stoneDefId, tile.BaseTerrainTypeId);
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class ColorPaletteTests
         // Assert: Verify the color index defaults to 0 (green)
         var tile = sim.World.GetTile(new TileCoord(2, 2));
         Assert.Equal(0, tile.ColorIndex);
-            Assert.Equal(concreteDefId, tile.TerrainTypeId);
+            Assert.Equal(concreteDefId, tile.BaseTerrainTypeId);
     }
 
     [Fact]

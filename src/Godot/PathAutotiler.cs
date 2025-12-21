@@ -58,10 +58,10 @@ public static class PathAutotiler
 	{
 		// Match reference implementation: treat tile at (x,y) as bottom-right of 4-tile intersection
 		// Check world tiles at (x-1,y-1), (x,y-1), (x-1,y), (x,y)
-		bool topLeft = IsPathTile(world, new TileCoord(coord.X - 1, coord.Y - 1), pathTerrainId);
-		bool topRight = IsPathTile(world, new TileCoord(coord.X, coord.Y - 1), pathTerrainId);
-		bool bottomLeft = IsPathTile(world, new TileCoord(coord.X - 1, coord.Y), pathTerrainId);
-		bool bottomRight = IsPathTile(world, new TileCoord(coord.X, coord.Y), pathTerrainId);
+        bool topLeft = IsAutotilingTile(world, new TileCoord(coord.X - 1, coord.Y - 1), pathTerrainId);
+        bool topRight = IsAutotilingTile(world, new TileCoord(coord.X, coord.Y - 1), pathTerrainId);
+        bool bottomLeft = IsAutotilingTile(world, new TileCoord(coord.X - 1, coord.Y), pathTerrainId);
+        bool bottomRight = IsAutotilingTile(world, new TileCoord(coord.X, coord.Y), pathTerrainId);
 
 		var pattern = (topLeft, topRight, bottomLeft, bottomRight);
 
@@ -75,12 +75,12 @@ public static class PathAutotiler
 		return new Vector2I(2, 1);
 	}
 
-	private static bool IsPathTile(World world, TileCoord coord, int pathTerrainId)
+    private static bool IsAutotilingTile(World world, TileCoord coord, int pathTerrainId)
 	{
 		if (!world.IsInBounds(coord))
 			return false;
 
 		var tile = world.GetTile(coord);
-		return tile.TerrainTypeId == pathTerrainId;
+		return tile.OverlayTerrainTypeId.HasValue && tile.OverlayTerrainTypeId.Value == pathTerrainId;
 	}
 }

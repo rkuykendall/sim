@@ -132,14 +132,14 @@ public static class ContentLoader
             var spriteKey = spriteKeyData.IsNil() ? "" : spriteKeyData.String;
 
             // Load isPath property (defaults to false if not specified)
-            var isPathData = data.Get("isPath");
-            var isPath = !isPathData.IsNil() && isPathData.Boolean;
+            var isAutotilingData = data.Get("isAutotiling");
+            var isAutotiling = !isAutotilingData.IsNil() && isAutotilingData.Boolean;
 
             registry.RegisterTerrain(key, new TerrainDef
             {
                 Walkable = walkable,
                 SpriteKey = spriteKey,
-                IsPath = isPath
+                IsAutotiling = isAutotiling
             });
         }
     }

@@ -199,9 +199,22 @@ public sealed class Simulation
             paletteSize = paletteDef.Colors.Count;
         int safeColorIndex = GetSafeColorIndex(colorIndex, paletteSize);
 
-        tile.TerrainTypeId = terrainDefId;
+        // Autotiling terrains (paths, etc.) go in the overlay layer
+        // Regular terrains go in the base layer
+        if (terrainDef.IsAutotiling)
+        {
+            tile.OverlayTerrainTypeId = terrainDefId;
+            tile.OverlayColorIndex = safeColorIndex;
+        }
+        else
+        {
+            tile.BaseTerrainTypeId = terrainDefId;
+            tile.ColorIndex = safeColorIndex;
+            // Clear overlay when painting non-autotiling terrain
+            tile.OverlayTerrainTypeId = null;
+        }
+
         tile.Walkable = terrainDef.Walkable;
-        tile.ColorIndex = safeColorIndex;
     }
 
     /// <summary>

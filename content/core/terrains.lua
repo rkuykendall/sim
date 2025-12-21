@@ -41,7 +41,7 @@ Terrains = {
     Path = {
         walkable = true,
         spriteKey = "path",
-        isPath = true
+        isAutotiling = true
     }
 }
 

@@ -8,5 +8,5 @@ public sealed class TerrainDef : IContentDef
     public int Id { get; set; }
     public bool Walkable { get; init; } = true;
     public string SpriteKey { get; init; } = "";
-    public bool IsPath { get; init; } = false; // Indicates terrain uses autotiling
+    public bool IsAutotiling { get; init; } = false; // Indicates terrain uses autotiling
 }
