@@ -218,7 +218,8 @@ public partial class GameRoot : Node2D
 
             if (BuildToolState.Mode == BuildToolMode.Delete)
             {
-                _sim.TryDeleteObject(tileCoord.X, tileCoord.Y);
+                _sim.DeleteAtTile(tileCoord.X, tileCoord.Y);
+                UpdateTileAndNeighbors(tileCoord);
                 return; // Consume event
             }
 

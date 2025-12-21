@@ -273,6 +273,44 @@ public sealed class Simulation
     }
 
     /// <summary>
+    /// Smart delete tool that removes objects, overlay terrain, or resets to flat terrain.
+    /// Priority: 1) Delete object if present, 2) Clear overlay terrain if present, 3) Reset base to flat.
+    /// </summary>
+    public void DeleteAtTile(int x, int y)
+    {
+        var coord = new TileCoord(x, y);
+        if (!World.IsInBounds(coord))
+            return;
+
+        // Priority 1: Try to delete an object at this position
+        if (TryDeleteObject(x, y))
+            return;
+
+        var tile = World.GetTile(coord);
+
+        // Priority 2: Clear overlay terrain if present
+        if (tile.OverlayTerrainTypeId.HasValue)
+        {
+            tile.OverlayTerrainTypeId = null;
+            // Restore walkability from base terrain
+            if (Content.Terrains.TryGetValue(tile.BaseTerrainTypeId, out var baseTerrain))
+            {
+                tile.Walkable = baseTerrain.Walkable;
+            }
+            return;
+        }
+
+        // Priority 3: Reset base terrain to flat
+        var flatTerrainId = Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "flat").Key;
+        if (Content.Terrains.TryGetValue(flatTerrainId, out var flatTerrain))
+        {
+            tile.BaseTerrainTypeId = flatTerrainId;
+            tile.Walkable = flatTerrain.Walkable;
+            tile.ColorIndex = 0; // Reset to default color
+        }
+    }
+
+    /// <summary>
     /// Create a pawn in the world with the specified configuration.
     /// </summary>
     /// <exception cref="ArgumentException">Thrown when config contains invalid need IDs.</exception>

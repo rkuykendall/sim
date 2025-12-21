@@ -38,7 +38,7 @@ public static class SpriteResourceManager
 		["tv"] = "res://sprites/objects/tv.png",
 		["shower"] = "res://sprites/objects/shower.png",
 		["plant"] = "res://sprites/objects/plant.png",
-		["rug"] = "res://sprites/objects/rug.png",
+		["castle"] = "res://sprites/objects/castle.png",
 		["lamp"] = "res://sprites/objects/lamp.png",
 
 		// Character sprites

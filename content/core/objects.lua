@@ -55,11 +55,11 @@ Objects = {
         spriteKey = "plant"
     },
 
-    Rug = {
-        walkable = true,
+    Castle = {
+        walkable = false,
         interactable = false,
         useAreas = {},
-        spriteKey = "rug"
+        spriteKey = "castle"
     },
 
     Lamp = {
