@@ -29,6 +29,7 @@ public partial class BuildToolbar : HBoxContainer
 
     private readonly List<Button> _colorButtons = new();
     private readonly List<Button> _toolButtons = new();
+    private readonly List<BuildToolMode> _toolButtonModes = new();
     private readonly List<SpriteIconButton> _optionButtons = new();
 
     public override void _Ready()
@@ -76,6 +77,7 @@ public partial class BuildToolbar : HBoxContainer
         // Clear existing buttons
         _colorButtons.Clear();
         _toolButtons.Clear();
+        _toolButtonModes.Clear();
 
         if (_toolsGrid != null)
         {
@@ -127,10 +129,11 @@ public partial class BuildToolbar : HBoxContainer
             // Column 1: Tool button
             if (row < toolRows)
             {
-                var (create, _) = toolDefs[row];
+                var (create, mode) = toolDefs[row];
                 Button toolButton = create();
                 _toolsGrid?.AddChild(toolButton);
                 _toolButtons.Add(toolButton);
+                _toolButtonModes.Add(mode);
             }
             else
             {
@@ -338,7 +341,7 @@ public partial class BuildToolbar : HBoxContainer
         for (int i = 0; i < _toolButtons.Count; i++)
         {
             var button = _toolButtons[i];
-            var mode = GetToolModeForButtonIndex(i);
+            var mode = _toolButtonModes[i];
             var isActive = mode == BuildToolState.Mode;
 
             // Always update the paint tool button (PreviewSquare)
@@ -413,22 +416,6 @@ public partial class BuildToolbar : HBoxContainer
                 button.SetSprite(textureRect.Texture, _currentPalette[BuildToolState.SelectedColorIndex]);
             }
         }
-    }
-
-    private BuildToolMode GetToolModeForButtonIndex(int index)
-    {
-        // Map index to tool mode based on which tools are visible
-        var toolModes = new List<BuildToolMode>
-        {
-            BuildToolMode.PlaceTerrain,
-            BuildToolMode.PlaceObject,
-            BuildToolMode.Delete
-        };
-        if (_debugMode)
-            toolModes.Add(BuildToolMode.Select);
-        if (index >= 0 && index < toolModes.Count)
-            return toolModes[index];
-        return BuildToolMode.PlaceTerrain;
     }
 
     private Button CreateFillSquareToolButton()
