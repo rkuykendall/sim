@@ -8,7 +8,9 @@ namespace SimGame.Godot;
 public enum BuildToolMode
 {
     PlaceObject, // Default: Place objects (fridge, bed, walls, decorations, etc.)
-    PlaceTerrain,// Paint terrain tiles
+    PlaceTerrain,// Paint terrain tiles (single tile)
+    FillSquare,  // Click and drag to fill a rectangle
+    OutlineSquare, // Click and drag to draw only the outline of a rectangle
     Delete,      // Remove objects
     Select       // Click to select pawns/objects (existing behavior)
 }

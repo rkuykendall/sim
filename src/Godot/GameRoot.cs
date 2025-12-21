@@ -6,6 +6,9 @@ using System.Linq;
 
 public partial class GameRoot : Node2D
 {
+    // For fill/outline brush drag
+    private TileCoord? _brushDragStart = null;
+    private TileCoord? _brushDragCurrent = null;
     private Simulation _sim = null!;
     private float _accumulator = 0f;
     private float _tickDelta;
@@ -116,7 +119,7 @@ public partial class GameRoot : Node2D
             // Don't call UpdatePalette here - modal isn't ready yet
             // _Process() will call it on first frame
         }
-    }
+	}
 
     public override void _Process(double delta)
     {
@@ -189,11 +192,36 @@ public partial class GameRoot : Node2D
                         UpdateTileAndNeighbors(tileCoord);
                         return;
                     }
+                    // Start fill/outline square drag
+                    if ((BuildToolState.Mode == BuildToolMode.FillSquare || BuildToolState.Mode == BuildToolMode.OutlineSquare) && BuildToolState.SelectedTerrainDefId.HasValue)
+                    {
+                        _brushDragStart = tileCoord;
+                        _brushDragCurrent = tileCoord;
+                        QueueRedraw();
+                        return;
+                    }
                 }
                 else
                 {
                     // Stop painting terrain on mouse up
                     _isPaintingTerrain = false;
+                    // Complete fill/outline square drag
+                    if ((BuildToolState.Mode == BuildToolMode.FillSquare || BuildToolState.Mode == BuildToolMode.OutlineSquare)
+                        && BuildToolState.SelectedTerrainDefId.HasValue && _brushDragStart.HasValue && _brushDragCurrent.HasValue)
+                    {
+                        if (BuildToolState.Mode == BuildToolMode.FillSquare)
+                        {
+                            FillRectangle(_brushDragStart.Value, _brushDragCurrent.Value, BuildToolState.SelectedTerrainDefId.Value, BuildToolState.SelectedColorIndex);
+                        }
+                        else if (BuildToolState.Mode == BuildToolMode.OutlineSquare)
+                        {
+                            OutlineRectangle(_brushDragStart.Value, _brushDragCurrent.Value, BuildToolState.SelectedTerrainDefId.Value, BuildToolState.SelectedColorIndex);
+                        }
+                        _brushDragStart = null;
+                        _brushDragCurrent = null;
+                        QueueRedraw();
+                        return;
+                    }
                 }
             }
 
@@ -287,6 +315,55 @@ public partial class GameRoot : Node2D
                 _sim.PaintTerrain(tileCoord.X, tileCoord.Y, BuildToolState.SelectedTerrainDefId.Value, BuildToolState.SelectedColorIndex);
                 UpdateTileAndNeighbors(tileCoord);
                 return;
+            }
+            if ((BuildToolState.Mode == BuildToolMode.FillSquare || BuildToolState.Mode == BuildToolMode.OutlineSquare)
+                && BuildToolState.SelectedTerrainDefId.HasValue && _brushDragStart.HasValue)
+            {
+                var localPos = GetLocalMousePosition();
+                var tileCoord = ScreenToTileCoord(localPos);
+                _brushDragCurrent = tileCoord;
+                QueueRedraw();
+                return;
+            }
+        }
+    }
+
+    // Paint only the outline of a rectangle of tiles
+    private void OutlineRectangle(TileCoord start, TileCoord end, int terrainId, int colorIndex)
+    {
+        int x0 = Mathf.Min(start.X, end.X);
+        int x1 = Mathf.Max(start.X, end.X);
+        int y0 = Mathf.Min(start.Y, end.Y);
+        int y1 = Mathf.Max(start.Y, end.Y);
+        for (int x = x0; x <= x1; x++)
+        {
+            _sim.PaintTerrain(x, y0, terrainId, colorIndex);
+            _sim.PaintTerrain(x, y1, terrainId, colorIndex);
+            UpdateTileAndNeighbors(new TileCoord(x, y0));
+            UpdateTileAndNeighbors(new TileCoord(x, y1));
+        }
+        for (int y = y0 + 1; y < y1; y++)
+        {
+            _sim.PaintTerrain(x0, y, terrainId, colorIndex);
+            _sim.PaintTerrain(x1, y, terrainId, colorIndex);
+            UpdateTileAndNeighbors(new TileCoord(x0, y));
+            UpdateTileAndNeighbors(new TileCoord(x1, y));
+        }
+    }
+
+    // Fill a rectangle of tiles with the selected terrain/color
+    private void FillRectangle(TileCoord start, TileCoord end, int terrainId, int colorIndex)
+    {
+        int x0 = Mathf.Min(start.X, end.X);
+        int x1 = Mathf.Max(start.X, end.X);
+        int y0 = Mathf.Min(start.Y, end.Y);
+        int y1 = Mathf.Max(start.Y, end.Y);
+        for (int x = x0; x <= x1; x++)
+        {
+            for (int y = y0; y <= y1; y++)
+            {
+                _sim.PaintTerrain(x, y, terrainId, colorIndex);
+                UpdateTileAndNeighbors(new TileCoord(x, y));
             }
         }
     }
@@ -384,6 +461,24 @@ public partial class GameRoot : Node2D
             color.A = 0.5f; // Semi-transparent
             DrawRect(rect, color, true);
         }
+        else if ((BuildToolState.Mode == BuildToolMode.FillSquare || BuildToolState.Mode == BuildToolMode.OutlineSquare)
+            && BuildToolState.SelectedTerrainDefId.HasValue && _brushDragStart.HasValue && _brushDragCurrent.HasValue)
+        {
+            // Draw preview rectangle for fill or outline
+            int x0 = Mathf.Min(_brushDragStart.Value.X, _brushDragCurrent.Value.X);
+            int x1 = Mathf.Max(_brushDragStart.Value.X, _brushDragCurrent.Value.X);
+            int y0 = Mathf.Min(_brushDragStart.Value.Y, _brushDragCurrent.Value.Y);
+            int y1 = Mathf.Max(_brushDragStart.Value.Y, _brushDragCurrent.Value.Y);
+            var color = _currentPalette[BuildToolState.SelectedColorIndex];
+            color.A = 0.3f;
+            var previewRect = new Rect2(x0 * TileSize, y0 * TileSize, (x1 - x0 + 1) * TileSize, (y1 - y0 + 1) * TileSize);
+            if (BuildToolState.Mode == BuildToolMode.FillSquare)
+            {
+                DrawRect(previewRect, color, true);
+            }
+            DrawRect(previewRect, Colors.White, false, 2f);
+            return;
+        }
         else if (BuildToolState.Mode == BuildToolMode.PlaceObject && BuildToolState.SelectedObjectDefId.HasValue)
         {
             var color = _currentPalette[BuildToolState.SelectedColorIndex];
@@ -396,8 +491,11 @@ public partial class GameRoot : Node2D
             DrawRect(rect, color, true);
         }
 
-        // Always draw outline around hovered tile
-        DrawRect(rect, Colors.White, false, 2f);
+        // Always draw outline around hovered tile (unless fill preview is active)
+        if (!(BuildToolState.Mode == BuildToolMode.FillSquare && _brushDragStart.HasValue && _brushDragCurrent.HasValue))
+        {
+            DrawRect(rect, Colors.White, false, 2f);
+        }
     }
 
     private int? FindPawnAtPosition(Vector2 pos)

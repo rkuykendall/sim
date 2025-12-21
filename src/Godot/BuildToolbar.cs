@@ -91,6 +91,8 @@ public partial class BuildToolbar : HBoxContainer
         var toolDefs = new List<(Func<Button> create, BuildToolMode mode)>
         {
             (() => CreatePaintToolButton(), BuildToolMode.PlaceTerrain),
+            (() => CreateFillSquareToolButton(), BuildToolMode.FillSquare),
+            (() => CreateOutlineSquareToolButton(), BuildToolMode.OutlineSquare),
             (() => CreateToolButton("generic-object.png", BuildToolMode.PlaceObject, "Place Object"), BuildToolMode.PlaceObject),
             (() => CreateToolButton("delete.png", BuildToolMode.Delete, "Delete"), BuildToolMode.Delete)
         };
@@ -206,7 +208,10 @@ public partial class BuildToolbar : HBoxContainer
                 }
                 break;
 
+            // Show terrain options for all paint tools
             case BuildToolMode.PlaceTerrain:
+            case BuildToolMode.FillSquare:
+            case BuildToolMode.OutlineSquare:
                 foreach (var (id, def) in _content.Terrains.OrderBy(kv => kv.Key))
                 {
                     optionsList.Add((id, def.SpriteKey, id.ToString(), false));
@@ -383,7 +388,10 @@ public partial class BuildToolbar : HBoxContainer
                     }
                 }
             }
-            else if (BuildToolState.Mode == BuildToolMode.PlaceTerrain && BuildToolState.SelectedTerrainDefId.HasValue)
+            else if ((BuildToolState.Mode == BuildToolMode.PlaceTerrain
+                      || BuildToolState.Mode == BuildToolMode.FillSquare
+                      || BuildToolState.Mode == BuildToolMode.OutlineSquare)
+                     && BuildToolState.SelectedTerrainDefId.HasValue)
             {
                 var terrains = _content?.Terrains.OrderBy(kv => kv.Key).ToList();
                 if (terrains != null)
@@ -421,5 +429,27 @@ public partial class BuildToolbar : HBoxContainer
         if (index >= 0 && index < toolModes.Count)
             return toolModes[index];
         return BuildToolMode.PlaceTerrain;
+    }
+
+    private Button CreateFillSquareToolButton()
+    {
+        var fillBtn = new PreviewSquare
+        {
+            CustomMinimumSize = new Vector2(96, 96),
+            TooltipText = "Fill Square"
+        };
+        fillBtn.Pressed += () => OnToolSelected(BuildToolMode.FillSquare);
+        return fillBtn;
+    }
+
+    private Button CreateOutlineSquareToolButton()
+    {
+        var outlineBtn = new PreviewSquare
+        {
+            CustomMinimumSize = new Vector2(96, 96),
+            TooltipText = "Outline Square"
+        };
+        outlineBtn.Pressed += () => OnToolSelected(BuildToolMode.OutlineSquare);
+        return outlineBtn;
     }
 }
