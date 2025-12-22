@@ -43,17 +43,18 @@ dotnet test
 This project uses [CSharpier](https://csharpier.com/) to enforce consistent C# code style.
 
 - **Format all code:**
-	```bash
-	csharpier format .
-	```
+  ```bash
+  csharpier format .
+  ```
 - **Check formatting (CI/pre-commit):**
-	```bash
-	csharpier check .
-	```
+  ```bash
+  csharpier check .
+  ```
 - **Pre-commit enforcement:**
-	A pre-commit git hook will block commits if code is not formatted. To fix formatting errors, run the format command above.
+  A pre-commit git hook will block commits if code is not formatted. To fix formatting errors, run the format command above.
 
 If you just installed CSharpier, you may need to add it to your PATH:
+
 ```bash
 export PATH="$PATH:/Users/rkuykendall/.dotnet/tools"
 ```
