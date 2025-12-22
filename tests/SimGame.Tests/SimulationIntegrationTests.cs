@@ -30,7 +30,7 @@ public class SimulationIntegrationTests
             grantsBuff: "GoodMeal",
             useAreas: new List<(int, int)> { (-1, 0) }
         );
-        builder.AddObject("Fridge", 4, 0);
+        builder.AddObject(fridgeDefId, 4, 0);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 0f } });
         var sim = builder.Build();
 
@@ -78,7 +78,7 @@ public class SimulationIntegrationTests
             grantsBuff: "GoodMeal",
             useAreas: new List<(int, int)> { (-1, 0) }
         );
-        builder.AddObject("Fridge", 4, 0);
+        builder.AddObject(fridgeDefId, 4, 0);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 100f } });
         var sim = builder.Build();
 
@@ -173,7 +173,7 @@ public class SimulationIntegrationTests
             grantsBuff: "GoodMeal",
             useAreas: new List<(int, int)> { (-1, 0) }
         );
-        builder.AddObject("Fridge", 9, 0);
+        builder.AddObject(fridgeDefId, 9, 0);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 10f } });
         var sim = builder.Build();
 
@@ -202,7 +202,7 @@ public class SimulationIntegrationTests
         var builder = new TestSimulationBuilder();
         builder.DefineNeed(key: "Hunger");
         var fridgeDefId = builder.DefineObject(key: "Fridge", satisfiesNeed: "Hunger");
-        builder.AddObject("Fridge", 2, 2);
+        builder.AddObject(fridgeDefId, 2, 2);
         var sim = builder.Build();
 
         var objectId = sim.Entities.AllObjects().First();

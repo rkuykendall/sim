@@ -17,7 +17,7 @@ namespace SimGame.Tests
             builder.DefineTerrain(key: "Floor", walkable: true);
             var wallId = builder.DefineTerrain(key: "Wall", walkable: false);
             builder.AddPawn("Alice", 1, 2, new Dictionary<string, float> { { "Restfulness", 0f } });
-            builder.AddObject("Bed", 3, 2);
+            builder.AddObject(bedDefId, 3, 2);
             var sim = builder.Build();
 
             // Paint a vertical wall at x=2
@@ -39,11 +39,11 @@ namespace SimGame.Tests
             // Arrange: 5x5 world, pawn at (1,2), bed at (3,2), wall tiles at (2,1), (2,3) but (2,2) is open
             var builder = new TestSimulationBuilder();
             builder.DefineNeed("Tiredness");
-            builder.DefineObject(key: "Bed", satisfiesNeed: "Tiredness");
+            var bedDefId = builder.DefineObject(key: "Bed", satisfiesNeed: "Tiredness");
             builder.DefineTerrain(key: "Floor", walkable: true);
             var wallId = builder.DefineTerrain(key: "Wall", walkable: false);
             builder.AddPawn("Bob", 1, 2, new Dictionary<string, float> { { "Tiredness", 100f } });
-            builder.AddObject("Bed", 3, 2);
+            builder.AddObject(bedDefId, 3, 2);
             var sim = builder.Build();
 
             // Only block (2,1) and (2,3), leave (2,2) open
@@ -65,11 +65,11 @@ namespace SimGame.Tests
             var builder = new TestSimulationBuilder();
             builder.WithWorldBounds(2, 2);
             builder.DefineNeed("Tiredness");
-            builder.DefineObject(key: "Bed", satisfiesNeed: "Tiredness");
+            var bedDefId = builder.DefineObject(key: "Bed", satisfiesNeed: "Tiredness");
             builder.DefineTerrain(key: "Floor", walkable: true);
             var wallId = builder.DefineTerrain(key: "Wall", walkable: false);
             builder.AddPawn("Carol", 0, 1, new Dictionary<string, float> { { "Tiredness", 100f } });
-            builder.AddObject("Bed", 2, 1);
+            builder.AddObject(bedDefId, 2, 1);
             var sim = builder.Build();
 
             sim.PaintTerrain(1, 1, wallId);
@@ -89,10 +89,10 @@ namespace SimGame.Tests
             var builder = new TestSimulationBuilder();
             builder.WithWorldBounds(2, 2);
             builder.DefineNeed("Tiredness");
-            builder.DefineObject(key: "Bed", satisfiesNeed: "Tiredness");
+            var bedDefId = builder.DefineObject(key: "Bed", satisfiesNeed: "Tiredness");
             builder.DefineTerrain(key: "Floor", walkable: true);
             builder.AddPawn("Dave", 0, 0, new Dictionary<string, float> { { "Tiredness", 100f } });
-            builder.AddObject("Bed", 2, 2);
+            builder.AddObject(bedDefId, 2, 2);
             var sim = builder.Build();
 
             var pawnId = sim.GetPawnByName("Dave");
@@ -109,11 +109,11 @@ namespace SimGame.Tests
             // Arrange: pawn at (0,0), bed at (2,2), walls at (1,0), (0,1), (1,1)
             var builder = new TestSimulationBuilder();
             builder.DefineNeed("Tiredness");
-            builder.DefineObject(key: "Bed", satisfiesNeed: "Tiredness");
+            var bedDefId = builder.DefineObject(key: "Bed", satisfiesNeed: "Tiredness");
             builder.DefineTerrain(key: "Floor", walkable: true);
             var wallId = builder.DefineTerrain(key: "Wall", walkable: false);
             builder.AddPawn("Eve", 0, 0, new Dictionary<string, float> { { "Tiredness", 0 } });
-            builder.AddObject("Bed", 4, 4);
+            builder.AddObject(bedDefId, 4, 4);
             var sim = builder.Build();
 
             for (int x = 0; x <= 4; x++)

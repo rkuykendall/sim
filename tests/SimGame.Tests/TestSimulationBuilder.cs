@@ -220,15 +220,10 @@ public sealed class TestSimulationBuilder
     }
 
     /// <summary>
-    /// Add an object instance to the world by its key name.
+    /// Add an object instance to the world by its object ID.
     /// </summary>
-    public void AddObject(string objectKey = "", int x = 0, int y = 0)
+    public void AddObject(int objectId, int x = 0, int y = 0)
     {
-        var objectId =
-            _content.GetObjectId(objectKey)
-            ?? throw new InvalidOperationException(
-                $"Object '{objectKey}' not found. Did you forget to call DefineObject()?"
-            );
         _config.Objects.Add((objectId, x, y));
     }
 

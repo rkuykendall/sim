@@ -37,7 +37,7 @@ public class PawnMovementTests
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (-1, 0), (1, 0) }
         ); // Both sides work in corridor
-        builder.AddObject("Fridge", 5, 0); // Fridge in middle
+        builder.AddObject(fridgeDefId, 5, 0); // Fridge in middle
         builder.AddPawn("LeftPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 10f } });
         builder.AddPawn("RightPawn", 9, 0, new Dictionary<string, float> { { "Hunger", 10f } });
         var sim = builder.Build();
@@ -130,8 +130,8 @@ public class PawnMovementTests
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (1, 0), (-1, 0) }
         ); // Use from either side
-        builder.AddObject("Fridge", 0, 0); // Fridge at left
-        builder.AddObject("Fridge", 3, 0); // Fridge at right (same type, different instance)
+        builder.AddObject(fridgeDefId, 0, 0); // Fridge at left
+        builder.AddObject(fridgeDefId, 3, 0); // Fridge at right (same type, different instance)
         builder.AddPawn("Pawn1", 1, 0, new Dictionary<string, float> { { "Hunger", 10f } });
         builder.AddPawn("Pawn2", 2, 0, new Dictionary<string, float> { { "Hunger", 10f } });
         var sim = builder.Build();
@@ -203,7 +203,7 @@ public class PawnMovementTests
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
-        builder.AddObject("Fridge", 2, 1); // Fridge in center
+        builder.AddObject(fridgeDefId, 2, 1); // Fridge in center
         builder.AddPawn("TopPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 5f } });
         builder.AddPawn("BottomPawn", 4, 2, new Dictionary<string, float> { { "Hunger", 5f } });
         var sim = builder.Build();
@@ -280,8 +280,8 @@ public class PawnMovementTests
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
-        builder.AddObject("Fridge", 0, 0); // Fridge at left
-        builder.AddObject("Bed", 6, 0); // Bed at right
+        builder.AddObject(fridgeDefId, 0, 0); // Fridge at left
+        builder.AddObject(bedDefId, 6, 0); // Bed at right
         // Pawn1 is hungry (will go left to fridge)
         builder.AddPawn(
             "HungryPawn",
@@ -409,7 +409,7 @@ public class PawnMovementTests
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
-        builder.AddObject("Fridge", 0, 0);
+        builder.AddObject(fridgeDefId, 0, 0);
         builder.AddPawn("BlockedPawn", 1, 0, new Dictionary<string, float> { { "Hunger", 5f } }); // Wants fridge
         builder.AddPawn("BlockerPawn", 2, 0, new Dictionary<string, float> { { "Hunger", 100f } }); // Doesn't need fridge
         var sim = builder.Build();
@@ -467,7 +467,7 @@ public class PawnMovementTests
             satisfactionAmount: 50f,
             interactionDuration: 40
         ); // Long interaction
-        builder.AddObject("Shower", 2, 1); // Shower at (2,1)
+        builder.AddObject(showerDefId, 2, 1); // Shower at (2,1)
         // Both pawns want the shower
         builder.AddPawn("Sam", 0, 1, new Dictionary<string, float> { { "Hygiene", 5f } });
         builder.AddPawn("Jordan", 4, 1, new Dictionary<string, float> { { "Hygiene", 5f } });

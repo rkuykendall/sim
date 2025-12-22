@@ -42,7 +42,7 @@ public class UseAreasTests
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (0, 1) }
         );
-        builder.AddObject("Fridge", 2, 0);
+        builder.AddObject(fridgeDefId, 2, 0);
         builder.AddPawn("TestPawn", 0, 2, new Dictionary<string, float> { { "Hunger", 10f } });
         var sim = builder.Build();
 
@@ -115,7 +115,7 @@ public class UseAreasTests
             interactionDuration: 30,
             useAreas: new List<(int, int)> { (-1, 0), (1, 0), (0, 1) }
         );
-        builder.AddObject("TV", 2, 1);
+        builder.AddObject(tvDefId, 2, 1);
         builder.AddPawn("TestPawn", 0, 4, new Dictionary<string, float> { { "Fun", 10f } });
         var sim = builder.Build();
 
@@ -189,8 +189,8 @@ public class UseAreasTests
             useAreas: new List<(int, int)> { (0, 1) }
         );
         var blockerDefId = builder.DefineObject(key: "Blocker");
-        builder.AddObject("Fridge", 2, 0);
-        builder.AddObject("Blocker", 2, 1);
+        builder.AddObject(fridgeDefId, 2, 0);
+        builder.AddObject(blockerDefId, 2, 1);
         builder.AddPawn("TestPawn", 0, 2, new Dictionary<string, float> { { "Hunger", 10f } });
         var sim = builder.Build();
 
