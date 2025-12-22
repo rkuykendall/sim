@@ -127,22 +127,24 @@ namespace SimGame.Tests
         {
             // Arrange: 3x3 world, pawn at (0,0), bed at (2,2), walls at (1,0), (0,1), (1,1)
             var sim = new TestSimulationBuilder()
-                .WithWorldBounds(0, 2, 0, 2)
+                .WithWorldBounds(0, 5, 0, 5)
                 .DefineNeed("Tiredness", "Tiredness")
                 .DefineObject("Bed", "Bed", satisfiesNeed: "Tiredness")
                 .DefineTerrain("Floor", walkable: true)
                 .DefineTerrain("Wall", walkable: false)
                 .AddPawn("Eve", 0, 0, new Dictionary<string, float> { { "Tiredness", 0 } })
-                .AddObject("Bed", 2, 2)
+                .AddObject("Bed", 5, 5)
                 .Build();
 
-            for (int x = 0; x <= 2; x++)
-                for (int y = 0; y <= 2; y++)
-                    sim.PaintTerrain(x, y, sim.Content.GetTerrainId("Floor").Value);
+            var floorId = sim.Content.GetTerrainId("Floor").Value;
+            var wallId = sim.Content.GetTerrainId("Wall").Value;
 
-            sim.PaintTerrain(1, 0, sim.Content.GetTerrainId("Wall").Value);
-            sim.PaintTerrain(0, 1, sim.Content.GetTerrainId("Wall").Value);
-            sim.PaintTerrain(1, 1, sim.Content.GetTerrainId("Wall").Value);
+            for (int x = 0; x <= 5; x++)
+                for (int y = 0; y <= 5; y++)
+                    sim.PaintTerrain(x, y, floorId);
+
+            for (int x = 0; x <= 5; x++)
+                sim.PaintTerrain(5-x, x, wallId);
 
             var pawnId = sim.GetPawnByName("Eve");
             Assert.NotNull(pawnId);

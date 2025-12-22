@@ -10,11 +10,6 @@ namespace SimGame.Core;
 public sealed class SimulationConfig
 {
     /// <summary>
-    /// If true, skip all default world/pawn bootstrap and only use explicit config.
-    /// </summary>
-    public bool SkipDefaultBootstrap { get; set; } = false;
-
-    /// <summary>
     /// Seed for the random number generator. If null, uses a random seed.
     /// </summary>
     public int? Seed { get; set; }

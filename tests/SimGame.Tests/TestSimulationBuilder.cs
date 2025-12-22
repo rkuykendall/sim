@@ -12,7 +12,6 @@ public sealed class TestSimulationBuilder
 {
     private readonly SimulationConfig _config = new()
     {
-        SkipDefaultBootstrap = true,
         Seed = 12345 // Fixed seed to ensure deterministic palette selection
     };
 
