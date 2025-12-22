@@ -172,14 +172,14 @@ public sealed class TestSimulationBuilder
 
     /// <summary>
     /// Define an object type that can be placed in the world.
-    /// ID is auto-generated. Use key names for need/buff references.
+    /// ID is auto-generated. Accepts need and buff IDs directly.
     /// </summary>
     public int DefineObject(
         string key = "",
-        string? satisfiesNeed = null,
+        int? satisfiesNeedId = null,
         float satisfactionAmount = 50f,
         int interactionDuration = 20,
-        string? grantsBuff = null,
+        int? grantsBuffId = null,
         List<(int, int)>? useAreas = null,
         bool walkable = false
     )
@@ -192,8 +192,8 @@ public sealed class TestSimulationBuilder
             NeedSatisfactionAmount = satisfactionAmount,
             InteractionDurationTicks = interactionDuration,
             UseAreas = useAreas ?? new List<(int dx, int dy)> { (0, 1) },
-            SatisfiesNeedId = satisfiesNeed != null ? _content.GetNeedId(satisfiesNeed) : null,
-            GrantsBuffId = grantsBuff != null ? _content.GetBuffId(grantsBuff) : null,
+            SatisfiesNeedId = satisfiesNeedId,
+            GrantsBuffId = grantsBuffId,
         };
         return _content.RegisterObject(key, obj);
     }

@@ -37,7 +37,7 @@ public class UseAreasTests
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",
-            satisfiesNeed: "Hunger",
+            satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (0, 1) }
@@ -110,7 +110,7 @@ public class UseAreasTests
         var funId = builder.DefineNeed(key: "Fun", decayPerTick: 0.001f);
         var tvDefId = builder.DefineObject(
             key: "TV",
-            satisfiesNeed: "Fun",
+            satisfiesNeedId: funId,
             satisfactionAmount: 40f,
             interactionDuration: 30,
             useAreas: new List<(int, int)> { (-1, 0), (1, 0), (0, 1) }
@@ -183,7 +183,7 @@ public class UseAreasTests
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",
-            satisfiesNeed: "Hunger",
+            satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (0, 1) }

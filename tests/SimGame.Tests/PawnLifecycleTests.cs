@@ -37,7 +37,7 @@ public class PawnLifecycleTests
         );
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",
-            satisfiesNeed: "Hunger",
+            satisfiesNeedId: hungerNeedId,
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
@@ -154,7 +154,7 @@ public class PawnLifecycleTests
         );
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",
-            satisfiesNeed: "Hunger",
+            satisfiesNeedId: hungerNeedId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (-1, 0) }
@@ -200,7 +200,7 @@ public class PawnLifecycleTests
         );
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",
-            satisfiesNeed: "Hunger",
+            satisfiesNeedId: hungerNeedId,
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
@@ -242,7 +242,7 @@ public class PawnLifecycleTests
         );
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",
-            satisfiesNeed: "Hunger",
+            satisfiesNeedId: hungerNeedId,
             satisfactionAmount: 60f,
             interactionDuration: 20
         );

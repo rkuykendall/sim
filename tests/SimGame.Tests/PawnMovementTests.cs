@@ -32,7 +32,7 @@ public class PawnMovementTests
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",
-            satisfiesNeed: "Hunger",
+            satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (-1, 0), (1, 0) }
@@ -125,7 +125,7 @@ public class PawnMovementTests
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",
-            satisfiesNeed: "Hunger",
+            satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (1, 0), (-1, 0) }
@@ -199,7 +199,7 @@ public class PawnMovementTests
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",
-            satisfiesNeed: "Hunger",
+            satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
@@ -270,13 +270,13 @@ public class PawnMovementTests
         var energyId = builder.DefineNeed(key: "Energy", decayPerTick: 0.001f);
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",
-            satisfiesNeed: "Hunger",
+            satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
         var bedDefId = builder.DefineObject(
             key: "Bed",
-            satisfiesNeed: "Energy",
+            satisfiesNeedId: energyId,
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
@@ -405,7 +405,7 @@ public class PawnMovementTests
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",
-            satisfiesNeed: "Hunger",
+            satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
@@ -463,7 +463,7 @@ public class PawnMovementTests
         var hygieneId = builder.DefineNeed(key: "Hygiene", decayPerTick: 0.001f);
         var showerDefId = builder.DefineObject(
             key: "Shower",
-            satisfiesNeed: "Hygiene",
+            satisfiesNeedId: hygieneId,
             satisfactionAmount: 50f,
             interactionDuration: 40
         ); // Long interaction
