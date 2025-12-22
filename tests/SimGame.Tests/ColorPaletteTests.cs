@@ -14,7 +14,7 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineObject("TestObject", "Test Object");
+        builder.DefineObject(key: "TestObject");
         var sim = builder.Build();
 
         var objectDefId = sim.Content.GetObjectId("TestObject");
@@ -33,7 +33,7 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineObject("TestObject", "Test Object");
+        builder.DefineObject(key: "TestObject");
         var sim = builder.Build();
 
         var objectDefId = sim.Content.GetObjectId("TestObject");
@@ -52,8 +52,8 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
-        builder.DefineTerrain("Stone", walkable: true, spriteKey: "stone");
+        builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
+        builder.DefineTerrain(key: "Stone", walkable: true, spriteKey: "stone");
         var sim = builder.Build();
 
         var stoneDefId = sim
@@ -75,8 +75,8 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
-        builder.DefineTerrain("Concrete", walkable: true, spriteKey: "concrete");
+        builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
+        builder.DefineTerrain(key: "Concrete", walkable: true, spriteKey: "concrete");
         var sim = builder.Build();
 
         var concreteDefId = sim
@@ -98,7 +98,7 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineObject("Bed", "Bed");
+        builder.DefineObject(key: "Bed");
         var sim = builder.Build();
 
         var bedDefId = sim.Content.GetObjectId("Bed");
@@ -130,7 +130,7 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineObject("Bed", "Bed");
+        builder.DefineObject(key: "Bed");
         var sim = builder.Build();
 
         var bedDefId = sim.Content.GetObjectId("Bed");
@@ -157,7 +157,7 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
+        builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
         var sim = builder.Build();
 
         var grassDefId = sim
@@ -186,7 +186,7 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineObject("Bed", "Bed");
+        builder.DefineObject(key: "Bed");
         var sim = builder.Build();
 
         var bedDefId = sim.Content.GetObjectId("Bed");

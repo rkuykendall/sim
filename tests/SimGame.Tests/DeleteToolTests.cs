@@ -14,9 +14,9 @@ public class DeleteToolTests
         // Arrange: Create a world with grass base + path overlay + object
         var builder = new TestSimulationBuilder();
 
-        builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
-        builder.DefineTerrain("Path", walkable: true, spriteKey: "path", isAutotiling: true);
-        builder.DefineObject("Bed", "Bed");
+        builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
+        builder.DefineTerrain(key: "Path", walkable: true, spriteKey: "path", isAutotiling: true);
+        builder.DefineObject(key: "Bed");
         var sim = builder.Build();
 
         var grassId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "grass").Key;
@@ -48,8 +48,8 @@ public class DeleteToolTests
         // Arrange: Create a world with grass base + path overlay (no object)
         var builder = new TestSimulationBuilder();
 
-        builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
-        builder.DefineTerrain("Path", walkable: true, spriteKey: "path", isAutotiling: true);
+        builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
+        builder.DefineTerrain(key: "Path", walkable: true, spriteKey: "path", isAutotiling: true);
         var sim = builder.Build();
 
         var grassId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "grass").Key;
@@ -78,8 +78,8 @@ public class DeleteToolTests
         // Arrange: Create a world with just grass base (no overlay, no object)
         var builder = new TestSimulationBuilder();
 
-        builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
-        builder.DefineTerrain("Flat", walkable: true, spriteKey: "flat");
+        builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
+        builder.DefineTerrain(key: "Flat", walkable: true, spriteKey: "flat");
         var sim = builder.Build();
 
         var grassId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "grass").Key;
@@ -108,10 +108,10 @@ public class DeleteToolTests
         // Arrange: Create a world with grass + path + object
         var builder = new TestSimulationBuilder();
 
-        builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
-        builder.DefineTerrain("Path", walkable: true, spriteKey: "path", isAutotiling: true);
-        builder.DefineTerrain("Flat", walkable: true, spriteKey: "flat");
-        builder.DefineObject("Bed", "Bed");
+        builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
+        builder.DefineTerrain(key: "Path", walkable: true, spriteKey: "path", isAutotiling: true);
+        builder.DefineTerrain(key: "Flat", walkable: true, spriteKey: "flat");
+        builder.DefineObject(key: "Bed");
         var sim = builder.Build();
 
         var grassId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "grass").Key;
