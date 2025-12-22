@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -308,9 +307,8 @@ public sealed class ActionSystem : ISystem
                 // Track how long we've been blocked
                 if (actionComp.BlockedSinceTick < 0)
                     actionComp.BlockedSinceTick = ctx.Time.Tick;
-                
                 int blockedDuration = ctx.Time.Tick - actionComp.BlockedSinceTick;
-                
+
                 // Give up if blocked too long
                 if (blockedDuration >= MaxBlockedTicks)
                 {
@@ -318,10 +316,10 @@ public sealed class ActionSystem : ISystem
                     actionComp.CurrentPath = null;
                     actionComp.BlockedSinceTick = -1;
                     actionComp.WaitUntilTick = -1;
-                    actionComp.ActionQueue.Clear();  // Clear queued actions too
+                    actionComp.ActionQueue.Clear();
                     return;
                 }
-                
+
                 // Priority-based yielding: Wandering pawns yield to goal-driven pawns
                 bool iAmWandering = action.DisplayName == "Wandering";
                 bool blockerIsWandering = false;
@@ -339,7 +337,7 @@ public sealed class ActionSystem : ISystem
                     actionComp.WaitUntilTick = -1;
                     return;
                 }
-                
+
                 // Randomized wait before repathing to break the "sidewalk dance"
                 if (actionComp.WaitUntilTick < 0)
                 {
@@ -347,7 +345,7 @@ public sealed class ActionSystem : ISystem
                     actionComp.WaitUntilTick = ctx.Time.Tick + ctx.Random.Next(5, 21);
                     return;
                 }
-                
+
                 if (ctx.Time.Tick < actionComp.WaitUntilTick)
                 {
                     // Still waiting
@@ -364,7 +362,7 @@ public sealed class ActionSystem : ISystem
                     actionComp.CurrentPath = newPath;
                     actionComp.PathIndex = 0;
                     actionComp.ActionStartTick = ctx.Time.Tick;
-                    actionComp.BlockedSinceTick = -1;  // Reset blocked timer
+                    actionComp.BlockedSinceTick = -1;
                 }
                 // If no path found, will wait again with new random time next tick
                 return;
@@ -661,7 +659,6 @@ public sealed class AISystem : ISystem
     {
         var objComp = ctx.Entities.Objects[targetObject];
         var objDef = ctx.Content.Objects[objComp.ObjectDefId];
-
         actionComp.ActionQueue.Enqueue(new ActionDef
         {
             Type = ActionType.UseObject,

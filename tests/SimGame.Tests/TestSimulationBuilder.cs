@@ -245,6 +245,60 @@ public sealed class TestSimulationBuilder
 public static class SimulationTestExtensions
 {
     /// <summary>
+    /// Render the world state as ASCII for debugging.
+    /// </summary>
+    public static void RenderWorld(this Simulation sim)
+    {
+        var pawnPositions = sim.GetAllPawnPositions() ?? new HashSet<TileCoord>();
+        var objectPositions = sim.GetAllObjectPositions() ?? new HashSet<TileCoord>();
+        int width = sim.World.Width;
+        int height = sim.World.Height;
+
+        for (int y = height - 1; y >= 0; y--)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                var coord = new TileCoord(x, y);
+                if (pawnPositions.Contains(coord))
+                    Console.Write("P"); // Pawn
+                else if (objectPositions.Contains(coord))
+                    Console.Write("O"); // Object
+                else if (!sim.World.IsWalkable(coord))
+                    Console.Write("#"); // Wall/non-walkable
+                else
+                    Console.Write("."); // Walkable floor
+            }
+            Console.WriteLine();
+        }
+    }
+    /// <summary>
+    /// Get all pawn positions in the simulation.
+    /// </summary>
+    public static HashSet<TileCoord>? GetAllPawnPositions(this Simulation sim)
+    {
+        var result = new HashSet<TileCoord>();
+        foreach (var id in sim.Entities.AllPawns())
+        {
+            if (sim.Entities.Positions.TryGetValue(id, out var pos))
+                result.Add(pos.Coord);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Get all object positions in the simulation.
+    /// </summary>
+    public static HashSet<TileCoord>? GetAllObjectPositions(this Simulation sim)
+    {
+        var result = new HashSet<TileCoord>();
+        foreach (var id in sim.Entities.AllObjects())
+        {
+            if (sim.Entities.Positions.TryGetValue(id, out var pos))
+                result.Add(pos.Coord);
+        }
+        return result;
+    }
+    /// <summary>
     /// Get the need value for a pawn by entity ID and need key name.
     /// </summary>
     public static float GetNeedValue(this Simulation sim, EntityId pawnId, string needKey)
