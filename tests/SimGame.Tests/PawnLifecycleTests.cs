@@ -26,26 +26,26 @@ public class PawnLifecycleTests
     {
         // Define debuff so AI knows when pawn is unhappy
         // Use fast decay so the test doesn't take forever
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 9, 0, 9)
-            .DefineBuff("Hungry", "Hungry", -5)
-            .DefineNeed(
-                "Hunger",
-                "Hunger",
-                decayPerTick: 0.5f,
-                lowThreshold: 35f,
-                lowDebuff: "Hungry"
-            )
-            .DefineObject(
-                "Fridge",
-                "Fridge",
-                satisfiesNeed: "Hunger",
-                satisfactionAmount: 50f,
-                interactionDuration: 20
-            )
-            .AddObject("Fridge", 5, 5)
-            .AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 10f } })
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 9, 0, 9);
+        builder.DefineBuff("Hungry", "Hungry", -5);
+        builder.DefineNeed(
+            "Hunger",
+            "Hunger",
+            decayPerTick: 0.5f,
+            lowThreshold: 35f,
+            lowDebuff: "Hungry"
+        );
+        builder.DefineObject(
+            "Fridge",
+            "Fridge",
+            satisfiesNeed: "Hunger",
+            satisfactionAmount: 50f,
+            interactionDuration: 20
+        );
+        builder.AddObject("Fridge", 5, 5);
+        builder.AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 10f } });
+        var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
         Assert.NotNull(pawnId);
@@ -145,27 +145,27 @@ public class PawnLifecycleTests
     public void Pawn_SeeksFoodWhenHasDebuff()
     {
         // Start below debuff threshold (35) - should immediately seek food
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 4, 0, 0)
-            .DefineBuff("Hungry", "Hungry", -5)
-            .DefineNeed(
-                "Hunger",
-                "Hunger",
-                decayPerTick: 0.01f,
-                lowThreshold: 35f,
-                lowDebuff: "Hungry"
-            )
-            .DefineObject(
-                "Fridge",
-                "Fridge",
-                satisfiesNeed: "Hunger",
-                satisfactionAmount: 50f,
-                interactionDuration: 20,
-                useAreas: new List<(int, int)> { (-1, 0) }
-            )
-            .AddObject("Fridge", 4, 0)
-            .AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 30f } })
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 4, 0, 0);
+        builder.DefineBuff("Hungry", "Hungry", -5);
+        builder.DefineNeed(
+            "Hunger",
+            "Hunger",
+            decayPerTick: 0.01f,
+            lowThreshold: 35f,
+            lowDebuff: "Hungry"
+        );
+        builder.DefineObject(
+            "Fridge",
+            "Fridge",
+            satisfiesNeed: "Hunger",
+            satisfactionAmount: 50f,
+            interactionDuration: 20,
+            useAreas: new List<(int, int)> { (-1, 0) }
+        );
+        builder.AddObject("Fridge", 4, 0);
+        builder.AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 30f } });
+        var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
         Assert.NotNull(pawnId);
@@ -193,26 +193,26 @@ public class PawnLifecycleTests
     public void Pawn_WandersWhenNoDebuffs()
     {
         // Start at 95 (well above debuff threshold, and high enough not to bother) - should wander
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 4, 0, 0)
-            .DefineBuff("Hungry", "Hungry", -5)
-            .DefineNeed(
-                "Hunger",
-                "Hunger",
-                decayPerTick: 0.001f,
-                lowThreshold: 35f,
-                lowDebuff: "Hungry"
-            )
-            .DefineObject(
-                "Fridge",
-                "Fridge",
-                satisfiesNeed: "Hunger",
-                satisfactionAmount: 50f,
-                interactionDuration: 20
-            )
-            .AddObject("Fridge", 4, 0)
-            .AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 95f } })
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 4, 0, 0);
+        builder.DefineBuff("Hungry", "Hungry", -5);
+        builder.DefineNeed(
+            "Hunger",
+            "Hunger",
+            decayPerTick: 0.001f,
+            lowThreshold: 35f,
+            lowDebuff: "Hungry"
+        );
+        builder.DefineObject(
+            "Fridge",
+            "Fridge",
+            satisfiesNeed: "Hunger",
+            satisfactionAmount: 50f,
+            interactionDuration: 20
+        );
+        builder.AddObject("Fridge", 4, 0);
+        builder.AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 95f } });
+        var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
         Assert.NotNull(pawnId);
@@ -237,26 +237,26 @@ public class PawnLifecycleTests
     [Fact]
     public void Pawn_SurvivesLongTerm_ByCyclingBetweenEatingAndWandering()
     {
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 9, 0, 9)
-            .DefineBuff("Hungry", "Hungry", -5)
-            .DefineNeed(
-                "Hunger",
-                "Hunger",
-                decayPerTick: 0.3f,
-                lowThreshold: 35f,
-                lowDebuff: "Hungry"
-            )
-            .DefineObject(
-                "Fridge",
-                "Fridge",
-                satisfiesNeed: "Hunger",
-                satisfactionAmount: 60f,
-                interactionDuration: 20
-            )
-            .AddObject("Fridge", 5, 5)
-            .AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 50f } })
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 9, 0, 9);
+        builder.DefineBuff("Hungry", "Hungry", -5);
+        builder.DefineNeed(
+            "Hunger",
+            "Hunger",
+            decayPerTick: 0.3f,
+            lowThreshold: 35f,
+            lowDebuff: "Hungry"
+        );
+        builder.DefineObject(
+            "Fridge",
+            "Fridge",
+            satisfiesNeed: "Hunger",
+            satisfactionAmount: 60f,
+            interactionDuration: 20
+        );
+        builder.AddObject("Fridge", 5, 5);
+        builder.AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 50f } });
+        var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
         Assert.NotNull(pawnId);

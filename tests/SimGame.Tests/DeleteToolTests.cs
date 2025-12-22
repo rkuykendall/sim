@@ -12,12 +12,12 @@ public class DeleteToolTests
     public void DeleteAtTile_WithObject_RemovesObjectOnly()
     {
         // Arrange: Create a world with grass base + path overlay + object
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 5, 0, 5)
-            .DefineTerrain("Grass", walkable: true, spriteKey: "grass")
-            .DefineTerrain("Path", walkable: true, spriteKey: "path", isAutotiling: true)
-            .DefineObject("Bed", "Bed")
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 5, 0, 5);
+        builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
+        builder.DefineTerrain("Path", walkable: true, spriteKey: "path", isAutotiling: true);
+        builder.DefineObject("Bed", "Bed");
+        var sim = builder.Build();
 
         var grassId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "grass").Key;
         var pathId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "path").Key;
@@ -46,11 +46,11 @@ public class DeleteToolTests
     public void DeleteAtTile_WithOverlay_ClearsOverlayOnly()
     {
         // Arrange: Create a world with grass base + path overlay (no object)
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 5, 0, 5)
-            .DefineTerrain("Grass", walkable: true, spriteKey: "grass")
-            .DefineTerrain("Path", walkable: true, spriteKey: "path", isAutotiling: true)
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 5, 0, 5);
+        builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
+        builder.DefineTerrain("Path", walkable: true, spriteKey: "path", isAutotiling: true);
+        var sim = builder.Build();
 
         var grassId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "grass").Key;
         var pathId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "path").Key;
@@ -76,11 +76,11 @@ public class DeleteToolTests
     public void DeleteAtTile_WithoutOverlay_ResetsToFlat()
     {
         // Arrange: Create a world with just grass base (no overlay, no object)
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 5, 0, 5)
-            .DefineTerrain("Grass", walkable: true, spriteKey: "grass")
-            .DefineTerrain("Flat", walkable: true, spriteKey: "flat")
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 5, 0, 5);
+        builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
+        builder.DefineTerrain("Flat", walkable: true, spriteKey: "flat");
+        var sim = builder.Build();
 
         var grassId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "grass").Key;
         var flatId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "flat").Key;
@@ -106,13 +106,13 @@ public class DeleteToolTests
     public void DeleteAtTile_ThreeClicks_RemovesAllLayers()
     {
         // Arrange: Create a world with grass + path + object
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 5, 0, 5)
-            .DefineTerrain("Grass", walkable: true, spriteKey: "grass")
-            .DefineTerrain("Path", walkable: true, spriteKey: "path", isAutotiling: true)
-            .DefineTerrain("Flat", walkable: true, spriteKey: "flat")
-            .DefineObject("Bed", "Bed")
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 5, 0, 5);
+        builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
+        builder.DefineTerrain("Path", walkable: true, spriteKey: "path", isAutotiling: true);
+        builder.DefineTerrain("Flat", walkable: true, spriteKey: "flat");
+        builder.DefineObject("Bed", "Bed");
+        var sim = builder.Build();
 
         var grassId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "grass").Key;
         var pathId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "path").Key;

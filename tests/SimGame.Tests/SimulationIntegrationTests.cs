@@ -19,22 +19,22 @@ public class SimulationIntegrationTests
     {
         // Arrange: Create a 5x1 world with a pawn at (0,0) and a fridge at (4,0)
         // The pawn has Hunger need at 0 (very hungry)
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 4, 0, 0)
-            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.02f)
-            .DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400)
-            .DefineObject(
-                "Fridge",
-                "Fridge",
-                satisfiesNeed: "Hunger",
-                satisfactionAmount: 50f,
-                interactionDuration: 20,
-                grantsBuff: "GoodMeal",
-                useAreas: new List<(int, int)> { (-1, 0) }
-            )
-            .AddObject("Fridge", 4, 0)
-            .AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 0f } })
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 4, 0, 0);
+        builder.DefineNeed("Hunger", "Hunger", decayPerTick: 0.02f);
+        builder.DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400);
+        builder.DefineObject(
+            "Fridge",
+            "Fridge",
+            satisfiesNeed: "Hunger",
+            satisfactionAmount: 50f,
+            interactionDuration: 20,
+            grantsBuff: "GoodMeal",
+            useAreas: new List<(int, int)> { (-1, 0) }
+        );
+        builder.AddObject("Fridge", 4, 0);
+        builder.AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 0f } });
+        var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
         Assert.NotNull(pawnId);
@@ -69,22 +69,22 @@ public class SimulationIntegrationTests
     public void Pawn_WithFullHunger_DoesNotSeekFridge()
     {
         // Arrange: Create same world but with full hunger
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 4, 0, 0)
-            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f)
-            .DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400)
-            .DefineObject(
-                "Fridge",
-                "Fridge",
-                satisfiesNeed: "Hunger",
-                satisfactionAmount: 50f,
-                interactionDuration: 20,
-                grantsBuff: "GoodMeal",
-                useAreas: new List<(int, int)> { (-1, 0) }
-            )
-            .AddObject("Fridge", 4, 0)
-            .AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 100f } })
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 4, 0, 0);
+        builder.DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f);
+        builder.DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400);
+        builder.DefineObject(
+            "Fridge",
+            "Fridge",
+            satisfiesNeed: "Hunger",
+            satisfactionAmount: 50f,
+            interactionDuration: 20,
+            grantsBuff: "GoodMeal",
+            useAreas: new List<(int, int)> { (-1, 0) }
+        );
+        builder.AddObject("Fridge", 4, 0);
+        builder.AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 100f } });
+        var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
         Assert.NotNull(pawnId);
@@ -108,7 +108,9 @@ public class SimulationIntegrationTests
     [Fact]
     public void Simulation_TicksAdvanceTime()
     {
-        var sim = new TestSimulationBuilder().WithWorldBounds(0, 4, 0, 4).Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 4, 0, 4);
+        var sim = builder.Build();
 
         int initialTick = sim.Time.Tick;
 
@@ -123,11 +125,11 @@ public class SimulationIntegrationTests
     [Fact]
     public void Needs_DecayOverTime()
     {
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 4, 0, 4)
-            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.5f)
-            .AddPawn("TestPawn", 2, 2, new Dictionary<string, float> { { "Hunger", 100f } })
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 4, 0, 4);
+        builder.DefineNeed("Hunger", "Hunger", decayPerTick: 0.5f);
+        builder.AddPawn("TestPawn", 2, 2, new Dictionary<string, float> { { "Hunger", 100f } });
+        var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
         Assert.NotNull(pawnId);
@@ -165,22 +167,22 @@ public class SimulationIntegrationTests
     public void Pawn_NavigatesToObject_AndUsesIt()
     {
         // Arrange: Larger world with pawn far from fridge
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 9, 0, 0)
-            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.01f)
-            .DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400)
-            .DefineObject(
-                "Fridge",
-                "Fridge",
-                satisfiesNeed: "Hunger",
-                satisfactionAmount: 50f,
-                interactionDuration: 20,
-                grantsBuff: "GoodMeal",
-                useAreas: new List<(int, int)> { (-1, 0) }
-            )
-            .AddObject("Fridge", 9, 0)
-            .AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 10f } })
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 9, 0, 0);
+        builder.DefineNeed("Hunger", "Hunger", decayPerTick: 0.01f);
+        builder.DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400);
+        builder.DefineObject(
+            "Fridge",
+            "Fridge",
+            satisfiesNeed: "Hunger",
+            satisfactionAmount: 50f,
+            interactionDuration: 20,
+            grantsBuff: "GoodMeal",
+            useAreas: new List<(int, int)> { (-1, 0) }
+        );
+        builder.AddObject("Fridge", 9, 0);
+        builder.AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 10f } });
+        var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
         Assert.NotNull(pawnId);
@@ -204,12 +206,12 @@ public class SimulationIntegrationTests
     public void DestroyEntity_RestoresTileWalkability_ForObjects()
     {
         // Arrange: Create a world with an object
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 4, 0, 4)
-            .DefineNeed("Hunger", "Hunger")
-            .DefineObject("Fridge", "Fridge", satisfiesNeed: "Hunger")
-            .AddObject("Fridge", 2, 2)
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 4, 0, 4);
+        builder.DefineNeed("Hunger", "Hunger");
+        builder.DefineObject("Fridge", "Fridge", satisfiesNeed: "Hunger");
+        builder.AddObject("Fridge", 2, 2);
+        var sim = builder.Build();
 
         var objectId = sim.Entities.AllObjects().First();
         var coord = new TileCoord(2, 2);

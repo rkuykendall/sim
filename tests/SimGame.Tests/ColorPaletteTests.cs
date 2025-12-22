@@ -13,10 +13,10 @@ public class ColorPaletteTests
     public void CreateObject_WithColorIndex_StoresColorCorrectly()
     {
         // Arrange
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 5, 0, 5)
-            .DefineObject("TestObject", "Test Object")
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 5, 0, 5);
+        builder.DefineObject("TestObject", "Test Object");
+        var sim = builder.Build();
 
         var objectDefId = sim.Content.GetObjectId("TestObject");
         Assert.NotNull(objectDefId);
@@ -33,10 +33,10 @@ public class ColorPaletteTests
     public void CreateObject_WithoutColorIndex_DefaultsToZero()
     {
         // Arrange
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 5, 0, 5)
-            .DefineObject("TestObject", "Test Object")
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 5, 0, 5);
+        builder.DefineObject("TestObject", "Test Object");
+        var sim = builder.Build();
 
         var objectDefId = sim.Content.GetObjectId("TestObject");
         Assert.NotNull(objectDefId);
@@ -53,11 +53,11 @@ public class ColorPaletteTests
     public void PaintTerrain_WithColorIndex_StoresColorCorrectly()
     {
         // Arrange
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 5, 0, 5)
-            .DefineTerrain("Grass", walkable: true, spriteKey: "grass")
-            .DefineTerrain("Stone", walkable: true, spriteKey: "stone")
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 5, 0, 5);
+        builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
+        builder.DefineTerrain("Stone", walkable: true, spriteKey: "stone");
+        var sim = builder.Build();
 
         var stoneDefId = sim
             .Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "stone")
@@ -77,11 +77,11 @@ public class ColorPaletteTests
     public void PaintTerrain_WithoutColorIndex_DefaultsToZero()
     {
         // Arrange
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 5, 0, 5)
-            .DefineTerrain("Grass", walkable: true, spriteKey: "grass")
-            .DefineTerrain("Concrete", walkable: true, spriteKey: "concrete")
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 5, 0, 5);
+        builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
+        builder.DefineTerrain("Concrete", walkable: true, spriteKey: "concrete");
+        var sim = builder.Build();
 
         var concreteDefId = sim
             .Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "concrete")
@@ -101,10 +101,10 @@ public class ColorPaletteTests
     public void RenderSnapshot_IncludesObjectColorIndex()
     {
         // Arrange
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 5, 0, 5)
-            .DefineObject("Bed", "Bed")
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 5, 0, 5);
+        builder.DefineObject("Bed", "Bed");
+        var sim = builder.Build();
 
         var bedDefId = sim.Content.GetObjectId("Bed");
         Assert.NotNull(bedDefId);
@@ -134,10 +134,10 @@ public class ColorPaletteTests
     public void MultipleObjects_CanHaveDifferentColors()
     {
         // Arrange
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 5, 0, 5)
-            .DefineObject("Bed", "Bed")
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 5, 0, 5);
+        builder.DefineObject("Bed", "Bed");
+        var sim = builder.Build();
 
         var bedDefId = sim.Content.GetObjectId("Bed");
         Assert.NotNull(bedDefId);
@@ -162,10 +162,10 @@ public class ColorPaletteTests
     public void PaintTerrain_OverwritesPreviousColor()
     {
         // Arrange
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 5, 0, 5)
-            .DefineTerrain("Grass", walkable: true, spriteKey: "grass")
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 5, 0, 5);
+        builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
+        var sim = builder.Build();
 
         var grassDefId = sim
             .Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "grass")
@@ -192,10 +192,10 @@ public class ColorPaletteTests
     public void DeleteObject_DoesNotAffectOtherObjectColors()
     {
         // Arrange
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 5, 0, 5)
-            .DefineObject("Bed", "Bed")
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(0, 5, 0, 5);
+        builder.DefineObject("Bed", "Bed");
+        var sim = builder.Build();
 
         var bedDefId = sim.Content.GetObjectId("Bed");
         Assert.NotNull(bedDefId);

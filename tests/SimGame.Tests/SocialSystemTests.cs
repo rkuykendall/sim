@@ -7,11 +7,11 @@ public class SocialSystemTests
     public void Pawn_Gains_Social_When_Near_Other_Pawn()
     {
         // Arrange: Define Social need and two pawns
-        var sim = new TestSimulationBuilder()
-            .DefineNeed("Social", "Social", decayPerTick: 0f)
-            .AddPawn("A", 5, 5, new Dictionary<string, float> { { "Social", 50f } })
-            .AddPawn("B", 6, 5, new Dictionary<string, float> { { "Social", 50f } })
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.DefineNeed("Social", "Social", decayPerTick: 0f);
+        builder.AddPawn("A", 5, 5, new Dictionary<string, float> { { "Social", 50f } });
+        builder.AddPawn("B", 6, 5, new Dictionary<string, float> { { "Social", 50f } });
+        var sim = builder.Build();
 
         var content = sim.Content;
         var pawn1 = sim.GetPawnByName("A");
@@ -31,10 +31,10 @@ public class SocialSystemTests
     public void Pawn_Does_Not_Gain_Social_When_Alone()
     {
         // Arrange: Define Social need and one pawn
-        var sim = new TestSimulationBuilder()
-            .DefineNeed("Social", "Social", decayPerTick: 0f)
-            .AddPawn("Solo", 5, 5, new Dictionary<string, float> { { "Social", 50f } })
-            .Build();
+        var builder = new TestSimulationBuilder();
+        builder.DefineNeed("Social", "Social", decayPerTick: 0f);
+        builder.AddPawn("Solo", 5, 5, new Dictionary<string, float> { { "Social", 50f } });
+        var sim = builder.Build();
 
         var content = sim.Content;
         var pawn1 = sim.GetPawnByName("Solo");

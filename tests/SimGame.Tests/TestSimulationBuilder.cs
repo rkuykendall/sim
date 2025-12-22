@@ -36,17 +36,16 @@ public sealed class TestSimulationBuilder
     /// <summary>
     /// Set custom world bounds (default is a 5x5 world from 0,0 to 4,4).
     /// </summary>
-    public TestSimulationBuilder WithWorldBounds(int minX, int maxX, int minY, int maxY)
+    public void WithWorldBounds(int minX, int maxX, int minY, int maxY)
     {
         _config.WorldBounds = (minX, maxX, minY, maxY);
-        return this;
     }
 
     /// <summary>
     /// Define a buff that can be granted by objects or applied by needs.
     /// ID is auto-generated.
     /// </summary>
-    public TestSimulationBuilder DefineBuff(
+    public void DefineBuff(
         string key = "",
         string name = "",
         float moodOffset = 0,
@@ -65,14 +64,13 @@ public sealed class TestSimulationBuilder
                 }
             )
         );
-        return this;
     }
 
     /// <summary>
     /// Define a need type that can be used by pawns and objects.
     /// ID is auto-generated. Use buff key names for debuff references.
     /// </summary>
-    public TestSimulationBuilder DefineNeed(
+    public void DefineNeed(
         string key = "",
         string name = "",
         float decayPerTick = 0.02f,
@@ -97,14 +95,13 @@ public sealed class TestSimulationBuilder
                 lowDebuff
             )
         );
-        return this;
     }
 
     /// <summary>
     /// Define an object type that can be placed in the world.
     /// ID is auto-generated. Use key names for need/buff references.
     /// </summary>
-    public TestSimulationBuilder DefineObject(
+    public void DefineObject(
         string key = "",
         string name = "",
         string? satisfiesNeed = null,
@@ -131,14 +128,13 @@ public sealed class TestSimulationBuilder
                 grantsBuff
             )
         );
-        return this;
     }
 
     /// <summary>
     /// Define a terrain type that can be painted on tiles.
     /// ID is auto-generated.
     /// </summary>
-    public TestSimulationBuilder DefineTerrain(
+    public void DefineTerrain(
         string key = "",
         bool walkable = true,
         string spriteKey = "",
@@ -157,22 +153,20 @@ public sealed class TestSimulationBuilder
                 }
             )
         );
-        return this;
     }
 
     /// <summary>
     /// Add an object instance to the world by its key name.
     /// </summary>
-    public TestSimulationBuilder AddObject(string objectKey = "", int x = 0, int y = 0)
+    public void AddObject(string objectKey = "", int x = 0, int y = 0)
     {
         _objectPlacements.Add((objectKey, x, y));
-        return this;
     }
 
     /// <summary>
     /// Add a pawn to the world with specified needs (by need key names).
     /// </summary>
-    public TestSimulationBuilder AddPawn(
+    public void AddPawn(
         string name = "",
         int x = 0,
         int y = 0,
@@ -180,7 +174,6 @@ public sealed class TestSimulationBuilder
     )
     {
         _pawns.Add((name, x, y, needs ?? new Dictionary<string, float>()));
-        return this;
     }
 
     /// <summary>
