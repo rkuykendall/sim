@@ -863,7 +863,7 @@ public partial class GameRoot : Node2D
             // Calculate autotile variant
             if (sprite.Texture is AtlasTexture atlasTexture)
             {
-                var atlasCoord = PathAutotiler.CalculateTileVariant(_sim.World, coord, pathTerrainId);
+                var atlasCoord = SimGame.Godot.PathAutotiler.CalculateTileVariant(_sim.World, coord, pathTerrainId);
                 atlasTexture.Region = new Rect2(
                     atlasCoord.X * 16,
                     atlasCoord.Y * 16,
