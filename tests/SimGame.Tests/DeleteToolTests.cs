@@ -13,7 +13,7 @@ public class DeleteToolTests
     {
         // Arrange: Create a world with grass base + path overlay + object
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 5, 0, 5);
+
         builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
         builder.DefineTerrain("Path", walkable: true, spriteKey: "path", isAutotiling: true);
         builder.DefineObject("Bed", "Bed");
@@ -47,7 +47,7 @@ public class DeleteToolTests
     {
         // Arrange: Create a world with grass base + path overlay (no object)
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 5, 0, 5);
+
         builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
         builder.DefineTerrain("Path", walkable: true, spriteKey: "path", isAutotiling: true);
         var sim = builder.Build();
@@ -77,7 +77,7 @@ public class DeleteToolTests
     {
         // Arrange: Create a world with just grass base (no overlay, no object)
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 5, 0, 5);
+
         builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
         builder.DefineTerrain("Flat", walkable: true, spriteKey: "flat");
         var sim = builder.Build();
@@ -107,7 +107,7 @@ public class DeleteToolTests
     {
         // Arrange: Create a world with grass + path + object
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 5, 0, 5);
+
         builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
         builder.DefineTerrain("Path", walkable: true, spriteKey: "path", isAutotiling: true);
         builder.DefineTerrain("Flat", walkable: true, spriteKey: "flat");

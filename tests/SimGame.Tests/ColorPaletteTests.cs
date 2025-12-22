@@ -14,7 +14,6 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 5, 0, 5);
         builder.DefineObject("TestObject", "Test Object");
         var sim = builder.Build();
 
@@ -34,7 +33,6 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 5, 0, 5);
         builder.DefineObject("TestObject", "Test Object");
         var sim = builder.Build();
 
@@ -54,7 +52,6 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 5, 0, 5);
         builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
         builder.DefineTerrain("Stone", walkable: true, spriteKey: "stone");
         var sim = builder.Build();
@@ -78,7 +75,6 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 5, 0, 5);
         builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
         builder.DefineTerrain("Concrete", walkable: true, spriteKey: "concrete");
         var sim = builder.Build();
@@ -102,7 +98,6 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 5, 0, 5);
         builder.DefineObject("Bed", "Bed");
         var sim = builder.Build();
 
@@ -135,7 +130,6 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 5, 0, 5);
         builder.DefineObject("Bed", "Bed");
         var sim = builder.Build();
 
@@ -163,7 +157,6 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 5, 0, 5);
         builder.DefineTerrain("Grass", walkable: true, spriteKey: "grass");
         var sim = builder.Build();
 
@@ -193,7 +186,6 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 5, 0, 5);
         builder.DefineObject("Bed", "Bed");
         var sim = builder.Build();
 

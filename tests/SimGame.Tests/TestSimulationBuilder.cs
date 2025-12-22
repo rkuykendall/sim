@@ -13,6 +13,7 @@ public sealed class TestSimulationBuilder
     private readonly SimulationConfig _config = new()
     {
         Seed = 12345, // Fixed seed to ensure deterministic palette selection
+        WorldBounds = (0, 4, 0, 4), // Default 5x5 world
     };
 
     private readonly List<(string Key, BuffDef Def)> _buffs = new();

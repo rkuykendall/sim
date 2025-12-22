@@ -108,7 +108,6 @@ public class UseAreasTests
     {
         // Arrange: TV at (2,1) with multiple use areas
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 4, 0, 4);
         builder.DefineNeed("Fun", "Fun", decayPerTick: 0.001f);
         builder.DefineObject(
             "TV",

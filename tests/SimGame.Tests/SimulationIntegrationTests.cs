@@ -20,7 +20,6 @@ public class SimulationIntegrationTests
         // Arrange: Create a 5x1 world with a pawn at (0,0) and a fridge at (4,0)
         // The pawn has Hunger need at 0 (very hungry)
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 4, 0, 0);
         builder.DefineNeed("Hunger", "Hunger", decayPerTick: 0.02f);
         builder.DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400);
         builder.DefineObject(
@@ -70,7 +69,6 @@ public class SimulationIntegrationTests
     {
         // Arrange: Create same world but with full hunger
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 4, 0, 0);
         builder.DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f);
         builder.DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400);
         builder.DefineObject(
@@ -109,7 +107,6 @@ public class SimulationIntegrationTests
     public void Simulation_TicksAdvanceTime()
     {
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 4, 0, 4);
         var sim = builder.Build();
 
         int initialTick = sim.Time.Tick;
@@ -126,7 +123,6 @@ public class SimulationIntegrationTests
     public void Needs_DecayOverTime()
     {
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 4, 0, 4);
         builder.DefineNeed("Hunger", "Hunger", decayPerTick: 0.5f);
         builder.AddPawn("TestPawn", 2, 2, new Dictionary<string, float> { { "Hunger", 100f } });
         var sim = builder.Build();
@@ -207,7 +203,6 @@ public class SimulationIntegrationTests
     {
         // Arrange: Create a world with an object
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 4, 0, 4);
         builder.DefineNeed("Hunger", "Hunger");
         builder.DefineObject("Fridge", "Fridge", satisfiesNeed: "Hunger");
         builder.AddObject("Fridge", 2, 2);
