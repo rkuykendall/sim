@@ -35,7 +35,7 @@ public sealed class TestSimulationBuilder
     /// Define a buff that can be granted by objects or applied by needs.
     /// ID is auto-generated.
     /// </summary>
-    public TestSimulationBuilder DefineBuff(string key, string name, float moodOffset, int durationTicks = 1000)
+    public TestSimulationBuilder DefineBuff(string key = "", string name = "", float moodOffset = 0, int durationTicks = 1000)
     {
         _buffs.Add((key, new BuffDef
         {
@@ -51,7 +51,9 @@ public sealed class TestSimulationBuilder
     /// Define a need type that can be used by pawns and objects.
     /// ID is auto-generated. Use buff key names for debuff references.
     /// </summary>
-    public TestSimulationBuilder DefineNeed(string key, string name, 
+    public TestSimulationBuilder DefineNeed(
+        string key = "",
+        string name = "",
         float decayPerTick = 0.02f,
         float criticalThreshold = 15f,
         float lowThreshold = 35f,
@@ -73,10 +75,12 @@ public sealed class TestSimulationBuilder
     /// Define an object type that can be placed in the world.
     /// ID is auto-generated. Use key names for need/buff references.
     /// </summary>
-    public TestSimulationBuilder DefineObject(string key, string name, 
-        string? satisfiesNeed = null, 
-        float satisfactionAmount = 50f, 
-        int interactionDuration = 20, 
+    public TestSimulationBuilder DefineObject(
+        string key = "",
+        string name = "",
+        string? satisfiesNeed = null,
+        float satisfactionAmount = 50f,
+        int interactionDuration = 20,
         string? grantsBuff = null,
         List<(int, int)>? useAreas = null,
         bool walkable = false)
@@ -97,7 +101,8 @@ public sealed class TestSimulationBuilder
     /// Define a terrain type that can be painted on tiles.
     /// ID is auto-generated.
     /// </summary>
-    public TestSimulationBuilder DefineTerrain(string key,
+    public TestSimulationBuilder DefineTerrain(
+        string key = "",
         bool walkable = true,
         string spriteKey = "",
         bool isAutotiling = false)
@@ -115,7 +120,7 @@ public sealed class TestSimulationBuilder
     /// <summary>
     /// Add an object instance to the world by its key name.
     /// </summary>
-    public TestSimulationBuilder AddObject(string objectKey, int x, int y)
+    public TestSimulationBuilder AddObject(string objectKey = "", int x = 0, int y = 0)
     {
         _objectPlacements.Add((objectKey, x, y));
         return this;
@@ -124,9 +129,9 @@ public sealed class TestSimulationBuilder
     /// <summary>
     /// Add a pawn to the world with specified needs (by need key names).
     /// </summary>
-    public TestSimulationBuilder AddPawn(string name, int x, int y, Dictionary<string, float> needs)
+    public TestSimulationBuilder AddPawn(string name = "", int x = 0, int y = 0, Dictionary<string, float>? needs = null)
     {
-        _pawns.Add((name, x, y, needs));
+        _pawns.Add((name, x, y, needs ?? new Dictionary<string, float>()));
         return this;
     }
 

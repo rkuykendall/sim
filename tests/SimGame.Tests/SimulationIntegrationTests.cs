@@ -20,20 +20,12 @@ public class SimulationIntegrationTests
         // Arrange: Create a 5x1 world with a pawn at (0,0) and a fridge at (4,0)
         // The pawn has Hunger need at 0 (very hungry)
         var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 4, 0, 0)  // 5x1 world
+            .WithWorldBounds(0, 4, 0, 0)
             .DefineNeed("Hunger", "Hunger", decayPerTick: 0.02f)
             .DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400)
-            .DefineObject("Fridge", "Fridge", 
-                satisfiesNeed: "Hunger", 
-                satisfactionAmount: 50f, 
-                interactionDuration: 20,
-                grantsBuff: "GoodMeal",
-                useAreas: new List<(int, int)> { (-1, 0) })  // West of fridge (works in 1D corridor)
-            .AddObject("Fridge", 4, 0)  // Fridge at (4,0)
-            .AddPawn("TestPawn", 0, 0, new Dictionary<string, float> 
-            { 
-                { "Hunger", 0f }  // Starting with 0 hunger (very hungry)
-            })
+            .DefineObject("Fridge", "Fridge", satisfiesNeed: "Hunger", satisfactionAmount: 50f, interactionDuration: 20, grantsBuff: "GoodMeal", useAreas: new List<(int, int)> { (-1, 0) })
+            .AddObject("Fridge", 4, 0)
+            .AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 0f } })
             .Build();
 
         var pawnId = sim.GetFirstPawn();
@@ -67,19 +59,11 @@ public class SimulationIntegrationTests
         // Arrange: Create same world but with full hunger
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 0)
-            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f)  // Very slow decay
+            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f)
             .DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400)
-            .DefineObject("Fridge", "Fridge",
-                satisfiesNeed: "Hunger",
-                satisfactionAmount: 50f,
-                interactionDuration: 20,
-                grantsBuff: "GoodMeal",
-                useAreas: new List<(int, int)> { (-1, 0) })  // West of fridge
+            .DefineObject("Fridge", "Fridge", satisfiesNeed: "Hunger", satisfactionAmount: 50f, interactionDuration: 20, grantsBuff: "GoodMeal", useAreas: new List<(int, int)> { (-1, 0) })
             .AddObject("Fridge", 4, 0)
-            .AddPawn("TestPawn", 0, 0, new Dictionary<string, float>
-            {
-                { "Hunger", 100f }  // Starting with full hunger
-            })
+            .AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 100f } })
             .Build();
 
         var pawnId = sim.GetFirstPawn();
@@ -124,11 +108,8 @@ public class SimulationIntegrationTests
     {
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 4)
-            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.5f)  // Very fast decay for testing
-            .AddPawn("TestPawn", 2, 2, new Dictionary<string, float>
-            {
-                { "Hunger", 100f }
-            })
+            .DefineNeed("Hunger", "Hunger", decayPerTick: 0.5f)
+            .AddPawn("TestPawn", 2, 2, new Dictionary<string, float> { { "Hunger", 100f } })
             .Build();
 
         var pawnId = sim.GetFirstPawn();
@@ -164,20 +145,12 @@ public class SimulationIntegrationTests
     {
         // Arrange: Larger world with pawn far from fridge
         var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 9, 0, 0)  // 10x1 world
+            .WithWorldBounds(0, 9, 0, 0)
             .DefineNeed("Hunger", "Hunger", decayPerTick: 0.01f)
             .DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400)
-            .DefineObject("Fridge", "Fridge",
-                satisfiesNeed: "Hunger",
-                satisfactionAmount: 50f,
-                interactionDuration: 20,
-                grantsBuff: "GoodMeal",
-                useAreas: new List<(int, int)> { (-1, 0) })  // West of fridge
-            .AddObject("Fridge", 9, 0)  // Fridge at far end
-            .AddPawn("TestPawn", 0, 0, new Dictionary<string, float>
-            {
-                { "Hunger", 10f }  // Low hunger to trigger seeking food
-            })
+            .DefineObject("Fridge", "Fridge", satisfiesNeed: "Hunger", satisfactionAmount: 50f, interactionDuration: 20, grantsBuff: "GoodMeal", useAreas: new List<(int, int)> { (-1, 0) })
+            .AddObject("Fridge", 9, 0)
+            .AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 10f } })
             .Build();
 
         var pawnId = sim.GetFirstPawn();

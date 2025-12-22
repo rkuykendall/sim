@@ -33,18 +33,11 @@ public class UseAreasTests
     {
         // Arrange: Fridge at (2,0) with UseArea only at (0,1) meaning pawn must stand at (2,1)
         var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 4, 0, 2)  // 5x3 world
+            .WithWorldBounds(0, 4, 0, 2)
             .DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f)
-            .DefineObject("Fridge", "Fridge",
-                satisfiesNeed: "Hunger",
-                satisfactionAmount: 50f,
-                interactionDuration: 20,
-                useAreas: new List<(int, int)> { (0, 1) })  // Only usable from south (Y+1)
-            .AddObject("Fridge", 2, 0)  // Fridge at (2,0)
-            .AddPawn("TestPawn", 0, 2, new Dictionary<string, float>
-            {
-                { "Hunger", 10f }  // Very hungry - will seek fridge
-            })
+            .DefineObject("Fridge", "Fridge", satisfiesNeed: "Hunger", satisfactionAmount: 50f, interactionDuration: 20, useAreas: new List<(int, int)> { (0, 1) })
+            .AddObject("Fridge", 2, 0)
+            .AddPawn("TestPawn", 0, 2, new Dictionary<string, float> { { "Hunger", 10f } })
             .Build();
 
         var pawnId = sim.GetFirstPawn();
@@ -103,18 +96,11 @@ public class UseAreasTests
     {
         // Arrange: TV at (2,1) with multiple use areas
         var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 4, 0, 4)  // 5x5 world
+            .WithWorldBounds(0, 4, 0, 4)
             .DefineNeed("Fun", "Fun", decayPerTick: 0.001f)
-            .DefineObject("TV", "TV",
-                satisfiesNeed: "Fun",
-                satisfactionAmount: 40f,
-                interactionDuration: 30,
-                useAreas: new List<(int, int)> { (-1, 0), (1, 0), (0, 1) })  // Left, right, and south
-            .AddObject("TV", 2, 1)  // TV at (2,1)
-            .AddPawn("TestPawn", 0, 4, new Dictionary<string, float>
-            {
-                { "Fun", 10f }  // Low fun - will seek TV
-            })
+            .DefineObject("TV", "TV", satisfiesNeed: "Fun", satisfactionAmount: 40f, interactionDuration: 30, useAreas: new List<(int, int)> { (-1, 0), (1, 0), (0, 1) })
+            .AddObject("TV", 2, 1)
+            .AddPawn("TestPawn", 0, 4, new Dictionary<string, float> { { "Fun", 10f } })
             .Build();
 
         var pawnId = sim.GetFirstPawn();
@@ -174,18 +160,11 @@ public class UseAreasTests
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 2)
             .DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f)
-            .DefineObject("Fridge", "Fridge",
-                satisfiesNeed: "Hunger",
-                satisfactionAmount: 50f,
-                interactionDuration: 20,
-                useAreas: new List<(int, int)> { (0, 1) })
-            .DefineObject("Blocker", "Blocker")  // Non-interactable blocker
-            .AddObject("Fridge", 2, 0)  // Fridge at (2,0)
-            .AddObject("Blocker", 2, 1)  // Blocker at (2,1) - blocks the use area!
-            .AddPawn("TestPawn", 0, 2, new Dictionary<string, float>
-            {
-                { "Hunger", 10f }
-            })
+            .DefineObject("Fridge", "Fridge", satisfiesNeed: "Hunger", satisfactionAmount: 50f, interactionDuration: 20, useAreas: new List<(int, int)> { (0, 1) })
+            .DefineObject("Blocker", "Blocker")
+            .AddObject("Fridge", 2, 0)
+            .AddObject("Blocker", 2, 1)
+            .AddPawn("TestPawn", 0, 2, new Dictionary<string, float> { { "Hunger", 10f } })
             .Build();
 
         var pawnId = sim.GetFirstPawn();
