@@ -16,6 +16,8 @@ public sealed class TestSimulationBuilder
         WorldBounds = (0, 4, 0, 4), // Default 5x5 world
     };
 
+    private readonly ContentRegistry _content = new();
+
     private readonly List<(string Key, BuffDef Def)> _buffs = new();
     private readonly List<(
         string Key,
@@ -33,6 +35,103 @@ public sealed class TestSimulationBuilder
     private readonly List<(string ObjectKey, int X, int Y)> _objectPlacements = new();
     private readonly List<(string Name, int X, int Y, Dictionary<string, float> Needs)> _pawns =
         new();
+
+    public TestSimulationBuilder()
+    {
+        // Register only the test color palette to ensure it is always selected
+        var testPalette = new ColorPaletteDef
+        {
+            Name = "test",
+            Colors = new List<ColorDef>
+            {
+                new ColorDef
+                {
+                    Name = "Green",
+                    R = 0.2f,
+                    G = 0.6f,
+                    B = 0.2f,
+                },
+                new ColorDef
+                {
+                    Name = "Brown",
+                    R = 0.5f,
+                    G = 0.3f,
+                    B = 0.1f,
+                },
+                new ColorDef
+                {
+                    Name = "Light Gray",
+                    R = 0.7f,
+                    G = 0.7f,
+                    B = 0.7f,
+                },
+                new ColorDef
+                {
+                    Name = "Tan",
+                    R = 0.8f,
+                    G = 0.6f,
+                    B = 0.3f,
+                },
+                new ColorDef
+                {
+                    Name = "Dark Gray",
+                    R = 0.4f,
+                    G = 0.4f,
+                    B = 0.4f,
+                },
+                new ColorDef
+                {
+                    Name = "Blue",
+                    R = 0.2f,
+                    G = 0.4f,
+                    B = 0.8f,
+                },
+                new ColorDef
+                {
+                    Name = "Red",
+                    R = 0.9f,
+                    G = 0.2f,
+                    B = 0.2f,
+                },
+                new ColorDef
+                {
+                    Name = "Yellow",
+                    R = 1.0f,
+                    G = 0.8f,
+                    B = 0.2f,
+                },
+                new ColorDef
+                {
+                    Name = "Purple",
+                    R = 0.6f,
+                    G = 0.3f,
+                    B = 0.6f,
+                },
+                new ColorDef
+                {
+                    Name = "Orange",
+                    R = 1.0f,
+                    G = 0.5f,
+                    B = 0.3f,
+                },
+                new ColorDef
+                {
+                    Name = "Cyan",
+                    R = 0.2f,
+                    G = 0.8f,
+                    B = 0.8f,
+                },
+                new ColorDef
+                {
+                    Name = "White",
+                    R = 0.95f,
+                    G = 0.95f,
+                    B = 0.95f,
+                },
+            },
+        };
+        _content.RegisterColorPalette("test", testPalette);
+    }
 
     /// <summary>
     /// Set custom world bounds (default is a 5x5 world from 0,0 to 4,4).
@@ -180,107 +279,10 @@ public sealed class TestSimulationBuilder
     /// </summary>
     public Simulation Build()
     {
-        // Create a fresh ContentRegistry for this test
-        var content = new ContentRegistry();
-
-        // Register only the test color palette to ensure it is always selected
-        var testPalette = new ColorPaletteDef
-        {
-            Name = "test",
-            Colors = new List<ColorDef>
-            {
-                new ColorDef
-                {
-                    Name = "Green",
-                    R = 0.2f,
-                    G = 0.6f,
-                    B = 0.2f,
-                },
-                new ColorDef
-                {
-                    Name = "Brown",
-                    R = 0.5f,
-                    G = 0.3f,
-                    B = 0.1f,
-                },
-                new ColorDef
-                {
-                    Name = "Light Gray",
-                    R = 0.7f,
-                    G = 0.7f,
-                    B = 0.7f,
-                },
-                new ColorDef
-                {
-                    Name = "Tan",
-                    R = 0.8f,
-                    G = 0.6f,
-                    B = 0.3f,
-                },
-                new ColorDef
-                {
-                    Name = "Dark Gray",
-                    R = 0.4f,
-                    G = 0.4f,
-                    B = 0.4f,
-                },
-                new ColorDef
-                {
-                    Name = "Blue",
-                    R = 0.2f,
-                    G = 0.4f,
-                    B = 0.8f,
-                },
-                new ColorDef
-                {
-                    Name = "Red",
-                    R = 0.9f,
-                    G = 0.2f,
-                    B = 0.2f,
-                },
-                new ColorDef
-                {
-                    Name = "Yellow",
-                    R = 1.0f,
-                    G = 0.8f,
-                    B = 0.2f,
-                },
-                new ColorDef
-                {
-                    Name = "Purple",
-                    R = 0.6f,
-                    G = 0.3f,
-                    B = 0.6f,
-                },
-                new ColorDef
-                {
-                    Name = "Orange",
-                    R = 1.0f,
-                    G = 0.5f,
-                    B = 0.3f,
-                },
-                new ColorDef
-                {
-                    Name = "Cyan",
-                    R = 0.2f,
-                    G = 0.8f,
-                    B = 0.8f,
-                },
-                new ColorDef
-                {
-                    Name = "White",
-                    R = 0.95f,
-                    G = 0.95f,
-                    B = 0.95f,
-                },
-            },
-        };
-        content.RegisterColorPalette("test", testPalette);
-
         // Register buffs first (needs reference them)
         foreach (var (key, buff) in _buffs)
         {
-            content.RegisterBuff(key, buff);
+            _content.RegisterBuff(key, buff);
         }
 
         // Register needs (with debuff references resolved)
@@ -294,10 +296,10 @@ public sealed class TestSimulationBuilder
                 CriticalThreshold = need.CriticalThreshold,
                 LowThreshold = need.LowThreshold,
                 CriticalDebuffId =
-                    criticalDebuff != null ? content.GetBuffId(criticalDebuff) : null,
-                LowDebuffId = lowDebuff != null ? content.GetBuffId(lowDebuff) : null,
+                    criticalDebuff != null ? _content.GetBuffId(criticalDebuff) : null,
+                LowDebuffId = lowDebuff != null ? _content.GetBuffId(lowDebuff) : null,
             };
-            content.RegisterNeed(key, resolvedNeed);
+            _content.RegisterNeed(key, resolvedNeed);
         }
 
         // Register objects (with need/buff references resolved)
@@ -312,23 +314,23 @@ public sealed class TestSimulationBuilder
                 NeedSatisfactionAmount = obj.NeedSatisfactionAmount,
                 InteractionDurationTicks = obj.InteractionDurationTicks,
                 UseAreas = obj.UseAreas,
-                SatisfiesNeedId = satisfiesNeed != null ? content.GetNeedId(satisfiesNeed) : null,
-                GrantsBuffId = grantsBuff != null ? content.GetBuffId(grantsBuff) : null,
+                SatisfiesNeedId = satisfiesNeed != null ? _content.GetNeedId(satisfiesNeed) : null,
+                GrantsBuffId = grantsBuff != null ? _content.GetBuffId(grantsBuff) : null,
             };
-            content.RegisterObject(key, resolvedObj);
+            _content.RegisterObject(key, resolvedObj);
         }
 
         // Register terrains
         foreach (var (key, terrain) in _terrains)
         {
-            content.RegisterTerrain(key, terrain);
+            _content.RegisterTerrain(key, terrain);
         }
 
         // Convert object placements to use resolved IDs
         foreach (var (objectKey, x, y) in _objectPlacements)
         {
             var objectId =
-                content.GetObjectId(objectKey)
+                _content.GetObjectId(objectKey)
                 ?? throw new InvalidOperationException(
                     $"Object '{objectKey}' not found. Did you forget to call DefineObject()?"
                 );
@@ -342,7 +344,7 @@ public sealed class TestSimulationBuilder
             foreach (var (needKey, value) in needsByName)
             {
                 var needId =
-                    content.GetNeedId(needKey)
+                    _content.GetNeedId(needKey)
                     ?? throw new InvalidOperationException(
                         $"Need '{needKey}' not found. Did you forget to call DefineNeed()?"
                     );
@@ -360,7 +362,7 @@ public sealed class TestSimulationBuilder
         }
 
         // Create and return the simulation with the content
-        return new Simulation(content, _config);
+        return new Simulation(_content, _config);
     }
 }
 
