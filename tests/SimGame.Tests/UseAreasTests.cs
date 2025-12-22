@@ -34,7 +34,7 @@ public class UseAreasTests
         // Arrange: Fridge at (2,0) with UseArea only at (0,1) meaning pawn must stand at (2,1)
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 2);
-        builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
+        var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",
             satisfiesNeed: "Hunger",
@@ -43,7 +43,7 @@ public class UseAreasTests
             useAreas: new List<(int, int)> { (0, 1) }
         );
         builder.AddObject(fridgeDefId, 2, 0);
-        builder.AddPawn("TestPawn", 0, 2, new Dictionary<string, float> { { "Hunger", 10f } });
+        builder.AddPawn("TestPawn", 0, 2, new Dictionary<int, float> { { hungerId, 10f } });
         var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
@@ -107,7 +107,7 @@ public class UseAreasTests
     {
         // Arrange: TV at (2,1) with multiple use areas
         var builder = new TestSimulationBuilder();
-        builder.DefineNeed(key: "Fun", decayPerTick: 0.001f);
+        var funId = builder.DefineNeed(key: "Fun", decayPerTick: 0.001f);
         var tvDefId = builder.DefineObject(
             key: "TV",
             satisfiesNeed: "Fun",
@@ -116,7 +116,7 @@ public class UseAreasTests
             useAreas: new List<(int, int)> { (-1, 0), (1, 0), (0, 1) }
         );
         builder.AddObject(tvDefId, 2, 1);
-        builder.AddPawn("TestPawn", 0, 4, new Dictionary<string, float> { { "Fun", 10f } });
+        builder.AddPawn("TestPawn", 0, 4, new Dictionary<int, float> { { funId, 10f } });
         var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
@@ -180,7 +180,7 @@ public class UseAreasTests
         // Arrange: Fridge with single use area that's blocked by another object
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 2);
-        builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
+        var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",
             satisfiesNeed: "Hunger",
@@ -191,7 +191,7 @@ public class UseAreasTests
         var blockerDefId = builder.DefineObject(key: "Blocker");
         builder.AddObject(fridgeDefId, 2, 0);
         builder.AddObject(blockerDefId, 2, 1);
-        builder.AddPawn("TestPawn", 0, 2, new Dictionary<string, float> { { "Hunger", 10f } });
+        builder.AddPawn("TestPawn", 0, 2, new Dictionary<int, float> { { hungerId, 10f } });
         var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();

@@ -42,7 +42,7 @@ public class PawnLifecycleTests
             interactionDuration: 20
         );
         builder.AddObject(fridgeDefId, 5, 5);
-        builder.AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 10f } });
+        builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerNeedId, 10f } });
         var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
@@ -160,7 +160,7 @@ public class PawnLifecycleTests
             useAreas: new List<(int, int)> { (-1, 0) }
         );
         builder.AddObject(fridgeDefId, 4, 0);
-        builder.AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 30f } });
+        builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerNeedId, 30f } });
         var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
@@ -205,7 +205,7 @@ public class PawnLifecycleTests
             interactionDuration: 20
         );
         builder.AddObject(fridgeDefId, 4, 0);
-        builder.AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 95f } });
+        builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerNeedId, 95f } });
         var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
@@ -247,7 +247,7 @@ public class PawnLifecycleTests
             interactionDuration: 20
         );
         builder.AddObject(fridgeDefId, 5, 5);
-        builder.AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 50f } });
+        builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerNeedId, 50f } });
         var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();

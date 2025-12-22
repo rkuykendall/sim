@@ -228,32 +228,22 @@ public sealed class TestSimulationBuilder
     }
 
     /// <summary>
-    /// Add a pawn to the world with specified needs (by need key names).
+    /// Add a pawn to the world with specified needs (by need IDs).
     /// </summary>
     public void AddPawn(
         string name = "",
         int x = 0,
         int y = 0,
-        Dictionary<string, float>? needs = null
+        Dictionary<int, float>? needs = null
     )
     {
-        var needsById = new Dictionary<int, float>();
-        foreach (var (needKey, value) in (needs ?? new Dictionary<string, float>()))
-        {
-            var needId =
-                _content.GetNeedId(needKey)
-                ?? throw new InvalidOperationException(
-                    $"Need '{needKey}' not found. Did you forget to call DefineNeed()?"
-                );
-            needsById[needId] = value;
-        }
         _config.Pawns.Add(
             new PawnConfig
             {
                 Name = name,
                 X = x,
                 Y = y,
-                Needs = needsById,
+                Needs = needs ?? new Dictionary<int, float>(),
             }
         );
     }
