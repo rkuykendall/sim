@@ -49,3 +49,24 @@ For more options, see the [dotnet test documentation](https://learn.microsoft.co
 ## Architecture
 
 The simulation runs independently of rendering at 20 ticks/second. Godot receives read-only `RenderSnapshot` data each frame. See `DESIGN.md` for details.
+
+## Art guide
+
+```
+#FFF <- highlights
+#EEE
+#DDD <- most pixels
+#CCC
+#BBB <- subtle shading
+#AAA
+#999 <- less subtle
+#888
+#777 <- grass
+#666
+#555 <- path shadow
+#444
+#333 <- Brick outline
+#222
+#111
+#000
+```

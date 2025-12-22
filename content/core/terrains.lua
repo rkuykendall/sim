@@ -30,7 +30,7 @@ Terrains = {
         walkable = true,
         spriteKey = "path",
         isAutotiling = true
-    }
+    },
     Water = {
         walkable = false,
         spriteKey = "water"
