@@ -14,7 +14,7 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        var objectDefId = builder.DefineObject(key: "TestObject");
+        var objectDefId = builder.DefineObject();
         var sim = builder.Build();
 
         // Act: Create object with color index 5 (blue)
@@ -30,8 +30,9 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        var objectDefId = builder.DefineObject(key: "TestObject");
+        var objectDefId = builder.DefineObject();
         var sim = builder.Build();
+
         // Act: Create object without specifying color index
         var objectId = sim.CreateObject(objectDefId, 2, 2);
 
@@ -45,8 +46,8 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        var grassDefId = builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
-        var stoneDefId = builder.DefineTerrain(key: "Stone", walkable: true, spriteKey: "stone");
+        builder.DefineTerrain(spriteKey: "grass");
+        var stoneDefId = builder.DefineTerrain(spriteKey: "stone");
         var sim = builder.Build();
 
         // Act: Paint terrain with color index 4 (dark gray)
@@ -63,12 +64,8 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        var grassDefId = builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
-        var concreteDefId = builder.DefineTerrain(
-            key: "Concrete",
-            walkable: true,
-            spriteKey: "concrete"
-        );
+        builder.DefineTerrain(spriteKey: "grass");
+        var concreteDefId = builder.DefineTerrain(spriteKey: "concrete");
         var sim = builder.Build();
 
         // Act: Paint terrain without specifying color index
@@ -138,7 +135,7 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        var grassDefId = builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
+        var grassDefId = builder.DefineTerrain(key: "Grass", spriteKey: "grass");
         var sim = builder.Build();
 
         var coord = new TileCoord(2, 2);
@@ -173,7 +170,7 @@ public class ColorPaletteTests
         // Assert: Blue bed still has correct color
         Assert.False(sim.Entities.Objects.ContainsKey(redBed));
         Assert.True(sim.Entities.Objects.TryGetValue(blueBed, out var blueObj));
-        Assert.Equal(5, blueObj!.ColorIndex);
+        Assert.Equal(5, blueObj.ColorIndex);
 
         var snapshot = sim.CreateRenderSnapshot();
         Assert.Single(snapshot.Objects);
