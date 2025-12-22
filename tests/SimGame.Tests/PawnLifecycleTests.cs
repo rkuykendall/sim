@@ -33,7 +33,7 @@ public class PawnLifecycleTests
             key: "Hunger",
             decayPerTick: 0.5f,
             lowThreshold: 35f,
-            lowDebuff: "Hungry"
+            lowDebuffId: hungryBuffId
         );
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",
@@ -150,7 +150,7 @@ public class PawnLifecycleTests
             key: "Hunger",
             decayPerTick: 0.01f,
             lowThreshold: 35f,
-            lowDebuff: "Hungry"
+            lowDebuffId: hungryBuffId
         );
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",
@@ -196,7 +196,7 @@ public class PawnLifecycleTests
             key: "Hunger",
             decayPerTick: 0.001f,
             lowThreshold: 35f,
-            lowDebuff: "Hungry"
+            lowDebuffId: hungryBuffId
         );
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",
@@ -238,7 +238,7 @@ public class PawnLifecycleTests
             "Hunger",
             decayPerTick: 0.3f,
             lowThreshold: 35f,
-            lowDebuff: "Hungry"
+            lowDebuffId: hungryBuffId
         );
         var fridgeDefId = builder.DefineObject(
             key: "Fridge",

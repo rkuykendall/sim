@@ -146,15 +146,15 @@ public sealed class TestSimulationBuilder
 
     /// <summary>
     /// Define a need type that can be used by pawns and objects.
-    /// ID is auto-generated. Use buff key names for debuff references.
+    /// ID is auto-generated. Accepts debuff IDs directly.
     /// </summary>
     public int DefineNeed(
         string key = "",
         float decayPerTick = 0.02f,
         float criticalThreshold = 15f,
         float lowThreshold = 35f,
-        string? criticalDebuff = null,
-        string? lowDebuff = null
+        int? criticalDebuffId = null,
+        int? lowDebuffId = null
     )
     {
         var need = new NeedDef
@@ -164,8 +164,8 @@ public sealed class TestSimulationBuilder
             DecayPerTick = decayPerTick,
             CriticalThreshold = criticalThreshold,
             LowThreshold = lowThreshold,
-            CriticalDebuffId = criticalDebuff != null ? _content.GetBuffId(criticalDebuff) : null,
-            LowDebuffId = lowDebuff != null ? _content.GetBuffId(lowDebuff) : null,
+            CriticalDebuffId = criticalDebuffId,
+            LowDebuffId = lowDebuffId,
         };
         return _content.RegisterNeed(key, need);
     }
