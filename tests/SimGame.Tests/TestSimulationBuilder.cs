@@ -18,7 +18,7 @@ public sealed class TestSimulationBuilder
 
     private readonly ContentRegistry _content = new();
 
-    private readonly List<(string Key, BuffDef Def)> _buffs = new();
+    // Buffs are now registered directly in _content
     private readonly List<(
         string Key,
         NeedDef Def,
@@ -152,18 +152,14 @@ public sealed class TestSimulationBuilder
         int durationTicks = 1000
     )
     {
-        _buffs.Add(
-            (
-                key,
-                new BuffDef
-                {
-                    Id = 0, // Auto-generated
-                    Name = name,
-                    MoodOffset = moodOffset,
-                    DurationTicks = durationTicks,
-                }
-            )
-        );
+        var buff = new BuffDef
+        {
+            Id = 0, // Auto-generated
+            Name = name,
+            MoodOffset = moodOffset,
+            DurationTicks = durationTicks,
+        };
+        _content.RegisterBuff(key, buff);
     }
 
     /// <summary>
@@ -279,12 +275,6 @@ public sealed class TestSimulationBuilder
     /// </summary>
     public Simulation Build()
     {
-        // Register buffs first (needs reference them)
-        foreach (var (key, buff) in _buffs)
-        {
-            _content.RegisterBuff(key, buff);
-        }
-
         // Register needs (with debuff references resolved)
         foreach (var (key, need, criticalDebuff, lowDebuff) in _needs)
         {
