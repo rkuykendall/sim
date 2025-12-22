@@ -54,62 +54,6 @@ public sealed class TestSimulationBuilder
                     G = 0.6f,
                     B = 0.3f,
                 },
-                new ColorDef
-                {
-                    Name = "Dark Gray",
-                    R = 0.4f,
-                    G = 0.4f,
-                    B = 0.4f,
-                },
-                new ColorDef
-                {
-                    Name = "Blue",
-                    R = 0.2f,
-                    G = 0.4f,
-                    B = 0.8f,
-                },
-                new ColorDef
-                {
-                    Name = "Red",
-                    R = 0.9f,
-                    G = 0.2f,
-                    B = 0.2f,
-                },
-                new ColorDef
-                {
-                    Name = "Yellow",
-                    R = 1.0f,
-                    G = 0.8f,
-                    B = 0.2f,
-                },
-                new ColorDef
-                {
-                    Name = "Purple",
-                    R = 0.6f,
-                    G = 0.3f,
-                    B = 0.6f,
-                },
-                new ColorDef
-                {
-                    Name = "Orange",
-                    R = 1.0f,
-                    G = 0.5f,
-                    B = 0.3f,
-                },
-                new ColorDef
-                {
-                    Name = "Cyan",
-                    R = 0.2f,
-                    G = 0.8f,
-                    B = 0.8f,
-                },
-                new ColorDef
-                {
-                    Name = "White",
-                    R = 0.95f,
-                    G = 0.95f,
-                    B = 0.95f,
-                },
             },
         };
         _content.RegisterColorPalette("test", testPalette);
