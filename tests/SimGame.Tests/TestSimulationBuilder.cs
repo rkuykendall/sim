@@ -127,7 +127,7 @@ public sealed class TestSimulationBuilder
     /// Define a buff that can be granted by objects or applied by needs.
     /// ID is auto-generated.
     /// </summary>
-    public void DefineBuff(
+    public int DefineBuff(
         string key = "",
         string name = "",
         float moodOffset = 0,
@@ -141,14 +141,14 @@ public sealed class TestSimulationBuilder
             MoodOffset = moodOffset,
             DurationTicks = durationTicks,
         };
-        _content.RegisterBuff(key, buff);
+        return _content.RegisterBuff(key, buff);
     }
 
     /// <summary>
     /// Define a need type that can be used by pawns and objects.
     /// ID is auto-generated. Use buff key names for debuff references.
     /// </summary>
-    public void DefineNeed(
+    public int DefineNeed(
         string key = "",
         float decayPerTick = 0.02f,
         float criticalThreshold = 15f,
@@ -167,14 +167,14 @@ public sealed class TestSimulationBuilder
             CriticalDebuffId = criticalDebuff != null ? _content.GetBuffId(criticalDebuff) : null,
             LowDebuffId = lowDebuff != null ? _content.GetBuffId(lowDebuff) : null,
         };
-        _content.RegisterNeed(key, need);
+        return _content.RegisterNeed(key, need);
     }
 
     /// <summary>
     /// Define an object type that can be placed in the world.
     /// ID is auto-generated. Use key names for need/buff references.
     /// </summary>
-    public void DefineObject(
+    public int DefineObject(
         string key = "",
         string? satisfiesNeed = null,
         float satisfactionAmount = 50f,
@@ -195,14 +195,14 @@ public sealed class TestSimulationBuilder
             SatisfiesNeedId = satisfiesNeed != null ? _content.GetNeedId(satisfiesNeed) : null,
             GrantsBuffId = grantsBuff != null ? _content.GetBuffId(grantsBuff) : null,
         };
-        _content.RegisterObject(key, obj);
+        return _content.RegisterObject(key, obj);
     }
 
     /// <summary>
     /// Define a terrain type that can be painted on tiles.
     /// ID is auto-generated.
     /// </summary>
-    public void DefineTerrain(
+    public int DefineTerrain(
         string key = "",
         bool walkable = true,
         string spriteKey = "",
@@ -216,7 +216,7 @@ public sealed class TestSimulationBuilder
             SpriteKey = spriteKey,
             IsAutotiling = isAutotiling,
         };
-        _content.RegisterTerrain(key, terrain);
+        return _content.RegisterTerrain(key, terrain);
     }
 
     /// <summary>

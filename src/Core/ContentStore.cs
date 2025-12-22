@@ -31,9 +31,9 @@ public sealed class ContentStore<T>
     public int Count => _byId.Count;
 
     /// <summary>
-    /// Register a definition. ID is auto-assigned if def.Id is 0.
+    /// Register a definition. ID is auto-assigned if def.Id is 0. Returns the assigned ID.
     /// </summary>
-    public void Register(string key, T def)
+    public int Register(string key, T def)
     {
         if (def.Id == 0)
             def.Id = _nextId++;
@@ -42,6 +42,7 @@ public sealed class ContentStore<T>
 
         _byId[def.Id] = def;
         _nameToId[key] = def.Id;
+        return def.Id;
     }
 
     /// <summary>
