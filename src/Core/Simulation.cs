@@ -348,9 +348,51 @@ public sealed class Simulation
     }
 
     /// <summary>
-    /// Gets the maximum number of pawns allowed in the simulation.
+    /// Gets the maximum number of pawns allowed in the simulation based on map diversity and object count.
     /// </summary>
-    public int GetMaxPawns() => 5;
+    public int GetMaxPawns()
+    {
+        int score = ScoreMapDiversity();
+        int numPawns = Entities.AllPawns().Count();
+
+        if (score > 10 && numPawns < 1)
+        {
+            return 1;
+        }
+
+        return Math.Min(10, score / 50);
+    }
+
+    /// <summary>
+    /// Scores the map based on tile diversity (adjacent tile differences).
+    /// </summary>
+    private int ScoreMapDiversity()
+    {
+        int score = 0;
+        Tile? prevTile = null;
+        for (int x = 0; x < World.Width; x++)
+        {
+            for (int y = 0; y < World.Height; y++)
+            {
+                var tile = World.GetTile(x, y);
+                if (prevTile != null)
+                {
+                    if (tile.BaseTerrainTypeId != prevTile.BaseTerrainTypeId)
+                    {
+                        score++;
+                    }
+                    if (tile.OverlayTerrainTypeId != prevTile.OverlayTerrainTypeId)
+                    {
+                        score++;
+                    }
+                }
+                prevTile = tile;
+            }
+        }
+
+        score += Entities.AllObjects().Count();
+        return score;
+    }
 
     /// <summary>
     /// Creates a dictionary of all needs initialized to full (100f).
