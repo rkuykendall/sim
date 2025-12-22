@@ -21,11 +21,6 @@ namespace SimGame.Tests
                 .AddObject("Bed", 3, 2)
                 .Build();
 
-            // Paint walkable floor everywhere
-            for (int x = 0; x <= 4; x++)
-                for (int y = 0; y <= 4; y++)
-                    sim.PaintTerrain(x, y, sim.Content.GetTerrainId("Floor").Value);
-
             // Paint a vertical wall at x=2
             for (int y = 0; y <= 4; y++)
                 sim.PaintTerrain(2, y, sim.Content.GetTerrainId("Wall").Value);
@@ -53,10 +48,6 @@ namespace SimGame.Tests
                 .AddObject("Bed", 3, 2)
                 .Build();
 
-            for (int x = 0; x <= 4; x++)
-                for (int y = 0; y <= 4; y++)
-                    sim.PaintTerrain(x, y, sim.Content.GetTerrainId("Floor").Value);
-
             // Only block (2,1) and (2,3), leave (2,2) open
             sim.PaintTerrain(2, 1, sim.Content.GetTerrainId("Wall").Value);
             sim.PaintTerrain(2, 3, sim.Content.GetTerrainId("Wall").Value);
@@ -83,10 +74,6 @@ namespace SimGame.Tests
                 .AddObject("Bed", 2, 1)
                 .Build();
 
-            for (int x = 0; x <= 2; x++)
-                for (int y = 0; y <= 2; y++)
-                    sim.PaintTerrain(x, y, sim.Content.GetTerrainId("Floor").Value);
-
             sim.PaintTerrain(1, 1, sim.Content.GetTerrainId("Wall").Value);
 
             var pawnId = sim.GetPawnByName("Carol");
@@ -110,10 +97,6 @@ namespace SimGame.Tests
                 .AddObject("Bed", 2, 2)
                 .Build();
 
-            for (int x = 0; x <= 2; x++)
-                for (int y = 0; y <= 2; y++)
-                    sim.PaintTerrain(x, y, sim.Content.GetTerrainId("Floor").Value);
-
             var pawnId = sim.GetPawnByName("Dave");
             Assert.NotNull(pawnId);
 
@@ -136,12 +119,7 @@ namespace SimGame.Tests
                 .AddObject("Bed", 5, 5)
                 .Build();
 
-            var floorId = sim.Content.GetTerrainId("Floor").Value;
             var wallId = sim.Content.GetTerrainId("Wall").Value;
-
-            for (int x = 0; x <= 5; x++)
-                for (int y = 0; y <= 5; y++)
-                    sim.PaintTerrain(x, y, floorId);
 
             for (int x = 0; x <= 5; x++)
                 sim.PaintTerrain(5-x, x, wallId);

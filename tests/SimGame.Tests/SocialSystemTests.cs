@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using SimGame.Core;
 using Xunit;
 using SimGame.Tests;
 
@@ -9,7 +7,7 @@ public class SocialSystemTests
     public void Pawn_Gains_Social_When_Near_Other_Pawn()
     {
         // Arrange: Define Social need and two pawns
-        var sim = new SimGame.Tests.TestSimulationBuilder()
+        var sim = new TestSimulationBuilder()
             .DefineNeed("Social", "Social", decayPerTick: 0f)
             .AddPawn("A", 5, 5, new Dictionary<string, float> { { "Social", 50f } })
             .AddPawn("B", 6, 5, new Dictionary<string, float> { { "Social", 50f } })
@@ -33,7 +31,7 @@ public class SocialSystemTests
     public void Pawn_Does_Not_Gain_Social_When_Alone()
     {
         // Arrange: Define Social need and one pawn
-        var sim = new SimGame.Tests.TestSimulationBuilder()
+        var sim = new TestSimulationBuilder()
             .DefineNeed("Social", "Social", decayPerTick: 0f)
             .AddPawn("Solo", 5, 5, new Dictionary<string, float> { { "Social", 50f } })
             .Build();
