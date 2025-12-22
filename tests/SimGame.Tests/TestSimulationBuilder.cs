@@ -17,15 +17,6 @@ public sealed class TestSimulationBuilder
     };
 
     private readonly ContentRegistry _content = new();
-    private readonly List<(
-        string Key,
-        ObjectDef Def,
-        string? SatisfiesNeed,
-        string? GrantsBuff
-    )> _objects = new();
-    private readonly List<(string ObjectKey, int X, int Y)> _objectPlacements = new();
-    private readonly List<(string Name, int X, int Y, Dictionary<string, float> Needs)> _pawns =
-        new();
 
     public TestSimulationBuilder()
     {
@@ -193,22 +184,18 @@ public sealed class TestSimulationBuilder
         bool walkable = false
     )
     {
-        _objects.Add(
-            (
-                key,
-                new ObjectDef
-                {
-                    Id = 0, // Auto-generated
-                    Name = key,
-                    Walkable = walkable,
-                    NeedSatisfactionAmount = satisfactionAmount,
-                    InteractionDurationTicks = interactionDuration,
-                    UseAreas = useAreas ?? new List<(int dx, int dy)> { (0, 1) },
-                },
-                satisfiesNeed,
-                grantsBuff
-            )
-        );
+        var obj = new ObjectDef
+        {
+            Id = 0, // Auto-generated
+            Name = key,
+            Walkable = walkable,
+            NeedSatisfactionAmount = satisfactionAmount,
+            InteractionDurationTicks = interactionDuration,
+            UseAreas = useAreas ?? new List<(int dx, int dy)> { (0, 1) },
+            SatisfiesNeedId = satisfiesNeed != null ? _content.GetNeedId(satisfiesNeed) : null,
+            GrantsBuffId = grantsBuff != null ? _content.GetBuffId(grantsBuff) : null,
+        };
+        _content.RegisterObject(key, obj);
     }
 
     /// <summary>
@@ -237,7 +224,12 @@ public sealed class TestSimulationBuilder
     /// </summary>
     public void AddObject(string objectKey = "", int x = 0, int y = 0)
     {
-        _objectPlacements.Add((objectKey, x, y));
+        var objectId =
+            _content.GetObjectId(objectKey)
+            ?? throw new InvalidOperationException(
+                $"Object '{objectKey}' not found. Did you forget to call DefineObject()?"
+            );
+        _config.Objects.Add((objectId, x, y));
     }
 
     /// <summary>
@@ -250,7 +242,25 @@ public sealed class TestSimulationBuilder
         Dictionary<string, float>? needs = null
     )
     {
-        _pawns.Add((name, x, y, needs ?? new Dictionary<string, float>()));
+        var needsById = new Dictionary<int, float>();
+        foreach (var (needKey, value) in (needs ?? new Dictionary<string, float>()))
+        {
+            var needId =
+                _content.GetNeedId(needKey)
+                ?? throw new InvalidOperationException(
+                    $"Need '{needKey}' not found. Did you forget to call DefineNeed()?"
+                );
+            needsById[needId] = value;
+        }
+        _config.Pawns.Add(
+            new PawnConfig
+            {
+                Name = name,
+                X = x,
+                Y = y,
+                Needs = needsById,
+            }
+        );
     }
 
     /// <summary>
@@ -258,60 +268,6 @@ public sealed class TestSimulationBuilder
     /// </summary>
     public Simulation Build()
     {
-        // Register objects (with need/buff references resolved)
-        foreach (var (key, obj, satisfiesNeed, grantsBuff) in _objects)
-        {
-            var resolvedObj = new ObjectDef
-            {
-                Id = obj.Id,
-                Name = obj.Name,
-                Walkable = obj.Walkable,
-                Interactable = obj.Interactable,
-                NeedSatisfactionAmount = obj.NeedSatisfactionAmount,
-                InteractionDurationTicks = obj.InteractionDurationTicks,
-                UseAreas = obj.UseAreas,
-                SatisfiesNeedId = satisfiesNeed != null ? _content.GetNeedId(satisfiesNeed) : null,
-                GrantsBuffId = grantsBuff != null ? _content.GetBuffId(grantsBuff) : null,
-            };
-            _content.RegisterObject(key, resolvedObj);
-        }
-
-        // Convert object placements to use resolved IDs
-        foreach (var (objectKey, x, y) in _objectPlacements)
-        {
-            var objectId =
-                _content.GetObjectId(objectKey)
-                ?? throw new InvalidOperationException(
-                    $"Object '{objectKey}' not found. Did you forget to call DefineObject()?"
-                );
-            _config.Objects.Add((objectId, x, y));
-        }
-
-        // Convert pawn needs to use resolved IDs
-        foreach (var (name, x, y, needsByName) in _pawns)
-        {
-            var needsById = new Dictionary<int, float>();
-            foreach (var (needKey, value) in needsByName)
-            {
-                var needId =
-                    _content.GetNeedId(needKey)
-                    ?? throw new InvalidOperationException(
-                        $"Need '{needKey}' not found. Did you forget to call DefineNeed()?"
-                    );
-                needsById[needId] = value;
-            }
-            _config.Pawns.Add(
-                new PawnConfig
-                {
-                    Name = name,
-                    X = x,
-                    Y = y,
-                    Needs = needsById,
-                }
-            );
-        }
-
-        // Create and return the simulation with the content
         return new Simulation(_content, _config);
     }
 }
