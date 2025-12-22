@@ -17,21 +17,12 @@ public sealed class TestSimulationBuilder
     };
 
     private readonly ContentRegistry _content = new();
-
-    // Buffs are now registered directly in _content
-    private readonly List<(
-        string Key,
-        NeedDef Def,
-        string? CriticalDebuff,
-        string? LowDebuff
-    )> _needs = new();
     private readonly List<(
         string Key,
         ObjectDef Def,
         string? SatisfiesNeed,
         string? GrantsBuff
     )> _objects = new();
-    private readonly List<(string Key, TerrainDef Def)> _terrains = new();
     private readonly List<(string ObjectKey, int X, int Y)> _objectPlacements = new();
     private readonly List<(string Name, int X, int Y, Dictionary<string, float> Needs)> _pawns =
         new();
@@ -175,21 +166,17 @@ public sealed class TestSimulationBuilder
         string? lowDebuff = null
     )
     {
-        _needs.Add(
-            (
-                key,
-                new NeedDef
-                {
-                    Id = 0, // Auto-generated
-                    Name = key,
-                    DecayPerTick = decayPerTick,
-                    CriticalThreshold = criticalThreshold,
-                    LowThreshold = lowThreshold,
-                },
-                criticalDebuff,
-                lowDebuff
-            )
-        );
+        var need = new NeedDef
+        {
+            Id = 0, // Auto-generated
+            Name = key,
+            DecayPerTick = decayPerTick,
+            CriticalThreshold = criticalThreshold,
+            LowThreshold = lowThreshold,
+            CriticalDebuffId = criticalDebuff != null ? _content.GetBuffId(criticalDebuff) : null,
+            LowDebuffId = lowDebuff != null ? _content.GetBuffId(lowDebuff) : null,
+        };
+        _content.RegisterNeed(key, need);
     }
 
     /// <summary>
@@ -235,18 +222,14 @@ public sealed class TestSimulationBuilder
         bool isAutotiling = false
     )
     {
-        _terrains.Add(
-            (
-                key,
-                new TerrainDef
-                {
-                    Id = 0, // Auto-generated
-                    Walkable = walkable,
-                    SpriteKey = spriteKey,
-                    IsAutotiling = isAutotiling,
-                }
-            )
-        );
+        var terrain = new TerrainDef
+        {
+            Id = 0, // Auto-generated
+            Walkable = walkable,
+            SpriteKey = spriteKey,
+            IsAutotiling = isAutotiling,
+        };
+        _content.RegisterTerrain(key, terrain);
     }
 
     /// <summary>
@@ -275,23 +258,6 @@ public sealed class TestSimulationBuilder
     /// </summary>
     public Simulation Build()
     {
-        // Register needs (with debuff references resolved)
-        foreach (var (key, need, criticalDebuff, lowDebuff) in _needs)
-        {
-            var resolvedNeed = new NeedDef
-            {
-                Id = need.Id,
-                Name = need.Name,
-                DecayPerTick = need.DecayPerTick,
-                CriticalThreshold = need.CriticalThreshold,
-                LowThreshold = need.LowThreshold,
-                CriticalDebuffId =
-                    criticalDebuff != null ? _content.GetBuffId(criticalDebuff) : null,
-                LowDebuffId = lowDebuff != null ? _content.GetBuffId(lowDebuff) : null,
-            };
-            _content.RegisterNeed(key, resolvedNeed);
-        }
-
         // Register objects (with need/buff references resolved)
         foreach (var (key, obj, satisfiesNeed, grantsBuff) in _objects)
         {
@@ -308,12 +274,6 @@ public sealed class TestSimulationBuilder
                 GrantsBuffId = grantsBuff != null ? _content.GetBuffId(grantsBuff) : null,
             };
             _content.RegisterObject(key, resolvedObj);
-        }
-
-        // Register terrains
-        foreach (var (key, terrain) in _terrains)
-        {
-            _content.RegisterTerrain(key, terrain);
         }
 
         // Convert object placements to use resolved IDs
