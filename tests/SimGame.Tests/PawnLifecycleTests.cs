@@ -27,18 +27,16 @@ public class PawnLifecycleTests
         // Define debuff so AI knows when pawn is unhappy
         // Use fast decay so the test doesn't take forever
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 9, 0, 9);
+        builder.WithWorldBounds(9, 9);
         builder.DefineBuff("Hungry", "Hungry", -5);
         builder.DefineNeed(
-            "Hunger",
-            "Hunger",
+            key: "Hunger",
             decayPerTick: 0.5f,
             lowThreshold: 35f,
             lowDebuff: "Hungry"
         );
         builder.DefineObject(
-            "Fridge",
-            "Fridge",
+            key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
             interactionDuration: 20
@@ -146,18 +144,16 @@ public class PawnLifecycleTests
     {
         // Start below debuff threshold (35) - should immediately seek food
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 4, 0, 0);
+        builder.WithWorldBounds(4, 0);
         builder.DefineBuff("Hungry", "Hungry", -5);
         builder.DefineNeed(
-            "Hunger",
-            "Hunger",
+            key: "Hunger",
             decayPerTick: 0.01f,
             lowThreshold: 35f,
             lowDebuff: "Hungry"
         );
         builder.DefineObject(
-            "Fridge",
-            "Fridge",
+            key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
             interactionDuration: 20,
@@ -194,18 +190,16 @@ public class PawnLifecycleTests
     {
         // Start at 95 (well above debuff threshold, and high enough not to bother) - should wander
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 4, 0, 0);
+        builder.WithWorldBounds(4, 0);
         builder.DefineBuff("Hungry", "Hungry", -5);
         builder.DefineNeed(
-            "Hunger",
-            "Hunger",
+            key: "Hunger",
             decayPerTick: 0.001f,
             lowThreshold: 35f,
             lowDebuff: "Hungry"
         );
         builder.DefineObject(
-            "Fridge",
-            "Fridge",
+            key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
             interactionDuration: 20
@@ -238,18 +232,11 @@ public class PawnLifecycleTests
     public void Pawn_SurvivesLongTerm_ByCyclingBetweenEatingAndWandering()
     {
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 9, 0, 9);
+        builder.WithWorldBounds(9, 9);
         builder.DefineBuff("Hungry", "Hungry", -5);
-        builder.DefineNeed(
-            "Hunger",
-            "Hunger",
-            decayPerTick: 0.3f,
-            lowThreshold: 35f,
-            lowDebuff: "Hungry"
-        );
+        builder.DefineNeed("Hunger", decayPerTick: 0.3f, lowThreshold: 35f, lowDebuff: "Hungry");
         builder.DefineObject(
-            "Fridge",
-            "Fridge",
+            key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 60f,
             interactionDuration: 20

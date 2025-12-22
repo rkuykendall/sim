@@ -37,9 +37,9 @@ public sealed class TestSimulationBuilder
     /// <summary>
     /// Set custom world bounds (default is a 5x5 world from 0,0 to 4,4).
     /// </summary>
-    public void WithWorldBounds(int minX, int maxX, int minY, int maxY)
+    public void WithWorldBounds(int maxX, int maxY)
     {
-        _config.WorldBounds = (minX, maxX, minY, maxY);
+        _config.WorldBounds = (0, maxX, 0, maxY);
     }
 
     /// <summary>
@@ -73,7 +73,6 @@ public sealed class TestSimulationBuilder
     /// </summary>
     public void DefineNeed(
         string key = "",
-        string name = "",
         float decayPerTick = 0.02f,
         float criticalThreshold = 15f,
         float lowThreshold = 35f,
@@ -87,7 +86,7 @@ public sealed class TestSimulationBuilder
                 new NeedDef
                 {
                     Id = 0, // Auto-generated
-                    Name = name,
+                    Name = key,
                     DecayPerTick = decayPerTick,
                     CriticalThreshold = criticalThreshold,
                     LowThreshold = lowThreshold,
@@ -104,7 +103,6 @@ public sealed class TestSimulationBuilder
     /// </summary>
     public void DefineObject(
         string key = "",
-        string name = "",
         string? satisfiesNeed = null,
         float satisfactionAmount = 50f,
         int interactionDuration = 20,
@@ -119,7 +117,7 @@ public sealed class TestSimulationBuilder
                 new ObjectDef
                 {
                     Id = 0, // Auto-generated
-                    Name = name,
+                    Name = key,
                     Walkable = walkable,
                     NeedSatisfactionAmount = satisfactionAmount,
                     InteractionDurationTicks = interactionDuration,

@@ -12,8 +12,8 @@ namespace SimGame.Tests
         {
             // Arrange: 5x5 world, pawn at (1,2), bed at (3,2), vertical wall at x=2
             var builder = new TestSimulationBuilder();
-            builder.DefineNeed("Restfulness", "Restfulness");
-            builder.DefineObject("Bed", "Bed", satisfiesNeed: "Restfulness");
+            builder.DefineNeed("Restfulness");
+            builder.DefineObject("Bed", satisfiesNeed: "Restfulness");
             builder.DefineTerrain("Floor", walkable: true);
             builder.DefineTerrain("Wall", walkable: false);
             builder.AddPawn("Alice", 1, 2, new Dictionary<string, float> { { "Restfulness", 0f } });
@@ -38,8 +38,8 @@ namespace SimGame.Tests
         {
             // Arrange: 5x5 world, pawn at (1,2), bed at (3,2), wall tiles at (2,1), (2,3) but (2,2) is open
             var builder = new TestSimulationBuilder();
-            builder.DefineNeed("Tiredness", "Tiredness");
-            builder.DefineObject("Bed", "Bed", satisfiesNeed: "Tiredness");
+            builder.DefineNeed("Tiredness");
+            builder.DefineObject("Bed", satisfiesNeed: "Tiredness");
             builder.DefineTerrain("Floor", walkable: true);
             builder.DefineTerrain("Wall", walkable: false);
             builder.AddPawn("Bob", 1, 2, new Dictionary<string, float> { { "Tiredness", 100f } });
@@ -63,9 +63,9 @@ namespace SimGame.Tests
         {
             // Arrange: 3x3 world, pawn at (0,1), wall at (1,1), bed at (2,1)
             var builder = new TestSimulationBuilder();
-            builder.WithWorldBounds(0, 2, 0, 2);
-            builder.DefineNeed("Tiredness", "Tiredness");
-            builder.DefineObject("Bed", "Bed", satisfiesNeed: "Tiredness");
+            builder.WithWorldBounds(2, 2);
+            builder.DefineNeed("Tiredness");
+            builder.DefineObject("Bed", satisfiesNeed: "Tiredness");
             builder.DefineTerrain("Floor", walkable: true);
             builder.DefineTerrain("Wall", walkable: false);
             builder.AddPawn("Carol", 0, 1, new Dictionary<string, float> { { "Tiredness", 100f } });
@@ -87,9 +87,9 @@ namespace SimGame.Tests
         {
             // Arrange: 3x3 world, pawn at (0,0), bed at (2,2), no walls
             var builder = new TestSimulationBuilder();
-            builder.WithWorldBounds(0, 2, 0, 2);
-            builder.DefineNeed("Tiredness", "Tiredness");
-            builder.DefineObject("Bed", "Bed", satisfiesNeed: "Tiredness");
+            builder.WithWorldBounds(2, 2);
+            builder.DefineNeed("Tiredness");
+            builder.DefineObject("Bed", satisfiesNeed: "Tiredness");
             builder.DefineTerrain("Floor", walkable: true);
             builder.AddPawn("Dave", 0, 0, new Dictionary<string, float> { { "Tiredness", 100f } });
             builder.AddObject("Bed", 2, 2);
@@ -108,8 +108,8 @@ namespace SimGame.Tests
         {
             // Arrange: pawn at (0,0), bed at (2,2), walls at (1,0), (0,1), (1,1)
             var builder = new TestSimulationBuilder();
-            builder.DefineNeed("Tiredness", "Tiredness");
-            builder.DefineObject("Bed", "Bed", satisfiesNeed: "Tiredness");
+            builder.DefineNeed("Tiredness");
+            builder.DefineObject("Bed", satisfiesNeed: "Tiredness");
             builder.DefineTerrain("Floor", walkable: true);
             builder.DefineTerrain("Wall", walkable: false);
             builder.AddPawn("Eve", 0, 0, new Dictionary<string, float> { { "Tiredness", 0 } });

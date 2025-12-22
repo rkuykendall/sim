@@ -28,11 +28,10 @@ public class PawnMovementTests
         // Arrange: Create a 1x10 corridor with two pawns at opposite ends
         // Both have low hunger and there's a fridge in the middle
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 9, 0, 0); // 10x1 corridor
-        builder.DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f);
+        builder.WithWorldBounds(9, 0); // 10x1 corridor
+        builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         builder.DefineObject(
-            "Fridge",
-            "Fridge",
+            key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
             interactionDuration: 20,
@@ -122,11 +121,10 @@ public class PawnMovementTests
         // Arrange: 2x1 world with pawns adjacent, fridges on opposite ends
         // Each pawn wants to get to the fridge on the other side
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 3, 0, 0); // 4x1: [Fridge][Pawn1][Pawn2][Fridge]
-        builder.DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f);
+        builder.WithWorldBounds(3, 0); // 4x1: [Fridge][Pawn1][Pawn2][Fridge]
+        builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         builder.DefineObject(
-            "Fridge",
-            "Fridge",
+            key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
             interactionDuration: 20,
@@ -197,11 +195,10 @@ public class PawnMovementTests
     {
         // Arrange: 5x3 area - pawns have room to go around each other
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 4, 0, 2); // 5x3 area
-        builder.DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f);
+        builder.WithWorldBounds(4, 2); // 5x3 area
+        builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         builder.DefineObject(
-            "Fridge",
-            "Fridge",
+            key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
             interactionDuration: 20
@@ -268,19 +265,17 @@ public class PawnMovementTests
         //    [ ][ ][ ][ ][ ][ ][ ]
         //    [ ][ ][ ][ ][ ][ ][ ]
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 6, 0, 2); // 7x3 area
-        builder.DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f);
-        builder.DefineNeed("Energy", "Energy", decayPerTick: 0.001f);
+        builder.WithWorldBounds(6, 2); // 7x3 area
+        builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
+        builder.DefineNeed(key: "Energy", decayPerTick: 0.001f);
         builder.DefineObject(
-            "Fridge",
-            "Fridge",
+            key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
         builder.DefineObject(
-            "Bed",
-            "Bed",
+            key: "Bed",
             satisfiesNeed: "Energy",
             satisfactionAmount: 50f,
             interactionDuration: 20
@@ -406,11 +401,10 @@ public class PawnMovementTests
         // Arrange: Minimal 3x1 world: [Fridge][Pawn1][Pawn2]
         // Pawn2 blocks Pawn1 from reaching fridge
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 2, 0, 0); // 3x1 corridor
-        builder.DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f);
+        builder.WithWorldBounds(2, 0); // 3x1 corridor
+        builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         builder.DefineObject(
-            "Fridge",
-            "Fridge",
+            key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
             interactionDuration: 20
@@ -465,11 +459,10 @@ public class PawnMovementTests
     {
         // Arrange: 5x3 area with ONE shower, two pawns who both need hygiene
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 4, 0, 2); // 5x3 area
-        builder.DefineNeed("Hygiene", "Hygiene", decayPerTick: 0.001f);
+        builder.WithWorldBounds(4, 2); // 5x3 area
+        builder.DefineNeed(key: "Hygiene", decayPerTick: 0.001f);
         builder.DefineObject(
-            "Shower",
-            "Shower",
+            key: "Shower",
             satisfiesNeed: "Hygiene",
             satisfactionAmount: 50f,
             interactionDuration: 40

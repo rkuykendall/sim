@@ -33,11 +33,10 @@ public class UseAreasTests
     {
         // Arrange: Fridge at (2,0) with UseArea only at (0,1) meaning pawn must stand at (2,1)
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 4, 0, 2);
-        builder.DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f);
+        builder.WithWorldBounds(4, 2);
+        builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         builder.DefineObject(
-            "Fridge",
-            "Fridge",
+            key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
             interactionDuration: 20,
@@ -108,10 +107,9 @@ public class UseAreasTests
     {
         // Arrange: TV at (2,1) with multiple use areas
         var builder = new TestSimulationBuilder();
-        builder.DefineNeed("Fun", "Fun", decayPerTick: 0.001f);
+        builder.DefineNeed(key: "Fun", decayPerTick: 0.001f);
         builder.DefineObject(
-            "TV",
-            "TV",
+            key: "TV",
             satisfiesNeed: "Fun",
             satisfactionAmount: 40f,
             interactionDuration: 30,
@@ -181,17 +179,16 @@ public class UseAreasTests
     {
         // Arrange: Fridge with single use area that's blocked by another object
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(0, 4, 0, 2);
-        builder.DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f);
+        builder.WithWorldBounds(4, 2);
+        builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         builder.DefineObject(
-            "Fridge",
-            "Fridge",
+            key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (0, 1) }
         );
-        builder.DefineObject("Blocker", "Blocker");
+        builder.DefineObject(key: "Blocker");
         builder.AddObject("Fridge", 2, 0);
         builder.AddObject("Blocker", 2, 1);
         builder.AddPawn("TestPawn", 0, 2, new Dictionary<string, float> { { "Hunger", 10f } });

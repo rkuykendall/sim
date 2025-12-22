@@ -8,7 +8,7 @@ public class SocialSystemTests
     {
         // Arrange: Define Social need and two pawns
         var builder = new TestSimulationBuilder();
-        builder.DefineNeed("Social", "Social", decayPerTick: 0f);
+        builder.DefineNeed(key: "Social", decayPerTick: 0f);
         builder.AddPawn("A", 5, 5, new Dictionary<string, float> { { "Social", 50f } });
         builder.AddPawn("B", 6, 5, new Dictionary<string, float> { { "Social", 50f } });
         var sim = builder.Build();
@@ -32,7 +32,7 @@ public class SocialSystemTests
     {
         // Arrange: Define Social need and one pawn
         var builder = new TestSimulationBuilder();
-        builder.DefineNeed("Social", "Social", decayPerTick: 0f);
+        builder.DefineNeed(key: "Social", decayPerTick: 0f);
         builder.AddPawn("Solo", 5, 5, new Dictionary<string, float> { { "Social", 50f } });
         var sim = builder.Build();
 
