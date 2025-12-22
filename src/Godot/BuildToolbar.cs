@@ -1,9 +1,8 @@
-
 using System;
-using Godot;
-using SimGame.Core;
 using System.Collections.Generic;
 using System.Linq;
+using Godot;
+using SimGame.Core;
 
 namespace SimGame.Godot;
 
@@ -19,8 +18,12 @@ public partial class BuildToolbar : HBoxContainer
             UpdateAllButtons();
         }
     }
-    [Export] public NodePath LeftPanelPath { get; set; } = "";
-    [Export] public NodePath OptionsContainerPath { get; set; } = "";
+
+    [Export]
+    public NodePath LeftPanelPath { get; set; } = "";
+
+    [Export]
+    public NodePath OptionsContainerPath { get; set; } = "";
 
     private GridContainer? _toolsGrid;
     private FlowContainer? _optionsContainer;
@@ -42,6 +45,7 @@ public partial class BuildToolbar : HBoxContainer
     }
 
     private bool _debugMode = false;
+
     public void Initialize(ContentRegistry content, bool debugMode = false)
     {
         _content = content;
@@ -101,12 +105,28 @@ public partial class BuildToolbar : HBoxContainer
             (() => CreateFillSquareToolButton(), BuildToolMode.FillSquare),
             (() => CreateOutlineSquareToolButton(), BuildToolMode.OutlineSquare),
             (() => CreateFloodFillToolButton(), BuildToolMode.FloodFill),
-            (() => CreateToolButton("generic-object.png", BuildToolMode.PlaceObject, "Place Object"), BuildToolMode.PlaceObject),
-            (() => CreateToolButton("delete.png", BuildToolMode.Delete, "Delete"), BuildToolMode.Delete)
+            (
+                () =>
+                    CreateToolButton(
+                        "generic-object.png",
+                        BuildToolMode.PlaceObject,
+                        "Place Object"
+                    ),
+                BuildToolMode.PlaceObject
+            ),
+            (
+                () => CreateToolButton("delete.png", BuildToolMode.Delete, "Delete"),
+                BuildToolMode.Delete
+            ),
         };
         if (_debugMode)
         {
-            toolDefs.Add((() => CreateToolButton("select.png", BuildToolMode.Select, "Select"), BuildToolMode.Select));
+            toolDefs.Add(
+                (
+                    () => CreateToolButton("select.png", BuildToolMode.Select, "Select"),
+                    BuildToolMode.Select
+                )
+            );
         }
         int toolRows = toolDefs.Count;
         int totalRows = System.Math.Max(colorRows, toolRows);
@@ -118,10 +138,7 @@ public partial class BuildToolbar : HBoxContainer
             if (row < colorRows)
             {
                 var colorIndex = row;
-                var colorButton = new PreviewSquare
-                {
-                    CustomMinimumSize = new Vector2(96, 96)
-                };
+                var colorButton = new PreviewSquare { CustomMinimumSize = new Vector2(96, 96) };
                 colorButton.Pressed += () => OnColorSelected(colorIndex);
                 _toolsGrid?.AddChild(colorButton);
                 _colorButtons.Add(colorButton);
@@ -155,12 +172,12 @@ public partial class BuildToolbar : HBoxContainer
         }
     }
 
-    private Button CreatePaintToolButton ()
+    private Button CreatePaintToolButton()
     {
         var paintBtn = new PreviewSquare
         {
             CustomMinimumSize = new Vector2(96, 96),
-            TooltipText = "Paint Terrain"
+            TooltipText = "Paint Terrain",
         };
         paintBtn.Pressed += () => OnToolSelected(BuildToolMode.PlaceTerrain);
         return paintBtn;
@@ -171,7 +188,7 @@ public partial class BuildToolbar : HBoxContainer
         var button = new SpriteIconButton
         {
             CustomMinimumSize = new Vector2(96, 96),
-            TooltipText = tooltip
+            TooltipText = tooltip,
         };
 
         var texture = GD.Load<Texture2D>($"res://sprites/{spriteKey}");
@@ -240,12 +257,18 @@ public partial class BuildToolbar : HBoxContainer
         // Auto-select first option if none selected, but do not trigger if already selected
         if (optionsList.Count > 0)
         {
-            if (BuildToolState.Mode == BuildToolMode.PlaceObject && !BuildToolState.SelectedObjectDefId.HasValue)
+            if (
+                BuildToolState.Mode == BuildToolMode.PlaceObject
+                && !BuildToolState.SelectedObjectDefId.HasValue
+            )
             {
                 BuildToolState.SelectedObjectDefId = optionsList[0].id;
                 UpdateAllButtons();
             }
-            else if (BuildToolState.Mode == BuildToolMode.PlaceTerrain && !BuildToolState.SelectedTerrainDefId.HasValue)
+            else if (
+                BuildToolState.Mode == BuildToolMode.PlaceTerrain
+                && !BuildToolState.SelectedTerrainDefId.HasValue
+            )
             {
                 BuildToolState.SelectedTerrainDefId = optionsList[0].id;
                 UpdateAllButtons();
@@ -253,12 +276,17 @@ public partial class BuildToolbar : HBoxContainer
         }
     }
 
-    private SpriteIconButton CreateOptionButton(int id, string spriteKey, string name, bool isObject)
+    private SpriteIconButton CreateOptionButton(
+        int id,
+        string spriteKey,
+        string name,
+        bool isObject
+    )
     {
         var button = new SpriteIconButton
         {
             CustomMinimumSize = new Vector2(96, 96),
-            TooltipText = name
+            TooltipText = name,
         };
 
         var texture = SpriteResourceManager.GetTexture(spriteKey);
@@ -277,7 +305,8 @@ public partial class BuildToolbar : HBoxContainer
 
     private void UpdateColorButton(int colorIndex)
     {
-        if (colorIndex >= _colorButtons.Count || colorIndex >= _currentPalette.Length) return;
+        if (colorIndex >= _colorButtons.Count || colorIndex >= _currentPalette.Length)
+            return;
 
         var button = _colorButtons[colorIndex];
         if (button is PreviewSquare preview)
@@ -378,7 +407,10 @@ public partial class BuildToolbar : HBoxContainer
                 var textureRect = spriteBtn.GetNodeOrNull<TextureRect>("TextureRect");
                 if (textureRect?.Texture != null)
                 {
-                    spriteBtn.SetSprite(textureRect.Texture, _currentPalette[BuildToolState.SelectedColorIndex]);
+                    spriteBtn.SetSprite(
+                        textureRect.Texture,
+                        _currentPalette[BuildToolState.SelectedColorIndex]
+                    );
                 }
                 spriteBtn.SetSelected(isActive);
             }
@@ -389,7 +421,10 @@ public partial class BuildToolbar : HBoxContainer
         {
             bool isSelected = false;
 
-            if (BuildToolState.Mode == BuildToolMode.PlaceObject && BuildToolState.SelectedObjectDefId.HasValue)
+            if (
+                BuildToolState.Mode == BuildToolMode.PlaceObject
+                && BuildToolState.SelectedObjectDefId.HasValue
+            )
             {
                 // Check if this button's ID matches the selected object
                 var objects = _content?.Objects.OrderBy(kv => kv.Value.Name).ToList();
@@ -402,10 +437,13 @@ public partial class BuildToolbar : HBoxContainer
                     }
                 }
             }
-            else if ((BuildToolState.Mode == BuildToolMode.PlaceTerrain
-                      || BuildToolState.Mode == BuildToolMode.FillSquare
-                      || BuildToolState.Mode == BuildToolMode.OutlineSquare)
-                     && BuildToolState.SelectedTerrainDefId.HasValue)
+            else if (
+                (
+                    BuildToolState.Mode == BuildToolMode.PlaceTerrain
+                    || BuildToolState.Mode == BuildToolMode.FillSquare
+                    || BuildToolState.Mode == BuildToolMode.OutlineSquare
+                ) && BuildToolState.SelectedTerrainDefId.HasValue
+            )
             {
                 var terrains = _content?.Terrains.OrderBy(kv => kv.Key).ToList();
                 if (terrains != null)
@@ -413,7 +451,8 @@ public partial class BuildToolbar : HBoxContainer
                     var index = _optionButtons.IndexOf(button);
                     if (index >= 0 && index < terrains.Count)
                     {
-                        isSelected = terrains[index].Key == BuildToolState.SelectedTerrainDefId.Value;
+                        isSelected =
+                            terrains[index].Key == BuildToolState.SelectedTerrainDefId.Value;
                     }
                 }
             }
@@ -424,7 +463,10 @@ public partial class BuildToolbar : HBoxContainer
             var textureRect = button.GetNodeOrNull<TextureRect>("TextureRect");
             if (textureRect?.Texture != null)
             {
-                button.SetSprite(textureRect.Texture, _currentPalette[BuildToolState.SelectedColorIndex]);
+                button.SetSprite(
+                    textureRect.Texture,
+                    _currentPalette[BuildToolState.SelectedColorIndex]
+                );
             }
         }
     }
@@ -434,7 +476,7 @@ public partial class BuildToolbar : HBoxContainer
         var fillBtn = new SpriteIconButton
         {
             CustomMinimumSize = new Vector2(96, 96),
-            TooltipText = "Flood Fill"
+            TooltipText = "Flood Fill",
         };
         var texture = GD.Load<Texture2D>("res://sprites/fill.png");
         if (texture != null)
@@ -450,7 +492,7 @@ public partial class BuildToolbar : HBoxContainer
         var fillBtn = new SpriteIconButton
         {
             CustomMinimumSize = new Vector2(96, 96),
-            TooltipText = "Fill Square"
+            TooltipText = "Fill Square",
         };
         var texture = GD.Load<Texture2D>("res://sprites/box.png");
         if (texture != null)
@@ -466,7 +508,7 @@ public partial class BuildToolbar : HBoxContainer
         var outlineBtn = new SpriteIconButton
         {
             CustomMinimumSize = new Vector2(96, 96),
-            TooltipText = "Outline Square"
+            TooltipText = "Outline Square",
         };
         var texture = GD.Load<Texture2D>("res://sprites/square.png");
         if (texture != null)

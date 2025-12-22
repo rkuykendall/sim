@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using Xunit;
 using SimGame.Core;
 using SimGame.Tests;
+using Xunit;
 
 namespace SimGame.Tests
 {
@@ -122,7 +122,7 @@ namespace SimGame.Tests
             var wallId = sim.Content.GetTerrainId("Wall").Value;
 
             for (int x = 0; x <= 5; x++)
-                sim.PaintTerrain(5-x, x, wallId);
+                sim.PaintTerrain(5 - x, x, wallId);
 
             var pawnId = sim.GetPawnByName("Eve");
             Assert.NotNull(pawnId);

@@ -37,16 +37,20 @@ public sealed class ProximitySocialSystem : ISystem
             int nearby = 0;
             foreach (var other in pawnPositions)
             {
-                if (other.Key == pawnId) continue;
+                if (other.Key == pawnId)
+                    continue;
                 int dist = Math.Abs(other.Value.X - pos.X) + Math.Abs(other.Value.Y - pos.Y);
-                if (dist <= ProximityRadius) nearby++;
+                if (dist <= ProximityRadius)
+                    nearby++;
             }
 
             if (nearby > 0)
             {
                 needs.Needs[socialNeedId] = Math.Clamp(
                     needs.Needs[socialNeedId] + SocialGainPerTick * nearby,
-                    0f, 100f);
+                    0f,
+                    100f
+                );
             }
         }
     }
@@ -73,7 +77,7 @@ public sealed class SystemManager
 public sealed class TimeService
 {
     // Time configuration
-    public const int TicksPerMinute = 10;      // 0.5 real seconds = 1 game minute (2x speed)
+    public const int TicksPerMinute = 10; // 0.5 real seconds = 1 game minute (2x speed)
     public const int MinutesPerHour = 60;
     public const int HoursPerDay = 24;
     public const int TicksPerHour = TicksPerMinute * MinutesPerHour;
@@ -82,7 +86,8 @@ public sealed class TimeService
 
     public int Tick { get; private set; }
 
-    public TimeService() : this(DefaultStartHour) { }
+    public TimeService()
+        : this(DefaultStartHour) { }
 
     public TimeService(int startHour)
     {
@@ -94,8 +99,8 @@ public sealed class TimeService
     public int Hour => (Tick / TicksPerHour) % HoursPerDay;
     public int Day => (Tick / TicksPerDay) + 1;
 
-    public bool IsNight => Hour < 6 || Hour >= 22;  // 10 PM - 6 AM
-    public bool IsSleepTime => Hour < 6 || Hour >= 23;  // 11 PM - 6 AM
+    public bool IsNight => Hour < 6 || Hour >= 22; // 10 PM - 6 AM
+    public bool IsSleepTime => Hour < 6 || Hour >= 23; // 11 PM - 6 AM
 
     public string TimeString => $"Day {Day}, {Hour:D2}:{Minute:D2}";
 
@@ -130,7 +135,7 @@ public sealed class NeedsSystem : ISystem
                 continue;
 
             var energyNeedId = ctx.Content.GetNeedId("Energy");
-            
+
             foreach (var needId in needs.Needs.Keys.ToList())
             {
                 if (!ctx.Content.Needs.TryGetValue(needId, out var needDef))
@@ -167,21 +172,25 @@ public sealed class NeedsSystem : ISystem
         // Apply appropriate debuff based on current value
         if (value < needDef.CriticalThreshold && needDef.CriticalDebuffId.HasValue)
         {
-            buffs.ActiveBuffs.Add(new BuffInstance
-            {
-                BuffDefId = needDef.CriticalDebuffId.Value,
-                StartTick = 0,
-                EndTick = -1 // Permanent until need recovers
-            });
+            buffs.ActiveBuffs.Add(
+                new BuffInstance
+                {
+                    BuffDefId = needDef.CriticalDebuffId.Value,
+                    StartTick = 0,
+                    EndTick = -1, // Permanent until need recovers
+                }
+            );
         }
         else if (value < needDef.LowThreshold && needDef.LowDebuffId.HasValue)
         {
-            buffs.ActiveBuffs.Add(new BuffInstance
-            {
-                BuffDefId = needDef.LowDebuffId.Value,
-                StartTick = 0,
-                EndTick = -1 // Permanent until need recovers
-            });
+            buffs.ActiveBuffs.Add(
+                new BuffInstance
+                {
+                    BuffDefId = needDef.LowDebuffId.Value,
+                    StartTick = 0,
+                    EndTick = -1, // Permanent until need recovers
+                }
+            );
         }
     }
 }
@@ -208,8 +217,10 @@ public sealed class MoodSystem : ISystem
     {
         foreach (var pawnId in ctx.Entities.AllPawns())
         {
-            if (!ctx.Entities.Moods.TryGetValue(pawnId, out var moodComp)) continue;
-            if (!ctx.Entities.Buffs.TryGetValue(pawnId, out var buffComp)) continue;
+            if (!ctx.Entities.Moods.TryGetValue(pawnId, out var moodComp))
+                continue;
+            if (!ctx.Entities.Buffs.TryGetValue(pawnId, out var buffComp))
+                continue;
 
             float mood = 0f;
 
@@ -228,7 +239,7 @@ public sealed class MoodSystem : ISystem
 public sealed class ActionSystem : ISystem
 {
     private const int MoveTicksPerTile = 10;
-    private const int MaxBlockedTicks = 50;  // Give up on move after being blocked this long
+    private const int MaxBlockedTicks = 50; // Give up on move after being blocked this long
 
     public void Tick(SimContext ctx)
     {
@@ -246,7 +257,8 @@ public sealed class ActionSystem : ISystem
                     actionComp.CurrentPath = null;
                     actionComp.PathIndex = 0;
                 }
-                else continue;
+                else
+                    continue;
             }
 
             var action = actionComp.CurrentAction;
@@ -270,7 +282,11 @@ public sealed class ActionSystem : ISystem
     private void ExecuteMoveTo(SimContext ctx, EntityId pawnId, ActionComponent actionComp)
     {
         var action = actionComp.CurrentAction!;
-        if (action.TargetCoord == null) { actionComp.CurrentAction = null; return; }
+        if (action.TargetCoord == null)
+        {
+            actionComp.CurrentAction = null;
+            return;
+        }
 
         var pos = ctx.Entities.Positions[pawnId];
         var target = action.TargetCoord.Value;
@@ -280,7 +296,12 @@ public sealed class ActionSystem : ISystem
 
         if (actionComp.CurrentPath == null)
         {
-            actionComp.CurrentPath = Pathfinder.FindPath(ctx.World, pos.Coord, target, occupiedTiles);
+            actionComp.CurrentPath = Pathfinder.FindPath(
+                ctx.World,
+                pos.Coord,
+                target,
+                occupiedTiles
+            );
             actionComp.PathIndex = 0;
 
             if (actionComp.CurrentPath == null || actionComp.CurrentPath.Count == 0)
@@ -294,12 +315,15 @@ public sealed class ActionSystem : ISystem
         }
 
         int ticksInAction = ctx.Time.Tick - actionComp.ActionStartTick;
-        int expectedPathIndex = Math.Min(ticksInAction / MoveTicksPerTile, actionComp.CurrentPath.Count - 1);
+        int expectedPathIndex = Math.Min(
+            ticksInAction / MoveTicksPerTile,
+            actionComp.CurrentPath.Count - 1
+        );
 
         if (expectedPathIndex > actionComp.PathIndex)
         {
             var nextTile = actionComp.CurrentPath[expectedPathIndex];
-            
+
             // Check if the next tile is occupied by another pawn
             var blockingPawnId = ctx.Entities.GetPawnAtTile(nextTile, pawnId);
             if (blockingPawnId != null)
@@ -327,7 +351,7 @@ public sealed class ActionSystem : ISystem
                 {
                     blockerIsWandering = blockerAction.CurrentAction?.DisplayName == "Wandering";
                 }
-                
+
                 // If I'm wandering and blocker has a goal, I should yield (cancel my action)
                 if (iAmWandering && !blockerIsWandering)
                 {
@@ -351,11 +375,11 @@ public sealed class ActionSystem : ISystem
                     // Still waiting
                     return;
                 }
-                
+
                 // Done waiting - try to find a new path around the obstacle
-                actionComp.WaitUntilTick = -1;  // Reset wait timer
+                actionComp.WaitUntilTick = -1; // Reset wait timer
                 var newPath = Pathfinder.FindPath(ctx.World, pos.Coord, target, occupiedTiles);
-                
+
                 if (newPath != null && newPath.Count > 0)
                 {
                     // Found alternate path - use it
@@ -367,7 +391,7 @@ public sealed class ActionSystem : ISystem
                 // If no path found, will wait again with new random time next tick
                 return;
             }
-            
+
             // Not blocked anymore
             actionComp.BlockedSinceTick = -1;
             actionComp.WaitUntilTick = -1;
@@ -385,24 +409,38 @@ public sealed class ActionSystem : ISystem
     private void ExecuteUseObject(SimContext ctx, EntityId pawnId, ActionComponent actionComp)
     {
         var action = actionComp.CurrentAction!;
-        if (action.TargetEntity == null) { actionComp.CurrentAction = null; return; }
+        if (action.TargetEntity == null)
+        {
+            actionComp.CurrentAction = null;
+            return;
+        }
 
         var targetId = action.TargetEntity.Value;
 
-        if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos)) return;
-        if (!ctx.Entities.Positions.TryGetValue(targetId, out var objPos)) return;
-        if (!ctx.Entities.Objects.TryGetValue(targetId, out var objCompCheck)) return;
-        
+        if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
+            return;
+        if (!ctx.Entities.Positions.TryGetValue(targetId, out var objPos))
+            return;
+        if (!ctx.Entities.Objects.TryGetValue(targetId, out var objCompCheck))
+            return;
+
         var objDefForCheck = ctx.Content.Objects[objCompCheck.ObjectDefId];
-        
+
         // Check if pawn is in a valid use area for this object
         bool inUseArea = IsInUseArea(pawnPos.Coord, objPos.Coord, objDefForCheck);
-        
+
         if (!inUseArea)
         {
             // Need to move to a valid use area first
-            var useAreaTarget = FindValidUseArea(ctx.World, ctx.Entities, objPos.Coord, pawnPos.Coord, objDefForCheck, pawnId);
-            
+            var useAreaTarget = FindValidUseArea(
+                ctx.World,
+                ctx.Entities,
+                objPos.Coord,
+                pawnPos.Coord,
+                objDefForCheck,
+                pawnId
+            );
+
             if (useAreaTarget == null)
             {
                 // No valid use area available (all blocked) - cancel action
@@ -410,14 +448,16 @@ public sealed class ActionSystem : ISystem
                 actionComp.ActionQueue.Clear();
                 return;
             }
-            
-            actionComp.ActionQueue = new Queue<ActionDef>(new[] { action }.Concat(actionComp.ActionQueue));
+
+            actionComp.ActionQueue = new Queue<ActionDef>(
+                new[] { action }.Concat(actionComp.ActionQueue)
+            );
             actionComp.CurrentAction = new ActionDef
             {
                 Type = ActionType.MoveTo,
                 TargetCoord = useAreaTarget,
                 DurationTicks = 0,
-                DisplayName = $"Going to {objDefForCheck.Name}"
+                DisplayName = $"Going to {objDefForCheck.Name}",
             };
             actionComp.ActionStartTick = ctx.Time.Tick;
             return;
@@ -427,7 +467,7 @@ public sealed class ActionSystem : ISystem
         {
             objComp.InUse = true;
             objComp.UsedBy = pawnId;
-            
+
             // Update display name to "Using X" now that we're actually using it
             // Create a new ActionDef since ActionDef is immutable
             var objDef = ctx.Content.Objects[objComp.ObjectDefId];
@@ -441,7 +481,7 @@ public sealed class ActionSystem : ISystem
                     DurationTicks = action.DurationTicks,
                     SatisfiesNeedId = action.SatisfiesNeedId,
                     NeedSatisfactionAmount = action.NeedSatisfactionAmount,
-                    DisplayName = $"Using {objDef.Name}"
+                    DisplayName = $"Using {objDef.Name}",
                 };
                 action = actionComp.CurrentAction;
             }
@@ -451,13 +491,18 @@ public sealed class ActionSystem : ISystem
         if (elapsed >= action.DurationTicks)
         {
             // Satisfy the need
-            if (action.SatisfiesNeedId.HasValue && ctx.Entities.Needs.TryGetValue(pawnId, out var needs))
+            if (
+                action.SatisfiesNeedId.HasValue
+                && ctx.Entities.Needs.TryGetValue(pawnId, out var needs)
+            )
             {
                 if (needs.Needs.ContainsKey(action.SatisfiesNeedId.Value))
                 {
                     needs.Needs[action.SatisfiesNeedId.Value] = Math.Clamp(
                         needs.Needs[action.SatisfiesNeedId.Value] + action.NeedSatisfactionAmount,
-                        0f, 100f);
+                        0f,
+                        100f
+                    );
                 }
             }
 
@@ -465,19 +510,24 @@ public sealed class ActionSystem : ISystem
             if (objComp != null)
             {
                 var objDef2 = ctx.Content.Objects[objComp.ObjectDefId];
-                if (objDef2.GrantsBuffId.HasValue && ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs))
+                if (
+                    objDef2.GrantsBuffId.HasValue
+                    && ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs)
+                )
                 {
                     var buffDef = ctx.Content.Buffs[objDef2.GrantsBuffId.Value];
-                    
+
                     // Remove existing instance of this buff (refresh it)
                     buffs.ActiveBuffs.RemoveAll(b => b.BuffDefId == objDef2.GrantsBuffId.Value);
-                    
-                    buffs.ActiveBuffs.Add(new BuffInstance
-                    {
-                        BuffDefId = objDef2.GrantsBuffId.Value,
-                        StartTick = ctx.Time.Tick,
-                        EndTick = ctx.Time.Tick + buffDef.DurationTicks
-                    });
+
+                    buffs.ActiveBuffs.Add(
+                        new BuffInstance
+                        {
+                            BuffDefId = objDef2.GrantsBuffId.Value,
+                            StartTick = ctx.Time.Tick,
+                            EndTick = ctx.Time.Tick + buffDef.DurationTicks,
+                        }
+                    );
                 }
 
                 objComp.InUse = false;
@@ -499,7 +549,7 @@ public sealed class ActionSystem : ISystem
             int dist = Math.Abs(pawnCoord.X - objCoord.X) + Math.Abs(pawnCoord.Y - objCoord.Y);
             return dist <= 1;
         }
-        
+
         foreach (var (dx, dy) in objDef.UseAreas)
         {
             var useAreaCoord = new TileCoord(objCoord.X + dx, objCoord.Y + dy);
@@ -508,38 +558,48 @@ public sealed class ActionSystem : ISystem
         }
         return false;
     }
-    
+
     /// <summary>
     /// Find the closest valid use area for an object that is walkable and not occupied.
     /// Returns null if no valid use area is available.
     /// </summary>
-    private TileCoord? FindValidUseArea(World world, EntityManager entities, TileCoord objCoord, TileCoord from, ObjectDef objDef, EntityId? excludePawn = null)
+    private TileCoord? FindValidUseArea(
+        World world,
+        EntityManager entities,
+        TileCoord objCoord,
+        TileCoord from,
+        ObjectDef objDef,
+        EntityId? excludePawn = null
+    )
     {
         var candidates = new List<(TileCoord coord, int dist)>();
-        
+
         // Use the object's defined use areas, or fall back to cardinal directions
-        var useAreas = objDef.UseAreas.Count > 0 
-            ? objDef.UseAreas 
-            : new List<(int dx, int dy)> { (0, 1), (0, -1), (1, 0), (-1, 0) };
-        
+        var useAreas =
+            objDef.UseAreas.Count > 0
+                ? objDef.UseAreas
+                : new List<(int dx, int dy)> { (0, 1), (0, -1), (1, 0), (-1, 0) };
+
         foreach (var (dx, dy) in useAreas)
         {
             var useAreaCoord = new TileCoord(objCoord.X + dx, objCoord.Y + dy);
-            
+
             // Check bounds
-            if (!world.IsInBounds(useAreaCoord)) continue;
-            
+            if (!world.IsInBounds(useAreaCoord))
+                continue;
+
             // Check if tile is walkable and not occupied by another pawn
-            if (world.GetTile(useAreaCoord).Walkable && !entities.IsTileOccupiedByPawn(useAreaCoord, excludePawn))
+            if (
+                world.GetTile(useAreaCoord).Walkable
+                && !entities.IsTileOccupiedByPawn(useAreaCoord, excludePawn)
+            )
             {
                 int dist = Math.Abs(useAreaCoord.X - from.X) + Math.Abs(useAreaCoord.Y - from.Y);
                 candidates.Add((useAreaCoord, dist));
             }
         }
-        
-        return candidates.Count > 0
-            ? candidates.OrderBy(c => c.dist).First().coord
-            : null;
+
+        return candidates.Count > 0 ? candidates.OrderBy(c => c.dist).First().coord : null;
     }
 }
 
@@ -550,8 +610,10 @@ public sealed class AISystem : ISystem
     {
         foreach (var pawnId in ctx.Entities.AllPawns())
         {
-            if (!ctx.Entities.Actions.TryGetValue(pawnId, out var actionComp)) continue;
-            if (!ctx.Entities.Needs.TryGetValue(pawnId, out var needs)) continue;
+            if (!ctx.Entities.Actions.TryGetValue(pawnId, out var actionComp))
+                continue;
+            if (!ctx.Entities.Needs.TryGetValue(pawnId, out var needs))
+                continue;
 
             // Skip pawns that already have something to do
             if (actionComp.CurrentAction != null || actionComp.ActionQueue.Count > 0)
@@ -564,7 +626,12 @@ public sealed class AISystem : ISystem
     /// <summary>
     /// Main decision entry point for a pawn that needs something to do.
     /// </summary>
-    private void DecideNextAction(SimContext ctx, EntityId pawnId, ActionComponent actionComp, NeedsComponent needs)
+    private void DecideNextAction(
+        SimContext ctx,
+        EntityId pawnId,
+        ActionComponent actionComp,
+        NeedsComponent needs
+    )
     {
         var urgentNeeds = CalculateUrgentNeeds(ctx, pawnId, needs);
 
@@ -595,7 +662,11 @@ public sealed class AISystem : ISystem
     /// <summary>
     /// Calculate which needs require attention, sorted by urgency (most urgent first).
     /// </summary>
-    private List<(int needId, float urgency)> CalculateUrgentNeeds(SimContext ctx, EntityId pawnId, NeedsComponent needs)
+    private List<(int needId, float urgency)> CalculateUrgentNeeds(
+        SimContext ctx,
+        EntityId pawnId,
+        NeedsComponent needs
+    )
     {
         var urgentNeeds = new List<(int needId, float urgency)>();
 
@@ -609,7 +680,8 @@ public sealed class AISystem : ISystem
 
         foreach (var (needId, value) in needs.Needs)
         {
-            if (!ctx.Content.Needs.TryGetValue(needId, out var needDef)) continue;
+            if (!ctx.Content.Needs.TryGetValue(needId, out var needDef))
+                continue;
 
             float? urgency = CalculateNeedUrgency(needDef, value, activeDebuffIds);
             if (urgency.HasValue)
@@ -628,8 +700,13 @@ public sealed class AISystem : ISystem
     private float? CalculateNeedUrgency(NeedDef needDef, float value, HashSet<int> activeDebuffIds)
     {
         bool hasDebuffFromNeed =
-            (needDef.CriticalDebuffId.HasValue && activeDebuffIds.Contains(needDef.CriticalDebuffId.Value)) ||
-            (needDef.LowDebuffId.HasValue && activeDebuffIds.Contains(needDef.LowDebuffId.Value));
+            (
+                needDef.CriticalDebuffId.HasValue
+                && activeDebuffIds.Contains(needDef.CriticalDebuffId.Value)
+            )
+            || (
+                needDef.LowDebuffId.HasValue && activeDebuffIds.Contains(needDef.LowDebuffId.Value)
+            );
 
         // Skip needs that are high AND not causing debuffs
         if (value >= 90f && !hasDebuffFromNeed)
@@ -639,14 +716,17 @@ public sealed class AISystem : ISystem
         if (hasDebuffFromNeed)
         {
             // Having a debuff makes this very urgent
-            if (needDef.CriticalDebuffId.HasValue && activeDebuffIds.Contains(needDef.CriticalDebuffId.Value))
-                urgency -= 100;  // Critical debuff - highest priority
+            if (
+                needDef.CriticalDebuffId.HasValue
+                && activeDebuffIds.Contains(needDef.CriticalDebuffId.Value)
+            )
+                urgency -= 100; // Critical debuff - highest priority
             else
-                urgency -= 50;   // Low debuff - high priority
+                urgency -= 50; // Low debuff - high priority
         }
         else if (value < needDef.LowThreshold)
         {
-            urgency -= 20;  // About to get a debuff
+            urgency -= 20; // About to get a debuff
         }
 
         return urgency;
@@ -659,23 +739,34 @@ public sealed class AISystem : ISystem
     {
         var objComp = ctx.Entities.Objects[targetObject];
         var objDef = ctx.Content.Objects[objComp.ObjectDefId];
-        actionComp.ActionQueue.Enqueue(new ActionDef
-        {
-            Type = ActionType.UseObject,
-            TargetEntity = targetObject,
-            DurationTicks = objDef.InteractionDurationTicks,
-            SatisfiesNeedId = objDef.SatisfiesNeedId,
-            NeedSatisfactionAmount = objDef.NeedSatisfactionAmount,
-            DisplayName = $"Going to {objDef.Name}"
-        });
+        actionComp.ActionQueue.Enqueue(
+            new ActionDef
+            {
+                Type = ActionType.UseObject,
+                TargetEntity = targetObject,
+                DurationTicks = objDef.InteractionDurationTicks,
+                SatisfiesNeedId = objDef.SatisfiesNeedId,
+                NeedSatisfactionAmount = objDef.NeedSatisfactionAmount,
+                DisplayName = $"Going to {objDef.Name}",
+            }
+        );
     }
 
     /// <summary>
     /// Queue an action to wait near an object when all relevant objects are in use.
     /// </summary>
-    private void QueueWaitForObject(SimContext ctx, EntityId pawnId, ActionComponent actionComp, List<(int needId, float urgency)> urgentNeeds)
+    private void QueueWaitForObject(
+        SimContext ctx,
+        EntityId pawnId,
+        ActionComponent actionComp,
+        List<(int needId, float urgency)> urgentNeeds
+    )
     {
-        var waitTarget = FindAnyObjectForNeeds(ctx, pawnId, urgentNeeds.Select(n => n.needId).ToList());
+        var waitTarget = FindAnyObjectForNeeds(
+            ctx,
+            pawnId,
+            urgentNeeds.Select(n => n.needId).ToList()
+        );
         if (waitTarget == null)
         {
             // No objects exist at all for our needs - wander
@@ -690,22 +781,26 @@ public sealed class AISystem : ISystem
         var waitSpot = FindWaitingSpot(ctx, objPos.Coord, pawnId);
         if (waitSpot != null)
         {
-            actionComp.ActionQueue.Enqueue(new ActionDef
-            {
-                Type = ActionType.MoveTo,
-                TargetCoord = waitSpot,
-                DisplayName = $"Waiting for {objDef.Name}"
-            });
+            actionComp.ActionQueue.Enqueue(
+                new ActionDef
+                {
+                    Type = ActionType.MoveTo,
+                    TargetCoord = waitSpot,
+                    DisplayName = $"Waiting for {objDef.Name}",
+                }
+            );
         }
         else
         {
             // Can't find waiting spot, just idle briefly
-            actionComp.ActionQueue.Enqueue(new ActionDef
-            {
-                Type = ActionType.Idle,
-                DurationTicks = 20,
-                DisplayName = $"Waiting for {objDef.Name}"
-            });
+            actionComp.ActionQueue.Enqueue(
+                new ActionDef
+                {
+                    Type = ActionType.Idle,
+                    DurationTicks = 20,
+                    DisplayName = $"Waiting for {objDef.Name}",
+                }
+            );
         }
     }
 
@@ -715,23 +810,38 @@ public sealed class AISystem : ISystem
             return;
 
         // Pick a random nearby tile to walk to
-        var directions = new[] { (0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1) };
+        var directions = new[]
+        {
+            (0, 1),
+            (0, -1),
+            (1, 0),
+            (-1, 0),
+            (1, 1),
+            (1, -1),
+            (-1, 1),
+            (-1, -1),
+        };
         var shuffled = directions.OrderBy(_ => ctx.Random.Next()).ToArray();
 
         foreach (var (dx, dy) in shuffled)
         {
             int wanderDist = ctx.Random.Next(1, 4); // 1-3 tiles
-            var target = new TileCoord(pos.Coord.X + dx * wanderDist, pos.Coord.Y + dy * wanderDist);
-            
+            var target = new TileCoord(
+                pos.Coord.X + dx * wanderDist,
+                pos.Coord.Y + dy * wanderDist
+            );
+
             // Check if target is walkable and not occupied by another pawn
             if (ctx.World.IsWalkable(target) && !ctx.Entities.IsTileOccupiedByPawn(target, pawnId))
             {
-                actionComp.ActionQueue.Enqueue(new ActionDef
-                {
-                    Type = ActionType.MoveTo,
-                    TargetCoord = target,
-                    DisplayName = "Wandering"
-                });
+                actionComp.ActionQueue.Enqueue(
+                    new ActionDef
+                    {
+                        Type = ActionType.MoveTo,
+                        TargetCoord = target,
+                        DisplayName = "Wandering",
+                    }
+                );
                 return;
             }
         }
@@ -750,13 +860,17 @@ public sealed class AISystem : ISystem
             var objComp = ctx.Entities.Objects[objId];
             var objDef = ctx.Content.Objects[objComp.ObjectDefId];
 
-            if (objDef.SatisfiesNeedId != needId) continue;
-            if (objComp.InUse) continue;
+            if (objDef.SatisfiesNeedId != needId)
+                continue;
+            if (objComp.InUse)
+                continue;
 
-            if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos)) continue;
+            if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos))
+                continue;
 
-            int dist = Math.Abs(pawnPos.Coord.X - objPos.Coord.X) +
-                       Math.Abs(pawnPos.Coord.Y - objPos.Coord.Y);
+            int dist =
+                Math.Abs(pawnPos.Coord.X - objPos.Coord.X)
+                + Math.Abs(pawnPos.Coord.Y - objPos.Coord.Y);
 
             if (dist < bestDist)
             {
@@ -786,13 +900,15 @@ public sealed class AISystem : ISystem
             var objDef = ctx.Content.Objects[objComp.ObjectDefId];
 
             // Check if this object satisfies any of our needs
-            if (!objDef.SatisfiesNeedId.HasValue || !needIds.Contains(objDef.SatisfiesNeedId.Value)) 
+            if (!objDef.SatisfiesNeedId.HasValue || !needIds.Contains(objDef.SatisfiesNeedId.Value))
                 continue;
 
-            if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos)) continue;
+            if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos))
+                continue;
 
-            int dist = Math.Abs(pawnPos.Coord.X - objPos.Coord.X) +
-                       Math.Abs(pawnPos.Coord.Y - objPos.Coord.Y);
+            int dist =
+                Math.Abs(pawnPos.Coord.X - objPos.Coord.X)
+                + Math.Abs(pawnPos.Coord.Y - objPos.Coord.Y);
 
             if (dist < bestDist)
             {
@@ -814,17 +930,21 @@ public sealed class AISystem : ISystem
         {
             for (int dy = -2; dy <= 2; dy++)
             {
-                if (dx == 0 && dy == 0) continue;  // Skip the object tile itself
-                
+                if (dx == 0 && dy == 0)
+                    continue; // Skip the object tile itself
+
                 var candidate = new TileCoord(objectPos.X + dx, objectPos.Y + dy);
-                
-                if (ctx.World.IsWalkable(candidate) && !ctx.Entities.IsTileOccupiedByPawn(candidate, pawnId))
+
+                if (
+                    ctx.World.IsWalkable(candidate)
+                    && !ctx.Entities.IsTileOccupiedByPawn(candidate, pawnId)
+                )
                 {
                     return candidate;
                 }
             }
         }
-        
+
         return null;
     }
 }

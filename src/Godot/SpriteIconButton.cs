@@ -27,7 +27,7 @@ public partial class SpriteIconButton : Button
             Name = "TextureRect",
             ExpandMode = TextureRect.ExpandModeEnum.FitWidth,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-            MouseFilter = MouseFilterEnum.Ignore
+            MouseFilter = MouseFilterEnum.Ignore,
         };
         _textureRect.SetAnchorsPreset(LayoutPreset.FullRect);
         AddChild(_textureRect);
@@ -90,7 +90,7 @@ public partial class SpriteIconButton : Button
                 BorderWidthRight = 3,
                 BorderWidthTop = 3,
                 BorderWidthBottom = 3,
-                DrawCenter = false
+                DrawCenter = false,
             };
             AddThemeStyleboxOverride("normal", styleBox);
             AddThemeStyleboxOverride("hover", styleBox);

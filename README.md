@@ -38,6 +38,26 @@ To run the automated test suite (unit and integration tests):
 dotnet test
 ```
 
+## Code Formatting (CSharpier)
+
+This project uses [CSharpier](https://csharpier.com/) to enforce consistent C# code style.
+
+- **Format all code:**
+	```bash
+	csharpier format .
+	```
+- **Check formatting (CI/pre-commit):**
+	```bash
+	csharpier check .
+	```
+- **Pre-commit enforcement:**
+	A pre-commit git hook will block commits if code is not formatted. To fix formatting errors, run the format command above.
+
+If you just installed CSharpier, you may need to add it to your PATH:
+```bash
+export PATH="$PATH:/Users/rkuykendall/.dotnet/tools"
+```
+
 This will build and execute all tests in the solution, including those in `tests/SimGame.Tests/`. You can also run tests for a specific project or file:
 
 ```bash

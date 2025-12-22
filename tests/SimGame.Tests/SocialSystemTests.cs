@@ -1,5 +1,5 @@
-using Xunit;
 using SimGame.Tests;
+using Xunit;
 
 public class SocialSystemTests
 {

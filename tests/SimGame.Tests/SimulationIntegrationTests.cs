@@ -23,7 +23,15 @@ public class SimulationIntegrationTests
             .WithWorldBounds(0, 4, 0, 0)
             .DefineNeed("Hunger", "Hunger", decayPerTick: 0.02f)
             .DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400)
-            .DefineObject("Fridge", "Fridge", satisfiesNeed: "Hunger", satisfactionAmount: 50f, interactionDuration: 20, grantsBuff: "GoodMeal", useAreas: new List<(int, int)> { (-1, 0) })
+            .DefineObject(
+                "Fridge",
+                "Fridge",
+                satisfiesNeed: "Hunger",
+                satisfactionAmount: 50f,
+                interactionDuration: 20,
+                grantsBuff: "GoodMeal",
+                useAreas: new List<(int, int)> { (-1, 0) }
+            )
             .AddObject("Fridge", 4, 0)
             .AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 0f } })
             .Build();
@@ -42,12 +50,16 @@ public class SimulationIntegrationTests
 
         // Assert: Pawn should have eaten and have higher hunger
         float finalHunger = sim.GetNeedValue(pawnId.Value, "Hunger");
-        Assert.True(finalHunger > initialHunger, 
-            $"Expected hunger to increase from {initialHunger}, but it was {finalHunger}");
-        
+        Assert.True(
+            finalHunger > initialHunger,
+            $"Expected hunger to increase from {initialHunger}, but it was {finalHunger}"
+        );
+
         // Hunger should be around 50 (satisfaction amount) minus any decay
-        Assert.True(finalHunger > 40f, 
-            $"Expected hunger to be > 40 after eating, but it was {finalHunger}");
+        Assert.True(
+            finalHunger > 40f,
+            $"Expected hunger to be > 40 after eating, but it was {finalHunger}"
+        );
     }
 
     /// <summary>
@@ -61,7 +73,15 @@ public class SimulationIntegrationTests
             .WithWorldBounds(0, 4, 0, 0)
             .DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f)
             .DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400)
-            .DefineObject("Fridge", "Fridge", satisfiesNeed: "Hunger", satisfactionAmount: 50f, interactionDuration: 20, grantsBuff: "GoodMeal", useAreas: new List<(int, int)> { (-1, 0) })
+            .DefineObject(
+                "Fridge",
+                "Fridge",
+                satisfiesNeed: "Hunger",
+                satisfactionAmount: 50f,
+                interactionDuration: 20,
+                grantsBuff: "GoodMeal",
+                useAreas: new List<(int, int)> { (-1, 0) }
+            )
             .AddObject("Fridge", 4, 0)
             .AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 100f } })
             .Build();
@@ -75,12 +95,11 @@ public class SimulationIntegrationTests
         // Assert: Pawn should still be near starting position (not at fridge)
         var pos = sim.GetPosition(pawnId.Value);
         Assert.NotNull(pos);
-        
+
         // Pawn might wander a bit but shouldn't be at the fridge (4,0) or adjacent (3,0)
         // They would only go there if they needed food
         float hunger = sim.GetNeedValue(pawnId.Value, "Hunger");
-        Assert.True(hunger > 95f, 
-            $"Expected hunger to remain high (~100), but it was {hunger}");
+        Assert.True(hunger > 95f, $"Expected hunger to remain high (~100), but it was {hunger}");
     }
 
     /// <summary>
@@ -89,12 +108,10 @@ public class SimulationIntegrationTests
     [Fact]
     public void Simulation_TicksAdvanceTime()
     {
-        var sim = new TestSimulationBuilder()
-            .WithWorldBounds(0, 4, 0, 4)
-            .Build();
+        var sim = new TestSimulationBuilder().WithWorldBounds(0, 4, 0, 4).Build();
 
         int initialTick = sim.Time.Tick;
-        
+
         sim.RunTicks(100);
 
         Assert.Equal(initialTick + 100, sim.Time.Tick);
@@ -117,24 +134,28 @@ public class SimulationIntegrationTests
 
         float initialHunger = sim.GetNeedValue(pawnId.Value, "Hunger");
         Assert.Equal(100f, initialHunger);
-        
+
         // Verify the need definition is in sim.Content
         var needId = sim.Content.GetNeedId("Hunger");
         Assert.NotNull(needId);
         Assert.True(sim.Content.Needs.ContainsKey(needId.Value), "Need should be registered");
         var needDef = sim.Content.Needs[needId.Value];
         Assert.Equal(0.5f, needDef.DecayPerTick);
-        
+
         sim.RunTicks(100);
 
         float finalHunger = sim.GetNeedValue(pawnId.Value, "Hunger");
-        Assert.True(finalHunger < initialHunger, 
-            $"Expected hunger to decay from {initialHunger}, but it was {finalHunger}");
-        
+        Assert.True(
+            finalHunger < initialHunger,
+            $"Expected hunger to decay from {initialHunger}, but it was {finalHunger}"
+        );
+
         // With 0.5 decay per tick over 100 ticks = 50 points decay
         // Should be around 50 or clamped to 0
-        Assert.True(finalHunger <= 60f, 
-            $"Expected hunger to decay to <= 60, but it was {finalHunger}");
+        Assert.True(
+            finalHunger <= 60f,
+            $"Expected hunger to decay to <= 60, but it was {finalHunger}"
+        );
     }
 
     /// <summary>
@@ -148,7 +169,15 @@ public class SimulationIntegrationTests
             .WithWorldBounds(0, 9, 0, 0)
             .DefineNeed("Hunger", "Hunger", decayPerTick: 0.01f)
             .DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400)
-            .DefineObject("Fridge", "Fridge", satisfiesNeed: "Hunger", satisfactionAmount: 50f, interactionDuration: 20, grantsBuff: "GoodMeal", useAreas: new List<(int, int)> { (-1, 0) })
+            .DefineObject(
+                "Fridge",
+                "Fridge",
+                satisfiesNeed: "Hunger",
+                satisfactionAmount: 50f,
+                interactionDuration: 20,
+                grantsBuff: "GoodMeal",
+                useAreas: new List<(int, int)> { (-1, 0) }
+            )
             .AddObject("Fridge", 9, 0)
             .AddPawn("TestPawn", 0, 0, new Dictionary<string, float> { { "Hunger", 10f } })
             .Build();
@@ -162,8 +191,10 @@ public class SimulationIntegrationTests
 
         // Assert: Pawn should have used the fridge
         float finalHunger = sim.GetNeedValue(pawnId.Value, "Hunger");
-        Assert.True(finalHunger > 40f,
-            $"Expected pawn to have eaten (hunger > 40), but hunger was {finalHunger}");
+        Assert.True(
+            finalHunger > 40f,
+            $"Expected pawn to have eaten (hunger > 40), but hunger was {finalHunger}"
+        );
     }
 
     /// <summary>
@@ -184,13 +215,22 @@ public class SimulationIntegrationTests
         var coord = new TileCoord(2, 2);
 
         // Verify tile is not walkable before destruction
-        Assert.False(sim.World.GetTile(coord).Walkable, "Tile should not be walkable with object on it");
+        Assert.False(
+            sim.World.GetTile(coord).Walkable,
+            "Tile should not be walkable with object on it"
+        );
 
         // Act: Destroy the object
         sim.DestroyEntity(objectId);
 
         // Assert: Tile should be walkable again
-        Assert.True(sim.World.GetTile(coord).Walkable, "Tile should be walkable after object destruction");
-        Assert.False(sim.Entities.Objects.ContainsKey(objectId), "Object should be removed from entities");
+        Assert.True(
+            sim.World.GetTile(coord).Walkable,
+            "Tile should be walkable after object destruction"
+        );
+        Assert.False(
+            sim.Entities.Objects.ContainsKey(objectId),
+            "Object should be removed from entities"
+        );
     }
 }

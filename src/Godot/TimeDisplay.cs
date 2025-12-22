@@ -3,7 +3,8 @@ using SimGame.Core;
 
 public partial class TimeDisplay : PanelContainer
 {
-    [Export] public NodePath TimeLabelPath { get; set; } = null!;
+    [Export]
+    public NodePath TimeLabelPath { get; set; } = null!;
 
     private Label? _timeLabel;
 

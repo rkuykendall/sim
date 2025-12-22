@@ -66,9 +66,8 @@ public sealed class Simulation
     /// <summary>
     /// Create a simulation with content and default configuration.
     /// </summary>
-    public Simulation(ContentRegistry content) : this(content, null)
-    {
-    }
+    public Simulation(ContentRegistry content)
+        : this(content, null) { }
 
     /// <summary>
     /// Create a simulation with content and custom configuration.
@@ -163,14 +162,19 @@ public sealed class Simulation
     public EntityId CreateObject(int objectDefId, int x, int y, int colorIndex = 0)
     {
         if (!Content.Objects.ContainsKey(objectDefId))
-            throw new ArgumentException($"Unknown object definition ID: {objectDefId}", nameof(objectDefId));
+            throw new ArgumentException(
+                $"Unknown object definition ID: {objectDefId}",
+                nameof(objectDefId)
+            );
 
         var objDef = Content.Objects[objectDefId];
         var coord = new TileCoord(x, y);
 
         // Check if tile is already occupied by an object
         if (!World.GetTile(coord).Walkable)
-            throw new InvalidOperationException($"Cannot place object at ({x}, {y}): tile is already occupied");
+            throw new InvalidOperationException(
+                $"Cannot place object at ({x}, {y}): tile is already occupied"
+            );
 
         // Clamp colorIndex to palette size
         int paletteSize = 1;
@@ -194,8 +198,10 @@ public sealed class Simulation
     public void DestroyEntity(EntityId id)
     {
         // If this is a non-walkable object, restore tile walkability
-        if (Entities.Objects.TryGetValue(id, out var objComp) &&
-            Entities.Positions.TryGetValue(id, out var pos))
+        if (
+            Entities.Objects.TryGetValue(id, out var objComp)
+            && Entities.Positions.TryGetValue(id, out var pos)
+        )
         {
             var objDef = Content.Objects[objComp.ObjectDefId];
             if (!objDef.Walkable)
@@ -214,7 +220,10 @@ public sealed class Simulation
     public void PaintTerrain(int x, int y, int terrainDefId, int colorIndex = 0)
     {
         if (!Content.Terrains.ContainsKey(terrainDefId))
-            throw new ArgumentException($"Unknown terrain definition ID: {terrainDefId}", nameof(terrainDefId));
+            throw new ArgumentException(
+                $"Unknown terrain definition ID: {terrainDefId}",
+                nameof(terrainDefId)
+            );
 
         var coord = new TileCoord(x, y);
         if (!World.IsInBounds(coord))
@@ -257,8 +266,7 @@ public sealed class Simulation
         // Find object at this position
         foreach (var objId in Entities.AllObjects())
         {
-            if (Entities.Positions.TryGetValue(objId, out var pos) &&
-                pos.Coord == coord)
+            if (Entities.Positions.TryGetValue(objId, out var pos) && pos.Coord == coord)
             {
                 DestroyEntity(objId);
                 return true;
@@ -315,7 +323,10 @@ public sealed class Simulation
         foreach (var needId in config.Needs.Keys)
         {
             if (!Content.Needs.ContainsKey(needId))
-                throw new ArgumentException($"Unknown need definition ID: {needId}", nameof(config));
+                throw new ArgumentException(
+                    $"Unknown need definition ID: {needId}",
+                    nameof(config)
+                );
         }
 
         var coord = new TileCoord(config.X, config.Y);
@@ -331,7 +342,8 @@ public sealed class Simulation
     /// <exception cref="InvalidOperationException">Thrown when no walkable tiles are available.</exception>
     public EntityId CreatePawn(string name = "Pawn", int age = 1)
     {
-        var position = GetRandomWalkableTile()
+        var position =
+            GetRandomWalkableTile()
             ?? throw new InvalidOperationException("No walkable tiles available to spawn pawn");
 
         return Entities.CreatePawn(position, name, age, GetFullNeeds());
@@ -396,7 +408,8 @@ public sealed class Simulation
     {
         if (content.ColorPalettes.Count == 0)
             throw new InvalidOperationException(
-                "No color palettes loaded. Ensure content/core/palettes.lua exists and is valid.");
+                "No color palettes loaded. Ensure content/core/palettes.lua exists and is valid."
+            );
 
         // Use seed to deterministically select a palette
         var rng = new Random(seed);
@@ -409,7 +422,8 @@ public sealed class Simulation
     /// </summary>
     private int GetSafeColorIndex(int requestedIndex, int paletteSize)
     {
-        if (paletteSize < 1) return 0;
+        if (paletteSize < 1)
+            return 0;
         return requestedIndex % paletteSize;
     }
 

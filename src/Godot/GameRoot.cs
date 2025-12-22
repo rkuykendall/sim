@@ -1,8 +1,8 @@
+using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using SimGame.Core;
 using SimGame.Godot;
-using System.Collections.Generic;
-using System.Linq;
 
 public partial class GameRoot : Node2D
 {
@@ -40,18 +40,41 @@ public partial class GameRoot : Node2D
     // Track mouse button state for drag painting
     private bool _isPaintingTerrain = false;
 
-    [Export] public PackedScene PawnScene { get; set; } = null!;
-    [Export] public PackedScene ObjectScene { get; set; } = null!;
-    [Export] public NodePath PawnsRootPath { get; set; } = ".";
-    [Export] public NodePath ObjectsRootPath { get; set; } = ".";
-    [Export] public NodePath TilesRootPath { get; set; } = ".";
-    [Export] public NodePath InfoPanelPath { get; set; } = "";
-    [Export] public NodePath ObjectInfoPanelPath { get; set; } = "";
-    [Export] public NodePath TimeDisplayPath { get; set; } = "";
-    [Export] public NodePath NightOverlayPath { get; set; } = "";
-    [Export] public NodePath CameraPath { get; set; } = "";
-    [Export] public NodePath UILayerPath { get; set; } = "";
-    [Export] public NodePath ToolbarPath { get; set; } = "";
+    [Export]
+    public PackedScene PawnScene { get; set; } = null!;
+
+    [Export]
+    public PackedScene ObjectScene { get; set; } = null!;
+
+    [Export]
+    public NodePath PawnsRootPath { get; set; } = ".";
+
+    [Export]
+    public NodePath ObjectsRootPath { get; set; } = ".";
+
+    [Export]
+    public NodePath TilesRootPath { get; set; } = ".";
+
+    [Export]
+    public NodePath InfoPanelPath { get; set; } = "";
+
+    [Export]
+    public NodePath ObjectInfoPanelPath { get; set; } = "";
+
+    [Export]
+    public NodePath TimeDisplayPath { get; set; } = "";
+
+    [Export]
+    public NodePath NightOverlayPath { get; set; } = "";
+
+    [Export]
+    public NodePath CameraPath { get; set; } = "";
+
+    [Export]
+    public NodePath UILayerPath { get; set; } = "";
+
+    [Export]
+    public NodePath ToolbarPath { get; set; } = "";
 
     private Node2D _pawnsRoot = null!;
     private Node2D _objectsRoot = null!;
@@ -64,6 +87,7 @@ public partial class GameRoot : Node2D
     private CanvasLayer? _uiLayer;
     private BuildToolbar? _toolbar;
     private bool DebugMode => _debugMode;
+
     public override void _Ready()
     {
         // Load content from Lua files and create simulation with it
@@ -119,7 +143,7 @@ public partial class GameRoot : Node2D
             // Don't call UpdatePalette here - modal isn't ready yet
             // _Process() will call it on first frame
         }
-	}
+    }
 
     public override void _Process(double delta)
     {
@@ -185,15 +209,28 @@ public partial class GameRoot : Node2D
                 if (mb.Pressed)
                 {
                     // Start painting terrain on mouse down
-                    if (BuildToolState.Mode == BuildToolMode.PlaceTerrain && BuildToolState.SelectedTerrainDefId.HasValue)
+                    if (
+                        BuildToolState.Mode == BuildToolMode.PlaceTerrain
+                        && BuildToolState.SelectedTerrainDefId.HasValue
+                    )
                     {
                         _isPaintingTerrain = true;
-                        _sim.PaintTerrain(tileCoord.X, tileCoord.Y, BuildToolState.SelectedTerrainDefId.Value, BuildToolState.SelectedColorIndex);
+                        _sim.PaintTerrain(
+                            tileCoord.X,
+                            tileCoord.Y,
+                            BuildToolState.SelectedTerrainDefId.Value,
+                            BuildToolState.SelectedColorIndex
+                        );
                         UpdateTileAndNeighbors(tileCoord);
                         return;
                     }
                     // Start fill/outline square drag
-                    if ((BuildToolState.Mode == BuildToolMode.FillSquare || BuildToolState.Mode == BuildToolMode.OutlineSquare) && BuildToolState.SelectedTerrainDefId.HasValue)
+                    if (
+                        (
+                            BuildToolState.Mode == BuildToolMode.FillSquare
+                            || BuildToolState.Mode == BuildToolMode.OutlineSquare
+                        ) && BuildToolState.SelectedTerrainDefId.HasValue
+                    )
                     {
                         _brushDragStart = tileCoord;
                         _brushDragCurrent = tileCoord;
@@ -201,9 +238,16 @@ public partial class GameRoot : Node2D
                         return;
                     }
                     // Flood fill brush
-                    if (BuildToolState.Mode == BuildToolMode.FloodFill && BuildToolState.SelectedTerrainDefId.HasValue)
+                    if (
+                        BuildToolState.Mode == BuildToolMode.FloodFill
+                        && BuildToolState.SelectedTerrainDefId.HasValue
+                    )
                     {
-                        FloodFill(tileCoord, BuildToolState.SelectedTerrainDefId.Value, BuildToolState.SelectedColorIndex);
+                        FloodFill(
+                            tileCoord,
+                            BuildToolState.SelectedTerrainDefId.Value,
+                            BuildToolState.SelectedColorIndex
+                        );
                         return;
                     }
                 }
@@ -212,16 +256,33 @@ public partial class GameRoot : Node2D
                     // Stop painting terrain on mouse up
                     _isPaintingTerrain = false;
                     // Complete fill/outline square drag
-                    if ((BuildToolState.Mode == BuildToolMode.FillSquare || BuildToolState.Mode == BuildToolMode.OutlineSquare)
-                        && BuildToolState.SelectedTerrainDefId.HasValue && _brushDragStart.HasValue && _brushDragCurrent.HasValue)
+                    if (
+                        (
+                            BuildToolState.Mode == BuildToolMode.FillSquare
+                            || BuildToolState.Mode == BuildToolMode.OutlineSquare
+                        )
+                        && BuildToolState.SelectedTerrainDefId.HasValue
+                        && _brushDragStart.HasValue
+                        && _brushDragCurrent.HasValue
+                    )
                     {
                         if (BuildToolState.Mode == BuildToolMode.FillSquare)
                         {
-                            FillRectangle(_brushDragStart.Value, _brushDragCurrent.Value, BuildToolState.SelectedTerrainDefId.Value, BuildToolState.SelectedColorIndex);
+                            FillRectangle(
+                                _brushDragStart.Value,
+                                _brushDragCurrent.Value,
+                                BuildToolState.SelectedTerrainDefId.Value,
+                                BuildToolState.SelectedColorIndex
+                            );
                         }
                         else if (BuildToolState.Mode == BuildToolMode.OutlineSquare)
                         {
-                            OutlineRectangle(_brushDragStart.Value, _brushDragCurrent.Value, BuildToolState.SelectedTerrainDefId.Value, BuildToolState.SelectedColorIndex);
+                            OutlineRectangle(
+                                _brushDragStart.Value,
+                                _brushDragCurrent.Value,
+                                BuildToolState.SelectedTerrainDefId.Value,
+                                BuildToolState.SelectedColorIndex
+                            );
                         }
                         _brushDragStart = null;
                         _brushDragCurrent = null;
@@ -232,16 +293,26 @@ public partial class GameRoot : Node2D
             }
 
             // Handle object placement and selection as before
-            if (BuildToolState.Mode == BuildToolMode.PlaceObject && BuildToolState.SelectedObjectDefId.HasValue)
+            if (
+                BuildToolState.Mode == BuildToolMode.PlaceObject
+                && BuildToolState.SelectedObjectDefId.HasValue
+            )
             {
                 try
                 {
-                    _sim.CreateObject(BuildToolState.SelectedObjectDefId.Value, tileCoord.X, tileCoord.Y, BuildToolState.SelectedColorIndex);
+                    _sim.CreateObject(
+                        BuildToolState.SelectedObjectDefId.Value,
+                        tileCoord.X,
+                        tileCoord.Y,
+                        BuildToolState.SelectedColorIndex
+                    );
                 }
                 catch (System.InvalidOperationException)
                 {
                     // Tile occupied, show error feedback (future: visual shake/red flash)
-                    GD.Print($"Cannot place object at ({tileCoord.X}, {tileCoord.Y}): tile occupied");
+                    GD.Print(
+                        $"Cannot place object at ({tileCoord.X}, {tileCoord.Y}): tile occupied"
+                    );
                 }
                 catch (System.ArgumentException ex)
                 {
@@ -259,20 +330,23 @@ public partial class GameRoot : Node2D
 
             // Select mode: try to click a pawn first
             var clickedPawnId = FindPawnAtPosition(localPos);
-            
+
             if (clickedPawnId.HasValue)
             {
                 // Deselect old pawn
-                if (_selectedPawnId.HasValue && _pawnNodes.TryGetValue(_selectedPawnId.Value, out var oldNode))
+                if (
+                    _selectedPawnId.HasValue
+                    && _pawnNodes.TryGetValue(_selectedPawnId.Value, out var oldNode)
+                )
                 {
                     if (oldNode is PawnView oldPv)
                         oldPv.SetSelected(false);
                 }
-                
+
                 _selectedPawnId = clickedPawnId;
                 _selectedObjectId = null;
                 _objectInfoPanel?.Hide();
-                
+
                 if (_pawnNodes.TryGetValue(_selectedPawnId.Value, out var newNode))
                 {
                     if (newNode is PawnView newPv)
@@ -280,27 +354,33 @@ public partial class GameRoot : Node2D
                 }
                 return;
             }
-            
+
             // Try to click an object
             var clickedObjectId = FindObjectAtPosition(localPos);
-            
+
             if (clickedObjectId.HasValue)
             {
                 // Deselect pawn if one was selected
-                if (_selectedPawnId.HasValue && _pawnNodes.TryGetValue(_selectedPawnId.Value, out var oldPawnNode))
+                if (
+                    _selectedPawnId.HasValue
+                    && _pawnNodes.TryGetValue(_selectedPawnId.Value, out var oldPawnNode)
+                )
                 {
                     if (oldPawnNode is PawnView oldPv)
                         oldPv.SetSelected(false);
                 }
-                
+
                 _selectedPawnId = null;
                 _selectedObjectId = clickedObjectId;
                 _infoPanel?.Hide();
                 return;
             }
-            
+
             // Clicked empty space - deselect everything
-            if (_selectedPawnId.HasValue && _pawnNodes.TryGetValue(_selectedPawnId.Value, out var pawnNode))
+            if (
+                _selectedPawnId.HasValue
+                && _pawnNodes.TryGetValue(_selectedPawnId.Value, out var pawnNode)
+            )
             {
                 if (pawnNode is PawnView pv)
                     pv.SetSelected(false);
@@ -314,16 +394,31 @@ public partial class GameRoot : Node2D
         // Handle mouse motion for drag painting (outside mouse button handler)
         if (@event is InputEventMouseMotion)
         {
-            if (_isPaintingTerrain && BuildToolState.Mode == BuildToolMode.PlaceTerrain && BuildToolState.SelectedTerrainDefId.HasValue)
+            if (
+                _isPaintingTerrain
+                && BuildToolState.Mode == BuildToolMode.PlaceTerrain
+                && BuildToolState.SelectedTerrainDefId.HasValue
+            )
             {
                 var localPos = GetLocalMousePosition();
                 var tileCoord = ScreenToTileCoord(localPos);
-                _sim.PaintTerrain(tileCoord.X, tileCoord.Y, BuildToolState.SelectedTerrainDefId.Value, BuildToolState.SelectedColorIndex);
+                _sim.PaintTerrain(
+                    tileCoord.X,
+                    tileCoord.Y,
+                    BuildToolState.SelectedTerrainDefId.Value,
+                    BuildToolState.SelectedColorIndex
+                );
                 UpdateTileAndNeighbors(tileCoord);
                 return;
             }
-            if ((BuildToolState.Mode == BuildToolMode.FillSquare || BuildToolState.Mode == BuildToolMode.OutlineSquare)
-                && BuildToolState.SelectedTerrainDefId.HasValue && _brushDragStart.HasValue)
+            if (
+                (
+                    BuildToolState.Mode == BuildToolMode.FillSquare
+                    || BuildToolState.Mode == BuildToolMode.OutlineSquare
+                )
+                && BuildToolState.SelectedTerrainDefId.HasValue
+                && _brushDragStart.HasValue
+            )
             {
                 var localPos = GetLocalMousePosition();
                 var tileCoord = ScreenToTileCoord(localPos);
@@ -337,12 +432,14 @@ public partial class GameRoot : Node2D
     // Flood fill all connected tiles of the same terrain and color
     private void FloodFill(TileCoord start, int newTerrainId, int newColorIndex)
     {
-        if (!_sim.World.IsInBounds(start)) return;
+        if (!_sim.World.IsInBounds(start))
+            return;
         var world = _sim.World;
         var tile = world.GetTile(start);
         int oldTerrainId = tile.BaseTerrainTypeId;
         int oldColorIndex = tile.ColorIndex;
-        if (oldTerrainId == newTerrainId && oldColorIndex == newColorIndex) return;
+        if (oldTerrainId == newTerrainId && oldColorIndex == newColorIndex)
+            return;
 
         var width = world.Width;
         var height = world.Height;
@@ -367,10 +464,20 @@ public partial class GameRoot : Node2D
                     int nx = coord.X + dx[dir];
                     int ny = coord.Y + dy[dir];
                     var ncoord = new TileCoord(nx, ny);
-                    if (nx >= 0 && nx <= width && ny >= 0 && ny <= height && !visited.Contains(ncoord) && world.IsInBounds(ncoord))
+                    if (
+                        nx >= 0
+                        && nx <= width
+                        && ny >= 0
+                        && ny <= height
+                        && !visited.Contains(ncoord)
+                        && world.IsInBounds(ncoord)
+                    )
                     {
                         var ntile = world.GetTile(ncoord);
-                        if (ntile.BaseTerrainTypeId == oldTerrainId && ntile.ColorIndex == oldColorIndex)
+                        if (
+                            ntile.BaseTerrainTypeId == oldTerrainId
+                            && ntile.ColorIndex == oldColorIndex
+                        )
                         {
                             queue.Enqueue(ncoord);
                             visited.Add(ncoord);
@@ -444,16 +551,12 @@ public partial class GameRoot : Node2D
                 {
                     Position = new Vector2((x - 0.5f) * TileSize, (y - 0.5f) * TileSize),
                     Name = $"Tile_{x}_{y}",
-                    ZIndex = -10
+                    ZIndex = -10,
                 };
                 _tilesRoot.AddChild(tileNode);
 
                 // Base layer for flat terrains
-                var baseLayer = new Node2D
-                {
-                    Name = "BaseLayer",
-                    ZIndex = -1
-                };
+                var baseLayer = new Node2D { Name = "BaseLayer", ZIndex = -1 };
                 tileNode.AddChild(baseLayer);
 
                 // Single sprite for full-tile textures (16x16 scaled to 32x32)
@@ -463,23 +566,19 @@ public partial class GameRoot : Node2D
                     Position = new Vector2(TileSize, TileSize), // Offset to align with world tile center
                     Centered = true,
                     Visible = false,
-                    Scale = new Vector2(2, 2) // Scale 16x16 texture to 32x32
+                    Scale = new Vector2(2, 2), // Scale 16x16 texture to 32x32
                 };
                 baseLayer.AddChild(fullTileSprite);
 
                 // Overlay layer for autotiled paths
-                var overlayLayer = new Node2D
-                {
-                    Name = "OverlayLayer",
-                    ZIndex = 0
-                };
+                var overlayLayer = new Node2D { Name = "OverlayLayer", ZIndex = 0 };
                 tileNode.AddChild(overlayLayer);
 
                 var overlaySprite = new Sprite2D
                 {
                     Name = "PathSprite",
                     Centered = false,
-                    Visible = false
+                    Visible = false,
                 };
 
                 // Apply shader to make pure black pixels transparent
@@ -501,22 +600,27 @@ public partial class GameRoot : Node2D
 
     private void DrawHoverPreview(TileCoord coord)
     {
-        var rect = new Rect2(
-            coord.X * TileSize,
-            coord.Y * TileSize,
-            TileSize,
-            TileSize
-        );
+        var rect = new Rect2(coord.X * TileSize, coord.Y * TileSize, TileSize, TileSize);
 
         // Draw preview based on mode
-        if (BuildToolState.Mode == BuildToolMode.PlaceTerrain && BuildToolState.SelectedTerrainDefId.HasValue)
+        if (
+            BuildToolState.Mode == BuildToolMode.PlaceTerrain
+            && BuildToolState.SelectedTerrainDefId.HasValue
+        )
         {
             var color = _currentPalette[BuildToolState.SelectedColorIndex];
             color.A = 0.5f; // Semi-transparent
             DrawRect(rect, color, true);
         }
-        else if ((BuildToolState.Mode == BuildToolMode.FillSquare || BuildToolState.Mode == BuildToolMode.OutlineSquare)
-            && BuildToolState.SelectedTerrainDefId.HasValue && _brushDragStart.HasValue && _brushDragCurrent.HasValue)
+        else if (
+            (
+                BuildToolState.Mode == BuildToolMode.FillSquare
+                || BuildToolState.Mode == BuildToolMode.OutlineSquare
+            )
+            && BuildToolState.SelectedTerrainDefId.HasValue
+            && _brushDragStart.HasValue
+            && _brushDragCurrent.HasValue
+        )
         {
             // Draw preview rectangle for fill or outline
             int x0 = Mathf.Min(_brushDragStart.Value.X, _brushDragCurrent.Value.X);
@@ -525,7 +629,12 @@ public partial class GameRoot : Node2D
             int y1 = Mathf.Max(_brushDragStart.Value.Y, _brushDragCurrent.Value.Y);
             var color = _currentPalette[BuildToolState.SelectedColorIndex];
             color.A = 0.3f;
-            var previewRect = new Rect2(x0 * TileSize, y0 * TileSize, (x1 - x0 + 1) * TileSize, (y1 - y0 + 1) * TileSize);
+            var previewRect = new Rect2(
+                x0 * TileSize,
+                y0 * TileSize,
+                (x1 - x0 + 1) * TileSize,
+                (y1 - y0 + 1) * TileSize
+            );
             if (BuildToolState.Mode == BuildToolMode.FillSquare)
             {
                 DrawRect(previewRect, color, true);
@@ -533,7 +642,10 @@ public partial class GameRoot : Node2D
             DrawRect(previewRect, Colors.White, false, 2f);
             return;
         }
-        else if (BuildToolState.Mode == BuildToolMode.PlaceObject && BuildToolState.SelectedObjectDefId.HasValue)
+        else if (
+            BuildToolState.Mode == BuildToolMode.PlaceObject
+            && BuildToolState.SelectedObjectDefId.HasValue
+        )
         {
             var color = _currentPalette[BuildToolState.SelectedColorIndex];
             color.A = 0.5f; // Semi-transparent
@@ -546,7 +658,13 @@ public partial class GameRoot : Node2D
         }
 
         // Always draw outline around hovered tile (unless fill preview is active)
-        if (!(BuildToolState.Mode == BuildToolMode.FillSquare && _brushDragStart.HasValue && _brushDragCurrent.HasValue))
+        if (
+            !(
+                BuildToolState.Mode == BuildToolMode.FillSquare
+                && _brushDragStart.HasValue
+                && _brushDragCurrent.HasValue
+            )
+        )
         {
             DrawRect(rect, Colors.White, false, 2f);
         }
@@ -559,9 +677,12 @@ public partial class GameRoot : Node2D
         foreach (var (id, node) in _pawnNodes)
         {
             var pawnPos = node.Position;
-            bool hit = pos.X >= pawnPos.X - halfSize && pos.X <= pawnPos.X + halfSize &&
-                       pos.Y >= pawnPos.Y - halfSize && pos.Y <= pawnPos.Y + halfSize;
-            
+            bool hit =
+                pos.X >= pawnPos.X - halfSize
+                && pos.X <= pawnPos.X + halfSize
+                && pos.Y >= pawnPos.Y - halfSize
+                && pos.Y <= pawnPos.Y + halfSize;
+
             if (hit)
                 return id;
         }
@@ -571,13 +692,16 @@ public partial class GameRoot : Node2D
     private int? FindObjectAtPosition(Vector2 pos)
     {
         const float halfSize = ObjectHitboxSize / 2f;
-        
+
         foreach (var (id, node) in _objectNodes)
         {
             var objPos = node.Position;
-            bool hit = pos.X >= objPos.X - halfSize && pos.X <= objPos.X + halfSize &&
-                       pos.Y >= objPos.Y - halfSize && pos.Y <= objPos.Y + halfSize;
-            
+            bool hit =
+                pos.X >= objPos.X - halfSize
+                && pos.X <= objPos.X + halfSize
+                && pos.Y >= objPos.Y - halfSize
+                && pos.Y <= objPos.Y + halfSize;
+
             if (hit)
                 return id;
         }
@@ -592,7 +716,8 @@ public partial class GameRoot : Node2D
             DrawHoverPreview(_hoveredTile.Value);
         }
 
-        if (!_debugMode) return;
+        if (!_debugMode)
+            return;
 
         // Draw hitboxes for all pawns
         const float pawnHalf = PawnHitboxSize / 2f;
@@ -658,8 +783,14 @@ public partial class GameRoot : Node2D
                     {
                         var from = pawn.CurrentPath[i];
                         var to = pawn.CurrentPath[i + 1];
-                        var fromPos = new Vector2(from.X * TileSize + TileSize / 2, from.Y * TileSize + TileSize / 2);
-                        var toPos = new Vector2(to.X * TileSize + TileSize / 2, to.Y * TileSize + TileSize / 2);
+                        var fromPos = new Vector2(
+                            from.X * TileSize + TileSize / 2,
+                            from.Y * TileSize + TileSize / 2
+                        );
+                        var toPos = new Vector2(
+                            to.X * TileSize + TileSize / 2,
+                            to.Y * TileSize + TileSize / 2
+                        );
                         DrawLine(fromPos, toPos, Colors.Orange, 2f);
                     }
 
@@ -667,7 +798,10 @@ public partial class GameRoot : Node2D
                     if (pawn.PathIndex < pawn.CurrentPath.Count)
                     {
                         var nextTile = pawn.CurrentPath[pawn.PathIndex];
-                        var nextPos = new Vector2(nextTile.X * TileSize + TileSize / 2, nextTile.Y * TileSize + TileSize / 2);
+                        var nextPos = new Vector2(
+                            nextTile.X * TileSize + TileSize / 2,
+                            nextTile.Y * TileSize + TileSize / 2
+                        );
                         DrawLine(pawnCenter, nextPos, Colors.White, 2f);
                     }
                 }
@@ -681,12 +815,12 @@ public partial class GameRoot : Node2D
                         TileSize - 8,
                         TileSize - 8
                     );
-                    DrawRect(targetRect, new Color(1, 0.5f, 0, 0.3f), true);  // Orange fill
-                    DrawRect(targetRect, Colors.Orange, false, 2f);           // Orange outline
+                    DrawRect(targetRect, new Color(1, 0.5f, 0, 0.3f), true); // Orange fill
+                    DrawRect(targetRect, Colors.Orange, false, 2f); // Orange outline
                 }
             }
         }
-        
+
         // Draw mouse position (local coordinates)
         var mousePos = GetLocalMousePosition();
         DrawCircle(mousePos, 5f, Colors.Yellow);
@@ -735,11 +869,12 @@ public partial class GameRoot : Node2D
     {
         // Update the 4 display tiles that depend on this world tile
         // This matches the reference implementation's setDisplayTile() function
-        var displayOffsets = new[] {
-            new TileCoord(0, 0),    // (x, y)
-            new TileCoord(1, 0),    // (x+1, y)
-            new TileCoord(0, 1),    // (x, y+1)
-            new TileCoord(1, 1)     // (x+1, y+1)
+        var displayOffsets = new[]
+        {
+            new TileCoord(0, 0), // (x, y)
+            new TileCoord(1, 0), // (x+1, y)
+            new TileCoord(0, 1), // (x, y+1)
+            new TileCoord(1, 1), // (x+1, y+1)
         };
 
         foreach (var offset in displayOffsets)
@@ -812,11 +947,12 @@ public partial class GameRoot : Node2D
         var sprite = overlayLayer.GetNode<Sprite2D>("PathSprite");
 
         // Check 4 world neighbors for paths
-        var neighborCoords = new[] {
+        var neighborCoords = new[]
+        {
             new TileCoord(coord.X - 1, coord.Y - 1),
             new TileCoord(coord.X, coord.Y - 1),
             new TileCoord(coord.X - 1, coord.Y),
-            new TileCoord(coord.X, coord.Y)
+            new TileCoord(coord.X, coord.Y),
         };
 
         bool hasPathNeighbor = false;
@@ -829,9 +965,14 @@ public partial class GameRoot : Node2D
             if (_sim.World.IsInBounds(neighborCoord))
             {
                 var tile = _sim.World.GetTile(neighborCoord);
-                if (tile.OverlayTerrainTypeId.HasValue &&
-                    _sim.Content.Terrains.TryGetValue(tile.OverlayTerrainTypeId.Value, out var terrainDef) &&
-                    terrainDef.IsAutotiling)
+                if (
+                    tile.OverlayTerrainTypeId.HasValue
+                    && _sim.Content.Terrains.TryGetValue(
+                        tile.OverlayTerrainTypeId.Value,
+                        out var terrainDef
+                    )
+                    && terrainDef.IsAutotiling
+                )
                 {
                     hasPathNeighbor = true;
                     pathTerrainId = tile.OverlayTerrainTypeId.Value;
@@ -848,13 +989,15 @@ public partial class GameRoot : Node2D
             sprite.Modulate = pathColor;
 
             // Setup atlas texture if needed
-            if (sprite.Texture is not AtlasTexture ||
-                (sprite.Texture is AtlasTexture atlas && atlas.Atlas != pathTexture))
+            if (
+                sprite.Texture is not AtlasTexture
+                || (sprite.Texture is AtlasTexture atlas && atlas.Atlas != pathTexture)
+            )
             {
                 var newAtlas = new AtlasTexture
                 {
                     Atlas = pathTexture,
-                    Region = new Rect2(0, 0, 16, 16)
+                    Region = new Rect2(0, 0, 16, 16),
                 };
                 sprite.Texture = newAtlas;
                 sprite.Scale = new Vector2(2, 2);
@@ -863,13 +1006,12 @@ public partial class GameRoot : Node2D
             // Calculate autotile variant
             if (sprite.Texture is AtlasTexture atlasTexture)
             {
-                var atlasCoord = SimGame.Godot.PathAutotiler.CalculateTileVariant(_sim.World, coord, pathTerrainId);
-                atlasTexture.Region = new Rect2(
-                    atlasCoord.X * 16,
-                    atlasCoord.Y * 16,
-                    16,
-                    16
+                var atlasCoord = SimGame.Godot.PathAutotiler.CalculateTileVariant(
+                    _sim.World,
+                    coord,
+                    pathTerrainId
                 );
+                atlasTexture.Region = new Rect2(atlasCoord.X * 16, atlasCoord.Y * 16, 16, 16);
             }
         }
         else
@@ -965,7 +1107,7 @@ public partial class GameRoot : Node2D
                 pv.SetSelected(pawn.Id.Value == _selectedPawnId);
             }
         }
-        
+
         // Remove nodes for pawns that no longer exist
         _idsToRemove.Clear();
         foreach (var id in _pawnNodes.Keys)
@@ -977,7 +1119,7 @@ public partial class GameRoot : Node2D
         {
             _pawnNodes[id].QueueFree();
             _pawnNodes.Remove(id);
-            
+
             // Clear selection if the removed pawn was selected
             if (_selectedPawnId == id)
             {
@@ -990,11 +1132,11 @@ public partial class GameRoot : Node2D
     private void SyncObjects(RenderSnapshot snapshot)
     {
         _activeIds.Clear();
-        
+
         foreach (var obj in snapshot.Objects)
         {
             _activeIds.Add(obj.Id.Value);
-            
+
             if (!_objectNodes.TryGetValue(obj.Id.Value, out var node))
             {
                 node = ObjectScene?.Instantiate<Node2D>() ?? new Node2D();
@@ -1025,7 +1167,7 @@ public partial class GameRoot : Node2D
                 ov.SetObjectInfo(obj.Name, obj.InUse, obj.ColorIndex, _currentPalette);
             }
         }
-        
+
         // Remove nodes for objects that no longer exist
         _idsToRemove.Clear();
         foreach (var id in _objectNodes.Keys)
@@ -1037,7 +1179,7 @@ public partial class GameRoot : Node2D
         {
             _objectNodes[id].QueueFree();
             _objectNodes.Remove(id);
-            
+
             // Clear selection if the removed object was selected
             if (_selectedObjectId == id)
             {
@@ -1088,7 +1230,8 @@ public partial class GameRoot : Node2D
 
     private void UpdateNightOverlay(RenderSnapshot snapshot)
     {
-        if (_nightOverlay == null) return;
+        if (_nightOverlay == null)
+            return;
 
         // Smoothly transition night overlay based on time
         float targetAlpha = 0f;

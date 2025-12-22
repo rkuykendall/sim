@@ -3,9 +3,14 @@ using SimGame.Core;
 
 public partial class ObjectInfoPanel : PanelContainer
 {
-    [Export] public NodePath NameLabelPath { get; set; } = null!;
-    [Export] public NodePath StatusLabelPath { get; set; } = null!;
-    [Export] public NodePath DescriptionLabelPath { get; set; } = null!;
+    [Export]
+    public NodePath NameLabelPath { get; set; } = null!;
+
+    [Export]
+    public NodePath StatusLabelPath { get; set; } = null!;
+
+    [Export]
+    public NodePath DescriptionLabelPath { get; set; } = null!;
 
     private Label? _nameLabel;
     private Label? _statusLabel;
@@ -16,7 +21,7 @@ public partial class ObjectInfoPanel : PanelContainer
         _nameLabel = GetNodeOrNull<Label>(NameLabelPath);
         _statusLabel = GetNodeOrNull<Label>(StatusLabelPath);
         _descriptionLabel = GetNodeOrNull<Label>(DescriptionLabelPath);
-        
+
         Visible = false;
     }
 
@@ -41,10 +46,16 @@ public partial class ObjectInfoPanel : PanelContainer
             }
         }
 
-        if (_descriptionLabel != null && content.Objects.TryGetValue(obj.ObjectDefId, out var objDef))
+        if (
+            _descriptionLabel != null
+            && content.Objects.TryGetValue(obj.ObjectDefId, out var objDef)
+        )
         {
             string needName = "nothing";
-            if (objDef.SatisfiesNeedId.HasValue && content.Needs.TryGetValue(objDef.SatisfiesNeedId.Value, out var needDef))
+            if (
+                objDef.SatisfiesNeedId.HasValue
+                && content.Needs.TryGetValue(objDef.SatisfiesNeedId.Value, out var needDef)
+            )
                 needName = needDef.Name;
 
             _descriptionLabel.Text = $"Satisfies: {needName} (+{objDef.NeedSatisfactionAmount:0})";

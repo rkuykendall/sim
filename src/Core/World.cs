@@ -6,13 +6,23 @@ public readonly struct TileCoord : IEquatable<TileCoord>
 {
     public readonly int X;
     public readonly int Y;
-    public TileCoord(int x, int y) { X = x; Y = y; }
+
+    public TileCoord(int x, int y)
+    {
+        X = x;
+        Y = y;
+    }
 
     public bool Equals(TileCoord other) => X == other.X && Y == other.Y;
+
     public override bool Equals(object? obj) => obj is TileCoord other && Equals(other);
+
     public override int GetHashCode() => HashCode.Combine(X, Y);
+
     public static bool operator ==(TileCoord left, TileCoord right) => left.Equals(right);
+
     public static bool operator !=(TileCoord left, TileCoord right) => !left.Equals(right);
+
     public override string ToString() => $"({X}, {Y})";
 }
 
@@ -37,8 +47,6 @@ public sealed class Tile
     public bool Walkable { get; set; } = true;
 
     /// <summary>Whether the player can place objects on this tile.</summary>
-
-
     /// <summary>Index into color palette for base terrain's visual appearance.</summary>
     public int ColorIndex { get; set; } = 0; // Default to first color
 
@@ -57,14 +65,14 @@ public sealed class Tile
 public sealed class World
 {
     // Default play area bounds (in tiles) - doubled for larger world
-    public const int DefaultWidth = 40;   // 40 tiles
-    public const int DefaultHeight = 22;  // 22 tiles
+    public const int DefaultWidth = 40; // 40 tiles
+    public const int DefaultHeight = 22; // 22 tiles
 
     private readonly Tile[,] _tiles;
 
     /// <summary>Width of the world in tiles.</summary>
     public int Width { get; }
-    
+
     /// <summary>Height of the world in tiles.</summary>
     public int Height { get; }
 
@@ -74,16 +82,15 @@ public sealed class World
     public int MinY => 0;
     public int MaxY => Height - 1;
 
-    public World() : this(DefaultWidth, DefaultHeight)
-    {
-    }
+    public World()
+        : this(DefaultWidth, DefaultHeight) { }
 
     public World(int width, int height)
     {
         Width = width;
         Height = height;
         _tiles = new Tile[width, height];
-        
+
         // Initialize all tiles
         for (int x = 0; x < width; x++)
         {
@@ -101,7 +108,9 @@ public sealed class World
         : this(maxX - minX + 1, maxY - minY + 1)
     {
         if (minX != 0 || minY != 0)
-            throw new ArgumentException("Non-zero minimum bounds are not supported. Use width/height constructor.");
+            throw new ArgumentException(
+                "Non-zero minimum bounds are not supported. Use width/height constructor."
+            );
     }
 
     public bool IsInBounds(TileCoord coord) =>
@@ -116,11 +125,14 @@ public sealed class World
     public Tile GetTile(TileCoord coord)
     {
         if (!IsInBounds(coord))
-            throw new ArgumentOutOfRangeException(nameof(coord), $"Coordinate {coord} is out of bounds (0-{Width - 1}, 0-{Height - 1})");
-        
+            throw new ArgumentOutOfRangeException(
+                nameof(coord),
+                $"Coordinate {coord} is out of bounds (0-{Width - 1}, 0-{Height - 1})"
+            );
+
         return _tiles[coord.X, coord.Y];
     }
-    
+
     /// <summary>
     /// Get a tile by x,y coordinates directly.
     /// </summary>

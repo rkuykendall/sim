@@ -20,12 +20,12 @@ public class UseAreasTests
     /// <summary>
     /// Bug test: A pawn should only be able to use an object from its defined UseAreas.
     /// If UseAreas is {(0, 1)} (south of object), pawn should not use it from (0, -1) (north).
-    /// 
+    ///
     /// Layout (5x3 world):
     ///   Y=0: [ ][ ][F][ ][ ]   F = Fridge at (2,0)
     ///   Y=1: [ ][ ][U][ ][ ]   U = Valid use area (2,1) - south of fridge
     ///   Y=2: [P][ ][ ][ ][ ]   P = Pawn starting at (0,2)
-    /// 
+    ///
     /// The pawn should walk to (2,1) to use the fridge, NOT to (2,-1) or adjacent cardinal tiles.
     /// </summary>
     [Fact]
@@ -35,7 +35,14 @@ public class UseAreasTests
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 2)
             .DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f)
-            .DefineObject("Fridge", "Fridge", satisfiesNeed: "Hunger", satisfactionAmount: 50f, interactionDuration: 20, useAreas: new List<(int, int)> { (0, 1) })
+            .DefineObject(
+                "Fridge",
+                "Fridge",
+                satisfiesNeed: "Hunger",
+                satisfactionAmount: 50f,
+                interactionDuration: 20,
+                useAreas: new List<(int, int)> { (0, 1) }
+            )
             .AddObject("Fridge", 2, 0)
             .AddPawn("TestPawn", 0, 2, new Dictionary<string, float> { { "Hunger", 10f } })
             .Build();
@@ -55,10 +62,12 @@ public class UseAreasTests
             sim.Tick();
 
             var pos = sim.GetPosition(pawnId.Value);
-            
+
             // Check if pawn is using the fridge
-            if (sim.Entities.Actions.TryGetValue(pawnId.Value, out var actionComp) &&
-                actionComp.CurrentAction?.Type == ActionType.UseObject)
+            if (
+                sim.Entities.Actions.TryGetValue(pawnId.Value, out var actionComp)
+                && actionComp.CurrentAction?.Type == ActionType.UseObject
+            )
             {
                 positionWhenUsingFridge = pos;
                 _output.WriteLine($"Tick {tick}: Pawn using fridge at position {pos}");
@@ -68,7 +77,10 @@ public class UseAreasTests
             if (tick % 20 == 0)
             {
                 string actionName = "none";
-                if (sim.Entities.Actions.TryGetValue(pawnId.Value, out var ac) && ac.CurrentAction != null)
+                if (
+                    sim.Entities.Actions.TryGetValue(pawnId.Value, out var ac)
+                    && ac.CurrentAction != null
+                )
                     actionName = ac.CurrentAction.DisplayName ?? ac.CurrentAction.Type.ToString();
                 _output.WriteLine($"Tick {tick}: Pawn at {pos}, action={actionName}");
             }
@@ -81,14 +93,14 @@ public class UseAreasTests
 
     /// <summary>
     /// Test that pawns can use objects with multiple UseAreas and pick the closest one.
-    /// 
+    ///
     /// Layout (5x5 world):
     ///   Y=0: [ ][ ][ ][ ][ ]
     ///   Y=1: [ ][U][T][U][ ]   T = TV at (2,1), U = Use areas at (1,1) and (3,1)
     ///   Y=2: [ ][ ][U][ ][ ]   U = Use area at (2,2)
     ///   Y=3: [ ][ ][ ][ ][ ]
     ///   Y=4: [P][ ][ ][ ][ ]   P = Pawn at (0,4)
-    /// 
+    ///
     /// Pawn should pick the closest use area.
     /// </summary>
     [Fact]
@@ -98,7 +110,14 @@ public class UseAreasTests
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 4)
             .DefineNeed("Fun", "Fun", decayPerTick: 0.001f)
-            .DefineObject("TV", "TV", satisfiesNeed: "Fun", satisfactionAmount: 40f, interactionDuration: 30, useAreas: new List<(int, int)> { (-1, 0), (1, 0), (0, 1) })
+            .DefineObject(
+                "TV",
+                "TV",
+                satisfiesNeed: "Fun",
+                satisfactionAmount: 40f,
+                interactionDuration: 30,
+                useAreas: new List<(int, int)> { (-1, 0), (1, 0), (0, 1) }
+            )
             .AddObject("TV", 2, 1)
             .AddPawn("TestPawn", 0, 4, new Dictionary<string, float> { { "Fun", 10f } })
             .Build();
@@ -119,8 +138,10 @@ public class UseAreasTests
 
             var pos = sim.GetPosition(pawnId.Value);
 
-            if (sim.Entities.Actions.TryGetValue(pawnId.Value, out var actionComp) &&
-                actionComp.CurrentAction?.Type == ActionType.UseObject)
+            if (
+                sim.Entities.Actions.TryGetValue(pawnId.Value, out var actionComp)
+                && actionComp.CurrentAction?.Type == ActionType.UseObject
+            )
             {
                 positionWhenUsingTV = pos;
                 _output.WriteLine($"Tick {tick}: Pawn using TV at position {pos}");
@@ -130,7 +151,10 @@ public class UseAreasTests
             if (tick % 20 == 0)
             {
                 string actionName = "none";
-                if (sim.Entities.Actions.TryGetValue(pawnId.Value, out var ac) && ac.CurrentAction != null)
+                if (
+                    sim.Entities.Actions.TryGetValue(pawnId.Value, out var ac)
+                    && ac.CurrentAction != null
+                )
                     actionName = ac.CurrentAction.DisplayName ?? ac.CurrentAction.Type.ToString();
                 _output.WriteLine($"Tick {tick}: Pawn at {pos}, action={actionName}");
             }
@@ -138,14 +162,14 @@ public class UseAreasTests
 
         // Assert: Pawn should be at one of the valid use areas
         Assert.NotNull(positionWhenUsingTV);
-        
+
         var validUseAreas = new HashSet<TileCoord>
         {
-            new TileCoord(1, 1),  // (-1, 0) relative to (2,1)
-            new TileCoord(3, 1),  // (1, 0) relative to (2,1)
-            new TileCoord(2, 2)   // (0, 1) relative to (2,1)
+            new TileCoord(1, 1), // (-1, 0) relative to (2,1)
+            new TileCoord(3, 1), // (1, 0) relative to (2,1)
+            new TileCoord(2, 2), // (0, 1) relative to (2,1)
         };
-        
+
         Assert.Contains(positionWhenUsingTV.Value, validUseAreas);
         _output.WriteLine($"Pawn correctly used TV from valid UseArea: {positionWhenUsingTV}");
     }
@@ -160,7 +184,14 @@ public class UseAreasTests
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 4, 0, 2)
             .DefineNeed("Hunger", "Hunger", decayPerTick: 0.001f)
-            .DefineObject("Fridge", "Fridge", satisfiesNeed: "Hunger", satisfactionAmount: 50f, interactionDuration: 20, useAreas: new List<(int, int)> { (0, 1) })
+            .DefineObject(
+                "Fridge",
+                "Fridge",
+                satisfiesNeed: "Hunger",
+                satisfactionAmount: 50f,
+                interactionDuration: 20,
+                useAreas: new List<(int, int)> { (0, 1) }
+            )
             .DefineObject("Blocker", "Blocker")
             .AddObject("Fridge", 2, 0)
             .AddObject("Blocker", 2, 1)
@@ -183,12 +214,16 @@ public class UseAreasTests
 
         // Assert: Hunger should have only decayed (not been satisfied)
         float finalHunger = sim.GetNeedValue(pawnId.Value, "Hunger");
-        
+
         // With decay of 0.001 per tick over 100 ticks, hunger drops by ~0.1
         // If pawn ate, hunger would jump up by 50
-        Assert.True(finalHunger <= initialHunger,
-            $"Pawn should not have eaten (UseArea blocked). Initial: {initialHunger}, Final: {finalHunger}");
-        
-        _output.WriteLine($"Hunger went from {initialHunger} to {finalHunger} - pawn correctly couldn't use blocked fridge");
+        Assert.True(
+            finalHunger <= initialHunger,
+            $"Pawn should not have eaten (UseArea blocked). Initial: {initialHunger}, Final: {finalHunger}"
+        );
+
+        _output.WriteLine(
+            $"Hunger went from {initialHunger} to {finalHunger} - pawn correctly couldn't use blocked fridge"
+        );
     }
 }

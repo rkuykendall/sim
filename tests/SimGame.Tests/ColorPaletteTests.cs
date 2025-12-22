@@ -59,7 +59,9 @@ public class ColorPaletteTests
             .DefineTerrain("Stone", walkable: true, spriteKey: "stone")
             .Build();
 
-        var stoneDefId = sim.Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "stone").Key;
+        var stoneDefId = sim
+            .Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "stone")
+            .Key;
         Assert.True(stoneDefId != 0);
 
         // Act: Paint terrain with color index 4 (dark gray)
@@ -68,7 +70,7 @@ public class ColorPaletteTests
         // Assert: Verify the color index is stored
         var tile = sim.World.GetTile(new TileCoord(3, 3));
         Assert.Equal(4, tile.ColorIndex);
-            Assert.Equal(stoneDefId, tile.BaseTerrainTypeId);
+        Assert.Equal(stoneDefId, tile.BaseTerrainTypeId);
     }
 
     [Fact]
@@ -81,7 +83,9 @@ public class ColorPaletteTests
             .DefineTerrain("Concrete", walkable: true, spriteKey: "concrete")
             .Build();
 
-        var concreteDefId = sim.Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "concrete").Key;
+        var concreteDefId = sim
+            .Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "concrete")
+            .Key;
         Assert.True(concreteDefId != 0);
 
         // Act: Paint terrain without specifying color index
@@ -90,7 +94,7 @@ public class ColorPaletteTests
         // Assert: Verify the color index defaults to 0 (green)
         var tile = sim.World.GetTile(new TileCoord(2, 2));
         Assert.Equal(0, tile.ColorIndex);
-            Assert.Equal(concreteDefId, tile.BaseTerrainTypeId);
+        Assert.Equal(concreteDefId, tile.BaseTerrainTypeId);
     }
 
     [Fact]
@@ -160,10 +164,12 @@ public class ColorPaletteTests
         // Arrange
         var sim = new TestSimulationBuilder()
             .WithWorldBounds(0, 5, 0, 5)
-            .DefineTerrain("Grass",  walkable: true, spriteKey: "grass")
+            .DefineTerrain("Grass", walkable: true, spriteKey: "grass")
             .Build();
 
-        var grassDefId = sim.Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "grass").Key;
+        var grassDefId = sim
+            .Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "grass")
+            .Key;
         Assert.True(grassDefId != 0);
 
         var coord = new TileCoord(2, 2);

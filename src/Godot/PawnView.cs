@@ -3,7 +3,8 @@ using SimGame.Godot;
 
 public partial class PawnView : Node2D
 {
-    [Export] public NodePath BodyPath { get; set; } = null!;
+    [Export]
+    public NodePath BodyPath { get; set; } = null!;
 
     private ColorRect? _body;
     private AnimatedSprite2D? _sprite;
@@ -61,7 +62,7 @@ public partial class PawnView : Node2D
         {
             Centered = true,
             Name = "Sprite",
-            Scale = new Vector2(2f, 2f)  // Scale 16x16 sprite to 32x32
+            Scale = new Vector2(2f, 2f), // Scale 16x16 sprite to 32x32
         };
 
         // Create sprite frames for animation
@@ -79,7 +80,7 @@ public partial class PawnView : Node2D
             var atlasTexture = new AtlasTexture
             {
                 Atlas = spriteSheet,
-                Region = new Rect2(i * 16, 0, 16, 16)
+                Region = new Rect2(i * 16, 0, 16, 16),
             };
             spriteFrames.AddFrame("walk", atlasTexture);
         }
@@ -90,7 +91,7 @@ public partial class PawnView : Node2D
         var idleTexture = new AtlasTexture
         {
             Atlas = spriteSheet,
-            Region = new Rect2(0, 0, 16, 16)
+            Region = new Rect2(0, 0, 16, 16),
         };
         spriteFrames.AddFrame("idle", idleTexture);
 
@@ -123,7 +124,8 @@ public partial class PawnView : Node2D
 
     private void UpdateAnimation(float delta)
     {
-        if (_sprite == null) return;
+        if (_sprite == null)
+            return;
 
         // Check if pawn is moving
         var velocity = _targetPosition - _visualPosition;

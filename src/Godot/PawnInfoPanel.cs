@@ -1,14 +1,23 @@
+using System.Collections.Generic;
 using Godot;
 using SimGame.Core;
-using System.Collections.Generic;
 
 public partial class PawnInfoPanel : PanelContainer
 {
-    [Export] public NodePath NameLabelPath { get; set; } = null!;
-    [Export] public NodePath MoodLabelPath { get; set; } = null!;
-    [Export] public NodePath ActionLabelPath { get; set; } = null!;
-    [Export] public NodePath NeedsContainerPath { get; set; } = null!;
-    [Export] public NodePath BuffsContainerPath { get; set; } = null!;
+    [Export]
+    public NodePath NameLabelPath { get; set; } = null!;
+
+    [Export]
+    public NodePath MoodLabelPath { get; set; } = null!;
+
+    [Export]
+    public NodePath ActionLabelPath { get; set; } = null!;
+
+    [Export]
+    public NodePath NeedsContainerPath { get; set; } = null!;
+
+    [Export]
+    public NodePath BuffsContainerPath { get; set; } = null!;
 
     private Label? _nameLabel;
     private Label? _moodLabel;
@@ -26,24 +35,32 @@ public partial class PawnInfoPanel : PanelContainer
         _actionLabel = GetNodeOrNull<Label>(ActionLabelPath);
         _needsContainer = GetNodeOrNull<VBoxContainer>(NeedsContainerPath);
         _buffsContainer = GetNodeOrNull<VBoxContainer>(BuffsContainerPath);
-        
+
         // Start hidden until a pawn is selected
         Visible = false;
     }
 
-    public void ShowPawn(RenderPawn pawn, NeedsComponent? needs, BuffComponent? buffs, ContentRegistry content)
+    public void ShowPawn(
+        RenderPawn pawn,
+        NeedsComponent? needs,
+        BuffComponent? buffs,
+        ContentRegistry content
+    )
     {
         Visible = true;
 
         if (_nameLabel != null)
             _nameLabel.Text = pawn.Name;
-        
+
         if (_moodLabel != null)
         {
             _moodLabel.Text = $"Mood: {pawn.Mood:+0;-0;0}";
-            _moodLabel.Modulate = pawn.Mood > 20 ? Colors.Lime : pawn.Mood < -20 ? Colors.Red : Colors.White;
+            _moodLabel.Modulate =
+                pawn.Mood > 20 ? Colors.Lime
+                : pawn.Mood < -20 ? Colors.Red
+                : Colors.White;
         }
-        
+
         if (_actionLabel != null)
             _actionLabel.Text = pawn.CurrentAction ?? "Idle";
 
@@ -62,7 +79,7 @@ public partial class PawnInfoPanel : PanelContainer
                 }
 
                 bar.Value = value;
-                
+
                 // Color based on thresholds
                 if (value < needDef.CriticalThreshold)
                     bar.Modulate = Colors.Red;
@@ -79,7 +96,8 @@ public partial class PawnInfoPanel : PanelContainer
 
     private void UpdateBuffsDisplay(BuffComponent? buffs, ContentRegistry content)
     {
-        if (_buffsContainer == null) return;
+        if (_buffsContainer == null)
+            return;
 
         // Clear old buff labels
         foreach (var label in _buffLabels)
@@ -88,11 +106,7 @@ public partial class PawnInfoPanel : PanelContainer
 
         if (buffs == null || buffs.ActiveBuffs.Count == 0)
         {
-            var noBuffsLabel = new Label
-            {
-                Text = "(none)",
-                Modulate = Colors.Gray
-            };
+            var noBuffsLabel = new Label { Text = "(none)", Modulate = Colors.Gray };
             noBuffsLabel.AddThemeFontSizeOverride("font_size", 8);
             _buffsContainer.AddChild(noBuffsLabel);
             _buffLabels.Add(noBuffsLabel);
@@ -104,10 +118,7 @@ public partial class PawnInfoPanel : PanelContainer
             if (!content.Buffs.TryGetValue(inst.BuffDefId, out var buffDef))
                 continue;
 
-            var label = new Label
-            {
-                Text = $"{buffDef.Name} ({buffDef.MoodOffset:+0;-0})"
-            };
+            var label = new Label { Text = $"{buffDef.Name} ({buffDef.MoodOffset:+0;-0})" };
             label.AddThemeFontSizeOverride("font_size", 8);
 
             // Color based on mood impact
@@ -131,19 +142,15 @@ public partial class PawnInfoPanel : PanelContainer
     private ProgressBar CreateNeedBar(string needName)
     {
         var container = new HBoxContainer();
-        
-        var label = new Label
-        {
-            Text = needName,
-            CustomMinimumSize = new Vector2(35, 0)
-        };
+
+        var label = new Label { Text = needName, CustomMinimumSize = new Vector2(35, 0) };
         label.AddThemeFontSizeOverride("font_size", 8);
-        
+
         var bar = new ProgressBar
         {
             CustomMinimumSize = new Vector2(50, 10),
             MaxValue = 100,
-            ShowPercentage = false
+            ShowPercentage = false,
         };
 
         container.AddChild(label);

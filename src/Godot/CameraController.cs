@@ -4,8 +4,11 @@ namespace SimGame.Godot;
 
 public partial class CameraController : Camera2D
 {
-    [Export] public float ZoomSpeed = 10f;
-    [Export] public float PanSpeed = 1000f;
+    [Export]
+    public float ZoomSpeed = 10f;
+
+    [Export]
+    public float PanSpeed = 1000f;
 
     private Vector2 _zoomTarget;
     private Vector2 _dragStartMousePos;

@@ -13,7 +13,8 @@ public interface IContentDef
 /// <summary>
 /// Generic store for content definitions with auto-ID assignment and name lookup.
 /// </summary>
-public sealed class ContentStore<T> where T : IContentDef
+public sealed class ContentStore<T>
+    where T : IContentDef
 {
     private readonly Dictionary<int, T> _byId = new();
     private readonly Dictionary<string, int> _nameToId = new();
@@ -46,12 +47,10 @@ public sealed class ContentStore<T> where T : IContentDef
     /// <summary>
     /// Get an ID by its key name, or null if not found.
     /// </summary>
-    public int? GetId(string name) =>
-        _nameToId.TryGetValue(name, out var id) ? id : null;
+    public int? GetId(string name) => _nameToId.TryGetValue(name, out var id) ? id : null;
 
     /// <summary>
     /// Get a definition by ID, or default if not found.
     /// </summary>
-    public T? Get(int id) =>
-        _byId.TryGetValue(id, out var def) ? def : default;
+    public T? Get(int id) => _byId.TryGetValue(id, out var def) ? def : default;
 }

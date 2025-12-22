@@ -43,7 +43,8 @@ public sealed class ContentRegistry
     public void RegisterTerrain(string key, TerrainDef terrain) => _terrains.Register(key, terrain);
 
     /// <summary>Register a color palette definition. ID is auto-assigned if palette.Id is 0.</summary>
-    public void RegisterColorPalette(string key, ColorPaletteDef palette) => _colorPalettes.Register(key, palette);
+    public void RegisterColorPalette(string key, ColorPaletteDef palette) =>
+        _colorPalettes.Register(key, palette);
 
     /// <summary>Get a buff ID by its key name.</summary>
     public int? GetBuffId(string name) => _buffs.GetId(name);

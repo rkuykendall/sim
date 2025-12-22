@@ -12,15 +12,26 @@ public sealed class TestSimulationBuilder
 {
     private readonly SimulationConfig _config = new()
     {
-        Seed = 12345 // Fixed seed to ensure deterministic palette selection
+        Seed = 12345, // Fixed seed to ensure deterministic palette selection
     };
 
     private readonly List<(string Key, BuffDef Def)> _buffs = new();
-    private readonly List<(string Key, NeedDef Def, string? CriticalDebuff, string? LowDebuff)> _needs = new();
-    private readonly List<(string Key, ObjectDef Def, string? SatisfiesNeed, string? GrantsBuff)> _objects = new();
+    private readonly List<(
+        string Key,
+        NeedDef Def,
+        string? CriticalDebuff,
+        string? LowDebuff
+    )> _needs = new();
+    private readonly List<(
+        string Key,
+        ObjectDef Def,
+        string? SatisfiesNeed,
+        string? GrantsBuff
+    )> _objects = new();
     private readonly List<(string Key, TerrainDef Def)> _terrains = new();
     private readonly List<(string ObjectKey, int X, int Y)> _objectPlacements = new();
-    private readonly List<(string Name, int X, int Y, Dictionary<string, float> Needs)> _pawns = new();
+    private readonly List<(string Name, int X, int Y, Dictionary<string, float> Needs)> _pawns =
+        new();
 
     /// <summary>
     /// Set custom world bounds (default is a 5x5 world from 0,0 to 4,4).
@@ -35,15 +46,25 @@ public sealed class TestSimulationBuilder
     /// Define a buff that can be granted by objects or applied by needs.
     /// ID is auto-generated.
     /// </summary>
-    public TestSimulationBuilder DefineBuff(string key = "", string name = "", float moodOffset = 0, int durationTicks = 1000)
+    public TestSimulationBuilder DefineBuff(
+        string key = "",
+        string name = "",
+        float moodOffset = 0,
+        int durationTicks = 1000
+    )
     {
-        _buffs.Add((key, new BuffDef
-        {
-            Id = 0,  // Auto-generated
-            Name = name,
-            MoodOffset = moodOffset,
-            DurationTicks = durationTicks
-        }));
+        _buffs.Add(
+            (
+                key,
+                new BuffDef
+                {
+                    Id = 0, // Auto-generated
+                    Name = name,
+                    MoodOffset = moodOffset,
+                    DurationTicks = durationTicks,
+                }
+            )
+        );
         return this;
     }
 
@@ -58,16 +79,24 @@ public sealed class TestSimulationBuilder
         float criticalThreshold = 15f,
         float lowThreshold = 35f,
         string? criticalDebuff = null,
-        string? lowDebuff = null)
+        string? lowDebuff = null
+    )
     {
-        _needs.Add((key, new NeedDef
-        {
-            Id = 0,  // Auto-generated
-            Name = name,
-            DecayPerTick = decayPerTick,
-            CriticalThreshold = criticalThreshold,
-            LowThreshold = lowThreshold
-        }, criticalDebuff, lowDebuff));
+        _needs.Add(
+            (
+                key,
+                new NeedDef
+                {
+                    Id = 0, // Auto-generated
+                    Name = name,
+                    DecayPerTick = decayPerTick,
+                    CriticalThreshold = criticalThreshold,
+                    LowThreshold = lowThreshold,
+                },
+                criticalDebuff,
+                lowDebuff
+            )
+        );
         return this;
     }
 
@@ -83,17 +112,25 @@ public sealed class TestSimulationBuilder
         int interactionDuration = 20,
         string? grantsBuff = null,
         List<(int, int)>? useAreas = null,
-        bool walkable = false)
+        bool walkable = false
+    )
     {
-        _objects.Add((key, new ObjectDef
-        {
-            Id = 0,  // Auto-generated
-            Name = name,
-            Walkable = walkable,
-            NeedSatisfactionAmount = satisfactionAmount,
-            InteractionDurationTicks = interactionDuration,
-            UseAreas = useAreas ?? new List<(int dx, int dy)> { (0, 1) }
-        }, satisfiesNeed, grantsBuff));
+        _objects.Add(
+            (
+                key,
+                new ObjectDef
+                {
+                    Id = 0, // Auto-generated
+                    Name = name,
+                    Walkable = walkable,
+                    NeedSatisfactionAmount = satisfactionAmount,
+                    InteractionDurationTicks = interactionDuration,
+                    UseAreas = useAreas ?? new List<(int dx, int dy)> { (0, 1) },
+                },
+                satisfiesNeed,
+                grantsBuff
+            )
+        );
         return this;
     }
 
@@ -105,15 +142,21 @@ public sealed class TestSimulationBuilder
         string key = "",
         bool walkable = true,
         string spriteKey = "",
-        bool isAutotiling = false)
+        bool isAutotiling = false
+    )
     {
-        _terrains.Add((key, new TerrainDef
-        {
-            Id = 0,  // Auto-generated
-            Walkable = walkable,
-            SpriteKey = spriteKey,
-            IsAutotiling = isAutotiling
-        }));
+        _terrains.Add(
+            (
+                key,
+                new TerrainDef
+                {
+                    Id = 0, // Auto-generated
+                    Walkable = walkable,
+                    SpriteKey = spriteKey,
+                    IsAutotiling = isAutotiling,
+                }
+            )
+        );
         return this;
     }
 
@@ -129,7 +172,12 @@ public sealed class TestSimulationBuilder
     /// <summary>
     /// Add a pawn to the world with specified needs (by need key names).
     /// </summary>
-    public TestSimulationBuilder AddPawn(string name = "", int x = 0, int y = 0, Dictionary<string, float>? needs = null)
+    public TestSimulationBuilder AddPawn(
+        string name = "",
+        int x = 0,
+        int y = 0,
+        Dictionary<string, float>? needs = null
+    )
     {
         _pawns.Add((name, x, y, needs ?? new Dictionary<string, float>()));
         return this;
@@ -149,19 +197,91 @@ public sealed class TestSimulationBuilder
             Name = "test",
             Colors = new List<ColorDef>
             {
-                new ColorDef { Name = "Green", R = 0.2f, G = 0.6f, B = 0.2f },
-                new ColorDef { Name = "Brown", R = 0.5f, G = 0.3f, B = 0.1f },
-                new ColorDef { Name = "Light Gray", R = 0.7f, G = 0.7f, B = 0.7f },
-                new ColorDef { Name = "Tan", R = 0.8f, G = 0.6f, B = 0.3f },
-                new ColorDef { Name = "Dark Gray", R = 0.4f, G = 0.4f, B = 0.4f },
-                new ColorDef { Name = "Blue", R = 0.2f, G = 0.4f, B = 0.8f },
-                new ColorDef { Name = "Red", R = 0.9f, G = 0.2f, B = 0.2f },
-                new ColorDef { Name = "Yellow", R = 1.0f, G = 0.8f, B = 0.2f },
-                new ColorDef { Name = "Purple", R = 0.6f, G = 0.3f, B = 0.6f },
-                new ColorDef { Name = "Orange", R = 1.0f, G = 0.5f, B = 0.3f },
-                new ColorDef { Name = "Cyan", R = 0.2f, G = 0.8f, B = 0.8f },
-                new ColorDef { Name = "White", R = 0.95f, G = 0.95f, B = 0.95f }
-            }
+                new ColorDef
+                {
+                    Name = "Green",
+                    R = 0.2f,
+                    G = 0.6f,
+                    B = 0.2f,
+                },
+                new ColorDef
+                {
+                    Name = "Brown",
+                    R = 0.5f,
+                    G = 0.3f,
+                    B = 0.1f,
+                },
+                new ColorDef
+                {
+                    Name = "Light Gray",
+                    R = 0.7f,
+                    G = 0.7f,
+                    B = 0.7f,
+                },
+                new ColorDef
+                {
+                    Name = "Tan",
+                    R = 0.8f,
+                    G = 0.6f,
+                    B = 0.3f,
+                },
+                new ColorDef
+                {
+                    Name = "Dark Gray",
+                    R = 0.4f,
+                    G = 0.4f,
+                    B = 0.4f,
+                },
+                new ColorDef
+                {
+                    Name = "Blue",
+                    R = 0.2f,
+                    G = 0.4f,
+                    B = 0.8f,
+                },
+                new ColorDef
+                {
+                    Name = "Red",
+                    R = 0.9f,
+                    G = 0.2f,
+                    B = 0.2f,
+                },
+                new ColorDef
+                {
+                    Name = "Yellow",
+                    R = 1.0f,
+                    G = 0.8f,
+                    B = 0.2f,
+                },
+                new ColorDef
+                {
+                    Name = "Purple",
+                    R = 0.6f,
+                    G = 0.3f,
+                    B = 0.6f,
+                },
+                new ColorDef
+                {
+                    Name = "Orange",
+                    R = 1.0f,
+                    G = 0.5f,
+                    B = 0.3f,
+                },
+                new ColorDef
+                {
+                    Name = "Cyan",
+                    R = 0.2f,
+                    G = 0.8f,
+                    B = 0.8f,
+                },
+                new ColorDef
+                {
+                    Name = "White",
+                    R = 0.95f,
+                    G = 0.95f,
+                    B = 0.95f,
+                },
+            },
         };
         content.RegisterColorPalette("test", testPalette);
 
@@ -181,8 +301,9 @@ public sealed class TestSimulationBuilder
                 DecayPerTick = need.DecayPerTick,
                 CriticalThreshold = need.CriticalThreshold,
                 LowThreshold = need.LowThreshold,
-                CriticalDebuffId = criticalDebuff != null ? content.GetBuffId(criticalDebuff) : null,
-                LowDebuffId = lowDebuff != null ? content.GetBuffId(lowDebuff) : null
+                CriticalDebuffId =
+                    criticalDebuff != null ? content.GetBuffId(criticalDebuff) : null,
+                LowDebuffId = lowDebuff != null ? content.GetBuffId(lowDebuff) : null,
             };
             content.RegisterNeed(key, resolvedNeed);
         }
@@ -200,7 +321,7 @@ public sealed class TestSimulationBuilder
                 InteractionDurationTicks = obj.InteractionDurationTicks,
                 UseAreas = obj.UseAreas,
                 SatisfiesNeedId = satisfiesNeed != null ? content.GetNeedId(satisfiesNeed) : null,
-                GrantsBuffId = grantsBuff != null ? content.GetBuffId(grantsBuff) : null
+                GrantsBuffId = grantsBuff != null ? content.GetBuffId(grantsBuff) : null,
             };
             content.RegisterObject(key, resolvedObj);
         }
@@ -214,8 +335,11 @@ public sealed class TestSimulationBuilder
         // Convert object placements to use resolved IDs
         foreach (var (objectKey, x, y) in _objectPlacements)
         {
-            var objectId = content.GetObjectId(objectKey)
-                ?? throw new InvalidOperationException($"Object '{objectKey}' not found. Did you forget to call DefineObject()?");
+            var objectId =
+                content.GetObjectId(objectKey)
+                ?? throw new InvalidOperationException(
+                    $"Object '{objectKey}' not found. Did you forget to call DefineObject()?"
+                );
             _config.Objects.Add((objectId, x, y));
         }
 
@@ -225,17 +349,22 @@ public sealed class TestSimulationBuilder
             var needsById = new Dictionary<int, float>();
             foreach (var (needKey, value) in needsByName)
             {
-                var needId = content.GetNeedId(needKey)
-                    ?? throw new InvalidOperationException($"Need '{needKey}' not found. Did you forget to call DefineNeed()?");
+                var needId =
+                    content.GetNeedId(needKey)
+                    ?? throw new InvalidOperationException(
+                        $"Need '{needKey}' not found. Did you forget to call DefineNeed()?"
+                    );
                 needsById[needId] = value;
             }
-            _config.Pawns.Add(new PawnConfig
-            {
-                Name = name,
-                X = x,
-                Y = y,
-                Needs = needsById
-            });
+            _config.Pawns.Add(
+                new PawnConfig
+                {
+                    Name = name,
+                    X = x,
+                    Y = y,
+                    Needs = needsById,
+                }
+            );
         }
 
         // Create and return the simulation with the content
@@ -275,6 +404,7 @@ public static class SimulationTestExtensions
             Console.WriteLine();
         }
     }
+
     /// <summary>
     /// Get all pawn positions in the simulation.
     /// </summary>
@@ -302,16 +432,20 @@ public static class SimulationTestExtensions
         }
         return result;
     }
+
     /// <summary>
     /// Get the need value for a pawn by entity ID and need key name.
     /// </summary>
     public static float GetNeedValue(this Simulation sim, EntityId pawnId, string needKey)
     {
         var needId = sim.Content.GetNeedId(needKey);
-        if (!needId.HasValue) return 0f;
-        
-        if (sim.Entities.Needs.TryGetValue(pawnId, out var needs) &&
-            needs.Needs.TryGetValue(needId.Value, out var value))
+        if (!needId.HasValue)
+            return 0f;
+
+        if (
+            sim.Entities.Needs.TryGetValue(pawnId, out var needs)
+            && needs.Needs.TryGetValue(needId.Value, out var value)
+        )
         {
             return value;
         }

@@ -6,14 +6,19 @@ namespace SimGame.Core;
 public readonly struct EntityId : IEquatable<EntityId>
 {
     public readonly int Value;
+
     public EntityId(int v) => Value = v;
-    
+
     public bool Equals(EntityId other) => Value == other.Value;
+
     public override bool Equals(object? obj) => obj is EntityId other && Equals(other);
+
     public override int GetHashCode() => Value;
+
     public override string ToString() => Value.ToString();
-    
+
     public static bool operator ==(EntityId left, EntityId right) => left.Equals(right);
+
     public static bool operator !=(EntityId left, EntityId right) => !left.Equals(right);
 }
 
@@ -30,13 +35,22 @@ public sealed class EntityManager
     /// <param name="name">The pawn's name (defaults to "Pawn")</param>
     /// <param name="age">The pawn's age (defaults to 1)</param>
     /// <param name="needs">The pawn's needs (defaults to empty dictionary)</param>
-    public EntityId CreatePawn(TileCoord position, string name = "Pawn", int age = 1, Dictionary<int, float>? needs = null)
+    public EntityId CreatePawn(
+        TileCoord position,
+        string name = "Pawn",
+        int age = 1,
+        Dictionary<int, float>? needs = null
+    )
     {
         var id = Create();
         Pawns[id] = new PawnComponent { Name = name, Age = age };
         Positions[id] = new PositionComponent { Coord = position };
         Moods[id] = new MoodComponent { Mood = 0 };
-        Needs[id] = new NeedsComponent { Needs = needs != null ? new Dictionary<int, float>(needs) : new Dictionary<int, float>() };
+        Needs[id] = new NeedsComponent
+        {
+            Needs =
+                needs != null ? new Dictionary<int, float>(needs) : new Dictionary<int, float>(),
+        };
         Buffs[id] = new BuffComponent();
         Actions[id] = new ActionComponent();
         return id;
@@ -49,11 +63,7 @@ public sealed class EntityManager
     {
         var id = Create();
         Positions[id] = new PositionComponent { Coord = position };
-        Objects[id] = new ObjectComponent
-        {
-            ObjectDefId = objectDefId,
-            ColorIndex = colorIndex
-        };
+        Objects[id] = new ObjectComponent { ObjectDefId = objectDefId, ColorIndex = colorIndex };
         return id;
     }
 
@@ -66,6 +76,7 @@ public sealed class EntityManager
     public readonly Dictionary<EntityId, ObjectComponent> Objects = new();
 
     public IEnumerable<EntityId> AllPawns() => Pawns.Keys;
+
     public IEnumerable<EntityId> AllObjects() => Objects.Keys;
 
     /// <summary>

@@ -54,7 +54,7 @@ public enum ActionType
     Idle,
     MoveTo,
     UseObject,
-    Socialize
+    Socialize,
 }
 
 /// <summary>

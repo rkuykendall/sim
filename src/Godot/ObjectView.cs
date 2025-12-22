@@ -3,8 +3,11 @@ using SimGame.Godot;
 
 public partial class ObjectView : Node2D
 {
-    [Export] public Label? NameLabel { get; set; }
-    [Export] public ColorRect? Body { get; set; }
+    [Export]
+    public Label? NameLabel { get; set; }
+
+    [Export]
+    public ColorRect? Body { get; set; }
 
     private Sprite2D? _sprite;
     private bool _usesSprite = false;
@@ -32,14 +35,14 @@ public partial class ObjectView : Node2D
         _sprite = new Sprite2D
         {
             Texture = texture,
-            Centered = true,  // Center on object position
-            Name = "Sprite"
+            Centered = true, // Center on object position
+            Name = "Sprite",
         };
 
         // Scale 16x16 sprite to 28x28 (object size)
         if (texture.GetWidth() == 16)
         {
-            _sprite.Scale = new Vector2(1.75f, 1.75f);  // 16 * 1.75 = 28
+            _sprite.Scale = new Vector2(1.75f, 1.75f); // 16 * 1.75 = 28
         }
 
         AddChild(_sprite);

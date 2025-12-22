@@ -7,7 +7,12 @@ public static class Pathfinder
 {
     private static readonly (int dx, int dy)[] Directions = { (0, 1), (0, -1), (1, 0), (-1, 0) };
 
-    public static List<TileCoord>? FindPath(World world, TileCoord start, TileCoord goal, HashSet<TileCoord>? avoidTiles = null)
+    public static List<TileCoord>? FindPath(
+        World world,
+        TileCoord start,
+        TileCoord goal,
+        HashSet<TileCoord>? avoidTiles = null
+    )
     {
         var openSet = new PriorityQueue<TileCoord, float>();
         var cameFrom = new Dictionary<TileCoord, TileCoord>();
@@ -25,14 +30,16 @@ public static class Pathfinder
             foreach (var (dx, dy) in Directions)
             {
                 var neighbor = new TileCoord(current.X + dx, current.Y + dy);
-                
+
                 // Check bounds first
-                if (!world.IsInBounds(neighbor)) continue;
-                
+                if (!world.IsInBounds(neighbor))
+                    continue;
+
                 var tile = world.GetTile(neighbor);
 
-                if (!tile.Walkable) continue;
-                
+                if (!tile.Walkable)
+                    continue;
+
                 // Avoid tiles with pawns
                 if (avoidTiles != null && avoidTiles.Contains(neighbor))
                     continue;
@@ -52,10 +59,13 @@ public static class Pathfinder
         return null;
     }
 
-    private static float Heuristic(TileCoord a, TileCoord b)
-        => Math.Abs(a.X - b.X) + Math.Abs(a.Y - b.Y);
+    private static float Heuristic(TileCoord a, TileCoord b) =>
+        Math.Abs(a.X - b.X) + Math.Abs(a.Y - b.Y);
 
-    private static List<TileCoord> ReconstructPath(Dictionary<TileCoord, TileCoord> cameFrom, TileCoord current)
+    private static List<TileCoord> ReconstructPath(
+        Dictionary<TileCoord, TileCoord> cameFrom,
+        TileCoord current
+    )
     {
         // Note: Path includes the start position (index 0) intentionally.
         // ActionSystem uses path index as a timing mechanism where index 0 = current position,

@@ -18,10 +18,7 @@ public partial class PreviewSquare : Button
         CustomMinimumSize = new Vector2(96, 96);
 
         // Create color layer (background)
-        _colorRect = new ColorRect
-        {
-            MouseFilter = MouseFilterEnum.Ignore
-        };
+        _colorRect = new ColorRect { MouseFilter = MouseFilterEnum.Ignore };
         _colorRect.SetAnchorsPreset(LayoutPreset.FullRect);
         AddChild(_colorRect);
         MoveChild(_colorRect, 0);
@@ -32,7 +29,7 @@ public partial class PreviewSquare : Button
             ExpandMode = TextureRect.ExpandModeEnum.FitWidth,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             MouseFilter = MouseFilterEnum.Ignore,
-            Visible = false
+            Visible = false,
         };
         _textureRect.SetAnchorsPreset(LayoutPreset.FullRect);
         AddChild(_textureRect);
@@ -51,7 +48,17 @@ public partial class PreviewSquare : Button
     /// <param name="isTerrainPreview">True if this is the terrain preview (shows generic-terrain.png when null)</param>
     /// <param name="isDeletePreview">True if this is the delete preview (shows delete.png)</param>
     /// <param name="isSelectPreview">True if this is the select preview (shows select.png)</param>
-    public void UpdatePreview(int colorIndex, int? objectDefId, int? terrainDefId, ContentRegistry? content, Color[] palette, bool isObjectPreview = false, bool isTerrainPreview = false, bool isDeletePreview = false, bool isSelectPreview = false)
+    public void UpdatePreview(
+        int colorIndex,
+        int? objectDefId,
+        int? terrainDefId,
+        ContentRegistry? content,
+        Color[] palette,
+        bool isObjectPreview = false,
+        bool isTerrainPreview = false,
+        bool isDeletePreview = false,
+        bool isSelectPreview = false
+    )
     {
         if (_colorRect == null || _textureRect == null)
             return;
@@ -62,11 +69,17 @@ public partial class PreviewSquare : Button
         // Determine which sprite to show
         if (content != null)
         {
-            if (objectDefId.HasValue && content.Objects.TryGetValue(objectDefId.Value, out var objDef))
+            if (
+                objectDefId.HasValue
+                && content.Objects.TryGetValue(objectDefId.Value, out var objDef)
+            )
             {
                 texture = SpriteResourceManager.GetTexture(objDef.SpriteKey);
             }
-            else if (terrainDefId.HasValue && content.Terrains.TryGetValue(terrainDefId.Value, out var terrainDef))
+            else if (
+                terrainDefId.HasValue
+                && content.Terrains.TryGetValue(terrainDefId.Value, out var terrainDef)
+            )
             {
                 texture = SpriteResourceManager.GetTexture(terrainDef.SpriteKey);
             }
@@ -129,7 +142,7 @@ public partial class PreviewSquare : Button
                 BorderWidthRight = 3,
                 BorderWidthTop = 3,
                 BorderWidthBottom = 3,
-                DrawCenter = false
+                DrawCenter = false,
             };
             AddThemeStyleboxOverride("normal", styleBox);
             AddThemeStyleboxOverride("hover", styleBox);

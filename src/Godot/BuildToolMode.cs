@@ -8,12 +8,12 @@ namespace SimGame.Godot;
 public enum BuildToolMode
 {
     PlaceObject, // Default: Place objects (fridge, bed, walls, decorations, etc.)
-    PlaceTerrain,// Paint terrain tiles (single tile)
-    FillSquare,  // Click and drag to fill a rectangle
+    PlaceTerrain, // Paint terrain tiles (single tile)
+    FillSquare, // Click and drag to fill a rectangle
     OutlineSquare, // Click and drag to draw only the outline of a rectangle
-    FloodFill,   // Fill all connected matching tiles
-    Delete,      // Remove objects
-    Select       // Click to select pawns/objects (existing behavior)
+    FloodFill, // Fill all connected matching tiles
+    Delete, // Remove objects
+    Select, // Click to select pawns/objects (existing behavior)
 }
 
 /// <summary>
@@ -32,7 +32,9 @@ public static class GameColorPalette
     /// <summary>
     /// Convert a list of Core ColorDefs to Godot.Color array.
     /// </summary>
-    public static Color[] ToGodotColors(System.Collections.Generic.IReadOnlyList<Core.ColorDef> palette)
+    public static Color[] ToGodotColors(
+        System.Collections.Generic.IReadOnlyList<Core.ColorDef> palette
+    )
     {
         var colors = new Color[palette.Count];
         for (int i = 0; i < palette.Count; i++)
