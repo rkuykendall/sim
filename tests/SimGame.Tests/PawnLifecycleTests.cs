@@ -28,14 +28,14 @@ public class PawnLifecycleTests
         // Use fast decay so the test doesn't take forever
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(9, 9);
-        builder.DefineBuff("Hungry", "Hungry", -5);
-        builder.DefineNeed(
+        var hungryBuffId = builder.DefineBuff("Hungry", "Hungry", -5);
+        var hungerNeedId = builder.DefineNeed(
             key: "Hunger",
             decayPerTick: 0.5f,
             lowThreshold: 35f,
             lowDebuff: "Hungry"
         );
-        builder.DefineObject(
+        var fridgeDefId = builder.DefineObject(
             key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
@@ -145,14 +145,14 @@ public class PawnLifecycleTests
         // Start below debuff threshold (35) - should immediately seek food
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 0);
-        builder.DefineBuff("Hungry", "Hungry", -5);
-        builder.DefineNeed(
+        var hungryBuffId = builder.DefineBuff("Hungry", "Hungry", -5);
+        var hungerNeedId = builder.DefineNeed(
             key: "Hunger",
             decayPerTick: 0.01f,
             lowThreshold: 35f,
             lowDebuff: "Hungry"
         );
-        builder.DefineObject(
+        var fridgeDefId = builder.DefineObject(
             key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
@@ -191,14 +191,14 @@ public class PawnLifecycleTests
         // Start at 95 (well above debuff threshold, and high enough not to bother) - should wander
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 0);
-        builder.DefineBuff("Hungry", "Hungry", -5);
-        builder.DefineNeed(
+        var hungryBuffId = builder.DefineBuff("Hungry", "Hungry", -5);
+        var hungerNeedId = builder.DefineNeed(
             key: "Hunger",
             decayPerTick: 0.001f,
             lowThreshold: 35f,
             lowDebuff: "Hungry"
         );
-        builder.DefineObject(
+        var fridgeDefId = builder.DefineObject(
             key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
@@ -233,9 +233,14 @@ public class PawnLifecycleTests
     {
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(9, 9);
-        builder.DefineBuff("Hungry", "Hungry", -5);
-        builder.DefineNeed("Hunger", decayPerTick: 0.3f, lowThreshold: 35f, lowDebuff: "Hungry");
-        builder.DefineObject(
+        var hungryBuffId = builder.DefineBuff("Hungry", "Hungry", -5);
+        var hungerNeedId = builder.DefineNeed(
+            "Hunger",
+            decayPerTick: 0.3f,
+            lowThreshold: 35f,
+            lowDebuff: "Hungry"
+        );
+        var fridgeDefId = builder.DefineObject(
             key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 60f,

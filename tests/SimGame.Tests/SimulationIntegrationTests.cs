@@ -22,7 +22,7 @@ public class SimulationIntegrationTests
         var builder = new TestSimulationBuilder();
         builder.DefineNeed(key: "Hunger", decayPerTick: 0.02f);
         builder.DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400);
-        builder.DefineObject(
+        var fridgeDefId = builder.DefineObject(
             key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
@@ -70,7 +70,7 @@ public class SimulationIntegrationTests
         var builder = new TestSimulationBuilder();
         builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         builder.DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400);
-        builder.DefineObject(
+        var fridgeDefId = builder.DefineObject(
             key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
@@ -165,7 +165,7 @@ public class SimulationIntegrationTests
         builder.WithWorldBounds(9, 0);
         builder.DefineNeed(key: "Hunger", decayPerTick: 0.01f);
         builder.DefineBuff("GoodMeal", "Good Meal", moodOffset: 15, durationTicks: 2400);
-        builder.DefineObject(
+        var fridgeDefId = builder.DefineObject(
             key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
@@ -201,7 +201,7 @@ public class SimulationIntegrationTests
         // Arrange: Create a world with an object
         var builder = new TestSimulationBuilder();
         builder.DefineNeed(key: "Hunger");
-        builder.DefineObject(key: "Fridge", satisfiesNeed: "Hunger");
+        var fridgeDefId = builder.DefineObject(key: "Fridge", satisfiesNeed: "Hunger");
         builder.AddObject("Fridge", 2, 2);
         var sim = builder.Build();
 

@@ -8,23 +8,21 @@ public class SocialSystemTests
     {
         // Arrange: Define Social need and two pawns
         var builder = new TestSimulationBuilder();
-        builder.DefineNeed(key: "Social", decayPerTick: 0f);
+        var socialNeedId = builder.DefineNeed(key: "Social", decayPerTick: 0f);
         builder.AddPawn("A", 5, 5, new Dictionary<string, float> { { "Social", 50f } });
         builder.AddPawn("B", 6, 5, new Dictionary<string, float> { { "Social", 50f } });
         var sim = builder.Build();
-
         var content = sim.Content;
         var pawn1 = sim.GetPawnByName("A");
         var pawn2 = sim.GetPawnByName("B");
-        var socialNeedId = content.GetNeedId("Social");
-        Assert.True(socialNeedId.HasValue, "Social need ID should not be null");
+        // socialNeedId is always valid (int)
 
         // Act: Run several ticks
         sim.RunTicks(10);
 
         // Assert: Both pawns should have gained social need
-        Assert.True(sim.Entities.Needs[pawn1.Value].Needs[socialNeedId.Value] > 50f);
-        Assert.True(sim.Entities.Needs[pawn2.Value].Needs[socialNeedId.Value] > 50f);
+        Assert.True(sim.Entities.Needs[pawn1.Value].Needs[socialNeedId] > 50f);
+        Assert.True(sim.Entities.Needs[pawn2.Value].Needs[socialNeedId] > 50f);
     }
 
     [Fact]
@@ -32,19 +30,14 @@ public class SocialSystemTests
     {
         // Arrange: Define Social need and one pawn
         var builder = new TestSimulationBuilder();
-        builder.DefineNeed(key: "Social", decayPerTick: 0f);
+        var socialNeedId = builder.DefineNeed(key: "Social", decayPerTick: 0f);
         builder.AddPawn("Solo", 5, 5, new Dictionary<string, float> { { "Social", 50f } });
         var sim = builder.Build();
 
-        var content = sim.Content;
         var pawn1 = sim.GetPawnByName("Solo");
-        var socialNeedId = content.GetNeedId("Social");
-        Assert.True(socialNeedId.HasValue, "Social need ID should not be null");
-
         // Act: Run several ticks
         sim.RunTicks(10);
-
         // Assert: Pawn should not have gained social need
-        Assert.Equal(50f, sim.Entities.Needs[pawn1.Value].Needs[socialNeedId.Value]);
+        Assert.Equal(50f, sim.Entities.Needs[pawn1.Value].Needs[socialNeedId]);
     }
 }

@@ -14,14 +14,15 @@ public class DeleteToolTests
         // Arrange: Create a world with grass base + path overlay + object
         var builder = new TestSimulationBuilder();
 
-        builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
-        builder.DefineTerrain(key: "Path", walkable: true, spriteKey: "path", isAutotiling: true);
-        builder.DefineObject(key: "Bed");
+        var grassId = builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
+        var pathId = builder.DefineTerrain(
+            key: "Path",
+            walkable: true,
+            spriteKey: "path",
+            isAutotiling: true
+        );
+        var bedId = builder.DefineObject(key: "Bed");
         var sim = builder.Build();
-
-        var grassId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "grass").Key;
-        var pathId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "path").Key;
-        var bedId = sim.Content.GetObjectId("Bed")!.Value;
 
         // Paint grass, then path, then place object
         sim.PaintTerrain(2, 2, grassId);
@@ -48,12 +49,14 @@ public class DeleteToolTests
         // Arrange: Create a world with grass base + path overlay (no object)
         var builder = new TestSimulationBuilder();
 
-        builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
-        builder.DefineTerrain(key: "Path", walkable: true, spriteKey: "path", isAutotiling: true);
+        var grassId = builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
+        var pathId = builder.DefineTerrain(
+            key: "Path",
+            walkable: true,
+            spriteKey: "path",
+            isAutotiling: true
+        );
         var sim = builder.Build();
-
-        var grassId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "grass").Key;
-        var pathId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "path").Key;
 
         // Paint grass, then path
         sim.PaintTerrain(2, 2, grassId);
@@ -78,12 +81,9 @@ public class DeleteToolTests
         // Arrange: Create a world with just grass base (no overlay, no object)
         var builder = new TestSimulationBuilder();
 
-        builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
-        builder.DefineTerrain(key: "Flat", walkable: true, spriteKey: "flat");
+        var grassId = builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
+        var flatId = builder.DefineTerrain(key: "Flat", walkable: true, spriteKey: "flat");
         var sim = builder.Build();
-
-        var grassId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "grass").Key;
-        var flatId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "flat").Key;
 
         // Paint grass
         sim.PaintTerrain(2, 2, grassId);
@@ -108,16 +108,16 @@ public class DeleteToolTests
         // Arrange: Create a world with grass + path + object
         var builder = new TestSimulationBuilder();
 
-        builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
-        builder.DefineTerrain(key: "Path", walkable: true, spriteKey: "path", isAutotiling: true);
-        builder.DefineTerrain(key: "Flat", walkable: true, spriteKey: "flat");
-        builder.DefineObject(key: "Bed");
+        var grassId = builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
+        var pathId = builder.DefineTerrain(
+            key: "Path",
+            walkable: true,
+            spriteKey: "path",
+            isAutotiling: true
+        );
+        var flatId = builder.DefineTerrain(key: "Flat", walkable: true, spriteKey: "flat");
+        var bedId = builder.DefineObject(key: "Bed");
         var sim = builder.Build();
-
-        var grassId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "grass").Key;
-        var pathId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "path").Key;
-        var flatId = sim.Content.Terrains.First(kv => kv.Value.SpriteKey == "flat").Key;
-        var bedId = sim.Content.GetObjectId("Bed")!.Value;
 
         // Setup: grass + path + object
         sim.PaintTerrain(2, 2, grassId);

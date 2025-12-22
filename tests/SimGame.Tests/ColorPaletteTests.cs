@@ -14,14 +14,11 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineObject(key: "TestObject");
+        var objectDefId = builder.DefineObject(key: "TestObject");
         var sim = builder.Build();
 
-        var objectDefId = sim.Content.GetObjectId("TestObject");
-        Assert.NotNull(objectDefId);
-
         // Act: Create object with color index 5 (blue)
-        var objectId = sim.CreateObject(objectDefId.Value, 2, 2, colorIndex: 5);
+        var objectId = sim.CreateObject(objectDefId, 2, 2, colorIndex: 5);
 
         // Assert: Verify the color index is stored
         Assert.True(sim.Entities.Objects.TryGetValue(objectId, out var objComp));
@@ -33,14 +30,10 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineObject(key: "TestObject");
+        var objectDefId = builder.DefineObject(key: "TestObject");
         var sim = builder.Build();
-
-        var objectDefId = sim.Content.GetObjectId("TestObject");
-        Assert.NotNull(objectDefId);
-
         // Act: Create object without specifying color index
-        var objectId = sim.CreateObject(objectDefId.Value, 2, 2);
+        var objectId = sim.CreateObject(objectDefId, 2, 2);
 
         // Assert: Verify the color index defaults to 0 (green)
         Assert.True(sim.Entities.Objects.TryGetValue(objectId, out var objComp));
@@ -52,14 +45,9 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
-        builder.DefineTerrain(key: "Stone", walkable: true, spriteKey: "stone");
+        var grassDefId = builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
+        var stoneDefId = builder.DefineTerrain(key: "Stone", walkable: true, spriteKey: "stone");
         var sim = builder.Build();
-
-        var stoneDefId = sim
-            .Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "stone")
-            .Key;
-        Assert.True(stoneDefId != 0);
 
         // Act: Paint terrain with color index 4 (dark gray)
         sim.PaintTerrain(3, 3, stoneDefId, colorIndex: 4);
@@ -75,14 +63,13 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
-        builder.DefineTerrain(key: "Concrete", walkable: true, spriteKey: "concrete");
+        var grassDefId = builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
+        var concreteDefId = builder.DefineTerrain(
+            key: "Concrete",
+            walkable: true,
+            spriteKey: "concrete"
+        );
         var sim = builder.Build();
-
-        var concreteDefId = sim
-            .Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "concrete")
-            .Key;
-        Assert.True(concreteDefId != 0);
 
         // Act: Paint terrain without specifying color index
         sim.PaintTerrain(2, 2, concreteDefId);
@@ -98,16 +85,13 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineObject(key: "Bed");
+        var bedDefId = builder.DefineObject(key: "Bed");
         var sim = builder.Build();
 
-        var bedDefId = sim.Content.GetObjectId("Bed");
-        Assert.NotNull(bedDefId);
-
         // Create objects with different colors
-        sim.CreateObject(bedDefId.Value, 1, 1, colorIndex: 1); // Brown
-        sim.CreateObject(bedDefId.Value, 2, 2, colorIndex: 6); // Red
-        sim.CreateObject(bedDefId.Value, 3, 3, colorIndex: 11); // White
+        sim.CreateObject(bedDefId, 1, 1, colorIndex: 1); // Brown
+        sim.CreateObject(bedDefId, 2, 2, colorIndex: 6); // Red
+        sim.CreateObject(bedDefId, 3, 3, colorIndex: 11); // White
 
         // Act: Get render snapshot
         var snapshot = sim.CreateRenderSnapshot();
@@ -130,16 +114,13 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineObject(key: "Bed");
+        var bedDefId = builder.DefineObject(key: "Bed");
         var sim = builder.Build();
 
-        var bedDefId = sim.Content.GetObjectId("Bed");
-        Assert.NotNull(bedDefId);
-
         // Act: Create multiple beds with different colors
-        var brownBed = sim.CreateObject(bedDefId.Value, 1, 1, colorIndex: 1);
-        var redBed = sim.CreateObject(bedDefId.Value, 2, 2, colorIndex: 6);
-        var purpleBed = sim.CreateObject(bedDefId.Value, 3, 3, colorIndex: 8);
+        var brownBed = sim.CreateObject(bedDefId, 1, 1, colorIndex: 1);
+        var redBed = sim.CreateObject(bedDefId, 2, 2, colorIndex: 6);
+        var purpleBed = sim.CreateObject(bedDefId, 3, 3, colorIndex: 8);
 
         // Assert: Each object has its own color
         sim.Entities.Objects.TryGetValue(brownBed, out var brownObj);
@@ -157,13 +138,8 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
+        var grassDefId = builder.DefineTerrain(key: "Grass", walkable: true, spriteKey: "grass");
         var sim = builder.Build();
-
-        var grassDefId = sim
-            .Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "grass")
-            .Key;
-        Assert.True(grassDefId != 0);
 
         var coord = new TileCoord(2, 2);
 
@@ -186,14 +162,10 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineObject(key: "Bed");
+        var bedDefId = builder.DefineObject(key: "Bed");
         var sim = builder.Build();
-
-        var bedDefId = sim.Content.GetObjectId("Bed");
-        Assert.NotNull(bedDefId);
-
-        var redBed = sim.CreateObject(bedDefId.Value, 1, 1, colorIndex: 6);
-        var blueBed = sim.CreateObject(bedDefId.Value, 2, 2, colorIndex: 5);
+        var redBed = sim.CreateObject(bedDefId, 1, 1, colorIndex: 6);
+        var blueBed = sim.CreateObject(bedDefId, 2, 2, colorIndex: 5);
 
         // Act: Delete the red bed
         sim.TryDeleteObject(1, 1);

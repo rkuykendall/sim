@@ -35,7 +35,7 @@ public class UseAreasTests
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 2);
         builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        builder.DefineObject(
+        var fridgeDefId = builder.DefineObject(
             key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
@@ -108,7 +108,7 @@ public class UseAreasTests
         // Arrange: TV at (2,1) with multiple use areas
         var builder = new TestSimulationBuilder();
         builder.DefineNeed(key: "Fun", decayPerTick: 0.001f);
-        builder.DefineObject(
+        var tvDefId = builder.DefineObject(
             key: "TV",
             satisfiesNeed: "Fun",
             satisfactionAmount: 40f,
@@ -181,14 +181,14 @@ public class UseAreasTests
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 2);
         builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        builder.DefineObject(
+        var fridgeDefId = builder.DefineObject(
             key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (0, 1) }
         );
-        builder.DefineObject(key: "Blocker");
+        var blockerDefId = builder.DefineObject(key: "Blocker");
         builder.AddObject("Fridge", 2, 0);
         builder.AddObject("Blocker", 2, 1);
         builder.AddPawn("TestPawn", 0, 2, new Dictionary<string, float> { { "Hunger", 10f } });

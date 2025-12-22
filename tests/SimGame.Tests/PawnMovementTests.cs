@@ -30,7 +30,7 @@ public class PawnMovementTests
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(9, 0); // 10x1 corridor
         builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        builder.DefineObject(
+        var fridgeDefId = builder.DefineObject(
             key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
@@ -123,7 +123,7 @@ public class PawnMovementTests
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(3, 0); // 4x1: [Fridge][Pawn1][Pawn2][Fridge]
         builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        builder.DefineObject(
+        var fridgeDefId = builder.DefineObject(
             key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
@@ -197,7 +197,7 @@ public class PawnMovementTests
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 2); // 5x3 area
         builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        builder.DefineObject(
+        var fridgeDefId = builder.DefineObject(
             key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
@@ -268,13 +268,13 @@ public class PawnMovementTests
         builder.WithWorldBounds(6, 2); // 7x3 area
         builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         builder.DefineNeed(key: "Energy", decayPerTick: 0.001f);
-        builder.DefineObject(
+        var fridgeDefId = builder.DefineObject(
             key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
-        builder.DefineObject(
+        var bedDefId = builder.DefineObject(
             key: "Bed",
             satisfiesNeed: "Energy",
             satisfactionAmount: 50f,
@@ -403,7 +403,7 @@ public class PawnMovementTests
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(2, 0); // 3x1 corridor
         builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        builder.DefineObject(
+        var fridgeDefId = builder.DefineObject(
             key: "Fridge",
             satisfiesNeed: "Hunger",
             satisfactionAmount: 50f,
@@ -461,7 +461,7 @@ public class PawnMovementTests
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 2); // 5x3 area
         builder.DefineNeed(key: "Hygiene", decayPerTick: 0.001f);
-        builder.DefineObject(
+        var showerDefId = builder.DefineObject(
             key: "Shower",
             satisfiesNeed: "Hygiene",
             satisfactionAmount: 50f,
