@@ -38,7 +38,6 @@ public sealed class SimulationConfig
 public sealed class PawnConfig
 {
     public string Name { get; set; } = "Pawn";
-    public int Age { get; set; } = 25;
     public int X { get; set; }
     public int Y { get; set; }
     public Dictionary<int, float> Needs { get; set; } = new();
@@ -330,14 +329,13 @@ public sealed class Simulation
         }
 
         var coord = new TileCoord(config.X, config.Y);
-        return Entities.CreatePawn(coord, config.Name, config.Age, config.Needs);
+        return Entities.CreatePawn(coord, config.Name, config.Needs);
     }
 
     /// <summary>
     /// Create a pawn with default values at a random walkable location.
     /// </summary>
     /// <param name="name">The pawn's name (defaults to "Pawn")</param>
-    /// <param name="age">The pawn's age (defaults to 1)</param>
     /// <returns>The created entity ID</returns>
     /// <exception cref="InvalidOperationException">Thrown when no walkable tiles are available.</exception>
     public EntityId CreatePawn(string name = "Pawn", int age = 1)
@@ -346,7 +344,7 @@ public sealed class Simulation
             GetRandomWalkableTile()
             ?? throw new InvalidOperationException("No walkable tiles available to spawn pawn");
 
-        return Entities.CreatePawn(position, name, age, GetFullNeeds());
+        return Entities.CreatePawn(position, name, GetFullNeeds());
     }
 
     /// <summary>

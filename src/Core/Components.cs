@@ -12,7 +12,6 @@ public sealed class PositionComponent
 public sealed class PawnComponent
 {
     public string Name { get; set; } = "";
-    public int Age { get; set; }
 }
 
 // Needs (hunger, energy, etc.)
