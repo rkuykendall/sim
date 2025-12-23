@@ -17,7 +17,7 @@ const float NIGHT_OUTER = 0.1;
 
 // Color/brightness tweaks
 const float NIGHT_DIM = 0.5;
-const vec3 WARM_TINT = vec3(0.9, 0.9, 0.60) * 1.3;
+const vec3 WARM_TINT = vec3(1.0, 0.8, 0.50) * 1.3;
 const vec3 COOL_TINT = vec3(0.5, 0.6, 1.0) * 1.3;
 
 // 0.0 = midnight, 0.5 = noon, 1.0 = next midnight
