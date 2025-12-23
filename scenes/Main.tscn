@@ -1,20 +1,20 @@
-[gd_scene load_steps=10 format=3 uid="uid://main"]
+[gd_scene load_steps=9 format=3 uid="uid://main"]
 
-[ext_resource type="Script" path="res://src/Godot/GameRoot.cs" id="1"]
-[ext_resource type="Script" path="res://src/Godot/CameraController.cs" id="1_camera"]
-[ext_resource type="PackedScene" path="res://scenes/Pawn.tscn" id="2"]
-[ext_resource type="PackedScene" path="res://scenes/Object.tscn" id="3"]
-[ext_resource type="PackedScene" path="res://scenes/PawnInfoPanel.tscn" id="4"]
-[ext_resource type="PackedScene" path="res://scenes/ObjectInfoPanel.tscn" id="5"]
-[ext_resource type="PackedScene" path="res://scenes/TimeDisplay.tscn" id="6"]
-[ext_resource type="PackedScene" path="res://scenes/BuildToolbar.tscn" id="7"]
+[ext_resource type="Script" uid="uid://dyt0a7kifwj6v" path="res://src/Godot/GameRoot.cs" id="1"]
+[ext_resource type="Script" uid="uid://br788loevkdbs" path="res://src/Godot/CameraController.cs" id="1_camera"]
+[ext_resource type="PackedScene" uid="uid://pawn" path="res://scenes/Pawn.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://object" path="res://scenes/Object.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://doo1qhnw0n04b" path="res://scenes/PawnInfoPanel.tscn" id="4"]
+[ext_resource type="PackedScene" uid="uid://cdrc4op6sef7d" path="res://scenes/ObjectInfoPanel.tscn" id="5"]
+[ext_resource type="PackedScene" uid="uid://timedisplay" path="res://scenes/TimeDisplay.tscn" id="6"]
+[ext_resource type="PackedScene" uid="uid://buildtoolbar" path="res://scenes/BuildToolbar.tscn" id="7"]
 
 [node name="Main" type="Node2D"]
 
 [node name="Camera2D" type="Camera2D" parent="."]
-script = ExtResource("1_camera")
 position = Vector2(640, 360)
 zoom = Vector2(2, 2)
+script = ExtResource("1_camera")
 
 [node name="Tiles" type="Node2D" parent="."]
 z_index = -10
@@ -33,28 +33,42 @@ TilesRootPath = NodePath("../Tiles")
 InfoPanelPath = NodePath("../UI/PawnInfoPanel")
 ObjectInfoPanelPath = NodePath("../UI/ObjectInfoPanel")
 TimeDisplayPath = NodePath("../UI/TimeDisplay")
-NightOverlayPath = NodePath("../UI/NightOverlay")
+NightOverlayPath = NodePath("../NightOverlayLayer/NightOverlay")
 CameraPath = NodePath("../Camera2D")
 UILayerPath = NodePath("../UI")
 ToolbarPath = NodePath("../UI/BuildToolbar")
 
 [node name="UI" type="CanvasLayer" parent="."]
-layer = 1
 
-[node name="NightOverlay" type="ColorRect" parent="UI"]
+[node name="PawnInfoPanel" parent="UI" instance=ExtResource("4")]
+offset_left = -205.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 200.0
+
+[node name="ObjectInfoPanel" parent="UI" instance=ExtResource("5")]
+offset_left = -205.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 90.0
+
+[node name="TimeDisplay" parent="UI" instance=ExtResource("6")]
+offset_left = -205.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 60.0
+
+[node name="BuildToolbar" parent="UI" instance=ExtResource("7")]
+
+[node name="NightOverlayLayer" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="NightOverlay" type="ColorRect" parent="NightOverlayLayer"]
 z_index = 100
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_right = 800
-offset_bottom = 600
+offset_right = 800.0
+offset_bottom = 600.0
 mouse_filter = 2
-color = Color(0.05, 0.05, 0.15, 0)
-
-[node name="PawnInfoPanel" parent="UI" instance=ExtResource("4")]
-
-[node name="ObjectInfoPanel" parent="UI" instance=ExtResource("5")]
-
-[node name="TimeDisplay" parent="UI" instance=ExtResource("6")]
-
-[node name="BuildToolbar" parent="UI" instance=ExtResource("7")]
+color = Color(0, 0, 0, 0)

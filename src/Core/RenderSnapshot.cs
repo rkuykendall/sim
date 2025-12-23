@@ -38,6 +38,9 @@ public sealed class RenderTime
     public int Day { get; init; }
     public bool IsNight { get; init; }
     public string TimeString { get; init; } = "";
+
+    // 0.0 = midnight, 0.5 = noon, 1.0 = next midnight
+    public float DayFraction { get; init; }
 }
 
 public sealed class RenderSnapshot
@@ -167,6 +170,8 @@ public static class RenderSnapshotBuilder
             Day = sim.Time.Day,
             IsNight = sim.Time.IsNight,
             TimeString = sim.Time.TimeString,
+            DayFraction =
+                (sim.Time.Tick % TimeService.TicksPerDay) / (float)TimeService.TicksPerDay,
         };
 
         // Get the selected color palette

@@ -77,7 +77,7 @@ public sealed class SystemManager
 public sealed class TimeService
 {
     // Time configuration
-    public const int TicksPerMinute = 10; // 0.5 real seconds = 1 game minute (2x speed)
+    public const int TicksPerMinute = 1; // 0.5 real seconds = 1 game minute (2x speed)
     public const int MinutesPerHour = 60;
     public const int HoursPerDay = 24;
     public const int TicksPerHour = TicksPerMinute * MinutesPerHour;

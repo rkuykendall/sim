@@ -83,6 +83,7 @@ public partial class GameRoot : Node2D
     private ObjectInfoPanel? _objectInfoPanel;
     private TimeDisplay? _timeDisplay;
     private ColorRect? _nightOverlay;
+    private ShaderMaterial? _nightShaderMaterial;
     private Camera2D? _camera;
     private CanvasLayer? _uiLayer;
     private BuildToolbar? _toolbar;
@@ -129,7 +130,21 @@ public partial class GameRoot : Node2D
         if (!string.IsNullOrEmpty(TimeDisplayPath))
             _timeDisplay = GetNodeOrNull<TimeDisplay>(TimeDisplayPath);
         if (!string.IsNullOrEmpty(NightOverlayPath))
+        {
+            GD.Print("[DEBUG] NightOverlayPath: " + NightOverlayPath);
             _nightOverlay = GetNodeOrNull<ColorRect>(NightOverlayPath);
+            GD.Print(
+                "[DEBUG] _nightOverlay: " + (_nightOverlay != null ? _nightOverlay.Name : "null")
+            );
+            if (_nightOverlay != null)
+            {
+                var shader = GD.Load<Shader>("res://shaders/sunset_night.gdshader");
+                GD.Print("[DEBUG] Shader loaded: " + (shader != null));
+                _nightShaderMaterial = new ShaderMaterial { Shader = shader };
+                _nightOverlay.Material = _nightShaderMaterial;
+                GD.Print("[DEBUG] ShaderMaterial assigned to NightOverlay");
+            }
+        }
         if (!string.IsNullOrEmpty(CameraPath))
             _camera = GetNodeOrNull<Camera2D>(CameraPath);
         if (!string.IsNullOrEmpty(UILayerPath))
@@ -1230,31 +1245,14 @@ public partial class GameRoot : Node2D
 
     private void UpdateNightOverlay(RenderSnapshot snapshot)
     {
-        if (_nightOverlay == null)
+        if (_nightShaderMaterial == null || _nightOverlay == null)
+        {
+            GD.Print("[DEBUG] NightOverlay or ShaderMaterial missing");
             return;
-
-        // Smoothly transition night overlay based on time
-        float targetAlpha = 0f;
-        int hour = snapshot.Time.Hour;
-
-        if (hour >= 22 || hour < 5)
-        {
-            // Deep night: 10 PM - 5 AM
-            targetAlpha = 0.4f;
-        }
-        else if (hour >= 20)
-        {
-            // Dusk: 8 PM - 10 PM
-            targetAlpha = (hour - 20) * 0.2f + (snapshot.Time.Minute / 60f) * 0.2f;
-        }
-        else if (hour < 7)
-        {
-            // Dawn: 5 AM - 7 AM
-            targetAlpha = 0.4f - ((hour - 5) * 0.2f + (snapshot.Time.Minute / 60f) * 0.2f);
         }
 
-        var color = _nightOverlay.Color;
-        color.A = Mathf.Lerp(color.A, targetAlpha, 0.05f);
-        _nightOverlay.Color = color;
+        // Normalized day fraction from simulation tick: 0.0 = midnight, 0.5 = noon, 1.0 = next midnight
+        float timeOfDay = snapshot.Time.DayFraction;
+        _nightShaderMaterial.SetShaderParameter("time_of_day", timeOfDay);
     }
 }
