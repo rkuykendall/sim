@@ -361,9 +361,7 @@ public partial class BuildToolbar : HBoxContainer
 
     private void OnTerrainOptionSelected(int terrainDefId)
     {
-        // Only set mode if not already PlaceTerrain to avoid resetting tool
-        if (BuildToolState.Mode != BuildToolMode.PlaceTerrain)
-            BuildToolState.Mode = BuildToolMode.PlaceTerrain;
+        // Keep the current terrain tool (paint/fill/outline/flood) and only change the selected texture
         BuildToolState.SelectedTerrainDefId = terrainDefId;
         BuildToolState.SelectedObjectDefId = null;
         UpdateAllButtons();

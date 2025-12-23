@@ -4,44 +4,49 @@
 Terrains = {
     Flat = {
         walkable = true,
-        spriteKey = "flat"
+        spriteKey = "flat",
     },
     Grass = {
         walkable = true,
-        spriteKey = "grass"
+        spriteKey = "grass",
     },
     Dirt = {
         walkable = true,
-        spriteKey = "dirt"
+        spriteKey = "dirt",
     },
     Concrete = {
         walkable = true,
-        spriteKey = "concrete"
+        spriteKey = "concrete",
     },
     WoodFloor = {
         walkable = true,
-        spriteKey = "wood_floor"
+        spriteKey = "wood_floor",
     },
     Stone = {
         walkable = true,
-        spriteKey = "stone"
+        spriteKey = "stone",
     },
     Path = {
         walkable = true,
         spriteKey = "path",
-        isAutotiling = true
+        isAutotiling = true,
     },
     Water = {
         walkable = false,
-        spriteKey = "water"
+        spriteKey = "water",
     },
     Block = {
         walkable = false,
-        spriteKey = "block"
+        spriteKey = "block",
     },
     Brick = {
         walkable = false,
         spriteKey = "brick",
+    },
+    Wall = {
+        walkable = false,
+        spriteKey = "wall",
+        isAutotiling = true,
     },
 }
 
