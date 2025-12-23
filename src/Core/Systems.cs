@@ -77,7 +77,7 @@ public sealed class SystemManager
 public sealed class TimeService
 {
     // Time configuration
-    public const int TicksPerMinute = 1; // 0.5 real seconds = 1 game minute (2x speed)
+    public const int TicksPerMinute = 10; // 0.5 real seconds = 1 game minute (2x speed)
     public const int MinutesPerHour = 60;
     public const int HoursPerDay = 24;
     public const int TicksPerHour = TicksPerMinute * MinutesPerHour;
@@ -864,6 +864,8 @@ public sealed class AISystem : ISystem
                 continue;
             if (objComp.InUse)
                 continue;
+            if (!IsObjectReachable(ctx, pawnId, objId))
+                continue;
 
             if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos))
                 continue;
@@ -901,6 +903,8 @@ public sealed class AISystem : ISystem
 
             // Check if this object satisfies any of our needs
             if (!objDef.SatisfiesNeedId.HasValue || !needIds.Contains(objDef.SatisfiesNeedId.Value))
+                continue;
+            if (!IsObjectReachable(ctx, pawnId, objId))
                 continue;
 
             if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos))
@@ -946,5 +950,38 @@ public sealed class AISystem : ISystem
         }
 
         return null;
+    }
+
+    private bool IsObjectReachable(SimContext ctx, EntityId pawnId, EntityId objId)
+    {
+        if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
+            return false;
+        if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos))
+            return false;
+        if (!ctx.Entities.Objects.TryGetValue(objId, out var objComp))
+            return false;
+
+        var objDef = ctx.Content.Objects[objComp.ObjectDefId];
+        var useAreas =
+            objDef.UseAreas.Count > 0
+                ? objDef.UseAreas
+                : new List<(int dx, int dy)> { (0, 1), (0, -1), (1, 0), (-1, 0) };
+
+        var occupiedTiles = ctx.Entities.GetOccupiedTiles(pawnId);
+
+        foreach (var (dx, dy) in useAreas)
+        {
+            var target = new TileCoord(objPos.Coord.X + dx, objPos.Coord.Y + dy);
+            if (!ctx.World.IsWalkable(target))
+                continue;
+            if (ctx.Entities.IsTileOccupiedByPawn(target, pawnId))
+                continue;
+
+            var path = Pathfinder.FindPath(ctx.World, pawnPos.Coord, target, occupiedTiles);
+            if (path != null && path.Count > 0)
+                return true;
+        }
+
+        return false;
     }
 }

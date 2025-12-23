@@ -551,4 +551,51 @@ public class PawnMovementTests
             $"Pawns appear stuck. Sam: {uniqueSam.Count} positions, Jordan: {uniqueJordan.Count} positions in last 100 ticks"
         );
     }
+
+    /// <summary>
+    /// Scenario: A pawn needs an object that is unreachable (behind a solid wall).
+    /// The pawn should not thrash between idle and repeatedly trying to go to the object.
+    /// </summary>
+    [Fact]
+    public void PawnWithNeed_UnreachableObject_DoesNotThrash()
+    {
+        var builder = new TestSimulationBuilder();
+        var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
+        var wallId = builder.DefineTerrain(key: "Wall", walkable: false);
+        var fridgeDefId = builder.DefineObject(
+            key: "Fridge",
+            satisfiesNeedId: hungerId,
+            satisfactionAmount: 50f,
+            interactionDuration: 5
+        );
+
+        builder.AddPawn("HungryPawn", 0, 2, new Dictionary<int, float> { { hungerId, 5f } });
+        builder.AddObject(fridgeDefId, 4, 2);
+        var sim = builder.Build();
+
+        // Paint an impassable vertical wall between the pawn and the fridge (x = 1)
+        for (int y = 0; y <= 4; y++)
+            sim.PaintTerrain(1, y, wallId);
+
+        var pawnId = sim.GetPawnByName("HungryPawn");
+        Assert.NotNull(pawnId);
+        var fridgeId = sim.Entities.AllObjects().First();
+
+        int goingToFridgeTicks = 0;
+        for (int tick = 0; tick < 60; tick++)
+        {
+            sim.Tick();
+            var actions = sim.Entities.Actions[pawnId.Value];
+            bool targetingFridge =
+                (actions.CurrentAction?.TargetEntity == fridgeId)
+                || actions.ActionQueue.Any(a => a.TargetEntity == fridgeId);
+            if (targetingFridge)
+                goingToFridgeTicks++;
+        }
+
+        Assert.True(
+            goingToFridgeTicks < 5,
+            $"Pawn kept trying to reach unreachable fridge for {goingToFridgeTicks} ticks"
+        );
+    }
 }
