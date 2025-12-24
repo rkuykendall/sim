@@ -79,6 +79,7 @@ public partial class GameRoot : Node2D
     private Node2D _pawnsRoot = null!;
     private Node2D _objectsRoot = null!;
     private Node2D _tilesRoot = null!;
+    private ModulatableTileMapLayer? _pathTileMapLayer;
     private PawnInfoPanel? _infoPanel;
     private ObjectInfoPanel? _objectInfoPanel;
     private TimeDisplay? _timeDisplay;
@@ -105,6 +106,9 @@ public partial class GameRoot : Node2D
         _objectsRoot = GetNode<Node2D>(ObjectsRootPath);
         _tilesRoot = GetNode<Node2D>(TilesRootPath);
 
+        // Initialize TileMapLayer for path overlay
+        InitializePathTileMapLayer();
+
         // Initialize palette immediately so tiles render with correct colors
         var initialSnapshot = _sim.CreateRenderSnapshot();
         _currentPalette = GameColorPalette.ToGodotColors(initialSnapshot.ColorPalette);
@@ -115,9 +119,9 @@ public partial class GameRoot : Node2D
         InitializeTileNodes();
 
         // Do an initial sync of all tiles to show the world
-        for (int x = 0; x <= _sim.World.Width; x++)
+        for (int x = 0; x < _sim.World.Width; x++)
         {
-            for (int y = 0; y <= _sim.World.Height; y++)
+            for (int y = 0; y < _sim.World.Height; y++)
             {
                 UpdateSingleTile(new TileCoord(x, y));
             }
@@ -552,19 +556,51 @@ public partial class GameRoot : Node2D
         );
     }
 
+    private void InitializePathTileMapLayer()
+    {
+        // Create TileMapLayer for path overlay with autotiling support
+        _pathTileMapLayer = new ModulatableTileMapLayer
+        {
+            Name = "PathTileMapLayer",
+            ZIndex = 0, // Render above base terrain
+        };
+
+        // Load the TileSet resource
+        var tileSet = GD.Load<TileSet>("res://resources/path_tileset.tres");
+        if (tileSet == null)
+        {
+            GD.PushError("Failed to load path_tileset.tres - path rendering will not work");
+            return;
+        }
+
+        _pathTileMapLayer.TileSet = tileSet;
+
+        // Apply shader to make black pixels transparent
+        var shader = GD.Load<Shader>("res://shaders/black_transparent.gdshader");
+        if (shader != null)
+        {
+            _pathTileMapLayer.Material = new ShaderMaterial { Shader = shader };
+        }
+
+        // Scale the tilemap to match our TileSize (32x32 display vs 16x16 source)
+        _pathTileMapLayer.Scale = new Vector2(2, 2);
+
+        _tilesRoot.AddChild(_pathTileMapLayer);
+    }
+
     private void InitializeTileNodes()
     {
-        // Create display tiles for dual-grid system
-        // Display grid extends one tile beyond world grid on right and bottom edges
-        // Display tiles are positioned at intersections (offset by -0.5 tiles)
-        for (int x = 0; x <= _sim.World.Width; x++)
+        // Create display tiles for standard grid system
+        // Display grid matches world grid dimensions (Width x Height)
+        // Display tiles are positioned at tile origins (standard grid alignment)
+        for (int x = 0; x < _sim.World.Width; x++)
         {
-            for (int y = 0; y <= _sim.World.Height; y++)
+            for (int y = 0; y < _sim.World.Height; y++)
             {
                 var coord = new TileCoord(x, y);
                 var tileNode = new Node2D
                 {
-                    Position = new Vector2((x - 0.5f) * TileSize, (y - 0.5f) * TileSize),
+                    Position = new Vector2(x * TileSize, y * TileSize),
                     Name = $"Tile_{x}_{y}",
                     ZIndex = -10,
                 };
@@ -578,32 +614,12 @@ public partial class GameRoot : Node2D
                 var fullTileSprite = new Sprite2D
                 {
                     Name = "FullTileSprite",
-                    Position = new Vector2(TileSize, TileSize), // Offset to align with world tile center
+                    Position = new Vector2(TileSize / 2, TileSize / 2), // Center on tile
                     Centered = true,
                     Visible = false,
                     Scale = new Vector2(2, 2), // Scale 16x16 texture to 32x32
                 };
                 baseLayer.AddChild(fullTileSprite);
-
-                // Overlay layer for autotiled paths
-                var overlayLayer = new Node2D { Name = "OverlayLayer", ZIndex = 0 };
-                tileNode.AddChild(overlayLayer);
-
-                var overlaySprite = new Sprite2D
-                {
-                    Name = "PathSprite",
-                    Centered = false,
-                    Visible = false,
-                };
-
-                // Apply shader to make pure black pixels transparent
-                var shader = GD.Load<Shader>("res://shaders/black_transparent.gdshader");
-                if (shader != null)
-                {
-                    overlaySprite.Material = new ShaderMaterial { Shader = shader };
-                }
-
-                overlayLayer.AddChild(overlaySprite);
 
                 _tileNodes[coord] = tileNode;
             }
@@ -877,19 +893,24 @@ public partial class GameRoot : Node2D
 
     /// <summary>
     /// Update display tiles affected by a world tile change.
-    /// In the dual-grid system, painting world tile at (x,y) affects 4 display tiles:
-    /// (x,y), (x+1,y), (x,y+1), (x+1,y+1)
+    /// In standard grid system, painting world tile at (x,y) affects 9 tiles:
+    /// the tile itself plus its 8 neighbors for autotiling.
     /// </summary>
     private void UpdateTileAndNeighbors(TileCoord coord)
     {
-        // Update the 4 display tiles that depend on this world tile
-        // This matches the reference implementation's setDisplayTile() function
+        // Update the tile and its 8 neighbors for autotiling
+        // In standard grid system, changing a tile affects itself and all adjacent tiles
         var displayOffsets = new[]
         {
-            new TileCoord(0, 0), // (x, y)
-            new TileCoord(1, 0), // (x+1, y)
-            new TileCoord(0, 1), // (x, y+1)
-            new TileCoord(1, 1), // (x+1, y+1)
+            new TileCoord(-1, -1), // top-left
+            new TileCoord(0, -1), // top
+            new TileCoord(1, -1), // top-right
+            new TileCoord(-1, 0), // left
+            new TileCoord(0, 0), // center (the tile itself)
+            new TileCoord(1, 0), // right
+            new TileCoord(-1, 1), // bottom-left
+            new TileCoord(0, 1), // bottom
+            new TileCoord(1, 1), // bottom-right
         };
 
         foreach (var offset in displayOffsets)
@@ -954,84 +975,48 @@ public partial class GameRoot : Node2D
     }
 
     /// <summary>
-    /// Update the overlay layer which renders autotiled paths at intersections.
+    /// Update the overlay layer which renders autotiled paths on the tile using TileMapLayer.
     /// </summary>
     private void UpdateOverlayLayer(TileCoord coord, Node2D tileNode)
     {
-        var overlayLayer = tileNode.GetNode<Node2D>("OverlayLayer");
-        var sprite = overlayLayer.GetNode<Sprite2D>("PathSprite");
+        if (_pathTileMapLayer == null)
+            return;
 
-        // Check 4 world neighbors for paths
-        var neighborCoords = new[]
+        // In standard grid system, check if the current tile has a path overlay
+        var tileMapCoord = new Vector2I(coord.X, coord.Y);
+        if (!_sim.World.IsInBounds(coord))
         {
-            new TileCoord(coord.X - 1, coord.Y - 1),
-            new TileCoord(coord.X, coord.Y - 1),
-            new TileCoord(coord.X - 1, coord.Y),
-            new TileCoord(coord.X, coord.Y),
-        };
-
-        bool hasPathNeighbor = false;
-        int pathTerrainId = -1;
-        Texture2D? pathTexture = null;
-        Color pathColor = Colors.White;
-
-        foreach (var neighborCoord in neighborCoords)
-        {
-            if (_sim.World.IsInBounds(neighborCoord))
-            {
-                var tile = _sim.World.GetTile(neighborCoord);
-                if (
-                    tile.OverlayTerrainTypeId.HasValue
-                    && _sim.Content.Terrains.TryGetValue(
-                        tile.OverlayTerrainTypeId.Value,
-                        out var terrainDef
-                    )
-                    && terrainDef.IsAutotiling
-                )
-                {
-                    hasPathNeighbor = true;
-                    pathTerrainId = tile.OverlayTerrainTypeId.Value;
-                    pathTexture = SpriteResourceManager.GetTexture(terrainDef.SpriteKey);
-                    pathColor = _currentPalette[tile.OverlayColorIndex];
-                    break;
-                }
-            }
+            _pathTileMapLayer.EraseCell(tileMapCoord);
+            _pathTileMapLayer.ClearTileColor(tileMapCoord);
+            return;
         }
 
-        if (hasPathNeighbor && pathTexture != null)
-        {
-            sprite.Visible = true;
-            sprite.Modulate = pathColor;
+        var tile = _sim.World.GetTile(coord);
 
-            // Setup atlas texture if needed
-            if (
-                sprite.Texture is not AtlasTexture
-                || (sprite.Texture is AtlasTexture atlas && atlas.Atlas != pathTexture)
+        if (
+            tile.OverlayTerrainTypeId.HasValue
+            && _sim.Content.Terrains.TryGetValue(
+                tile.OverlayTerrainTypeId.Value,
+                out var terrainDef
             )
-            {
-                var newAtlas = new AtlasTexture
-                {
-                    Atlas = pathTexture,
-                    Region = new Rect2(0, 0, 16, 16),
-                };
-                sprite.Texture = newAtlas;
-                sprite.Scale = new Vector2(2, 2);
-            }
+            && terrainDef.IsAutotiling
+        )
+        {
+            var pathColor = _currentPalette[tile.OverlayColorIndex];
 
-            // Calculate autotile variant
-            if (sprite.Texture is AtlasTexture atlasTexture)
-            {
-                var atlasCoord = SimGame.Godot.PathAutotiler.CalculateTileVariant(
-                    _sim.World,
-                    coord,
-                    pathTerrainId
-                );
-                atlasTexture.Region = new Rect2(atlasCoord.X * 16, atlasCoord.Y * 16, 16, 16);
-            }
+            // Place tile using SetCellsTerrainConnect for automatic terrain matching
+            // This uses the terrain system to automatically select the correct tile variant
+            var cellsArray = new Godot.Collections.Array<Vector2I> { tileMapCoord };
+            _pathTileMapLayer.SetCellsTerrainConnect(cellsArray, 0, 0, false);
+
+            // Apply per-tile color modulation (stored persistently)
+            _pathTileMapLayer.SetTileColor(tileMapCoord, pathColor);
         }
         else
         {
-            sprite.Visible = false;
+            // No path on this tile, erase it and clear its color
+            _pathTileMapLayer.EraseCell(tileMapCoord);
+            _pathTileMapLayer.ClearTileColor(tileMapCoord);
         }
     }
 
