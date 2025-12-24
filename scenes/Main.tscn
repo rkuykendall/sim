@@ -1,7 +1,7 @@
 [gd_scene load_steps=9 format=3 uid="uid://main"]
 
-[ext_resource type="Script" uid="uid://dyt0a7kifwj6v" path="res://src/Godot/GameRoot.cs" id="1"]
-[ext_resource type="Script" uid="uid://br788loevkdbs" path="res://src/Godot/CameraController.cs" id="1_camera"]
+[ext_resource type="Script" path="res://src/Godot/GameRoot.cs" id="1"]
+[ext_resource type="Script" path="res://src/Godot/CameraController.cs" id="1_camera"]
 [ext_resource type="PackedScene" uid="uid://pawn" path="res://scenes/Pawn.tscn" id="2"]
 [ext_resource type="PackedScene" uid="uid://object" path="res://scenes/Object.tscn" id="3"]
 [ext_resource type="PackedScene" uid="uid://doo1qhnw0n04b" path="res://scenes/PawnInfoPanel.tscn" id="4"]

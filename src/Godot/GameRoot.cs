@@ -565,14 +565,15 @@ public partial class GameRoot : Node2D
             ZIndex = 0, // Render above base terrain
         };
 
-        // Load the TileSet resource
-        var tileSet = GD.Load<TileSet>("res://resources/path_tileset.tres");
-        if (tileSet == null)
+        // Create TileSet programmatically
+        var pathTexture = SpriteResourceManager.GetTexture("path");
+        if (pathTexture == null)
         {
-            GD.PushError("Failed to load path_tileset.tres - path rendering will not work");
+            GD.PushError("Failed to load path texture - path rendering will not work");
             return;
         }
 
+        var tileSet = AutoTileSetBuilder.CreateAutoTileSet(pathTexture, "Path");
         _pathTileMapLayer.TileSet = tileSet;
 
         // Scale the tilemap to match our TileSize (32x32 display vs 16x16 source)
