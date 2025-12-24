@@ -575,13 +575,6 @@ public partial class GameRoot : Node2D
 
         _pathTileMapLayer.TileSet = tileSet;
 
-        // Apply shader to make black pixels transparent
-        var shader = GD.Load<Shader>("res://shaders/black_transparent.gdshader");
-        if (shader != null)
-        {
-            _pathTileMapLayer.Material = new ShaderMaterial { Shader = shader };
-        }
-
         // Scale the tilemap to match our TileSize (32x32 display vs 16x16 source)
         _pathTileMapLayer.Scale = new Vector2(2, 2);
 
