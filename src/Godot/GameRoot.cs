@@ -150,7 +150,16 @@ public partial class GameRoot : Node2D
             }
         }
         if (!string.IsNullOrEmpty(CameraPath))
+        {
             _camera = GetNodeOrNull<Camera2D>(CameraPath);
+            if (_camera != null)
+            {
+                // Center camera over the world grid
+                var worldCenterX = (_sim.World.Width * TileSize) / 2f;
+                var worldCenterY = (_sim.World.Height * TileSize) / 2f;
+                _camera.Position = new Vector2(worldCenterX, worldCenterY);
+            }
+        }
         if (!string.IsNullOrEmpty(UILayerPath))
             _uiLayer = GetNodeOrNull<CanvasLayer>(UILayerPath);
 

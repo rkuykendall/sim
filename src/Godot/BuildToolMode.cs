@@ -53,5 +53,5 @@ public static class BuildToolState
     public static BuildToolMode Mode { get; set; } = BuildToolMode.PlaceTerrain;
     public static int? SelectedObjectDefId { get; set; } = null;
     public static int? SelectedTerrainDefId { get; set; } = null;
-    public static int SelectedColorIndex { get; set; } = 0; // Default to green
+    public static int SelectedColorIndex { get; set; } = 0;
 }

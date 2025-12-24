@@ -65,8 +65,8 @@ public sealed class Tile
 public sealed class World
 {
     // Default play area bounds (in tiles) - doubled for larger world
-    public const int DefaultWidth = 40; // 40 tiles
-    public const int DefaultHeight = 22; // 22 tiles
+    public const int DefaultWidth = 80; // 40 tiles
+    public const int DefaultHeight = 80; // 22 tiles
 
     private readonly Tile[,] _tiles;
 
