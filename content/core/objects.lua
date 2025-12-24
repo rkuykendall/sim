@@ -38,15 +38,6 @@ Objects = {
         spriteKey = "shower"
     },
 
-    -- Walls (blocking objects)
-    Wall = {
-        walkable = false,      -- blocks movement
-        interactable = false,  -- cannot be used
-        useAreas = {},
-        spriteKey = "wall",
-        isAutoTiled = false    -- Enable when wall_grid.png is ready
-    },
-
     -- Decorations (non-interactive, walkable)
     Plant = {
         walkable = true,       -- can walk through

@@ -45,7 +45,6 @@ public sealed class ObjectDef : IContentDef
     public int? GrantsBuffId { get; init; } // Buff to apply when interaction completes (set during content loading)
     public IReadOnlyList<(int dx, int dy)> UseAreas { get; init; } = Array.Empty<(int, int)>(); // Relative tile offsets where pawn can use this object
     public string SpriteKey { get; init; } = ""; // Path to sprite texture
-    public bool IsAutoTiled { get; init; } = false; // For future wall autotiling
 }
 
 // Action definition

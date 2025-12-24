@@ -59,7 +59,7 @@ public sealed class Tile
 /// </summary>
 /// <remarks>
 /// The world is a simple 2D array of tiles with defined bounds.
-/// Objects (furniture, walls) are stored as entities in EntityManager, not on tiles.
+/// Objects are stored as entities in EntityManager, not on tiles.
 /// Placing an object should update the tile's Walkable properties as needed.
 /// </remarks>
 public sealed class World
