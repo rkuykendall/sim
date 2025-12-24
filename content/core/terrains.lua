@@ -44,6 +44,11 @@ Terrains = {
         walkable = false,
         spriteKey = "brick",
     },
+    Wall = {
+        walkable = false,
+        spriteKey = "wall",
+        isAutotiling = true,
+    },
 }
 
 return Terrains

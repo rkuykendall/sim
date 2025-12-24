@@ -27,6 +27,7 @@ public static class SpriteResourceManager
         // Path autotile atlas
         ["path"] = "res://sprites/tiles/path.png",
         ["water"] = "res://sprites/tiles/water.png",
+        ["wall"] = "res://sprites/tiles/wall.png",
 
         // Object sprites
         ["fridge"] = "res://sprites/objects/fridge.png",
