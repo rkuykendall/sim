@@ -20,13 +20,13 @@ public static class SpriteResourceManager
         ["concrete"] = "res://sprites/tiles/concrete.png",
         ["wood_floor"] = "res://sprites/tiles/wood_floor.png",
         ["stone"] = "res://sprites/tiles/stone.png",
-        ["water"] = "res://sprites/tiles/water.png",
         ["flat"] = "res://sprites/tiles/flat.png",
         ["block"] = "res://sprites/tiles/block.png",
         ["brick"] = "res://sprites/tiles/brick.png",
 
         // Path autotile atlas
         ["path"] = "res://sprites/tiles/path.png",
+        ["water"] = "res://sprites/tiles/water.png",
 
         // Object sprites
         ["fridge"] = "res://sprites/objects/fridge.png",

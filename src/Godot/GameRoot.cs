@@ -79,7 +79,7 @@ public partial class GameRoot : Node2D
     private Node2D _pawnsRoot = null!;
     private Node2D _objectsRoot = null!;
     private Node2D _tilesRoot = null!;
-    private ModulatableTileMapLayer? _pathTileMapLayer;
+    private Dictionary<int, ModulatableTileMapLayer> _autoTileLayers = new();
     private PawnInfoPanel? _infoPanel;
     private ObjectInfoPanel? _objectInfoPanel;
     private TimeDisplay? _timeDisplay;
@@ -106,8 +106,8 @@ public partial class GameRoot : Node2D
         _objectsRoot = GetNode<Node2D>(ObjectsRootPath);
         _tilesRoot = GetNode<Node2D>(TilesRootPath);
 
-        // Initialize TileMapLayer for path overlay
-        InitializePathTileMapLayer();
+        // Initialize TileMapLayers for all autotiling terrains
+        InitializeAutoTileLayers();
 
         // Initialize palette immediately so tiles render with correct colors
         var initialSnapshot = _sim.CreateRenderSnapshot();
@@ -556,30 +556,34 @@ public partial class GameRoot : Node2D
         );
     }
 
-    private void InitializePathTileMapLayer()
+    private void InitializeAutoTileLayers()
     {
-        // Create TileMapLayer for path overlay with autotiling support
-        _pathTileMapLayer = new ModulatableTileMapLayer
+        // Create TileMapLayers for all autotiling terrains
+        foreach (var (terrainId, terrainDef) in _sim.Content.Terrains)
         {
-            Name = "PathTileMapLayer",
-            ZIndex = 0, // Render above base terrain
-        };
+            if (!terrainDef.IsAutotiling)
+                continue;
 
-        // Create TileSet programmatically
-        var pathTexture = SpriteResourceManager.GetTexture("path");
-        if (pathTexture == null)
-        {
-            GD.PushError("Failed to load path texture - path rendering will not work");
-            return;
+            var texture = SpriteResourceManager.GetTexture(terrainDef.SpriteKey);
+            if (texture == null)
+            {
+                GD.PushError(
+                    $"Failed to load texture '{terrainDef.SpriteKey}' for autotiling terrain {terrainId}"
+                );
+                continue;
+            }
+
+            var layer = new ModulatableTileMapLayer
+            {
+                Name = $"{terrainDef.SpriteKey}TileMapLayer",
+                ZIndex = 0, // Overlay layer
+                TileSet = AutoTileSetBuilder.CreateAutoTileSet(texture, terrainDef.SpriteKey),
+                Scale = new Vector2(2, 2),
+            };
+
+            _tilesRoot.AddChild(layer);
+            _autoTileLayers[terrainId] = layer;
         }
-
-        var tileSet = AutoTileSetBuilder.CreateAutoTileSet(pathTexture, "Path");
-        _pathTileMapLayer.TileSet = tileSet;
-
-        // Scale the tilemap to match our TileSize (32x32 display vs 16x16 source)
-        _pathTileMapLayer.Scale = new Vector2(2, 2);
-
-        _tilesRoot.AddChild(_pathTileMapLayer);
     }
 
     private void InitializeTileNodes()
@@ -937,6 +941,7 @@ public partial class GameRoot : Node2D
     {
         var baseLayer = tileNode.GetNode<Node2D>("BaseLayer");
         var sprite = baseLayer.GetNode<Sprite2D>("FullTileSprite");
+        var tileMapCoord = new Vector2I(coord.X, coord.Y);
 
         // Check if this world tile exists and should be rendered
         if (!_sim.World.IsInBounds(coord))
@@ -947,24 +952,38 @@ public partial class GameRoot : Node2D
 
         var tile = _sim.World.GetTile(coord);
 
-        // Always render base terrain (overlay will render on top if present)
         if (!_sim.Content.Terrains.TryGetValue(tile.BaseTerrainTypeId, out var terrainDef))
         {
             sprite.Visible = false;
             return;
         }
 
-        // Render flat terrain using its sprite key
-        var flatTexture = SpriteResourceManager.GetTexture(terrainDef.SpriteKey);
-        if (flatTexture != null)
+        // If base terrain is autotiling, use TileMapLayer
+        if (
+            terrainDef.IsAutotiling
+            && _autoTileLayers.TryGetValue(tile.BaseTerrainTypeId, out var layer)
+        )
         {
-            sprite.Texture = flatTexture;
-            sprite.Modulate = _currentPalette[tile.ColorIndex];
-            sprite.Visible = true;
+            sprite.Visible = false;
+            var color = _currentPalette[tile.ColorIndex];
+            var cellsArray = new Godot.Collections.Array<Vector2I> { tileMapCoord };
+            layer.SetCellsTerrainConnect(cellsArray, 0, 0, false);
+            layer.SetTileColor(tileMapCoord, color);
         }
         else
         {
-            sprite.Visible = false;
+            // Render flat terrain using sprite
+            var flatTexture = SpriteResourceManager.GetTexture(terrainDef.SpriteKey);
+            if (flatTexture != null)
+            {
+                sprite.Texture = flatTexture;
+                sprite.Modulate = _currentPalette[tile.ColorIndex];
+                sprite.Visible = true;
+            }
+            else
+            {
+                sprite.Visible = false;
+            }
         }
     }
 
@@ -973,44 +992,36 @@ public partial class GameRoot : Node2D
     /// </summary>
     private void UpdateOverlayLayer(TileCoord coord, Node2D tileNode)
     {
-        if (_pathTileMapLayer == null)
-            return;
-
-        // In standard grid system, check if the current tile has a path overlay
         var tileMapCoord = new Vector2I(coord.X, coord.Y);
+
         if (!_sim.World.IsInBounds(coord))
-        {
-            _pathTileMapLayer.EraseCell(tileMapCoord);
-            _pathTileMapLayer.ClearTileColor(tileMapCoord);
             return;
-        }
 
         var tile = _sim.World.GetTile(coord);
 
+        // Find and clear any overlay autotiling layers at this coord
+        // (Overlays are autotiling terrains used as OverlayTerrainTypeId)
+        foreach (var (terrainId, layer) in _autoTileLayers)
+        {
+            // Skip if this is a base terrain autotiling layer
+            if (terrainId == tile.BaseTerrainTypeId)
+                continue;
+
+            // Clear this layer at this coord (might have been an overlay before)
+            layer.EraseCell(tileMapCoord);
+            layer.ClearTileColor(tileMapCoord);
+        }
+
+        // Render overlay autotiling terrain if present
         if (
             tile.OverlayTerrainTypeId.HasValue
-            && _sim.Content.Terrains.TryGetValue(
-                tile.OverlayTerrainTypeId.Value,
-                out var terrainDef
-            )
-            && terrainDef.IsAutotiling
+            && _autoTileLayers.TryGetValue(tile.OverlayTerrainTypeId.Value, out var overlayLayer)
         )
         {
-            var pathColor = _currentPalette[tile.OverlayColorIndex];
-
-            // Place tile using SetCellsTerrainConnect for automatic terrain matching
-            // This uses the terrain system to automatically select the correct tile variant
+            var color = _currentPalette[tile.OverlayColorIndex];
             var cellsArray = new Godot.Collections.Array<Vector2I> { tileMapCoord };
-            _pathTileMapLayer.SetCellsTerrainConnect(cellsArray, 0, 0, false);
-
-            // Apply per-tile color modulation (stored persistently)
-            _pathTileMapLayer.SetTileColor(tileMapCoord, pathColor);
-        }
-        else
-        {
-            // No path on this tile, erase it and clear its color
-            _pathTileMapLayer.EraseCell(tileMapCoord);
-            _pathTileMapLayer.ClearTileColor(tileMapCoord);
+            overlayLayer.SetCellsTerrainConnect(cellsArray, 0, 0, false);
+            overlayLayer.SetTileColor(tileMapCoord, color);
         }
     }
 

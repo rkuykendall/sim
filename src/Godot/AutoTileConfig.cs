@@ -10,7 +10,10 @@ public static class AutoTileConfig
 {
     public record TilePattern(int X, int Y, byte PeeringBits);
 
-    public static readonly List<TilePattern> PathPatterns = new()
+    /// <summary>
+    /// Standard 47-tile template used by all autotiling textures.
+    /// </summary>
+    public static readonly List<TilePattern> Standard47TilePatterns = new()
     {
         // Row 0
         new(0, 0, 0x40),

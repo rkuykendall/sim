@@ -39,7 +39,7 @@ public static class AutoTileSetBuilder
         int terrain
     )
     {
-        foreach (var pattern in AutoTileConfig.PathPatterns)
+        foreach (var pattern in AutoTileConfig.Standard47TilePatterns)
         {
             ConfigureTile(
                 atlasSource,

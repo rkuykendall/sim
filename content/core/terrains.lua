@@ -34,6 +34,7 @@ Terrains = {
     Water = {
         walkable = false,
         spriteKey = "water",
+        isAutotiling = true,
     },
     Block = {
         walkable = false,
