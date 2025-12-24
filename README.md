@@ -17,6 +17,9 @@ godot project.godot
 dotnet build
 godot --headless --build-solutions --quit
 godot
+
+# Or all at once
+csharpier format .; dotnet build; dotnet test; godot --headless --build-solutions --quit; godot
 ```
 
 ## Project Structure
