@@ -292,6 +292,17 @@ public partial class BuildToolbar : HBoxContainer
         var texture = SpriteResourceManager.GetTexture(spriteKey);
         if (texture != null)
         {
+            // For autotiled terrains, show only the 1x1 variant (lower-left 16x16)
+            if (
+                !isObject
+                && _content != null
+                && _content.Terrains.TryGetValue(id, out var terrainDef)
+                && terrainDef.IsAutotiling
+            )
+            {
+                texture = ExtractAutoTile1x1(texture);
+            }
+
             button.SetSprite(texture, _currentPalette[BuildToolState.SelectedColorIndex]);
         }
 
@@ -301,6 +312,33 @@ public partial class BuildToolbar : HBoxContainer
             button.Pressed += () => OnTerrainOptionSelected(id);
 
         return button;
+    }
+
+    /// <summary>
+    /// Extracts the 1x1 variant from an autotile texture (lower-left 16x16 portion).
+    /// </summary>
+    private Texture2D ExtractAutoTile1x1(Texture2D originalTexture)
+    {
+        var image = originalTexture.GetImage();
+        if (image == null)
+            return originalTexture;
+
+        // The 1x1 tile is in the lower-left corner
+        // Extract 16x16 region from position (0, height-16)
+        int tileSize = 16;
+        int sourceY = image.GetHeight() - tileSize;
+
+        // Create a new image for the cropped region
+        var croppedImage = Image.CreateEmpty(tileSize, tileSize, false, image.GetFormat());
+
+        // Copy the lower-left 16x16 pixels
+        croppedImage.BlitRect(
+            image,
+            new Rect2I(0, sourceY, tileSize, tileSize),
+            new Vector2I(0, 0)
+        );
+
+        return ImageTexture.CreateFromImage(croppedImage);
     }
 
     private void UpdateColorButton(int colorIndex)
