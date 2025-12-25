@@ -455,6 +455,7 @@ public sealed class ActionSystem : ISystem
             actionComp.CurrentAction = new ActionDef
             {
                 Type = ActionType.MoveTo,
+                Animation = AnimationType.Walk,
                 TargetCoord = useAreaTarget,
                 DurationTicks = 0,
                 DisplayName = $"Going to {objDefForCheck.Name}",
@@ -469,13 +470,13 @@ public sealed class ActionSystem : ISystem
             objComp.UsedBy = pawnId;
 
             // Update display name to "Using X" now that we're actually using it
-            // Create a new ActionDef since ActionDef is immutable
             var objDef = ctx.Content.Objects[objComp.ObjectDefId];
             if (action.DisplayName != $"Using {objDef.Name}")
             {
                 actionComp.CurrentAction = new ActionDef
                 {
                     Type = action.Type,
+                    Animation = action.Animation,
                     TargetCoord = action.TargetCoord,
                     TargetEntity = action.TargetEntity,
                     DurationTicks = action.DurationTicks,
@@ -743,6 +744,7 @@ public sealed class AISystem : ISystem
             new ActionDef
             {
                 Type = ActionType.UseObject,
+                Animation = AnimationType.Idle,
                 TargetEntity = targetObject,
                 DurationTicks = objDef.InteractionDurationTicks,
                 SatisfiesNeedId = objDef.SatisfiesNeedId,
@@ -785,6 +787,7 @@ public sealed class AISystem : ISystem
                 new ActionDef
                 {
                     Type = ActionType.MoveTo,
+                    Animation = AnimationType.Walk,
                     TargetCoord = waitSpot,
                     DisplayName = $"Waiting for {objDef.Name}",
                 }
@@ -797,6 +800,7 @@ public sealed class AISystem : ISystem
                 new ActionDef
                 {
                     Type = ActionType.Idle,
+                    Animation = AnimationType.Idle,
                     DurationTicks = 20,
                     DisplayName = $"Waiting for {objDef.Name}",
                 }
@@ -834,12 +838,26 @@ public sealed class AISystem : ISystem
             // Check if target is walkable and not occupied by another pawn
             if (ctx.World.IsWalkable(target) && !ctx.Entities.IsTileOccupiedByPawn(target, pawnId))
             {
+                // Queue a walk action
                 actionComp.ActionQueue.Enqueue(
                     new ActionDef
                     {
                         Type = ActionType.MoveTo,
+                        Animation = AnimationType.Walk,
                         TargetCoord = target,
                         DisplayName = "Wandering",
+                    }
+                );
+
+                // Then queue an idle action (stand around for a bit)
+                int idleDuration = ctx.Random.Next(40, 120); // 2-6 seconds at 20 ticks/sec
+                actionComp.ActionQueue.Enqueue(
+                    new ActionDef
+                    {
+                        Type = ActionType.Idle,
+                        Animation = AnimationType.Idle,
+                        DurationTicks = idleDuration,
+                        DisplayName = "Idle",
                     }
                 );
                 return;

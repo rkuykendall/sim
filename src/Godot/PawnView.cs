@@ -1,3 +1,4 @@
+using System;
 using Godot;
 using SimGame.Godot;
 
@@ -9,6 +10,7 @@ public partial class PawnView : Node2D
     private ColorRect? _body;
     private AnimatedSprite2D? _sprite;
     private bool _usesSprite = false;
+    private SimGame.Core.AnimationType _currentAnimation = SimGame.Core.AnimationType.Idle;
 
     private bool _selected = false;
     private float _baseMood = 0f;
@@ -46,10 +48,17 @@ public partial class PawnView : Node2D
     }
 
     /// <summary>
-    /// Initialize the pawn view with a sprite and animation.
+    /// Initialize the pawn view with sprite animations.
     /// Call this after instantiation to use sprite instead of ColorRect.
     /// </summary>
-    public void InitializeWithSprite(Texture2D spriteSheet)
+    public void InitializeWithSprite(
+        Texture2D? walkSheet,
+        Texture2D? idleSheet,
+        Texture2D? axeSheet,
+        Texture2D? pickaxeSheet,
+        Texture2D? lookDownSheet,
+        Texture2D? lookUpSheet
+    )
     {
         // Hide ColorRect body
         if (_body != null)
@@ -68,32 +77,99 @@ public partial class PawnView : Node2D
         // Create sprite frames for animation
         var spriteFrames = new SpriteFrames();
 
-        // Add walking animation (8 frames from sprite sheet)
-        spriteFrames.AddAnimation("walk");
-        spriteFrames.SetAnimationLoop("walk", true);
-        spriteFrames.SetAnimationSpeed("walk", ANIMATION_SPEED);
-
-        // Split the sprite sheet into individual frames
-        // The sprite sheet is 128x16 (8 frames of 16x16)
-        for (int i = 0; i < 8; i++)
+        // Walk animation (8 frames, 128x16 sprite sheet)
+        if (walkSheet != null)
         {
-            var atlasTexture = new AtlasTexture
+            spriteFrames.AddAnimation("walk");
+            spriteFrames.SetAnimationLoop("walk", true);
+            spriteFrames.SetAnimationSpeed("walk", ANIMATION_SPEED);
+            for (int i = 0; i < 8; i++)
             {
-                Atlas = spriteSheet,
-                Region = new Rect2(i * 16, 0, 16, 16),
-            };
-            spriteFrames.AddFrame("walk", atlasTexture);
+                var atlasTexture = new AtlasTexture
+                {
+                    Atlas = walkSheet,
+                    Region = new Rect2(i * 16, 0, 16, 16),
+                };
+                spriteFrames.AddFrame("walk", atlasTexture);
+            }
         }
 
-        // Add idle animation (use first frame)
-        spriteFrames.AddAnimation("idle");
-        spriteFrames.SetAnimationLoop("idle", false);
-        var idleTexture = new AtlasTexture
+        // Idle animation (3 frames, 48x16 sprite sheet)
+        if (idleSheet != null)
         {
-            Atlas = spriteSheet,
-            Region = new Rect2(0, 0, 16, 16),
-        };
-        spriteFrames.AddFrame("idle", idleTexture);
+            spriteFrames.AddAnimation("idle");
+            spriteFrames.SetAnimationLoop("idle", true);
+            spriteFrames.SetAnimationSpeed("idle", ANIMATION_SPEED / 2); // Slower idle
+            for (int i = 0; i < 3; i++)
+            {
+                var atlasTexture = new AtlasTexture
+                {
+                    Atlas = idleSheet,
+                    Region = new Rect2(i * 16, 0, 16, 16),
+                };
+                spriteFrames.AddFrame("idle", atlasTexture);
+            }
+        }
+
+        // Axe animation (5 frames, 80x16 sprite sheet)
+        if (axeSheet != null)
+        {
+            spriteFrames.AddAnimation("axe");
+            spriteFrames.SetAnimationLoop("axe", true);
+            spriteFrames.SetAnimationSpeed("axe", ANIMATION_SPEED);
+            for (int i = 0; i < 5; i++)
+            {
+                var atlasTexture = new AtlasTexture
+                {
+                    Atlas = axeSheet,
+                    Region = new Rect2(i * 16, 0, 16, 16),
+                };
+                spriteFrames.AddFrame("axe", atlasTexture);
+            }
+        }
+
+        // Pickaxe animation (5 frames, 80x16 sprite sheet)
+        if (pickaxeSheet != null)
+        {
+            spriteFrames.AddAnimation("pickaxe");
+            spriteFrames.SetAnimationLoop("pickaxe", true);
+            spriteFrames.SetAnimationSpeed("pickaxe", ANIMATION_SPEED);
+            for (int i = 0; i < 5; i++)
+            {
+                var atlasTexture = new AtlasTexture
+                {
+                    Atlas = pickaxeSheet,
+                    Region = new Rect2(i * 16, 0, 16, 16),
+                };
+                spriteFrames.AddFrame("pickaxe", atlasTexture);
+            }
+        }
+
+        // Look down (1 frame, 16x16 sprite)
+        if (lookDownSheet != null)
+        {
+            spriteFrames.AddAnimation("look_down");
+            spriteFrames.SetAnimationLoop("look_down", false);
+            var atlasTexture = new AtlasTexture
+            {
+                Atlas = lookDownSheet,
+                Region = new Rect2(0, 0, 16, 16),
+            };
+            spriteFrames.AddFrame("look_down", atlasTexture);
+        }
+
+        // Look up (1 frame, 16x16 sprite)
+        if (lookUpSheet != null)
+        {
+            spriteFrames.AddAnimation("look_up");
+            spriteFrames.SetAnimationLoop("look_up", false);
+            var atlasTexture = new AtlasTexture
+            {
+                Atlas = lookUpSheet,
+                Region = new Rect2(0, 0, 16, 16),
+            };
+            spriteFrames.AddFrame("look_up", atlasTexture);
+        }
 
         _sprite.SpriteFrames = spriteFrames;
         _sprite.Animation = "idle";
@@ -122,6 +198,14 @@ public partial class PawnView : Node2D
         _targetPosition = target;
     }
 
+    /// <summary>
+    /// Set the current animation type.
+    /// </summary>
+    public void SetCurrentAnimation(SimGame.Core.AnimationType animation)
+    {
+        _currentAnimation = animation;
+    }
+
     private void UpdateAnimation(float delta)
     {
         if (_sprite == null)
@@ -131,29 +215,32 @@ public partial class PawnView : Node2D
         var velocity = _targetPosition - _visualPosition;
         bool isMoving = velocity.LengthSquared() > 0.1f;
 
+        // Map AnimationType enum to animation name
+        string targetAnimation = _currentAnimation switch
+        {
+            SimGame.Core.AnimationType.Idle => "idle",
+            SimGame.Core.AnimationType.Walk => "walk",
+            SimGame.Core.AnimationType.Axe => "axe",
+            SimGame.Core.AnimationType.Pickaxe => "pickaxe",
+            SimGame.Core.AnimationType.LookUp => "look_up",
+            SimGame.Core.AnimationType.LookDown => "look_down",
+            _ => "idle",
+        };
+
+        // Apply animation if different
+        if (_sprite.Animation != targetAnimation)
+        {
+            _sprite.Animation = targetAnimation;
+            _sprite.Play();
+        }
+
+        // Flip sprite based on movement direction (for walk animation)
         if (isMoving)
         {
-            // Play walking animation
-            if (_sprite.Animation != "walk")
-            {
-                _sprite.Animation = "walk";
-                _sprite.Play();
-            }
-
-            // Flip sprite based on movement direction
             if (velocity.X < 0)
                 _sprite.FlipH = true;
             else if (velocity.X > 0)
                 _sprite.FlipH = false;
-        }
-        else
-        {
-            // Play idle animation
-            if (_sprite.Animation != "idle")
-            {
-                _sprite.Animation = "idle";
-                _sprite.Play();
-            }
         }
 
         _lastPosition = _visualPosition;

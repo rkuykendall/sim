@@ -28,8 +28,13 @@ public partial class GameRoot : Node2D
     private Color[] _currentPalette = Enumerable.Repeat(Colors.White, 12).ToArray();
     private int _currentPaletteId = -1; // Track which palette is currently loaded
 
-    // Character sprite for pawns
+    // Character sprites for pawns
     private Texture2D? _characterSprite = null;
+    private Texture2D? _idleSprite = null;
+    private Texture2D? _axeSprite = null;
+    private Texture2D? _pickaxeSprite = null;
+    private Texture2D? _lookDownSprite = null;
+    private Texture2D? _lookUpSprite = null;
 
     private int? _selectedPawnId = null;
     private int? _selectedObjectId = null;
@@ -99,8 +104,13 @@ public partial class GameRoot : Node2D
         _sim = new Simulation(content);
         _tickDelta = 1f / Simulation.TickRate;
 
-        // Load character sprite
+        // Load character sprites
         _characterSprite = SpriteResourceManager.GetTexture("character_walk");
+        _idleSprite = SpriteResourceManager.GetTexture("character_idle");
+        _axeSprite = SpriteResourceManager.GetTexture("character_axe");
+        _pickaxeSprite = SpriteResourceManager.GetTexture("character_pickaxe");
+        _lookDownSprite = SpriteResourceManager.GetTexture("character_look_down");
+        _lookUpSprite = SpriteResourceManager.GetTexture("character_look_up");
 
         _pawnsRoot = GetNode<Node2D>(PawnsRootPath);
         _objectsRoot = GetNode<Node2D>(ObjectsRootPath);
@@ -1098,7 +1108,14 @@ public partial class GameRoot : Node2D
                 // Initialize with sprite if available
                 if (node is PawnView pawnView && _characterSprite != null)
                 {
-                    pawnView.InitializeWithSprite(_characterSprite);
+                    pawnView.InitializeWithSprite(
+                        _characterSprite,
+                        _idleSprite,
+                        _axeSprite,
+                        _pickaxeSprite,
+                        _lookDownSprite,
+                        _lookUpSprite
+                    );
                 }
             }
 
@@ -1117,6 +1134,7 @@ public partial class GameRoot : Node2D
                 }
 
                 pv.SetTargetPosition(targetPosition);
+                pv.SetCurrentAnimation(pawn.Animation);
                 pv.SetMood(pawn.Mood);
                 pv.SetSelected(pawn.Id.Value == _selectedPawnId);
             }

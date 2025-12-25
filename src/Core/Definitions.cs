@@ -57,16 +57,30 @@ public enum ActionType
 }
 
 /// <summary>
+/// Animation type for visual representation of actions.
+/// </summary>
+public enum AnimationType
+{
+    Idle,
+    Walk,
+    Axe,
+    Pickaxe,
+    LookUp,
+    LookDown,
+}
+
+/// <summary>
 /// Immutable definition of an action a pawn can perform.
 /// Use object initializer syntax to create instances.
 /// </summary>
 public sealed class ActionDef
 {
     public ActionType Type { get; init; }
+    public AnimationType Animation { get; init; } = AnimationType.Idle;
     public TileCoord? TargetCoord { get; init; }
     public EntityId? TargetEntity { get; init; }
     public int DurationTicks { get; init; }
     public int? SatisfiesNeedId { get; init; }
     public float NeedSatisfactionAmount { get; init; }
-    public string? DisplayName { get; init; } // What to show in UI (e.g., "Going to Fridge", "Wandering")
+    public string? DisplayName { get; init; }
 }

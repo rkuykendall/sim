@@ -12,6 +12,7 @@ public sealed class RenderPawn
     public float Mood { get; init; }
     public string Name { get; init; } = "";
     public string? CurrentAction { get; init; }
+    public AnimationType Animation { get; init; } = AnimationType.Idle;
 
     // Debug: pathfinding info
     public (int X, int Y)? TargetTile { get; init; }
@@ -120,6 +121,7 @@ public static class RenderSnapshotBuilder
                     Mood = mood?.Mood ?? 0,
                     Name = pawn?.Name ?? $"Pawn {pawnId.Value}",
                     CurrentAction = actionName,
+                    Animation = action?.CurrentAction?.Animation ?? AnimationType.Idle,
                     TargetTile = targetTile,
                     CurrentPath = pathCoords,
                     PathIndex = pathIndex,

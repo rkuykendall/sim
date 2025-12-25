@@ -40,6 +40,11 @@ public static class SpriteResourceManager
 
         // Character sprites
         ["character_walk"] = "res://sprites/characters/character_walk.png",
+        ["character_idle"] = "res://sprites/characters/idle_strip3.png",
+        ["character_axe"] = "res://sprites/characters/axe_strip5.png",
+        ["character_pickaxe"] = "res://sprites/characters/pickaxe_strip5.png",
+        ["character_look_down"] = "res://sprites/characters/look_down.png",
+        ["character_look_up"] = "res://sprites/characters/look_up.png",
     };
 
     /// <summary>
