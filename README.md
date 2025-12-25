@@ -76,6 +76,12 @@ The simulation runs independently of rendering at 20 ticks/second. Godot receive
 
 ## Art guide
 
+## Credits
+
+- [Pixel Simple Human Character 16x16 px by Brysia](https://brysiaa.itch.io/pixel-simple-human-character-16x16-px)
+- [KidPix 1.0](https://en.wikipedia.org/wiki/Kid_Pix)
+- [Tileset Templates by Patrik](https://patrik-arts.itch.io/tileset-templates)
+
 ```
 #FFF <- highlights
 #EEE
