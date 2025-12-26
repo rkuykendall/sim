@@ -21,6 +21,15 @@ script = ExtResource("1_camera")
 [node name="Tiles" type="Node2D" parent="."]
 z_index = -10
 
+[node name="ShadowLayer" type="Node2D" parent="."]
+z_index = -5
+
+[node name="ShadowRect" type="ColorRect" parent="ShadowLayer"]
+offset_right = 2560.0
+offset_bottom = 2560.0
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
 [node name="Objects" type="Node2D" parent="."]
 
 [node name="Pawns" type="Node2D" parent="."]
@@ -36,6 +45,7 @@ InfoPanelPath = NodePath("../UI/PawnInfoPanel")
 ObjectInfoPanelPath = NodePath("../UI/ObjectInfoPanel")
 TimeDisplayPath = NodePath("../UI/TimeDisplay")
 NightOverlayPath = NodePath("../NightOverlayLayer/NightOverlay")
+ShadowRectPath = NodePath("../ShadowLayer/ShadowRect")
 CameraPath = NodePath("../Camera2D")
 UILayerPath = NodePath("../UI")
 ToolbarPath = NodePath("../UI/BuildToolbar")
