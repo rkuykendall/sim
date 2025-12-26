@@ -1,0 +1,16 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://shaders/crt.gdshader" id="1"]
+
+[resource]
+shader = ExtResource("1")
+shader_parameter/enable_grain = true
+shader_parameter/enable_scanlines = true
+shader_parameter/enable_rgb_grid = true
+shader_parameter/brightness_multiplier = 1.0
+shader_parameter/rgb_grid_scale = 1.0
+shader_parameter/rgb_grid_softness = 0.5
+shader_parameter/scanlines_interval = 2.0
+shader_parameter/scanline_opacity = 0.15
+shader_parameter/scanline_thickness = 1.0
+shader_parameter/grain_strength = 0.1
