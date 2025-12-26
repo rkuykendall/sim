@@ -1,51 +1,64 @@
 -- Terrain definitions
 -- Terrains define the properties of tile types
+-- passability: "Low" (water/pits), "Ground" (walkable), "High" (walls/blocks)
+-- blocksLight: true if terrain should cast shadows and block sunlight
 
 Terrains = {
     Flat = {
-        walkable = true,
+        passability = "Ground",
+        blocksLight = false,
         spriteKey = "flat",
     },
     Grass = {
-        walkable = true,
+        passability = "Ground",
+        blocksLight = false,
         spriteKey = "grass",
     },
     Dirt = {
-        walkable = true,
+        passability = "Ground",
+        blocksLight = false,
         spriteKey = "dirt",
     },
     Concrete = {
-        walkable = true,
+        passability = "Ground",
+        blocksLight = false,
         spriteKey = "concrete",
     },
     WoodFloor = {
-        walkable = true,
+        passability = "Ground",
+        blocksLight = false,
         spriteKey = "wood_floor",
     },
     Stone = {
-        walkable = true,
+        passability = "Ground",
+        blocksLight = false,
         spriteKey = "stone",
     },
     Path = {
-        walkable = true,
+        passability = "Ground",
+        blocksLight = false,
         spriteKey = "path",
         isAutotiling = true,
     },
     Water = {
-        walkable = false,
+        passability = "Low",
+        blocksLight = false,
         spriteKey = "water",
         isAutotiling = true,
     },
     Block = {
-        walkable = false,
+        passability = "High",
+        blocksLight = true,
         spriteKey = "block",
     },
     Brick = {
-        walkable = false,
+        passability = "High",
+        blocksLight = true,
         spriteKey = "brick",
     },
     Wall = {
-        walkable = false,
+        passability = "High",
+        blocksLight = true,
         spriteKey = "wall",
         isAutotiling = true,
     },

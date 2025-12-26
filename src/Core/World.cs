@@ -2,6 +2,21 @@ using System;
 
 namespace SimGame.Core;
 
+/// <summary>
+/// Defines the height/walkability level of terrain.
+/// </summary>
+public enum TerrainPassability
+{
+    /// <summary>Low/sunken terrain - not walkable (e.g., water, pits)</summary>
+    Low = 0,
+
+    /// <summary>Normal ground - walkable (e.g., grass, dirt, floors)</summary>
+    Ground = 1,
+
+    /// <summary>High/solid terrain - not walkable (e.g., walls, boulders)</summary>
+    High = 2,
+}
+
 public readonly struct TileCoord : IEquatable<TileCoord>
 {
     public readonly int X;
@@ -32,7 +47,7 @@ public readonly struct TileCoord : IEquatable<TileCoord>
 /// <remarks>
 /// Tiles store terrain data (texture, walkability). Objects placed on tiles
 /// are separate entities tracked by EntityManager, not stored on the tile itself.
-/// When an object is placed, it may modify tile properties (e.g., Walkable = false).
+/// When an object is placed, it may modify tile properties (e.g., ObjectBlocksMovement = true).
 /// Tiles now support layering with a base terrain (always visible) and optional overlay terrain (autotiling paths, etc.)
 /// </remarks>
 public sealed class Tile
@@ -43,10 +58,18 @@ public sealed class Tile
     /// <summary>ID of the optional overlay terrain type (paths, etc.) - renders on top with transparency.</summary>
     public int? OverlayTerrainTypeId { get; set; } = null;
 
-    /// <summary>Whether pawns can walk through this tile. May be set false by terrain or placed objects.</summary>
-    public bool Walkable { get; set; } = true;
+    /// <summary>Height/walkability level of the terrain (from base terrain definition).</summary>
+    public TerrainPassability Passability { get; set; } = TerrainPassability.Ground;
 
-    /// <summary>Whether the player can place objects on this tile.</summary>
+    /// <summary>Whether this tile blocks light (from terrain or placed objects).</summary>
+    public bool BlocksLight { get; set; } = false;
+
+    /// <summary>Whether a placed object blocks movement on this tile.</summary>
+    public bool ObjectBlocksMovement { get; set; } = false;
+
+    /// <summary>Whether pawns can walk through this tile. Computed from Passability and ObjectBlocksMovement.</summary>
+    public bool Walkable => Passability == TerrainPassability.Ground && !ObjectBlocksMovement;
+
     /// <summary>Index into color palette for base terrain's visual appearance.</summary>
     public int ColorIndex { get; set; } = 0; // Default to first color
 
@@ -65,8 +88,8 @@ public sealed class Tile
 public sealed class World
 {
     // Default play area bounds (in tiles) - doubled for larger world
-    public const int DefaultWidth = 80; // 40 tiles
-    public const int DefaultHeight = 80; // 22 tiles
+    public const int DefaultWidth = 80;
+    public const int DefaultHeight = 80;
 
     private readonly Tile[,] _tiles;
 

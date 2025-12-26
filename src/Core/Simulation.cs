@@ -144,10 +144,11 @@ public sealed class Simulation
                 var tile = World.GetTile(x, y);
                 tile.BaseTerrainTypeId = flatTerrainId;
 
-                // Set walkability based on terrain definition
+                // Set terrain properties based on terrain definition
                 if (Content.Terrains.TryGetValue(flatTerrainId, out var terrainDef))
                 {
-                    tile.Walkable = terrainDef.Walkable;
+                    tile.Passability = terrainDef.Passability;
+                    tile.BlocksLight = terrainDef.BlocksLight;
                 }
             }
         }
@@ -186,7 +187,7 @@ public sealed class Simulation
         // Only block the tile if this object is not walkable (e.g., fridge blocks, bed doesn't)
         if (!objDef.Walkable)
         {
-            World.GetTile(coord).Walkable = false;
+            World.GetTile(coord).ObjectBlocksMovement = true;
         }
         return id;
     }
@@ -205,7 +206,7 @@ public sealed class Simulation
             var objDef = Content.Objects[objComp.ObjectDefId];
             if (!objDef.Walkable)
             {
-                World.GetTile(pos.Coord).Walkable = true;
+                World.GetTile(pos.Coord).ObjectBlocksMovement = false;
             }
         }
 
@@ -252,7 +253,8 @@ public sealed class Simulation
             tile.OverlayTerrainTypeId = null;
         }
 
-        tile.Walkable = terrainDef.Walkable;
+        tile.Passability = terrainDef.Passability;
+        tile.BlocksLight = terrainDef.BlocksLight;
     }
 
     /// <summary>
@@ -294,10 +296,11 @@ public sealed class Simulation
         if (tile.OverlayTerrainTypeId.HasValue)
         {
             tile.OverlayTerrainTypeId = null;
-            // Restore walkability from base terrain
+            // Restore terrain properties from base terrain
             if (Content.Terrains.TryGetValue(tile.BaseTerrainTypeId, out var baseTerrain))
             {
-                tile.Walkable = baseTerrain.Walkable;
+                tile.Passability = baseTerrain.Passability;
+                tile.BlocksLight = baseTerrain.BlocksLight;
             }
             return;
         }
@@ -307,7 +310,8 @@ public sealed class Simulation
         if (Content.Terrains.TryGetValue(flatTerrainId, out var flatTerrain))
         {
             tile.BaseTerrainTypeId = flatTerrainId;
-            tile.Walkable = flatTerrain.Walkable;
+            tile.Passability = flatTerrain.Passability;
+            tile.BlocksLight = flatTerrain.BlocksLight;
             tile.ColorIndex = 0; // Reset to default color
         }
     }

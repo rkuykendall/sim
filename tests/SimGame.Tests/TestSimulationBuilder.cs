@@ -156,7 +156,8 @@ public sealed class TestSimulationBuilder
         var terrain = new TerrainDef
         {
             Id = 0, // Auto-generated
-            Walkable = walkable,
+            Passability = walkable ? TerrainPassability.Ground : TerrainPassability.High,
+            BlocksLight = !walkable,
             SpriteKey = spriteKey,
             IsAutotiling = isAutotiling,
         };
