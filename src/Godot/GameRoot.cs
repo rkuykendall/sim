@@ -98,6 +98,7 @@ public partial class GameRoot : Node2D
     private Camera2D? _camera;
     private CanvasLayer? _uiLayer;
     private BuildToolbar? _toolbar;
+
     private bool DebugMode => _debugMode;
 
     public override void _Ready()
@@ -628,7 +629,6 @@ public partial class GameRoot : Node2D
             var layer = new ModulatableTileMapLayer
             {
                 Name = $"{terrainDef.SpriteKey}TileMapLayer",
-                ZIndex = 0, // Overlay layer
                 TileSet = AutoTileSetBuilder.CreateAutoTileSet(
                     texture,
                     terrainDef.SpriteKey,
@@ -637,7 +637,27 @@ public partial class GameRoot : Node2D
                 Scale = new Vector2(2, 2),
             };
 
-            _tilesRoot.AddChild(layer);
+            // Walls need to y-sort with pawns/objects, so add them to Main as siblings
+            // Other autotile layers (water, etc.) stay in Tiles at z=-10
+            if (terrainDef.BlocksLight)
+            {
+                layer.ZIndex = 1; // Same z-index as pawns for y-sorting (above objects at z=0)
+                layer.YSortEnabled = true; // Enable y-sorting
+                // TileMapLayer uses tile coordinates for y_sort_origin, not pixels
+                // Each tile is 16x16 in the texture, scaled 2x to 32x32
+                // MapToLocal returns center of tile, so to sort by bottom edge:
+                // offset from center (Y=8) to bottom (Y=16) = 8 pixels in local space
+                layer.YSortOrigin = 4; // Sort by bottom edge (offset from tile center)
+                // Add to the same parent as Pawns/Objects/Tiles (the Main node)
+                // Use CallDeferred to add after scene tree is ready
+                _pawnsRoot.GetParent().CallDeferred(Node.MethodName.AddChild, layer);
+            }
+            else
+            {
+                layer.ZIndex = 0; // Relative to Tiles parent (-10) = absolute -10
+                _tilesRoot.AddChild(layer); // Add to Tiles (background layer)
+            }
+
             _autoTileLayers[terrainId] = layer;
         }
     }
@@ -1141,7 +1161,8 @@ public partial class GameRoot : Node2D
             if (isNewPawn)
             {
                 node = PawnScene.Instantiate<Node2D>();
-                _pawnsRoot.AddChild(node);
+                // Add pawns directly to Main for y-sorting with walls
+                _pawnsRoot.GetParent().AddChild(node);
                 _pawnNodes.Add(pawn.Id.Value, node);
 
                 // Initialize with sprite if available
@@ -1211,7 +1232,8 @@ public partial class GameRoot : Node2D
             if (!_objectNodes.TryGetValue(obj.Id.Value, out var node))
             {
                 node = ObjectScene?.Instantiate<Node2D>() ?? new Node2D();
-                _objectsRoot.AddChild(node);
+                // Add objects directly to Main for y-sorting with walls
+                _objectsRoot.GetParent().AddChild(node);
                 _objectNodes.Add(obj.Id.Value, node);
 
                 // Initialize with sprite if object has one

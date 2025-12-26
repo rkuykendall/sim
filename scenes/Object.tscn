@@ -3,6 +3,8 @@
 [ext_resource type="Script" path="res://src/Godot/ObjectView.cs" id="1"]
 
 [node name="Object" type="Node2D"]
+y_sort_enabled = true
+y_sort_origin = 14
 script = ExtResource("1")
 NameLabel = NodePath("NameLabel")
 Body = NodePath("Body")

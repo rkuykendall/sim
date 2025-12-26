@@ -3,6 +3,9 @@
 [ext_resource type="Script" path="res://src/Godot/PawnView.cs" id="1"]
 
 [node name="Pawn" type="Node2D"]
+y_sort_enabled = true
+y_sort_origin = 12
+z_index = 1
 script = ExtResource("1")
 BodyPath = NodePath("Body")
 

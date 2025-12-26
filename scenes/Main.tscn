@@ -12,6 +12,7 @@
 [ext_resource type="Material" path="res://shaders/crt_material.tres" id="9"]
 
 [node name="Main" type="Node2D"]
+y_sort_enabled = true
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(640, 360)
