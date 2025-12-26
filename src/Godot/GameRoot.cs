@@ -546,8 +546,25 @@ public partial class GameRoot : Node2D
                     )
                     {
                         var ntile = world.GetTile(ncoord);
+
+                        // Don't flood through tiles that have blocking overlay terrain (like walls)
+                        bool hasBlockingOverlay = false;
                         if (
-                            ntile.BaseTerrainTypeId == oldTerrainId
+                            ntile.OverlayTerrainTypeId.HasValue
+                            && _sim.Content.Terrains.TryGetValue(
+                                ntile.OverlayTerrainTypeId.Value,
+                                out var overlayDef
+                            )
+                        )
+                        {
+                            hasBlockingOverlay =
+                                overlayDef.BlocksLight
+                                || overlayDef.Passability == TerrainPassability.High;
+                        }
+
+                        if (
+                            !hasBlockingOverlay
+                            && ntile.BaseTerrainTypeId == oldTerrainId
                             && ntile.ColorIndex == oldColorIndex
                         )
                         {
