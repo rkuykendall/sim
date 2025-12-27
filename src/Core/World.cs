@@ -52,11 +52,17 @@ public readonly struct TileCoord : IEquatable<TileCoord>
 /// </remarks>
 public sealed class Tile
 {
+    /// <summary>Index into color palette for base terrain's visual appearance.</summary>
+    public int ColorIndex { get; set; } = 0; // Default to first color
+
     /// <summary>ID of the base terrain type (grass, dirt, wood floor, etc.) - always renders underneath.</summary>
     public int BaseTerrainTypeId { get; set; }
 
     /// <summary>ID of the optional overlay terrain type (paths, etc.) - renders on top with transparency.</summary>
     public int? OverlayTerrainTypeId { get; set; } = null;
+
+    /// <summary>Index into color palette for overlay terrain's visual appearance.</summary>
+    public int OverlayColorIndex { get; set; } = 0; // Default to first color
 
     /// <summary>Height/walkability level of the terrain (from base terrain definition).</summary>
     public TerrainPassability Passability { get; set; } = TerrainPassability.Ground;
@@ -69,12 +75,6 @@ public sealed class Tile
 
     /// <summary>Whether pawns can walk through this tile. Computed from Passability and ObjectBlocksMovement.</summary>
     public bool Walkable => Passability == TerrainPassability.Ground && !ObjectBlocksMovement;
-
-    /// <summary>Index into color palette for base terrain's visual appearance.</summary>
-    public int ColorIndex { get; set; } = 0; // Default to first color
-
-    /// <summary>Index into color palette for overlay terrain's visual appearance.</summary>
-    public int OverlayColorIndex { get; set; } = 0; // Default to first color
 }
 
 /// <summary>
