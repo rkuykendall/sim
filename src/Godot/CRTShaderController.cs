@@ -6,7 +6,7 @@ public partial class CRTShaderController : CanvasLayer
 {
     private ColorRect? _shaderRect;
     private ShaderMaterial? _shaderMaterial;
-    private bool _isEnabled = false;
+    private bool _isEnabled = true;
 
     public override void _Ready()
     {
@@ -17,7 +17,7 @@ public partial class CRTShaderController : CanvasLayer
         {
             _shaderMaterial = _shaderRect.Material as ShaderMaterial;
             // Start with shader disabled
-            _shaderRect.Visible = false;
+            _shaderRect.Visible = true;
         }
     }
 

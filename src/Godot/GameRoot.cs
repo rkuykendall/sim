@@ -1437,7 +1437,7 @@ public partial class GameRoot : Node2D
             _crtShaderController.SetTimeOfDay(timeOfDay);
         }
 
-        // Update shadow shader sun angle
+        // Update shadow shader sun angle and length
         if (_shadowShaderMaterial != null)
         {
             // Calculate sun angle: -90° at midnight, 0° at noon (overhead), 90° at next midnight
@@ -1445,6 +1445,28 @@ public partial class GameRoot : Node2D
             float sunAngle = (timeOfDay - 0.5f) * 180f; // -90° to 90°
             // Convert to degrees (shader expects 0-360)
             _shadowShaderMaterial.SetShaderParameter("sun_angle", sunAngle + 90f);
+
+            // Calculate sun elevation for shadow length (1.0 at noon, 0.0 at horizon/midnight)
+            // Using cosine: high when sun is overhead, low when sun is at horizon
+            float sunElevation = Mathf.Max(0.0f, Mathf.Cos(sunAngle * Mathf.Pi / 180f));
+
+            // Shadow length inversely proportional to sun elevation
+            // At noon (elevation = 1.0): shadows shortest (multiplier = 1.0)
+            // At sunrise/sunset (elevation = 0.0): shadows longest (multiplier = 3.0)
+            float baseShadowDistance = 16.0f;
+            float shadowMultiplier = 1.0f + (1.0f - sunElevation) * 4.0f;
+            float shadowDistance = baseShadowDistance * shadowMultiplier;
+
+            _shadowShaderMaterial.SetShaderParameter("max_shadow_distance", shadowDistance);
+
+            // Fade shadow opacity based on sun elevation
+            // At noon (elevation = 1.0): full opacity (0.3 alpha)
+            // At midnight (elevation = 0.0): invisible (0.0 alpha)
+            float baseShadowAlpha = 0.3f;
+            float shadowAlpha = baseShadowAlpha * sunElevation;
+            var shadowColor = new Color(0.0f, 0.0f, 0.0f, shadowAlpha);
+
+            _shadowShaderMaterial.SetShaderParameter("shadow_color", shadowColor);
         }
     }
 }
