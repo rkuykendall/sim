@@ -58,11 +58,17 @@ public sealed class Tile
     /// <summary>ID of the base terrain type (grass, dirt, wood floor, etc.) - always renders underneath.</summary>
     public int BaseTerrainTypeId { get; set; }
 
+    /// <summary>Variant index for base terrain (0-based, randomized on paint).</summary>
+    public int BaseVariantIndex { get; set; } = 0;
+
     /// <summary>ID of the optional overlay terrain type (paths, etc.) - renders on top with transparency.</summary>
     public int? OverlayTerrainTypeId { get; set; } = null;
 
     /// <summary>Index into color palette for overlay terrain's visual appearance.</summary>
     public int OverlayColorIndex { get; set; } = 0; // Default to first color
+
+    /// <summary>Variant index for overlay terrain (0-based, randomized on paint).</summary>
+    public int OverlayVariantIndex { get; set; } = 0;
 
     /// <summary>Height/walkability level of the terrain (from base terrain definition).</summary>
     public TerrainPassability Passability { get; set; } = TerrainPassability.Ground;

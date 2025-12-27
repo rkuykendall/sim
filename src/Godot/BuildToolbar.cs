@@ -302,6 +302,16 @@ public partial class BuildToolbar : HBoxContainer
             {
                 texture = ExtractAutoTile1x1(texture);
             }
+            // For variant terrains, show only the first variant (top-left 16x16)
+            else if (
+                !isObject
+                && _content != null
+                && _content.Terrains.TryGetValue(id, out terrainDef)
+                && terrainDef.VariantCount > 1
+            )
+            {
+                texture = ExtractVariantTile(texture);
+            }
 
             button.SetSprite(texture, _currentPalette[BuildToolState.SelectedColorIndex]);
         }
@@ -337,6 +347,27 @@ public partial class BuildToolbar : HBoxContainer
             new Rect2I(0, sourceY, tileSize, tileSize),
             new Vector2I(0, 0)
         );
+
+        return ImageTexture.CreateFromImage(croppedImage);
+    }
+
+    /// <summary>
+    /// Extracts the first variant from a variant terrain texture (top-left 16x16 portion).
+    /// </summary>
+    private Texture2D ExtractVariantTile(Texture2D originalTexture)
+    {
+        var image = originalTexture.GetImage();
+        if (image == null)
+            return originalTexture;
+
+        // Extract top-left 16x16 region (first variant in 2x2 layout)
+        int tileSize = 16;
+
+        // Create a new image for the cropped region
+        var croppedImage = Image.CreateEmpty(tileSize, tileSize, false, image.GetFormat());
+
+        // Copy the top-left 16x16 pixels
+        croppedImage.BlitRect(image, new Rect2I(0, 0, tileSize, tileSize), new Vector2I(0, 0));
 
         return ImageTexture.CreateFromImage(croppedImage);
     }

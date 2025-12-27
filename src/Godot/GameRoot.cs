@@ -697,20 +697,35 @@ public partial class GameRoot : Node2D
                 };
                 _tilesRoot.AddChild(tileNode);
 
-                // Base layer for flat terrains
+                // Base layer for foundation terrains (flat, wood floor)
                 var baseLayer = new Node2D { Name = "BaseLayer", ZIndex = -1 };
                 tileNode.AddChild(baseLayer);
 
-                // Single sprite for full-tile textures (16x16 scaled to 32x32)
-                var fullTileSprite = new Sprite2D
+                // Sprite for base layer textures (16x16 scaled to 32x32)
+                var baseTileSprite = new Sprite2D
                 {
-                    Name = "FullTileSprite",
+                    Name = "BaseTileSprite",
                     Position = new Vector2(TileSize / 2, TileSize / 2), // Center on tile
                     Centered = true,
                     Visible = false,
                     Scale = new Vector2(2, 2), // Scale 16x16 texture to 32x32
                 };
-                baseLayer.AddChild(fullTileSprite);
+                baseLayer.AddChild(baseTileSprite);
+
+                // Overlay layer for decorative terrains (grass, dirt, etc.)
+                var overlayLayer = new Node2D { Name = "OverlayLayer", ZIndex = 0 };
+                tileNode.AddChild(overlayLayer);
+
+                // Sprite for overlay layer textures (16x16 scaled to 32x32)
+                var overlayTileSprite = new Sprite2D
+                {
+                    Name = "OverlayTileSprite",
+                    Position = new Vector2(TileSize / 2, TileSize / 2), // Center on tile
+                    Centered = true,
+                    Visible = false,
+                    Scale = new Vector2(2, 2), // Scale 16x16 texture to 32x32
+                };
+                overlayLayer.AddChild(overlayTileSprite);
 
                 _tileNodes[coord] = tileNode;
             }
@@ -1035,7 +1050,7 @@ public partial class GameRoot : Node2D
     private void UpdateBaseLayer(TileCoord coord, Node2D tileNode)
     {
         var baseLayer = tileNode.GetNode<Node2D>("BaseLayer");
-        var sprite = baseLayer.GetNode<Sprite2D>("FullTileSprite");
+        var sprite = baseLayer.GetNode<Sprite2D>("BaseTileSprite");
         var tileMapCoord = new Vector2I(coord.X, coord.Y);
 
         // Check if this world tile exists and should be rendered
@@ -1067,12 +1082,35 @@ public partial class GameRoot : Node2D
         }
         else
         {
-            // Render flat terrain using sprite
+            // Render terrain using sprite (supports variants)
             var flatTexture = SpriteResourceManager.GetTexture(terrainDef.SpriteKey);
             if (flatTexture != null)
             {
                 sprite.Texture = flatTexture;
                 sprite.Modulate = _currentPalette[tile.ColorIndex];
+
+                // Handle texture variants if terrain has multiple variants
+                if (terrainDef.VariantCount > 1)
+                {
+                    // Use stored variant index from tile (randomized on paint)
+                    int variantIndex = tile.BaseVariantIndex;
+
+                    // Calculate texture region for 2x2 atlas layout
+                    // Assumes 16x16 tiles arranged in a 2x2 grid for 4 variants
+                    int variantsPerRow = 2; // 2x2 layout
+                    int tileSize = 16;
+                    int atlasX = (variantIndex % variantsPerRow) * tileSize;
+                    int atlasY = (variantIndex / variantsPerRow) * tileSize;
+
+                    sprite.RegionEnabled = true;
+                    sprite.RegionRect = new Rect2(atlasX, atlasY, tileSize, tileSize);
+                }
+                else
+                {
+                    // No variants - use full texture
+                    sprite.RegionEnabled = false;
+                }
+
                 sprite.Visible = true;
             }
             else
@@ -1083,40 +1121,103 @@ public partial class GameRoot : Node2D
     }
 
     /// <summary>
-    /// Update the overlay layer which renders autotiled paths on the tile using TileMapLayer.
+    /// Update the overlay layer which renders decorative terrains (grass, walls, paths).
+    /// Supports both autotiling (TileMapLayer) and sprite-based (with variants).
     /// </summary>
     private void UpdateOverlayLayer(TileCoord coord, Node2D tileNode)
     {
+        var overlayLayer = tileNode.GetNode<Node2D>("OverlayLayer");
+        var sprite = overlayLayer.GetNode<Sprite2D>("OverlayTileSprite");
         var tileMapCoord = new Vector2I(coord.X, coord.Y);
 
         if (!_sim.World.IsInBounds(coord))
+        {
+            sprite.Visible = false;
             return;
+        }
 
         var tile = _sim.World.GetTile(coord);
 
-        // Find and clear any overlay autotiling layers at this coord
-        // (Overlays are autotiling terrains used as OverlayTerrainTypeId)
+        // Clear all autotiling layers at this coord first
         foreach (var (terrainId, layer) in _autoTileLayers)
         {
             // Skip if this is a base terrain autotiling layer
             if (terrainId == tile.BaseTerrainTypeId)
                 continue;
 
-            // Clear this layer at this coord (might have been an overlay before)
             layer.EraseCell(tileMapCoord);
             layer.ClearTileColor(tileMapCoord);
         }
 
-        // Render overlay autotiling terrain if present
+        // If no overlay terrain, hide sprite and return
+        if (!tile.OverlayTerrainTypeId.HasValue)
+        {
+            sprite.Visible = false;
+            return;
+        }
+
+        // Get the overlay terrain definition
         if (
-            tile.OverlayTerrainTypeId.HasValue
-            && _autoTileLayers.TryGetValue(tile.OverlayTerrainTypeId.Value, out var overlayLayer)
+            !_sim.Content.Terrains.TryGetValue(
+                tile.OverlayTerrainTypeId.Value,
+                out var overlayTerrainDef
+            )
         )
         {
+            sprite.Visible = false;
+            return;
+        }
+
+        // Render overlay terrain - either autotiling or sprite-based
+        if (
+            overlayTerrainDef.IsAutotiling
+            && _autoTileLayers.TryGetValue(tile.OverlayTerrainTypeId.Value, out var autoTileLayer)
+        )
+        {
+            // Use TileMapLayer for autotiling terrain
+            sprite.Visible = false;
             var color = _currentPalette[tile.OverlayColorIndex];
             var cellsArray = new Godot.Collections.Array<Vector2I> { tileMapCoord };
-            overlayLayer.SetCellsTerrainConnect(cellsArray, 0, 0, false);
-            overlayLayer.SetTileColor(tileMapCoord, color);
+            autoTileLayer.SetCellsTerrainConnect(cellsArray, 0, 0, false);
+            autoTileLayer.SetTileColor(tileMapCoord, color);
+        }
+        else
+        {
+            // Use sprite for non-autotiling overlay terrain (supports variants)
+            var overlayTexture = SpriteResourceManager.GetTexture(overlayTerrainDef.SpriteKey);
+            if (overlayTexture != null)
+            {
+                sprite.Texture = overlayTexture;
+                sprite.Modulate = _currentPalette[tile.OverlayColorIndex];
+
+                // Handle texture variants if terrain has multiple variants
+                if (overlayTerrainDef.VariantCount > 1)
+                {
+                    // Use stored variant index from tile (randomized on paint)
+                    int variantIndex = tile.OverlayVariantIndex;
+
+                    // Calculate texture region for 2x2 atlas layout
+                    // Assumes 16x16 tiles arranged in a 2x2 grid for 4 variants
+                    int variantsPerRow = 2; // 2x2 layout
+                    int tileSize = 16;
+                    int atlasX = (variantIndex % variantsPerRow) * tileSize;
+                    int atlasY = (variantIndex / variantsPerRow) * tileSize;
+
+                    sprite.RegionEnabled = true;
+                    sprite.RegionRect = new Rect2(atlasX, atlasY, tileSize, tileSize);
+                }
+                else
+                {
+                    // No variants - use full texture
+                    sprite.RegionEnabled = false;
+                }
+
+                sprite.Visible = true;
+            }
+            else
+            {
+                sprite.Visible = false;
+            }
         }
     }
 

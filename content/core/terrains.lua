@@ -6,10 +6,16 @@ Terrains = {
     Flat = {
         passability = "Ground",
         spriteKey = "flat",
+        paintsToBase = true,
+    },
+    WoodFloor = {
+        passability = "Ground",
+        spriteKey = "wood_floor",
     },
     Grass = {
         passability = "Ground",
         spriteKey = "grass",
+        variantCount = 4,
     },
     Dirt = {
         passability = "Ground",
@@ -18,10 +24,6 @@ Terrains = {
     Concrete = {
         passability = "Ground",
         spriteKey = "concrete",
-    },
-    WoodFloor = {
-        passability = "Ground",
-        spriteKey = "wood_floor",
     },
     Stone = {
         passability = "Ground",

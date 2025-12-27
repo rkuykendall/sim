@@ -150,9 +150,13 @@ public sealed class TestSimulationBuilder
         string key = "",
         bool walkable = true,
         string spriteKey = "",
-        bool isAutotiling = false
+        bool isAutotiling = false,
+        bool? paintsToBase = null // If null, defaults based on isAutotiling
     )
     {
+        // Smart default: autotiling terrains paint to overlay, others to base
+        bool effectivePaintsToBase = paintsToBase ?? !isAutotiling;
+
         var terrain = new TerrainDef
         {
             Id = 0, // Auto-generated
@@ -160,6 +164,7 @@ public sealed class TestSimulationBuilder
             BlocksLight = !walkable,
             SpriteKey = spriteKey,
             IsAutotiling = isAutotiling,
+            PaintsToBase = effectivePaintsToBase,
         };
         return _content.RegisterTerrain(key, terrain);
     }

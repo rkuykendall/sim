@@ -79,7 +79,7 @@ public class FillToolTests
         // Arrange: Simple 5x5 world
         var builder = new TestSimulationBuilder();
         var grassId = builder.DefineTerrain(key: "Grass", walkable: true, isAutotiling: false);
-        var wallId = builder.DefineTerrain(key: "Wall", walkable: false, isAutotiling: true); // Autotiling!
+        var wallId = builder.DefineTerrain(key: "Wall", walkable: false, isAutotiling: true); // Overlay
         var floorId = builder.DefineTerrain(key: "Floor", walkable: true, isAutotiling: false);
         var sim = builder.Build();
 

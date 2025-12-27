@@ -178,6 +178,14 @@ public static class ContentLoader
             var isAutotilingData = data.Get("isAutotiling");
             var isAutotiling = !isAutotilingData.IsNil() && isAutotilingData.Boolean;
 
+            // Load paintsToBase property (defaults to false if not specified)
+            var paintsToBaseData = data.Get("paintsToBase");
+            var paintsToBase = !paintsToBaseData.IsNil() && paintsToBaseData.Boolean;
+
+            // Load variantCount property (defaults to 1 if not specified)
+            var variantCountData = data.Get("variantCount");
+            var variantCount = variantCountData.IsNil() ? 1 : (int)variantCountData.Number;
+
             registry.RegisterTerrain(
                 key,
                 new TerrainDef
@@ -186,6 +194,8 @@ public static class ContentLoader
                     BlocksLight = blocksLight,
                     SpriteKey = spriteKey,
                     IsAutotiling = isAutotiling,
+                    PaintsToBase = paintsToBase,
+                    VariantCount = variantCount,
                 }
             );
         }

@@ -238,19 +238,28 @@ public sealed class Simulation
             paletteSize = paletteDef.Colors.Count;
         int safeColorIndex = GetSafeColorIndex(colorIndex, paletteSize);
 
-        // Autotiling terrains (paths, etc.) go in the overlay layer
-        // Regular terrains go in the base layer
-        if (terrainDef.IsAutotiling)
-        {
-            tile.OverlayTerrainTypeId = terrainDefId;
-            tile.OverlayColorIndex = safeColorIndex;
-        }
-        else
+        // Most terrains go in the overlay layer (grass, walls, paths, etc.)
+        // Foundation terrains go in the base layer (flat, wood floor)
+        if (terrainDef.PaintsToBase)
         {
             tile.BaseTerrainTypeId = terrainDefId;
             tile.ColorIndex = safeColorIndex;
-            // Clear overlay when painting non-autotiling terrain
-            tile.OverlayTerrainTypeId = null;
+            // Randomize variant for this terrain
+            if (terrainDef.VariantCount > 1)
+                tile.BaseVariantIndex = Random.Next(terrainDef.VariantCount);
+            else
+                tile.BaseVariantIndex = 0;
+            // Keep overlay - allows grass/decorations on top of floors
+        }
+        else
+        {
+            tile.OverlayTerrainTypeId = terrainDefId;
+            tile.OverlayColorIndex = safeColorIndex;
+            // Randomize variant for this terrain
+            if (terrainDef.VariantCount > 1)
+                tile.OverlayVariantIndex = Random.Next(terrainDef.VariantCount);
+            else
+                tile.OverlayVariantIndex = 0;
         }
 
         tile.Passability = terrainDef.Passability;
