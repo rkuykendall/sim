@@ -22,7 +22,6 @@ public static class SpriteResourceManager
         ["stone"] = "res://sprites/tiles/stone.png",
         ["flat"] = "res://sprites/tiles/flat.png",
         ["block"] = "res://sprites/tiles/block.png",
-        ["brick"] = "res://sprites/tiles/brick.png",
 
         // Path autotile atlas
         ["path"] = "res://sprites/tiles/path.png",
