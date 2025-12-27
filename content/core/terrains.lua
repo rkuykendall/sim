@@ -50,6 +50,7 @@ Terrains = {
         passability = "High",
         blocksLight = true,
         spriteKey = "block",
+        isAutotiling = true,
     },
     Brick = {
         passability = "High",
