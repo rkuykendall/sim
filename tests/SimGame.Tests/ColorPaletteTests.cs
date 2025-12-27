@@ -64,17 +64,17 @@ public class ColorPaletteTests
     {
         // Arrange
         var builder = new TestSimulationBuilder();
-        builder.DefineTerrain(spriteKey: "grass");
-        var concreteDefId = builder.DefineTerrain(spriteKey: "concrete");
+        builder.DefineTerrain();
+        var newDefId = builder.DefineTerrain();
         var sim = builder.Build();
 
         // Act: Paint terrain without specifying color index
-        sim.PaintTerrain(2, 2, concreteDefId);
+        sim.PaintTerrain(2, 2, newDefId);
 
-        // Assert: Verify the color index defaults to 0 (green)
+        // Assert: Verify the color index defaults to 0
         var tile = sim.World.GetTile(new TileCoord(2, 2));
         Assert.Equal(0, tile.ColorIndex);
-        Assert.Equal(concreteDefId, tile.BaseTerrainTypeId);
+        Assert.Equal(newDefId, tile.BaseTerrainTypeId);
     }
 
     [Fact]

@@ -22,10 +22,6 @@ Terrains = {
         spriteKey = "dirt",
         variantCount = 4,
     },
-    Concrete = {
-        passability = "Ground",
-        spriteKey = "concrete",
-    },
     Stone = {
         passability = "Ground",
         spriteKey = "stone",

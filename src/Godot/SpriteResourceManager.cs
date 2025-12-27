@@ -17,13 +17,10 @@ public static class SpriteResourceManager
         // Tile sprites
         ["grass"] = "res://sprites/tiles/grass.png",
         ["dirt"] = "res://sprites/tiles/dirt.png",
-        ["concrete"] = "res://sprites/tiles/concrete.png",
         ["wood_floor"] = "res://sprites/tiles/wood_floor.png",
         ["stone"] = "res://sprites/tiles/stone.png",
         ["flat"] = "res://sprites/tiles/flat.png",
         ["block"] = "res://sprites/tiles/block.png",
-
-        // Path autotile atlas
         ["path"] = "res://sprites/tiles/path.png",
         ["water"] = "res://sprites/tiles/water.png",
         ["wall"] = "res://sprites/tiles/wall.png",
