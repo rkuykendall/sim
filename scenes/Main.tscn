@@ -9,7 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://timedisplay" path="res://scenes/TimeDisplay.tscn" id="6"]
 [ext_resource type="PackedScene" uid="uid://buildtoolbar" path="res://scenes/BuildToolbar.tscn" id="7"]
 [ext_resource type="Script" path="res://src/Godot/CRTShaderController.cs" id="8"]
-[ext_resource type="Material" path="res://shaders/crt_material.tres" id="9"]
+[ext_resource type="Material" path="res://shaders/screen_effects_material.tres" id="9"]
 
 [node name="Main" type="Node2D"]
 y_sort_enabled = true
@@ -45,8 +45,8 @@ TilesRootPath = NodePath("../Tiles")
 InfoPanelPath = NodePath("../UI/PawnInfoPanel")
 ObjectInfoPanelPath = NodePath("../UI/ObjectInfoPanel")
 TimeDisplayPath = NodePath("../UI/TimeDisplay")
-NightOverlayPath = NodePath("../NightOverlayLayer/NightOverlay")
 ShadowRectPath = NodePath("../ShadowLayer/ShadowRect")
+CRTShaderLayerPath = NodePath("../CRTShaderLayer")
 CameraPath = NodePath("../Camera2D")
 UILayerPath = NodePath("../UI")
 ToolbarPath = NodePath("../UI/BuildToolbar")
@@ -73,30 +73,21 @@ offset_bottom = 60.0
 
 [node name="BuildToolbar" parent="UI" instance=ExtResource("7")]
 
-[node name="NightOverlayLayer" type="CanvasLayer" parent="."]
-layer = 100
-
-[node name="NightOverlay" type="ColorRect" parent="NightOverlayLayer"]
-z_index = 100
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_right = 800.0
-offset_bottom = 600.0
-mouse_filter = 2
-color = Color(0, 0, 0, 0)
-
 [node name="CRTShaderLayer" type="CanvasLayer" parent="."]
 layer = 128
 script = ExtResource("8")
 
 [node name="BackBufferCopy" type="BackBufferCopy" parent="CRTShaderLayer"]
+copy_mode = 2
 
 [node name="CRTShaderRect" type="ColorRect" parent="CRTShaderLayer"]
 material = ExtResource("9")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_right = 800.0
+offset_bottom = 600.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+color = Color(0, 0, 0, 0)

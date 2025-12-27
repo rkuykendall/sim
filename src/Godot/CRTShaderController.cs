@@ -5,16 +5,27 @@ namespace SimGame.Godot;
 public partial class CRTShaderController : CanvasLayer
 {
     private ColorRect? _shaderRect;
+    private ShaderMaterial? _shaderMaterial;
     private bool _isEnabled = false;
 
     public override void _Ready()
     {
         _shaderRect = GetNode<ColorRect>("CRTShaderRect");
 
-        // Start with shader disabled
+        // Get the shader material
         if (_shaderRect != null)
         {
+            _shaderMaterial = _shaderRect.Material as ShaderMaterial;
+            // Start with shader disabled
             _shaderRect.Visible = false;
+        }
+    }
+
+    public void SetTimeOfDay(float timeOfDay)
+    {
+        if (_shaderMaterial != null)
+        {
+            _shaderMaterial.SetShaderParameter("time_of_day", timeOfDay);
         }
     }
 

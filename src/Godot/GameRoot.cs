@@ -70,10 +70,10 @@ public partial class GameRoot : Node2D
     public NodePath TimeDisplayPath { get; set; } = "";
 
     [Export]
-    public NodePath NightOverlayPath { get; set; } = "";
+    public NodePath ShadowRectPath { get; set; } = "";
 
     [Export]
-    public NodePath ShadowRectPath { get; set; } = "";
+    public NodePath CRTShaderLayerPath { get; set; } = "";
 
     [Export]
     public NodePath CameraPath { get; set; } = "";
@@ -91,10 +91,9 @@ public partial class GameRoot : Node2D
     private PawnInfoPanel? _infoPanel;
     private ObjectInfoPanel? _objectInfoPanel;
     private TimeDisplay? _timeDisplay;
-    private ColorRect? _nightOverlay;
-    private ShaderMaterial? _nightShaderMaterial;
     private ColorRect? _shadowRect;
     private ShaderMaterial? _shadowShaderMaterial;
+    private CRTShaderController? _crtShaderController;
     private Camera2D? _camera;
     private CanvasLayer? _uiLayer;
     private BuildToolbar? _toolbar;
@@ -149,21 +148,9 @@ public partial class GameRoot : Node2D
             _objectInfoPanel = GetNodeOrNull<ObjectInfoPanel>(ObjectInfoPanelPath);
         if (!string.IsNullOrEmpty(TimeDisplayPath))
             _timeDisplay = GetNodeOrNull<TimeDisplay>(TimeDisplayPath);
-        if (!string.IsNullOrEmpty(NightOverlayPath))
+        if (!string.IsNullOrEmpty(CRTShaderLayerPath))
         {
-            GD.Print("[DEBUG] NightOverlayPath: " + NightOverlayPath);
-            _nightOverlay = GetNodeOrNull<ColorRect>(NightOverlayPath);
-            GD.Print(
-                "[DEBUG] _nightOverlay: " + (_nightOverlay != null ? _nightOverlay.Name : "null")
-            );
-            if (_nightOverlay != null)
-            {
-                var shader = GD.Load<Shader>("res://shaders/sunset_night.gdshader");
-                GD.Print("[DEBUG] Shader loaded: " + (shader != null));
-                _nightShaderMaterial = new ShaderMaterial { Shader = shader };
-                _nightOverlay.Material = _nightShaderMaterial;
-                GD.Print("[DEBUG] ShaderMaterial assigned to NightOverlay");
-            }
+            _crtShaderController = GetNodeOrNull<CRTShaderController>(CRTShaderLayerPath);
         }
         if (!string.IsNullOrEmpty(ShadowRectPath))
         {
@@ -1441,15 +1428,14 @@ public partial class GameRoot : Node2D
 
     private void UpdateNightOverlay(RenderSnapshot snapshot)
     {
-        if (_nightShaderMaterial == null || _nightOverlay == null)
-        {
-            GD.Print("[DEBUG] NightOverlay or ShaderMaterial missing");
-            return;
-        }
-
         // Normalized day fraction from simulation tick: 0.0 = midnight, 0.5 = noon, 1.0 = next midnight
         float timeOfDay = snapshot.Time.DayFraction;
-        _nightShaderMaterial.SetShaderParameter("time_of_day", timeOfDay);
+
+        // Update CRT shader's time of day parameter
+        if (_crtShaderController != null)
+        {
+            _crtShaderController.SetTimeOfDay(timeOfDay);
+        }
 
         // Update shadow shader sun angle
         if (_shadowShaderMaterial != null)

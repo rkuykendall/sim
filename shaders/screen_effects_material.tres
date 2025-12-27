@@ -1,9 +1,11 @@
 [gd_resource type="ShaderMaterial" load_steps=2 format=3]
 
-[ext_resource type="Shader" path="res://shaders/crt.gdshader" id="1"]
+[ext_resource type="Shader" path="res://shaders/screen_effects.gdshader" id="1"]
 
 [resource]
 shader = ExtResource("1")
+shader_parameter/time_of_day = 0.5
+shader_parameter/transition_speed = 0.5
 shader_parameter/enable_grain = true
 shader_parameter/enable_scanlines = true
 shader_parameter/enable_rgb_grid = true
