@@ -116,6 +116,95 @@ public class FillToolTests
         Assert.Equal(grassId, sim.World.GetTile(new TileCoord(0, 0)).BaseTerrainTypeId); // THIS WILL FAIL - gets filled!
     }
 
+    [Fact]
+    public void FloodFill_ShouldOnlyExpandIntoExactlyMatchingTiles()
+    {
+        // Fill tool should only expand into tiles that match in ALL aspects:
+        // - Same base terrain
+        // - Same overlay terrain (or both null)
+        // - Same color
+        // It should NOT spread from grass+dirt to grass-only, even though base is the same
+
+        // Arrange: Create a 7x5 world with distinct regions
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(6, 4); // 7x5 world (0-6, 0-4)
+        var grassId = builder.DefineTerrain(key: "Grass", walkable: true, isAutotiling: false);
+        var dirtId = builder.DefineTerrain(key: "Dirt", walkable: true, isAutotiling: false);
+        var stoneId = builder.DefineTerrain(key: "Stone", walkable: true, isAutotiling: false);
+        var sim = builder.Build();
+
+        // Create three distinct regions separated by stone walls:
+        // Left region (0-2, 0-2): Grass only (color 0) - contiguous, should all fill
+        // Middle region (3-4, 0-2): Grass + Dirt overlay (color 0) - should NOT fill
+        // Right region (5-6, 0-2): Grass only (color 1) - different color, should NOT fill
+        // Everywhere else: Stone
+
+        // Paint everything stone first
+        for (int x = 0; x <= 6; x++)
+        for (int y = 0; y <= 4; y++)
+            sim.PaintTerrain(x, y, stoneId, 0);
+
+        // Left region: Grass only (color 0) - 3x3 square, should all be filled
+        for (int x = 0; x <= 2; x++)
+        for (int y = 0; y <= 2; y++)
+            sim.PaintTerrain(x, y, grassId, 0);
+
+        // Middle region: Grass + Dirt overlay (color 0) - should NOT fill
+        for (int x = 3; x <= 4; x++)
+        for (int y = 0; y <= 2; y++)
+        {
+            sim.PaintTerrain(x, y, grassId, 0);
+            sim.World.GetTile(new TileCoord(x, y)).OverlayTerrainTypeId = dirtId;
+        }
+
+        // Right region: Grass only (color 1) - different color, should NOT fill
+        for (int x = 5; x <= 6; x++)
+        for (int y = 0; y <= 2; y++)
+            sim.PaintTerrain(x, y, grassId, 1);
+
+        // Verify initial state
+        Assert.Equal(grassId, sim.World.GetTile(new TileCoord(0, 0)).BaseTerrainTypeId);
+        Assert.Null(sim.World.GetTile(new TileCoord(0, 0)).OverlayTerrainTypeId);
+        Assert.Equal(0, sim.World.GetTile(new TileCoord(0, 0)).ColorIndex);
+
+        Assert.Equal(grassId, sim.World.GetTile(new TileCoord(3, 0)).BaseTerrainTypeId);
+        Assert.Equal(dirtId, sim.World.GetTile(new TileCoord(3, 0)).OverlayTerrainTypeId);
+        Assert.Equal(0, sim.World.GetTile(new TileCoord(3, 0)).ColorIndex);
+
+        Assert.Equal(grassId, sim.World.GetTile(new TileCoord(5, 0)).BaseTerrainTypeId);
+        Assert.Equal(1, sim.World.GetTile(new TileCoord(5, 0)).ColorIndex);
+
+        // Act: Flood fill from (1,1) in left region (grass-only, color 0)
+        // Replace with stone, color 2
+        FloodFillHelper(sim, new TileCoord(1, 1), stoneId, 2);
+
+        // Assert: Only the left region (grass-only, color 0) should be filled with stone
+        // All 9 tiles in left region should be stone now
+        for (int x = 0; x <= 2; x++)
+        for (int y = 0; y <= 2; y++)
+        {
+            Assert.Equal(stoneId, sim.World.GetTile(new TileCoord(x, y)).BaseTerrainTypeId);
+            Assert.Equal(2, sim.World.GetTile(new TileCoord(x, y)).ColorIndex);
+        }
+
+        // Middle region (grass+dirt) should NOT be changed
+        for (int x = 3; x <= 4; x++)
+        for (int y = 0; y <= 2; y++)
+        {
+            Assert.Equal(grassId, sim.World.GetTile(new TileCoord(x, y)).BaseTerrainTypeId);
+            Assert.Equal(dirtId, sim.World.GetTile(new TileCoord(x, y)).OverlayTerrainTypeId);
+            Assert.Equal(0, sim.World.GetTile(new TileCoord(x, y)).ColorIndex);
+        }
+
+        // Right region (grass, different color) should NOT be changed
+        for (int x = 5; x <= 6; x++)
+        for (int y = 0; y <= 2; y++)
+        {
+            Assert.Equal(grassId, sim.World.GetTile(new TileCoord(x, y)).BaseTerrainTypeId);
+            Assert.Equal(1, sim.World.GetTile(new TileCoord(x, y)).ColorIndex);
+        }
+    }
+
     // Helper method that implements flood fill logic (copied from GameRoot.cs)
     // This will be replaced with a proper API on Simulation later
     private void FloodFillHelper(
@@ -132,6 +221,7 @@ public class FillToolTests
         var tile = world.GetTile(start);
         int oldTerrainId = tile.BaseTerrainTypeId;
         int oldColorIndex = tile.ColorIndex;
+        int? oldOverlayTerrainId = tile.OverlayTerrainTypeId;
 
         if (oldTerrainId == newTerrainId && oldColorIndex == newColorIndex)
             return;
@@ -150,7 +240,13 @@ public class FillToolTests
         {
             var coord = queue.Dequeue();
             var t = world.GetTile(coord);
-            if (t.BaseTerrainTypeId == oldTerrainId && t.ColorIndex == oldColorIndex)
+
+            // Only fill tiles that match ALL aspects: base terrain, overlay terrain, and color
+            if (
+                t.BaseTerrainTypeId == oldTerrainId
+                && t.ColorIndex == oldColorIndex
+                && t.OverlayTerrainTypeId == oldOverlayTerrainId
+            )
             {
                 sim.PaintTerrain(coord.X, coord.Y, newTerrainId, newColorIndex);
 
@@ -185,10 +281,12 @@ public class FillToolTests
                                 || overlayDef.Passability == TerrainPassability.High;
                         }
 
+                        // Only expand into tiles that match exactly: same base, same overlay, same color
                         if (
                             !hasBlockingOverlay
                             && ntile.BaseTerrainTypeId == oldTerrainId
                             && ntile.ColorIndex == oldColorIndex
+                            && ntile.OverlayTerrainTypeId == oldOverlayTerrainId
                         )
                         {
                             queue.Enqueue(ncoord);
