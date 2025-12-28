@@ -39,7 +39,7 @@ public static class AutoTileConfig
         new(7, 1, 0x6A),
         new(8, 1, 0xD6),
         new(9, 1, 0x7E),
-        new(10, 1, 0xFF), // Extra center tile
+        // new(10, 1, 0xFF), Extra center tile
         new(11, 1, 0x7B),
         // Row 2
         new(0, 2, 0x02),
