@@ -34,6 +34,42 @@ public partial class PreviewSquare : Button
         _textureRect.SetAnchorsPreset(LayoutPreset.FullRect);
         AddChild(_textureRect);
         MoveChild(_textureRect, 1); // Above color rect
+
+        InitializeBorder();
+    }
+
+    private void InitializeBorder()
+    {
+        // Always apply a 4px border (invisible by default)
+        var styleBox = new StyleBoxFlat
+        {
+            BorderColor = new Color(1, 1, 1, 0), // Transparent white
+            BorderWidthLeft = 4,
+            BorderWidthRight = 4,
+            BorderWidthTop = 4,
+            BorderWidthBottom = 4,
+            DrawCenter = false,
+        };
+        AddThemeStyleboxOverride("normal", styleBox);
+        AddThemeStyleboxOverride("hover", styleBox);
+        AddThemeStyleboxOverride("pressed", styleBox);
+        AddThemeStyleboxOverride("focus", styleBox);
+
+        // Always inset both rects to account for border
+        if (_colorRect != null)
+        {
+            _colorRect.OffsetLeft = 4;
+            _colorRect.OffsetTop = 4;
+            _colorRect.OffsetRight = -4;
+            _colorRect.OffsetBottom = -4;
+        }
+        if (_textureRect != null)
+        {
+            _textureRect.OffsetLeft = 4;
+            _textureRect.OffsetTop = 4;
+            _textureRect.OffsetRight = -4;
+            _textureRect.OffsetBottom = -4;
+        }
     }
 
     /// <summary>
@@ -132,60 +168,19 @@ public partial class PreviewSquare : Button
     /// <param name="selected">True to show selected state</param>
     public void SetSelected(bool selected)
     {
-        if (selected)
+        // Update border color (visible when selected, transparent when not)
+        var styleBox = new StyleBoxFlat
         {
-            // Show white outline border
-            var styleBox = new StyleBoxFlat
-            {
-                BorderColor = Colors.White,
-                BorderWidthLeft = 3,
-                BorderWidthRight = 3,
-                BorderWidthTop = 3,
-                BorderWidthBottom = 3,
-                DrawCenter = false,
-            };
-            AddThemeStyleboxOverride("normal", styleBox);
-            AddThemeStyleboxOverride("hover", styleBox);
-            AddThemeStyleboxOverride("pressed", styleBox);
-
-            // Inset both rects to leave room for border
-            if (_colorRect != null)
-            {
-                _colorRect.OffsetLeft = 3;
-                _colorRect.OffsetTop = 3;
-                _colorRect.OffsetRight = -3;
-                _colorRect.OffsetBottom = -3;
-            }
-            if (_textureRect != null)
-            {
-                _textureRect.OffsetLeft = 3;
-                _textureRect.OffsetTop = 3;
-                _textureRect.OffsetRight = -3;
-                _textureRect.OffsetBottom = -3;
-            }
-        }
-        else
-        {
-            // Remove outline
-            RemoveThemeStyleboxOverride("normal");
-            RemoveThemeStyleboxOverride("hover");
-            RemoveThemeStyleboxOverride("pressed");
-
-            // Reset both rects to full size
-            if (_colorRect != null)
-            {
-                _colorRect.OffsetLeft = 0;
-                _colorRect.OffsetTop = 0;
-                _colorRect.OffsetRight = 0;
-                _colorRect.OffsetBottom = 0;
-            }
-            if (_textureRect != null)
-            {
-                _textureRect.OffsetLeft = 0;
-                _textureRect.OffsetTop = 0;
-                _textureRect.OffsetRight = 0;
-                _textureRect.OffsetBottom = 0;
-            }
-        }
+            BorderColor = selected ? Colors.White : new Color(1, 1, 1, 0),
+            BorderWidthLeft = 4,
+            BorderWidthRight = 4,
+            BorderWidthTop = 4,
+            BorderWidthBottom = 4,
+            DrawCenter = false,
+        };
+        AddThemeStyleboxOverride("normal", styleBox);
+        AddThemeStyleboxOverride("hover", styleBox);
+        AddThemeStyleboxOverride("pressed", styleBox);
+        AddThemeStyleboxOverride("focus", styleBox);
     }
 }
