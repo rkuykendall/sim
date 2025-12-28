@@ -1,6 +1,13 @@
-[gd_scene load_steps=2 format=3 uid="uid://buildtoolbar"]
+[gd_scene load_steps=3 format=3 uid="uid://buildtoolbar"]
 
 [ext_resource type="Script" path="res://src/Godot/BuildToolbar.cs" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.1, 0.1, 0.1, 0.8)
+corner_radius_top_left = 0
+corner_radius_top_right = 0
+corner_radius_bottom_right = 0
+corner_radius_bottom_left = 0
 
 [node name="BuildToolbar" type="HBoxContainer"]
 anchors_preset = 15
@@ -19,6 +26,7 @@ OptionsContainerPath = NodePath("OptionsPanel/MarginContainer/OptionsFlow")
 custom_minimum_size = Vector2(202, 0)
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="MarginContainer" type="MarginContainer" parent="LeftPanel"]
 layout_mode = 2
@@ -35,6 +43,7 @@ columns = 2
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="MarginContainer" type="MarginContainer" parent="OptionsPanel"]
 layout_mode = 2

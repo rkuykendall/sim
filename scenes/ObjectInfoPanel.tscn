@@ -1,8 +1,16 @@
-[gd_scene load_steps=2 format=3 uid="uid://objectinfopanel"]
+[gd_scene load_steps=3 format=3 uid="uid://objectinfopanel"]
 
 [ext_resource type="Script" path="res://src/Godot/ObjectInfoPanel.cs" id="1"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.1, 0.1, 0.1, 0.8)
+corner_radius_top_left = 0
+corner_radius_top_right = 0
+corner_radius_bottom_right = 0
+corner_radius_bottom_left = 0
+
 [node name="ObjectInfoPanel" type="PanelContainer"]
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
