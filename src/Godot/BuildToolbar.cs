@@ -509,6 +509,7 @@ public partial class BuildToolbar : HBoxContainer
                     BuildToolState.Mode == BuildToolMode.PlaceTerrain
                     || BuildToolState.Mode == BuildToolMode.FillSquare
                     || BuildToolState.Mode == BuildToolMode.OutlineSquare
+                    || BuildToolState.Mode == BuildToolMode.FloodFill
                 ) && BuildToolState.SelectedTerrainDefId.HasValue
             )
             {
