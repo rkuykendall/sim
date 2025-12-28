@@ -1460,10 +1460,13 @@ public partial class GameRoot : Node2D
             _shadowShaderMaterial.SetShaderParameter("max_shadow_distance", shadowDistance);
 
             // Fade shadow opacity based on sun elevation
-            // At noon (elevation = 1.0): full opacity (0.3 alpha)
-            // At midnight (elevation = 0.0): invisible (0.0 alpha)
+            // Shadows should fade out before midnight - use a steeper curve
+            // Apply power function to make shadows disappear faster as sun gets lower
             float baseShadowAlpha = 0.3f;
-            float shadowAlpha = baseShadowAlpha * sunElevation;
+            // Square the elevation to make shadows fade faster near sunset/sunrise
+            // This makes shadows disappear well before midnight
+            float shadowFade = sunElevation * sunElevation;
+            float shadowAlpha = baseShadowAlpha * shadowFade;
             var shadowColor = new Color(0.0f, 0.0f, 0.0f, shadowAlpha);
 
             _shadowShaderMaterial.SetShaderParameter("shadow_color", shadowColor);

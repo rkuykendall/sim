@@ -5,7 +5,7 @@ render_mode unshaded;
 uniform float sun_angle : hint_range(0.0, 360.0) = 45.0;
 
 // Shadow parameters
-uniform vec4 shadow_color : source_color = vec4(0.0, 0.0, 0.0, 0.3);
+uniform vec4 shadow_color : source_color = vec4(0.0, 0.0, 0.0, 0.6);
 uniform float max_shadow_distance : hint_range(0.0, 200.0) = 32.0;
 
 // Gradient texture for hard/soft shadow control
