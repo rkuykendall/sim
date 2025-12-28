@@ -359,6 +359,7 @@ public sealed class ActionSystem : ISystem
                     actionComp.CurrentPath = null;
                     actionComp.BlockedSinceTick = -1;
                     actionComp.WaitUntilTick = -1;
+                    actionComp.ActionQueue.Clear(); // Also clear queued actions (e.g., the Idle after wandering)
                     return;
                 }
 
@@ -637,12 +638,20 @@ public sealed class AISystem : ISystem
         var urgentNeeds = CalculateUrgentNeeds(ctx, pawnId, needs);
 
         // Try to find an available object for any of our urgent needs
+        // Only seek objects when the need is actually pressing (urgency < 50)
         EntityId? targetObject = null;
-        foreach (var (needId, _) in urgentNeeds)
+        foreach (var (needId, urgency) in urgentNeeds)
         {
-            targetObject = FindObjectForNeed(ctx, pawnId, needId);
-            if (targetObject != null)
-                break;
+            // Only pursue objects for needs that are actually low or causing issues
+            // Urgency < 50 means either:
+            // - Need value is very low (< 50), OR
+            // - Need has a debuff (urgency gets -50 or -100 modifier)
+            if (urgency < 50)
+            {
+                targetObject = FindObjectForNeed(ctx, pawnId, needId);
+                if (targetObject != null)
+                    break;
+            }
         }
 
         if (targetObject != null)
@@ -813,7 +822,21 @@ public sealed class AISystem : ISystem
         if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pos))
             return;
 
-        // Pick a random nearby tile to walk to
+        // Get diversity map for the whole world (cached per tick in simulation)
+        var diversityMap = ctx.Sim.GetDiversityMap();
+
+        // Step 1: Gather all potential wander destinations
+        var potentialTargets = new List<TileCoord>();
+
+        // Add 10 random tiles from anywhere on the map
+        for (int i = 0; i < 10; i++)
+        {
+            int x = ctx.Random.Next(0, ctx.World.Width);
+            int y = ctx.Random.Next(0, ctx.World.Height);
+            potentialTargets.Add(new TileCoord(x, y));
+        }
+
+        // Add nearby tiles in all directions (distances 1-3)
         var directions = new[]
         {
             (0, 1),
@@ -825,44 +848,72 @@ public sealed class AISystem : ISystem
             (-1, 1),
             (-1, -1),
         };
-        var shuffled = directions.OrderBy(_ => ctx.Random.Next()).ToArray();
-
-        foreach (var (dx, dy) in shuffled)
+        foreach (var (dx, dy) in directions)
         {
-            int wanderDist = ctx.Random.Next(1, 4); // 1-3 tiles
-            var target = new TileCoord(
-                pos.Coord.X + dx * wanderDist,
-                pos.Coord.Y + dy * wanderDist
-            );
-
-            // Check if target is walkable and not occupied by another pawn
-            if (ctx.World.IsWalkable(target) && !ctx.Entities.IsTileOccupiedByPawn(target, pawnId))
+            for (int dist = 1; dist <= 3; dist++)
             {
-                // Queue a walk action
-                actionComp.ActionQueue.Enqueue(
-                    new ActionDef
-                    {
-                        Type = ActionType.MoveTo,
-                        Animation = AnimationType.Walk,
-                        TargetCoord = target,
-                        DisplayName = "Wandering",
-                    }
+                potentialTargets.Add(
+                    new TileCoord(pos.Coord.X + dx * dist, pos.Coord.Y + dy * dist)
                 );
-
-                // Then queue an idle action (stand around for a bit)
-                int idleDuration = ctx.Random.Next(40, 120); // 2-6 seconds at 20 ticks/sec
-                actionComp.ActionQueue.Enqueue(
-                    new ActionDef
-                    {
-                        Type = ActionType.Idle,
-                        Animation = AnimationType.Idle,
-                        DurationTicks = idleDuration,
-                        DisplayName = "Idle",
-                    }
-                );
-                return;
             }
         }
+
+        // Step 2: Filter to valid candidates (walkable, unoccupied, not current position)
+        var candidates = potentialTargets
+            .Where(target => !target.Equals(pos.Coord))
+            .Where(target => ctx.World.IsWalkable(target))
+            .Where(target => !ctx.Entities.IsTileOccupiedByPawn(target, pawnId))
+            .Select(target => (coord: target, diversity: diversityMap[target.X, target.Y]))
+            .ToList();
+
+        // If no valid candidates, pawn is completely stuck
+        if (candidates.Count == 0)
+            return;
+
+        // Step 3: Sort by diversity (descending) with random tiebreaker
+        // This creates strong preference for diverse/interesting areas
+        candidates = candidates
+            .OrderByDescending(c => c.diversity)
+            .ThenBy(_ => ctx.Random.Next())
+            .ToList();
+
+        // Step 4: Pick the best candidate
+        var selected = candidates[0];
+
+        // If all tiles have zero diversity, prefer closer tiles instead
+        if (candidates.All(c => c.diversity == 0))
+        {
+            selected = candidates
+                .OrderBy(c => Math.Abs(c.coord.X - pos.Coord.X) + Math.Abs(c.coord.Y - pos.Coord.Y))
+                .First();
+        }
+
+        // Queue a walk action
+        actionComp.ActionQueue.Enqueue(
+            new ActionDef
+            {
+                Type = ActionType.MoveTo,
+                Animation = AnimationType.Walk,
+                TargetCoord = selected.coord,
+                DisplayName = "Wandering",
+            }
+        );
+
+        // Then queue an idle action (stand around for a bit)
+        // Idle longer on more diverse tiles (but cap to avoid getting stuck)
+        int baseIdleDuration = ctx.Random.Next(20, 40); // 1-2 seconds at 20 ticks/sec
+        int diversityBonus = selected.diversity * 3; // +0.15 second per diversity point (0-9 scale)
+        int idleDuration = Math.Min(50, baseIdleDuration + diversityBonus); // Cap at 2.5 seconds
+
+        actionComp.ActionQueue.Enqueue(
+            new ActionDef
+            {
+                Type = ActionType.Idle,
+                Animation = AnimationType.Idle,
+                DurationTicks = idleDuration,
+                DisplayName = "Idle",
+            }
+        );
     }
 
     private EntityId? FindObjectForNeed(SimContext ctx, EntityId pawnId, int needId)
