@@ -6,35 +6,31 @@ Objects = {
     Fridge = {
         satisfiesNeed = "Hunger",
         satisfactionAmount = 50,
-        interactionDuration = 20,
+        interactionDuration = 200,
         grantsBuff = "GoodMeal",
-        useAreas = { {0, 1} },  -- stand in front (south)
         spriteKey = "fridge"
     },
     Bed = {
         satisfiesNeed = "Energy",
         satisfactionAmount = 80,
-        interactionDuration = 40,
+        interactionDuration = 400,
         grantsBuff = "WellRested",
         walkable = true,  -- pawn stands on the bed to sleep
-        useAreas = { {0, 0} },
         spriteKey = "bed"
     },
     TV = {
         satisfiesNeed = "Fun",
         satisfactionAmount = 40,
-        interactionDuration = 30,
+        interactionDuration = 300,
         grantsBuff = "HadFun",
-        useAreas = { {0, 1}, {0, 2}, {-1, 1}, {1, 1}, {-1, 2}, {1, 2} },  -- viewing area in front
         spriteKey = "tv"
     },
     Shower = {
         satisfiesNeed = "Hygiene",
         satisfactionAmount = 60,
-        interactionDuration = 20,
+        interactionDuration = 200,
         grantsBuff = "FeelingFresh",
         walkable = true,  -- pawn stands in the shower
-        useAreas = { {0, 0} },
         spriteKey = "shower"
     },
 
@@ -42,21 +38,18 @@ Objects = {
     Plant = {
         walkable = true,       -- can walk through
         interactable = false,  -- no interaction
-        useAreas = {},
         spriteKey = "plant"
     },
 
     Castle = {
         walkable = false,
         interactable = false,
-        useAreas = {},
         spriteKey = "castle"
     },
 
     Lamp = {
         walkable = true,
         interactable = false,
-        useAreas = {},
         spriteKey = "lamp"
     },
 }

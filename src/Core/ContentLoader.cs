@@ -212,21 +212,28 @@ public static class ContentLoader
             var key = pair.Key.String;
             var data = pair.Value.Table;
 
-            // Load use areas first
+            // Derive use areas from walkable property
             var useAreas = new List<(int dx, int dy)>();
-            var useAreasData = data.Get("useAreas");
-            if (!useAreasData.IsNil() && useAreasData.Type == DataType.Table)
-            {
-                foreach (var areaPair in useAreasData.Table.Pairs)
-                {
-                    var areaTable = areaPair.Value.Table;
-                    useAreas.Add(((int)areaTable.Get(1).Number, (int)areaTable.Get(2).Number));
-                }
-            }
 
             // Load walkable property (defaults to false if not specified)
             var walkableData = data.Get("walkable");
             var walkable = !walkableData.IsNil() && walkableData.Boolean;
+
+            if (walkable)
+            {
+                useAreas.Add((0, 0));
+            }
+            else
+            {
+                useAreas.Add((0, 1));
+                useAreas.Add((1, 0));
+                useAreas.Add((0, -1));
+                useAreas.Add((-1, 0));
+                useAreas.Add((1, 1));
+                useAreas.Add((1, -1));
+                useAreas.Add((-1, 1));
+                useAreas.Add((-1, -1));
+            }
 
             // Load sprite key (defaults to empty string if not specified)
             var spriteKeyData = data.Get("spriteKey");

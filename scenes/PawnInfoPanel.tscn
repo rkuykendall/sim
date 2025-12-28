@@ -29,7 +29,7 @@ layout_mode = 2
 
 [node name="NameLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 20
 text = "Pawn Name"
 
 [node name="MoodLabel" type="Label" parent="MarginContainer/VBoxContainer"]
@@ -46,7 +46,7 @@ layout_mode = 2
 
 [node name="NeedsLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 8
+theme_override_font_sizes/font_size = 16
 text = "Needs"
 
 [node name="NeedsContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
@@ -57,7 +57,7 @@ layout_mode = 2
 
 [node name="BuffsLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 8
+theme_override_font_sizes/font_size = 16
 text = "Mood Effects"
 
 [node name="BuffsContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
