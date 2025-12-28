@@ -48,10 +48,18 @@ public class SimulationMaxPawnsTests
         builder.WithWorldBounds(10, 10);
         var sim = builder.Build();
         // Artificially boost score by painting many tiles
-        var grassId = builder.DefineTerrain(key: "Grass", spriteKey: "grass");
+        var terrain1 = builder.DefineTerrain();
+        var terrain2 = builder.DefineTerrain();
+
         for (int x = 0; x < 10; x++)
         for (int y = 0; y < 10; y++)
-            sim.PaintTerrain(x, y, grassId);
+            sim.PaintTerrain(x, y, (x + y) % 2 == 0 ? terrain1 : terrain2, (x + y) % 2);
+
+        Assert.True(
+            sim.ScoreMapDiversity() > 10,
+            "Expected score map diversity to be greater than 10"
+        );
+
         // No pawns, score > 10, should return 1
         Assert.Equal(1, sim.GetMaxPawns());
     }

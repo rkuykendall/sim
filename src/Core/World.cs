@@ -52,6 +52,25 @@ public readonly struct TileCoord : IEquatable<TileCoord>
 /// </remarks>
 public sealed class Tile
 {
+    /// <summary>
+    /// Returns a hash representing the key properties of this tile for comparison.
+    /// </summary>
+    public int TileHash
+    {
+        get
+        {
+            // Combine all relevant properties for comparison
+            // Use HashCode.Combine for value types and handle nullable overlay
+            return HashCode.Combine(
+                BaseTerrainTypeId,
+                ColorIndex,
+                OverlayTerrainTypeId ?? -1,
+                OverlayColorIndex,
+                ObjectBlocksMovement
+            );
+        }
+    }
+
     /// <summary>Index into color palette for base terrain's visual appearance.</summary>
     public int ColorIndex { get; set; } = 0; // Default to first color
 

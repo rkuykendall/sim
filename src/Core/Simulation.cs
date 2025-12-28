@@ -377,32 +377,66 @@ public sealed class Simulation
     }
 
     /// <summary>
-    /// Scores the map based on tile diversity (adjacent tile differences).
+    /// Generates a 2D grid of diversity scores for each tile.
+    /// Each cell's score is based on differences with the tile to the left and above.
     /// </summary>
-    private int ScoreMapDiversity()
+    public int[,] GetDiversityMap()
     {
-        int score = 0;
-        Tile? prevTile = null;
-        for (int x = 0; x < World.Width; x++)
+        int width = World.Width;
+        int height = World.Height;
+        int[,] scores = new int[width, height];
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < World.Height; y++)
+            for (int y = 0; y < height; y++)
             {
+                int xScore = 0;
+                int yScore = 0;
                 var tile = World.GetTile(x, y);
-                if (prevTile != null)
+                var tileHash = tile.TileHash;
+
+                // Compare to left neighbor using TileHash
+                if (x > 0)
                 {
-                    if (tile.BaseTerrainTypeId != prevTile.BaseTerrainTypeId)
-                    {
-                        score++;
-                    }
-                    if (tile.OverlayTerrainTypeId != prevTile.OverlayTerrainTypeId)
-                    {
-                        score++;
-                    }
+                    xScore = scores[x - 1, y];
+                    var xTile = World.GetTile(x - 1, y);
+                    if (tileHash != xTile.TileHash)
+                        xScore += 1;
+                    else if (xScore > 0)
+                        xScore -= 1;
                 }
-                prevTile = tile;
+
+                // Compare to above neighbor using TileHash
+                if (y > 0)
+                {
+                    yScore = scores[x, y - 1];
+                    var yTile = World.GetTile(x, y - 1);
+                    if (tileHash != yTile.TileHash)
+                        yScore += 1;
+                    else if (yScore > 0)
+                        yScore -= 1;
+                }
+                scores[x, y] = Math.Min(9, (xScore + yScore) / 2);
             }
         }
+        return scores;
+    }
 
+    /// <summary>
+    /// Scores the map based on tile diversity (adjacent tile differences).
+    /// </summary>
+    public int ScoreMapDiversity()
+    {
+        int[,] diversityMap = GetDiversityMap();
+        int score = 0;
+        int width = diversityMap.GetLength(0);
+        int height = diversityMap.GetLength(1);
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                score += diversityMap[x, y];
+            }
+        }
         score += Entities.AllObjects().Count();
         return score;
     }
