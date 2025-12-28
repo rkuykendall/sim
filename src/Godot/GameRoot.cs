@@ -495,9 +495,10 @@ public partial class GameRoot : Node2D
             return;
         var world = _sim.World;
         var tile = world.GetTile(start);
-        int oldTerrainId = tile.BaseTerrainTypeId;
-        int oldColorIndex = tile.ColorIndex;
-        if (oldTerrainId == newTerrainId && oldColorIndex == newColorIndex)
+        int oldTileHash = tile.TileHash;
+
+        // Check if we're already the target terrain/color - use TileHash for accurate comparison
+        if (tile.BaseTerrainTypeId == newTerrainId && tile.ColorIndex == newColorIndex)
             return;
 
         var width = world.Width;
@@ -514,7 +515,8 @@ public partial class GameRoot : Node2D
         {
             var coord = queue.Dequeue();
             var t = world.GetTile(coord);
-            if (t.BaseTerrainTypeId == oldTerrainId && t.ColorIndex == oldColorIndex)
+            // Use TileHash to match identical tiles (base + overlay + colors)
+            if (t.TileHash == oldTileHash)
             {
                 _sim.PaintTerrain(coord.X, coord.Y, newTerrainId, newColorIndex);
                 UpdateTileAndNeighbors(coord);
@@ -549,11 +551,8 @@ public partial class GameRoot : Node2D
                                 || overlayDef.Passability == TerrainPassability.High;
                         }
 
-                        if (
-                            !hasBlockingOverlay
-                            && ntile.BaseTerrainTypeId == oldTerrainId
-                            && ntile.ColorIndex == oldColorIndex
-                        )
+                        // Use TileHash to match identical tiles
+                        if (!hasBlockingOverlay && ntile.TileHash == oldTileHash)
                         {
                             queue.Enqueue(ncoord);
                             visited.Add(ncoord);
