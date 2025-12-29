@@ -267,6 +267,75 @@ public sealed class Simulation
     }
 
     /// <summary>
+    /// Flood fill all connected tiles of the same terrain and color with a new terrain and color.
+    /// Only fills tiles that exactly match the starting tile's base terrain, overlay terrain, and color.
+    /// </summary>
+    /// <param name="startX">X coordinate of the starting tile</param>
+    /// <param name="startY">Y coordinate of the starting tile</param>
+    /// <param name="newTerrainId">The terrain ID to fill with</param>
+    /// <param name="newColorIndex">The color index to fill with</param>
+    public void FloodFill(int startX, int startY, int newTerrainId, int newColorIndex)
+    {
+        var start = new TileCoord(startX, startY);
+        if (!World.IsInBounds(start))
+            return;
+
+        var tile = World.GetTile(start);
+        int oldTileHash = tile.TileHash;
+
+        // Check if we're already the target terrain/color
+        if (tile.BaseTerrainTypeId == newTerrainId && tile.ColorIndex == newColorIndex)
+            return;
+
+        var width = World.Width;
+        var height = World.Height;
+        var visited = new HashSet<TileCoord>();
+        var queue = new Queue<TileCoord>();
+        queue.Enqueue(start);
+        visited.Add(start);
+
+        int[] dx = { 0, 1, 0, -1 };
+        int[] dy = { -1, 0, 1, 0 };
+
+        while (queue.Count > 0)
+        {
+            var coord = queue.Dequeue();
+            var t = World.GetTile(coord);
+
+            // Use TileHash to match identical tiles
+            if (t.TileHash == oldTileHash)
+            {
+                PaintTerrain(coord.X, coord.Y, newTerrainId, newColorIndex);
+
+                for (int dir = 0; dir < 4; dir++)
+                {
+                    int nx = coord.X + dx[dir];
+                    int ny = coord.Y + dy[dir];
+                    var ncoord = new TileCoord(nx, ny);
+
+                    if (
+                        nx >= 0
+                        && nx < width
+                        && ny >= 0
+                        && ny < height
+                        && !visited.Contains(ncoord)
+                    )
+                    {
+                        var ntile = World.GetTile(ncoord);
+
+                        // Use TileHash for consistent tile identity checking
+                        if (ntile.TileHash == oldTileHash)
+                        {
+                            queue.Enqueue(ncoord);
+                            visited.Add(ncoord);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// Delete an object at the specified position (if any). Returns true if an object was deleted.
     /// </summary>
     public bool TryDeleteObject(int x, int y)

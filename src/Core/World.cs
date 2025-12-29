@@ -65,8 +65,7 @@ public sealed class Tile
                 BaseTerrainTypeId,
                 ColorIndex,
                 OverlayTerrainTypeId ?? -1,
-                OverlayColorIndex,
-                ObjectBlocksMovement
+                OverlayColorIndex
             );
         }
     }

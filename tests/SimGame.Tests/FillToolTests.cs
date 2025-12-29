@@ -51,7 +51,7 @@ public class FillToolTests
 
         // Act: Flood fill from inside the square (3,3) with floor
         // This simulates clicking inside the walled area with the fill tool
-        FloodFillHelper(sim, new TileCoord(3, 3), floorId, 0);
+        sim.FloodFill(3, 3, floorId, 0);
 
         // Assert: Only tiles inside the wall square should be floor
         // Inside tiles should be floor
@@ -106,7 +106,7 @@ public class FillToolTests
         Assert.Equal(grassId, wallTile.BaseTerrainTypeId); // Base is still grass!
 
         // Act: Flood fill from inside the square (2,2) with floor
-        FloodFillHelper(sim, new TileCoord(2, 2), floorId, 0);
+        sim.FloodFill(2, 2, floorId, 0);
 
         // Assert: Walls should still exist (not be removed)
         var wallTileAfter = sim.World.GetTile(new TileCoord(1, 1));
@@ -114,6 +114,87 @@ public class FillToolTests
 
         // And outside grass should NOT be filled (walls should block flood)
         Assert.Equal(grassId, sim.World.GetTile(new TileCoord(0, 0)).BaseTerrainTypeId); // THIS WILL FAIL - gets filled!
+    }
+
+    [Fact]
+    public void FloodFill_ShouldFillContiguousBlockOutlineWithNewTerrain()
+    {
+        // Reproduces bug: Create a block outline, switch to brick with different color,
+        // flood fill the outline - all block tiles should become brick
+
+        // Arrange: Create a 7x7 world
+        var builder = new TestSimulationBuilder();
+        builder.WithWorldBounds(6, 6); // 7x7 world
+        var grassId = builder.DefineTerrain(key: "Grass", walkable: true, isAutotiling: false);
+        var blockId = builder.DefineTerrain(key: "Block", walkable: false, isAutotiling: true);
+        var brickId = builder.DefineTerrain(key: "Brick", walkable: false, isAutotiling: true);
+        var sim = builder.Build();
+
+        // Paint everything grass first
+        for (int x = 0; x <= 6; x++)
+        for (int y = 0; y <= 6; y++)
+            sim.PaintTerrain(x, y, grassId, 0);
+
+        // Create a 5x5 outline of Block tiles (color 0) from (1,1) to (5,5)
+        // Top and bottom edges
+        for (int x = 1; x <= 5; x++)
+        {
+            sim.PaintTerrain(x, 1, blockId, 0); // Top edge
+            sim.PaintTerrain(x, 5, blockId, 0); // Bottom edge
+        }
+        // Left and right edges
+        for (int y = 1; y <= 5; y++)
+        {
+            sim.PaintTerrain(1, y, blockId, 0); // Left edge
+            sim.PaintTerrain(5, y, blockId, 0); // Right edge
+        }
+
+        // Verify the outline is Block (autotiling goes to overlay)
+        var tile11 = sim.World.GetTile(new TileCoord(1, 1));
+        Assert.Equal(grassId, tile11.BaseTerrainTypeId); // Base should be grass
+        Assert.Equal(blockId, tile11.OverlayTerrainTypeId); // Block is autotiling, goes to overlay
+
+        // Verify center is still grass
+        Assert.Equal(grassId, sim.World.GetTile(new TileCoord(3, 3)).BaseTerrainTypeId);
+
+        // Act: Flood fill from a corner of the Block outline (1,1) with Brick (color 3)
+        // This simulates: user created Block outline, switched to Brick + color 3, clicked fill
+        sim.FloodFill(1, 1, brickId, 3);
+
+        // Assert: ALL Block tiles in the outline should now be Brick (autotiling goes to overlay)
+        // Top edge
+        for (int x = 1; x <= 5; x++)
+        {
+            var t = sim.World.GetTile(new TileCoord(x, 1));
+            Assert.Equal(brickId, t.OverlayTerrainTypeId); // Brick is autotiling, goes to overlay
+            Assert.Equal(3, t.OverlayColorIndex); // Overlay color should be 3
+        }
+        // Bottom edge
+        for (int x = 1; x <= 5; x++)
+        {
+            var t = sim.World.GetTile(new TileCoord(x, 5));
+            Assert.Equal(brickId, t.OverlayTerrainTypeId);
+            Assert.Equal(3, t.OverlayColorIndex);
+        }
+        // Left edge
+        for (int y = 2; y <= 4; y++) // Skip corners (already checked)
+        {
+            var t = sim.World.GetTile(new TileCoord(1, y));
+            Assert.Equal(brickId, t.OverlayTerrainTypeId);
+            Assert.Equal(3, t.OverlayColorIndex);
+        }
+        // Right edge
+        for (int y = 2; y <= 4; y++) // Skip corners
+        {
+            var t = sim.World.GetTile(new TileCoord(5, y));
+            Assert.Equal(brickId, t.OverlayTerrainTypeId);
+            Assert.Equal(3, t.OverlayColorIndex);
+        }
+
+        // Center should still be grass with no overlay (not filled)
+        var centerTile = sim.World.GetTile(new TileCoord(3, 3));
+        Assert.Equal(grassId, centerTile.BaseTerrainTypeId);
+        Assert.Null(centerTile.OverlayTerrainTypeId);
     }
 
     [Fact]
@@ -176,7 +257,7 @@ public class FillToolTests
 
         // Act: Flood fill from (1,1) in left region (grass-only, color 0)
         // Replace with stone, color 2
-        FloodFillHelper(sim, new TileCoord(1, 1), stoneId, 2);
+        sim.FloodFill(1, 1, stoneId, 2);
 
         // Assert: Only the left region (grass-only, color 0) should be filled with stone
         // All 9 tiles in left region should be stone now
@@ -202,99 +283,6 @@ public class FillToolTests
         {
             Assert.Equal(grassId, sim.World.GetTile(new TileCoord(x, y)).BaseTerrainTypeId);
             Assert.Equal(1, sim.World.GetTile(new TileCoord(x, y)).ColorIndex);
-        }
-    }
-
-    // Helper method that implements flood fill logic (copied from GameRoot.cs)
-    // This will be replaced with a proper API on Simulation later
-    private void FloodFillHelper(
-        Simulation sim,
-        TileCoord start,
-        int newTerrainId,
-        int newColorIndex
-    )
-    {
-        if (!sim.World.IsInBounds(start))
-            return;
-
-        var world = sim.World;
-        var tile = world.GetTile(start);
-        int oldTerrainId = tile.BaseTerrainTypeId;
-        int oldColorIndex = tile.ColorIndex;
-        int? oldOverlayTerrainId = tile.OverlayTerrainTypeId;
-
-        if (oldTerrainId == newTerrainId && oldColorIndex == newColorIndex)
-            return;
-
-        var width = world.Width;
-        var height = world.Height;
-        var visited = new HashSet<TileCoord>();
-        var queue = new Queue<TileCoord>();
-        queue.Enqueue(start);
-        visited.Add(start);
-
-        int[] dx = { 0, 1, 0, -1 };
-        int[] dy = { -1, 0, 1, 0 };
-
-        while (queue.Count > 0)
-        {
-            var coord = queue.Dequeue();
-            var t = world.GetTile(coord);
-
-            // Only fill tiles that match ALL aspects: base terrain, overlay terrain, and color
-            if (
-                t.BaseTerrainTypeId == oldTerrainId
-                && t.ColorIndex == oldColorIndex
-                && t.OverlayTerrainTypeId == oldOverlayTerrainId
-            )
-            {
-                sim.PaintTerrain(coord.X, coord.Y, newTerrainId, newColorIndex);
-
-                for (int dir = 0; dir < 4; dir++)
-                {
-                    int nx = coord.X + dx[dir];
-                    int ny = coord.Y + dy[dir];
-                    var ncoord = new TileCoord(nx, ny);
-
-                    if (
-                        nx >= 0
-                        && nx < width
-                        && ny >= 0
-                        && ny < height
-                        && !visited.Contains(ncoord)
-                    )
-                    {
-                        var ntile = world.GetTile(ncoord);
-
-                        // Don't flood through tiles that have blocking overlay terrain (like walls)
-                        bool hasBlockingOverlay = false;
-                        if (
-                            ntile.OverlayTerrainTypeId.HasValue
-                            && sim.Content.Terrains.TryGetValue(
-                                ntile.OverlayTerrainTypeId.Value,
-                                out var overlayDef
-                            )
-                        )
-                        {
-                            hasBlockingOverlay =
-                                overlayDef.BlocksLight
-                                || overlayDef.Passability == TerrainPassability.High;
-                        }
-
-                        // Only expand into tiles that match exactly: same base, same overlay, same color
-                        if (
-                            !hasBlockingOverlay
-                            && ntile.BaseTerrainTypeId == oldTerrainId
-                            && ntile.ColorIndex == oldColorIndex
-                            && ntile.OverlayTerrainTypeId == oldOverlayTerrainId
-                        )
-                        {
-                            queue.Enqueue(ncoord);
-                            visited.Add(ncoord);
-                        }
-                    }
-                }
-            }
         }
     }
 }

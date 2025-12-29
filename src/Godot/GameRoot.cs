@@ -302,11 +302,14 @@ public partial class GameRoot : Node2D
                         && BuildToolState.SelectedTerrainDefId.HasValue
                     )
                     {
-                        FloodFill(
-                            tileCoord,
+                        _sim.FloodFill(
+                            tileCoord.X,
+                            tileCoord.Y,
                             BuildToolState.SelectedTerrainDefId.Value,
                             BuildToolState.SelectedColorIndex
                         );
+                        // Update all tiles since flood fill can affect many tiles
+                        SyncTiles();
                         return;
                     }
                 }
@@ -486,82 +489,6 @@ public partial class GameRoot : Node2D
                 return;
             }
         }
-    }
-
-    // Flood fill all connected tiles of the same terrain and color
-    private void FloodFill(TileCoord start, int newTerrainId, int newColorIndex)
-    {
-        if (!_sim.World.IsInBounds(start))
-            return;
-        var world = _sim.World;
-        var tile = world.GetTile(start);
-        int oldTileHash = tile.TileHash;
-
-        // Check if we're already the target terrain/color - use TileHash for accurate comparison
-        if (tile.BaseTerrainTypeId == newTerrainId && tile.ColorIndex == newColorIndex)
-            return;
-
-        var width = world.Width;
-        var height = world.Height;
-        var visited = new HashSet<TileCoord>();
-        var queue = new Queue<TileCoord>();
-        queue.Enqueue(start);
-        visited.Add(start);
-
-        int[] dx = { 0, 1, 0, -1 };
-        int[] dy = { -1, 0, 1, 0 };
-
-        while (queue.Count > 0)
-        {
-            var coord = queue.Dequeue();
-            var t = world.GetTile(coord);
-            // Use TileHash to match identical tiles (base + overlay + colors)
-            if (t.TileHash == oldTileHash)
-            {
-                _sim.PaintTerrain(coord.X, coord.Y, newTerrainId, newColorIndex);
-                UpdateTileAndNeighbors(coord);
-                for (int dir = 0; dir < 4; dir++)
-                {
-                    int nx = coord.X + dx[dir];
-                    int ny = coord.Y + dy[dir];
-                    var ncoord = new TileCoord(nx, ny);
-                    if (
-                        nx >= 0
-                        && nx <= width
-                        && ny >= 0
-                        && ny <= height
-                        && !visited.Contains(ncoord)
-                        && world.IsInBounds(ncoord)
-                    )
-                    {
-                        var ntile = world.GetTile(ncoord);
-
-                        // Don't flood through tiles that have blocking overlay terrain (like walls)
-                        bool hasBlockingOverlay = false;
-                        if (
-                            ntile.OverlayTerrainTypeId.HasValue
-                            && _sim.Content.Terrains.TryGetValue(
-                                ntile.OverlayTerrainTypeId.Value,
-                                out var overlayDef
-                            )
-                        )
-                        {
-                            hasBlockingOverlay =
-                                overlayDef.BlocksLight
-                                || overlayDef.Passability == TerrainPassability.High;
-                        }
-
-                        // Use TileHash to match identical tiles
-                        if (!hasBlockingOverlay && ntile.TileHash == oldTileHash)
-                        {
-                            queue.Enqueue(ncoord);
-                            visited.Add(ncoord);
-                        }
-                    }
-                }
-            }
-        }
-        QueueRedraw();
     }
 
     // Paint only the outline of a rectangle of tiles
