@@ -17,6 +17,11 @@ Terrains = {
         spriteKey = "grass",
         variantCount = 4,
     },
+    Trees = {
+        passability = "High",
+        spriteKey = "trees",
+        isAutotiling = true,
+    },
     Dirt = {
         passability = "Ground",
         spriteKey = "dirt",
