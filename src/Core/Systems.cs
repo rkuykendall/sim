@@ -536,6 +536,23 @@ public sealed class ActionSystem : ISystem
                 objComp.UsedBy = null;
             }
 
+            // Add a brief happy idle action showing satisfaction with the object used
+            if (objComp != null && action.SatisfiesNeedId.HasValue)
+            {
+                var objDef3 = ctx.Content.Objects[objComp.ObjectDefId];
+                actionComp.ActionQueue.Enqueue(
+                    new ActionDef
+                    {
+                        Type = ActionType.Idle,
+                        Animation = AnimationType.Idle,
+                        DurationTicks = 10, // Brief satisfaction moment
+                        DisplayName = "Satisfied",
+                        Expression = ExpressionType.Happy,
+                        ExpressionIconDefId = objDef3.Id,
+                    }
+                );
+            }
+
             actionComp.CurrentAction = null;
         }
     }
@@ -905,6 +922,9 @@ public sealed class AISystem : ISystem
         int diversityBonus = selected.diversity * 3; // +0.15 second per diversity point (0-9 scale)
         int idleDuration = Math.Min(50, baseIdleDuration + diversityBonus); // Cap at 2.5 seconds
 
+        // Decide expression for idle time (pout or preen based on buffs/needs)
+        var (exprType, exprIconDefId) = DecideExpression(ctx, pawnId);
+
         actionComp.ActionQueue.Enqueue(
             new ActionDef
             {
@@ -912,6 +932,8 @@ public sealed class AISystem : ISystem
                 Animation = AnimationType.Idle,
                 DurationTicks = idleDuration,
                 DisplayName = "Idle",
+                Expression = exprType,
+                ExpressionIconDefId = exprIconDefId,
             }
         );
     }
@@ -1052,5 +1074,83 @@ public sealed class AISystem : ISystem
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Decides what expression a pawn should display during idle/wander actions
+    /// based on their current buffs and needs.
+    /// Returns (ExpressionType, IconDefId) or (null, null) if no expression.
+    /// </summary>
+    private (ExpressionType?, int?) DecideExpression(SimContext ctx, EntityId pawnId)
+    {
+        // Check for active buffs first (highest priority)
+        if (ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs))
+        {
+            // Check for strongest positive buff
+            var positiveBuff = buffs
+                .ActiveBuffs.Where(b =>
+                    ctx.Content.Buffs.TryGetValue(b.BuffDefId, out var def) && def.MoodOffset > 0
+                )
+                .OrderByDescending(b => ctx.Content.Buffs[b.BuffDefId].MoodOffset)
+                .FirstOrDefault();
+
+            if (positiveBuff != null)
+            {
+                // Happy expression with buff-related icon
+                var buffDef = ctx.Content.Buffs[positiveBuff.BuffDefId];
+                return (ExpressionType.Happy, buffDef.Id);
+            }
+
+            // Check for strongest negative buff
+            var negativeBuff = buffs
+                .ActiveBuffs.Where(b =>
+                    ctx.Content.Buffs.TryGetValue(b.BuffDefId, out var def) && def.MoodOffset < 0
+                )
+                .OrderBy(b => ctx.Content.Buffs[b.BuffDefId].MoodOffset)
+                .FirstOrDefault();
+
+            if (negativeBuff != null)
+            {
+                // Complaint expression with buff-related icon
+                var buffDef = ctx.Content.Buffs[negativeBuff.BuffDefId];
+                return (ExpressionType.Complaint, buffDef.Id);
+            }
+        }
+
+        // No active buffs - check for low needs
+        if (ctx.Entities.Needs.TryGetValue(pawnId, out var needs))
+        {
+            // Find lowest need below LowThreshold
+            int? lowestNeedId = null;
+            float lowestValue = 100f;
+
+            foreach (var (needId, value) in needs.Needs)
+            {
+                if (!ctx.Content.Needs.TryGetValue(needId, out var needDef))
+                    continue;
+
+                if (value < needDef.LowThreshold && value < lowestValue)
+                {
+                    lowestValue = value;
+                    lowestNeedId = needId;
+                }
+            }
+
+            if (lowestNeedId.HasValue)
+            {
+                // Find an object that satisfies this need
+                var satisfyingObject = ctx.Content.Objects.Values.FirstOrDefault(o =>
+                    o.SatisfiesNeedId.HasValue && o.SatisfiesNeedId.Value == lowestNeedId.Value
+                );
+
+                if (satisfyingObject != null)
+                {
+                    return (ExpressionType.Thought, satisfyingObject.Id);
+                }
+            }
+        }
+
+        // No expression needed
+        return (null, null);
     }
 }

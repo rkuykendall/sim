@@ -70,6 +70,18 @@ public enum AnimationType
 }
 
 /// <summary>
+/// Expression types for pawn communication bubbles.
+/// </summary>
+public enum ExpressionType
+{
+    Thought, // Cloud bubble - wanting something
+    Speech, // Speech bubble - neutral/talking
+    Happy, // Heart bubble - satisfied/happy
+    Complaint, // Jagged bubble - frustrated/angry
+    Question, // Question bubble - confused/waiting
+}
+
+/// <summary>
 /// Immutable definition of an action a pawn can perform.
 /// Use object initializer syntax to create instances.
 /// </summary>
@@ -83,4 +95,8 @@ public sealed class ActionDef
     public int? SatisfiesNeedId { get; init; }
     public float NeedSatisfactionAmount { get; init; }
     public string? DisplayName { get; init; }
+
+    // Expression bubble data (shown while performing this action)
+    public ExpressionType? Expression { get; init; }
+    public int? ExpressionIconDefId { get; init; } // Object/Terrain/Buff def ID for icon
 }

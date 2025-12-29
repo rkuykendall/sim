@@ -1301,6 +1301,7 @@ public partial class GameRoot : Node2D
                 pv.SetCurrentAnimation(pawn.Animation);
                 pv.SetMood(pawn.Mood);
                 pv.SetSelected(pawn.Id.Value == _selectedPawnId);
+                pv.SetExpression(pawn.Expression, pawn.ExpressionIconDefId, _sim.Content);
             }
         }
 

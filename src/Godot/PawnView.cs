@@ -15,6 +15,15 @@ public partial class PawnView : Node2D
     private bool _selected = false;
     private float _baseMood = 0f;
 
+    // Expression bubble
+    private Node2D? _expressionBubble = null;
+    private Sprite2D? _bubbleWrapper = null;
+    private Sprite2D? _bubbleIcon = null;
+    private float _bubbleFloatOffset = 0f;
+    private const float BUBBLE_FLOAT_SPEED = 2f;
+    private const float BUBBLE_FLOAT_AMPLITUDE = 3f;
+    private const float BUBBLE_Y_OFFSET = -40f;
+
     // Smooth movement interpolation
     private Vector2 _visualPosition;
     private Vector2 _targetPosition;
@@ -44,6 +53,15 @@ public partial class PawnView : Node2D
         if (_usesSprite && _sprite != null)
         {
             UpdateAnimation((float)delta);
+        }
+
+        // Animate bubble floating
+        if (_expressionBubble != null && _expressionBubble.Visible)
+        {
+            _bubbleFloatOffset += BUBBLE_FLOAT_SPEED * (float)delta;
+            float yOffset =
+                BUBBLE_Y_OFFSET + Mathf.Sin(_bubbleFloatOffset) * BUBBLE_FLOAT_AMPLITUDE;
+            _expressionBubble.Position = new Vector2(0, yOffset);
         }
     }
 
@@ -275,5 +293,107 @@ public partial class PawnView : Node2D
             else
                 _body.Color = new Color(0.2f, 0.6f, 1f);
         }
+    }
+
+    /// <summary>
+    /// Set the expression bubble to display above the pawn.
+    /// </summary>
+    public void SetExpression(
+        SimGame.Core.ExpressionType? type,
+        int? iconDefId,
+        SimGame.Core.ContentRegistry content
+    )
+    {
+        if (_expressionBubble == null)
+            CreateExpressionBubble();
+
+        if (type == null || iconDefId == null)
+        {
+            _expressionBubble!.Visible = false;
+            return;
+        }
+
+        // Determine bubble wrapper sprite key based on expression type
+        string wrapperKey = type.Value switch
+        {
+            SimGame.Core.ExpressionType.Thought => "thought_bubble",
+            SimGame.Core.ExpressionType.Happy => "heart_bubble",
+            SimGame.Core.ExpressionType.Complaint => "complaint_bubble",
+            _ => "thought_bubble", // Fallback for unused types (Speech, Question)
+        };
+
+        // Get icon sprite key from content def
+        string? iconKey = null;
+
+        // Try to get sprite key from ObjectDef
+        if (content.Objects.TryGetValue(iconDefId.Value, out var objDef))
+        {
+            iconKey = objDef.SpriteKey;
+        }
+        // Try BuffDef (buffs don't currently have sprite keys, so we'll use placeholder icons)
+        else if (content.Buffs.TryGetValue(iconDefId.Value, out var buffDef))
+        {
+            // Map buff names to icon sprite keys
+            iconKey = buffDef.Name.ToLower() switch
+            {
+                "well fed" => "heart",
+                "rested" => "zzz",
+                "starving" => "hungry",
+                "exhausted" => "exclamation",
+                _ => "question",
+            };
+        }
+
+        if (iconKey == null)
+        {
+            _expressionBubble!.Visible = false;
+            return;
+        }
+
+        // Load textures
+        var wrapperTexture = SpriteResourceManager.GetTexture(wrapperKey);
+        var iconTexture = SpriteResourceManager.GetTexture(iconKey);
+
+        if (wrapperTexture != null && iconTexture != null)
+        {
+            _bubbleWrapper!.Texture = wrapperTexture;
+            _bubbleIcon!.Texture = iconTexture;
+            _expressionBubble!.Visible = true;
+        }
+        else
+        {
+            _expressionBubble!.Visible = false;
+        }
+    }
+
+    /// <summary>
+    /// Create the expression bubble node hierarchy.
+    /// </summary>
+    private void CreateExpressionBubble()
+    {
+        _expressionBubble = new Node2D
+        {
+            Name = "ExpressionBubble",
+            Position = new Vector2(0, BUBBLE_Y_OFFSET),
+            Visible = false,
+            ZIndex = 100,
+        };
+        AddChild(_expressionBubble);
+
+        _bubbleWrapper = new Sprite2D
+        {
+            Name = "Wrapper",
+            Centered = true,
+            ZIndex = 0,
+        };
+        _expressionBubble.AddChild(_bubbleWrapper);
+
+        _bubbleIcon = new Sprite2D
+        {
+            Name = "Icon",
+            Centered = true,
+            ZIndex = 1,
+        };
+        _expressionBubble.AddChild(_bubbleIcon);
     }
 }

@@ -41,6 +41,18 @@ public static class SpriteResourceManager
         ["character_pickaxe"] = "res://sprites/characters/pickaxe_strip5.png",
         ["character_look_down"] = "res://sprites/characters/look_down.png",
         ["character_look_up"] = "res://sprites/characters/look_up.png",
+
+        // Expression bubble wrappers (32x32)
+        ["thought_bubble"] = "res://sprites/ui/bubbles/thought_bubble.png",
+        ["heart_bubble"] = "res://sprites/ui/bubbles/heart_bubble.png",
+        ["complaint_bubble"] = "res://sprites/ui/bubbles/complaint_bubble.png",
+
+        // Expression icons (16x16)
+        ["heart"] = "res://sprites/ui/icons/heart.png",
+        ["exclamation"] = "res://sprites/ui/icons/exclamation.png",
+        ["question"] = "res://sprites/ui/icons/question.png",
+        ["zzz"] = "res://sprites/ui/icons/zzz.png",
+        ["hungry"] = "res://sprites/ui/icons/hungry.png",
     };
 
     /// <summary>

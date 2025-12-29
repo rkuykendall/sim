@@ -13,6 +13,8 @@ public sealed class RenderPawn
     public string Name { get; init; } = "";
     public string? CurrentAction { get; init; }
     public AnimationType Animation { get; init; } = AnimationType.Idle;
+    public ExpressionType? Expression { get; init; }
+    public int? ExpressionIconDefId { get; init; }
 
     // Debug: pathfinding info
     public (int X, int Y)? TargetTile { get; init; }
@@ -122,6 +124,8 @@ public static class RenderSnapshotBuilder
                     Name = pawn?.Name ?? $"Pawn {pawnId.Value}",
                     CurrentAction = actionName,
                     Animation = action?.CurrentAction?.Animation ?? AnimationType.Idle,
+                    Expression = action?.CurrentAction?.Expression,
+                    ExpressionIconDefId = action?.CurrentAction?.ExpressionIconDefId,
                     TargetTile = targetTile,
                     CurrentPath = pathCoords,
                     PathIndex = pathIndex,
