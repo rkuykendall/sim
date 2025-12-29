@@ -42,8 +42,12 @@ Objects = {
     },
 
     Castle = {
+        satisfiesNeed = "Fun",
+        satisfactionAmount = 40,
+        interactionDuration = 300,
+        grantsBuff = "HadFun",
         walkable = false,
-        interactable = false,
+        interactable = true,
         spriteKey = "castle"
     },
 

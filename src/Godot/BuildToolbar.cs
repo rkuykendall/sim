@@ -408,13 +408,6 @@ public partial class BuildToolbar : HBoxContainer
     {
         BuildToolState.Mode = mode;
 
-        // Clear selections when switching to Select or Delete modes
-        if (mode == BuildToolMode.Select || mode == BuildToolMode.Delete)
-        {
-            BuildToolState.SelectedObjectDefId = null;
-            BuildToolState.SelectedTerrainDefId = null;
-        }
-
         // Rebuild options
         RebuildOptions();
         UpdateAllButtons();
@@ -424,7 +417,6 @@ public partial class BuildToolbar : HBoxContainer
     {
         BuildToolState.Mode = BuildToolMode.PlaceObject;
         BuildToolState.SelectedObjectDefId = objectDefId;
-        BuildToolState.SelectedTerrainDefId = null;
         UpdateAllButtons();
     }
 
@@ -432,7 +424,6 @@ public partial class BuildToolbar : HBoxContainer
     {
         // Keep the current terrain tool (paint/fill/outline/flood) and only change the selected texture
         BuildToolState.SelectedTerrainDefId = terrainDefId;
-        BuildToolState.SelectedObjectDefId = null;
         UpdateAllButtons();
     }
 
