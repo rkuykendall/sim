@@ -79,8 +79,10 @@ The simulation runs independently of rendering at 20 ticks/second. Godot receive
 ## Credits
 
 - [Pixel Simple Human Character 16x16 px by Brysia](https://brysiaa.itch.io/pixel-simple-human-character-16x16-px)
-- [KidPix 1.0](https://en.wikipedia.org/wiki/Kid_Pix)
+- [KidPix 1.0 by Craig Hickman](https://en.wikipedia.org/wiki/Kid_Pix)
 - [Tileset Templates by Patrik](https://patrik-arts.itch.io/tileset-templates)
+- [Puny World by Shade](https://merchant-shade.itch.io/16x16-puny-world)
+- [Webtyler by Alexander Nadeau](https://wareya.github.io/webtyler/)
 
 ```
 #FFF <- highlights
