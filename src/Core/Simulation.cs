@@ -75,17 +75,13 @@ public sealed class Simulation
     {
         Content = content ?? throw new ArgumentNullException(nameof(content));
 
-        // Initialize time service with optional start hour
         Time = new TimeService(config?.StartHour ?? TimeService.DefaultStartHour);
 
-        // Store seed for deterministic behavior (use Environment.TickCount if not provided)
         Seed = config?.Seed ?? Environment.TickCount;
         Random = new Random(Seed);
 
-        // Select color palette deterministically based on seed
         SelectedPaletteId = SelectColorPalette(content, Seed);
 
-        // Create world with optional custom bounds
         if (config?.WorldBounds != null)
         {
             var bounds = config.WorldBounds.Value;
@@ -96,7 +92,6 @@ public sealed class Simulation
             World = new World();
         }
 
-        // Initialize all tiles with Flat terrain as the default base
         InitializeWorldTerrain();
 
         _systems.Add(new NeedsSystem());
@@ -106,7 +101,6 @@ public sealed class Simulation
         _systems.Add(new ActionSystem());
         _systems.Add(new AISystem());
 
-        // Apply custom configuration
         if (config != null)
         {
             foreach (var (objectDefId, x, y) in config.Objects)
@@ -126,17 +120,13 @@ public sealed class Simulation
     /// </summary>
     private void InitializeWorldTerrain()
     {
-        // Find the Flat terrain (sprite key "flat")
         var flatTerrainId = Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "flat").Key;
 
-        // If no "flat" terrain found, use terrain ID 0 as fallback
         if (flatTerrainId == 0 && !Content.Terrains.ContainsKey(0))
         {
-            // No valid terrain to initialize with - tiles will remain at default (0)
             return;
         }
 
-        // Initialize all tiles to Flat terrain
         for (int x = 0; x < World.Width; x++)
         {
             for (int y = 0; y < World.Height; y++)
@@ -144,7 +134,6 @@ public sealed class Simulation
                 var tile = World.GetTile(x, y);
                 tile.BaseTerrainTypeId = flatTerrainId;
 
-                // Set terrain properties based on terrain definition
                 if (Content.Terrains.TryGetValue(flatTerrainId, out var terrainDef))
                 {
                     tile.Passability = terrainDef.Passability;
@@ -169,13 +158,11 @@ public sealed class Simulation
 
         var objDef = Content.Objects[objectDefId];
 
-        // Check if tile is already occupied by an object
         if (!World.GetTile(coord).Walkable)
             throw new InvalidOperationException(
                 $"Cannot place object at {coord}: tile is already occupied"
             );
 
-        // Clamp colorIndex to palette size
         int paletteSize = 1;
         if (Content.ColorPalettes.TryGetValue(SelectedPaletteId, out var paletteDef))
             paletteSize = paletteDef.Colors.Count;
@@ -183,7 +170,6 @@ public sealed class Simulation
 
         var id = Entities.CreateObject(coord, objectDefId, safeColorIndex);
 
-        // Only block the tile if this object is not walkable (e.g., fridge blocks, bed doesn't)
         if (!objDef.Walkable)
         {
             World.GetTile(coord).ObjectBlocksMovement = true;
@@ -196,7 +182,6 @@ public sealed class Simulation
     /// </summary>
     public void DestroyEntity(EntityId id)
     {
-        // If this is a non-walkable object, restore tile walkability
         if (
             Entities.Objects.TryGetValue(id, out var objComp)
             && Entities.Positions.TryGetValue(id, out var pos)
@@ -232,19 +217,15 @@ public sealed class Simulation
         var tile = World.GetTile(coord);
         var terrainDef = Content.Terrains[terrainDefId];
 
-        // Clamp colorIndex to palette size
         int paletteSize = 1;
         if (Content.ColorPalettes.TryGetValue(SelectedPaletteId, out var paletteDef))
             paletteSize = paletteDef.Colors.Count;
         int safeColorIndex = GetSafeColorIndex(colorIndex, paletteSize);
 
-        // Most terrains go in the overlay layer (grass, walls, paths, etc.)
-        // Foundation terrains go in the base layer (flat, wood floor)
         if (terrainDef.PaintsToBase)
         {
             tile.BaseTerrainTypeId = terrainDefId;
             tile.ColorIndex = safeColorIndex;
-            // Randomize variant for this terrain
             if (terrainDef.VariantCount > 1)
                 tile.BaseVariantIndex = Random.Next(terrainDef.VariantCount);
             else
@@ -255,7 +236,6 @@ public sealed class Simulation
         {
             tile.OverlayTerrainTypeId = terrainDefId;
             tile.OverlayColorIndex = safeColorIndex;
-            // Randomize variant for this terrain
             if (terrainDef.VariantCount > 1)
                 tile.OverlayVariantIndex = Random.Next(terrainDef.VariantCount);
             else
@@ -265,33 +245,34 @@ public sealed class Simulation
         tile.Passability = terrainDef.Passability;
         tile.BlocksLight = terrainDef.BlocksLight;
 
-        // Return the painted tile plus its neighbors for autotiling updates
         return GetTilesWithNeighbors(new[] { coord });
     }
 
     /// <summary>
     /// Flood fill all connected tiles of the same terrain and color with a new terrain and color.
     /// Only fills tiles that exactly match the starting tile's base terrain, overlay terrain, and color.
+    /// Returns all affected tiles including neighbors for autotiling updates.
     /// </summary>
     /// <param name="start">Starting tile coordinate for the flood fill</param>
     /// <param name="newTerrainId">The terrain ID to fill with</param>
     /// <param name="newColorIndex">The color index to fill with</param>
-    public void FloodFill(TileCoord start, int newTerrainId, int newColorIndex)
+    /// <returns>Array of all tiles affected by the flood fill (painted tiles and their neighbors)</returns>
+    public TileCoord[] FloodFill(TileCoord start, int newTerrainId, int newColorIndex)
     {
         if (!World.IsInBounds(start))
-            return;
+            return Array.Empty<TileCoord>();
 
         var tile = World.GetTile(start);
         int oldTileHash = tile.TileHash;
 
-        // Check if we're already the target terrain/color
         if (tile.BaseTerrainTypeId == newTerrainId && tile.ColorIndex == newColorIndex)
-            return;
+            return Array.Empty<TileCoord>();
 
         var width = World.Width;
         var height = World.Height;
         var visited = new HashSet<TileCoord>();
         var queue = new Queue<TileCoord>();
+        var affectedTiles = new HashSet<TileCoord>();
         queue.Enqueue(start);
         visited.Add(start);
 
@@ -303,10 +284,13 @@ public sealed class Simulation
             var coord = queue.Dequeue();
             var t = World.GetTile(coord);
 
-            // Use TileHash to match identical tiles
             if (t.TileHash == oldTileHash)
             {
-                PaintTerrain(coord, newTerrainId, newColorIndex);
+                var tilesToUpdate = PaintTerrain(coord, newTerrainId, newColorIndex);
+                foreach (var tileCoord in tilesToUpdate)
+                {
+                    affectedTiles.Add(tileCoord);
+                }
 
                 for (int dir = 0; dir < 4; dir++)
                 {
@@ -324,7 +308,6 @@ public sealed class Simulation
                     {
                         var ntile = World.GetTile(ncoord);
 
-                        // Use TileHash for consistent tile identity checking
                         if (ntile.TileHash == oldTileHash)
                         {
                             queue.Enqueue(ncoord);
@@ -334,6 +317,8 @@ public sealed class Simulation
                 }
             }
         }
+
+        return affectedTiles.ToArray();
     }
 
     /// <summary>
@@ -352,7 +337,6 @@ public sealed class Simulation
         int colorIndex = 0
     )
     {
-        // Normalize coordinates to ensure minX <= maxX and minY <= maxY
         int minX = Math.Min(start.X, end.X);
         int maxX = Math.Max(start.X, end.X);
         int minY = Math.Min(start.Y, end.Y);
@@ -389,7 +373,6 @@ public sealed class Simulation
         int colorIndex = 0
     )
     {
-        // Normalize coordinates to ensure minX <= maxX and minY <= maxY
         int minX = Math.Min(start.X, end.X);
         int maxX = Math.Max(start.X, end.X);
         int minY = Math.Min(start.Y, end.Y);
@@ -397,7 +380,6 @@ public sealed class Simulation
 
         var paintedTiles = new List<TileCoord>();
 
-        // Paint top and bottom edges
         for (int x = minX; x <= maxX; x++)
         {
             var topCoord = new TileCoord(x, minY);
@@ -408,7 +390,6 @@ public sealed class Simulation
             paintedTiles.Add(bottomCoord);
         }
 
-        // Paint left and right edges (excluding corners already painted)
         for (int y = minY + 1; y < maxY; y++)
         {
             var leftCoord = new TileCoord(minX, y);
@@ -432,7 +413,6 @@ public sealed class Simulation
     {
         var result = new HashSet<TileCoord>();
 
-        // 8-directional offsets (including diagonals)
         var offsets = new[]
         {
             new TileCoord(-1, -1), // top-left
@@ -451,7 +431,6 @@ public sealed class Simulation
             foreach (var offset in offsets)
             {
                 var neighborCoord = new TileCoord(tile.X + offset.X, tile.Y + offset.Y);
-                // Only include tiles that are within world bounds
                 if (World.IsInBounds(neighborCoord))
                 {
                     result.Add(neighborCoord);
@@ -467,7 +446,6 @@ public sealed class Simulation
     /// </summary>
     public bool TryDeleteObject(TileCoord coord)
     {
-        // Find object at this position
         foreach (var objId in Entities.AllObjects())
         {
             if (Entities.Positions.TryGetValue(objId, out var pos) && pos.Coord == coord)
@@ -490,17 +468,14 @@ public sealed class Simulation
         if (!World.IsInBounds(coord))
             return Array.Empty<TileCoord>();
 
-        // Priority 1: Try to delete an object at this position
         if (TryDeleteObject(coord))
             return GetTilesWithNeighbors(new[] { coord });
 
         var tile = World.GetTile(coord);
 
-        // Priority 2: Clear overlay terrain if present
         if (tile.OverlayTerrainTypeId.HasValue)
         {
             tile.OverlayTerrainTypeId = null;
-            // Restore terrain properties from base terrain
             if (Content.Terrains.TryGetValue(tile.BaseTerrainTypeId, out var baseTerrain))
             {
                 tile.Passability = baseTerrain.Passability;
@@ -509,14 +484,13 @@ public sealed class Simulation
             return GetTilesWithNeighbors(new[] { coord });
         }
 
-        // Priority 3: Reset base terrain to flat
         var flatTerrainId = Content.Terrains.FirstOrDefault(kv => kv.Value.SpriteKey == "flat").Key;
         if (Content.Terrains.TryGetValue(flatTerrainId, out var flatTerrain))
         {
             tile.BaseTerrainTypeId = flatTerrainId;
             tile.Passability = flatTerrain.Passability;
             tile.BlocksLight = flatTerrain.BlocksLight;
-            tile.ColorIndex = 0; // Reset to default color
+            tile.ColorIndex = 0;
         }
 
         return GetTilesWithNeighbors(new[] { coord });
@@ -528,7 +502,6 @@ public sealed class Simulation
     /// <exception cref="ArgumentException">Thrown when config contains invalid need IDs.</exception>
     public EntityId CreatePawn(PawnConfig config)
     {
-        // Validate all need IDs before creating the entity
         foreach (var needId in config.Needs.Keys)
         {
             if (!Content.Needs.ContainsKey(needId))
@@ -591,7 +564,6 @@ public sealed class Simulation
                 var tile = World.GetTile(x, y);
                 var tileHash = tile.TileHash;
 
-                // Compare to left neighbor using TileHash
                 if (x > 0)
                 {
                     xScore = scores[x - 1, y];
@@ -602,7 +574,6 @@ public sealed class Simulation
                         xScore -= 1;
                 }
 
-                // Compare to above neighbor using TileHash
                 if (y > 0)
                 {
                     yScore = scores[x, y - 1];
@@ -665,7 +636,6 @@ public sealed class Simulation
         {
             for (int y = 0; y < World.Height; y++)
             {
-                // Only consider edge tiles
                 bool isEdge = x == 0 || x == World.Width - 1 || y == 0 || y == World.Height - 1;
                 if (!isEdge)
                     continue;
@@ -695,7 +665,6 @@ public sealed class Simulation
                 "No color palettes loaded. Ensure content/core/palettes.lua exists and is valid."
             );
 
-        // Use seed to deterministically select a palette
         var rng = new Random(seed);
         var paletteIds = content.ColorPalettes.Keys.ToArray();
         return paletteIds[rng.Next(paletteIds.Length)];
@@ -717,7 +686,6 @@ public sealed class Simulation
         _systems.TickAll(ctx);
         Time.AdvanceTick();
 
-        // Spawn new pawns at intervals if under the maximum
         if (Time.Tick % PawnSpawnInterval == 0)
         {
             var currentPawnCount = Entities.AllPawns().Count();
@@ -727,10 +695,7 @@ public sealed class Simulation
                 {
                     CreatePawn();
                 }
-                catch (InvalidOperationException)
-                {
-                    // No walkable tiles available, skip spawning
-                }
+                catch (InvalidOperationException) { }
             }
         }
     }
