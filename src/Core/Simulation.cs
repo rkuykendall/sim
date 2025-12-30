@@ -214,9 +214,11 @@ public sealed class Simulation
 
     /// <summary>
     /// Paint terrain at a tile, updating its properties based on the terrain definition.
+    /// Returns the painted tile plus all its 8-neighbors for autotiling updates.
     /// </summary>
     /// <exception cref="ArgumentException">Thrown when terrainDefId is not a valid terrain definition.</exception>
-    public void PaintTerrain(TileCoord coord, int terrainDefId, int colorIndex = 0)
+    /// <returns>Array containing the painted tile and its neighbors (for rendering updates)</returns>
+    public TileCoord[] PaintTerrain(TileCoord coord, int terrainDefId, int colorIndex = 0)
     {
         if (!Content.Terrains.ContainsKey(terrainDefId))
             throw new ArgumentException(
@@ -225,7 +227,7 @@ public sealed class Simulation
             );
 
         if (!World.IsInBounds(coord))
-            return;
+            return Array.Empty<TileCoord>();
 
         var tile = World.GetTile(coord);
         var terrainDef = Content.Terrains[terrainDefId];
@@ -262,6 +264,9 @@ public sealed class Simulation
 
         tile.Passability = terrainDef.Passability;
         tile.BlocksLight = terrainDef.BlocksLight;
+
+        // Return the painted tile plus its neighbors for autotiling updates
+        return GetTilesWithNeighbors(new[] { coord });
     }
 
     /// <summary>
@@ -477,15 +482,17 @@ public sealed class Simulation
     /// <summary>
     /// Smart delete tool that removes objects, overlay terrain, or resets to flat terrain.
     /// Priority: 1) Delete object if present, 2) Clear overlay terrain if present, 3) Reset base to flat.
+    /// Returns the deleted tile plus all its 8-neighbors for autotiling updates.
     /// </summary>
-    public void DeleteAtTile(TileCoord coord)
+    /// <returns>Array containing the deleted tile and its neighbors (for rendering updates)</returns>
+    public TileCoord[] DeleteAtTile(TileCoord coord)
     {
         if (!World.IsInBounds(coord))
-            return;
+            return Array.Empty<TileCoord>();
 
         // Priority 1: Try to delete an object at this position
         if (TryDeleteObject(coord))
-            return;
+            return GetTilesWithNeighbors(new[] { coord });
 
         var tile = World.GetTile(coord);
 
@@ -499,7 +506,7 @@ public sealed class Simulation
                 tile.Passability = baseTerrain.Passability;
                 tile.BlocksLight = baseTerrain.BlocksLight;
             }
-            return;
+            return GetTilesWithNeighbors(new[] { coord });
         }
 
         // Priority 3: Reset base terrain to flat
@@ -511,6 +518,8 @@ public sealed class Simulation
             tile.BlocksLight = flatTerrain.BlocksLight;
             tile.ColorIndex = 0; // Reset to default color
         }
+
+        return GetTilesWithNeighbors(new[] { coord });
     }
 
     /// <summary>
