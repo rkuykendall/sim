@@ -225,7 +225,6 @@ public partial class GameRoot : Node2D
             _toolbar?.UpdatePalette(_currentPalette);
         }
 
-        // Note: SyncTiles() removed from main loop for performance
         // Tiles are now updated only when they change (via UpdateTileAndNeighbors after PaintTerrain)
         SyncPawns(snapshot);
         SyncObjects(snapshot);
@@ -309,7 +308,7 @@ public partial class GameRoot : Node2D
                             BuildToolState.SelectedColorIndex
                         );
                         // Update all tiles since flood fill can affect many tiles
-                        SyncTiles();
+                        SyncAllTiles();
                         return;
                     }
                 }
@@ -494,41 +493,31 @@ public partial class GameRoot : Node2D
     // Paint only the outline of a rectangle of tiles
     private void OutlineRectangle(TileCoord start, TileCoord end, int terrainId, int colorIndex)
     {
-        int x0 = Mathf.Min(start.X, end.X);
-        int x1 = Mathf.Max(start.X, end.X);
-        int y0 = Mathf.Min(start.Y, end.Y);
-        int y1 = Mathf.Max(start.Y, end.Y);
-        for (int x = x0; x <= x1; x++)
-        {
-            _sim.PaintTerrain(x, y0, terrainId, colorIndex);
-            _sim.PaintTerrain(x, y1, terrainId, colorIndex);
-            UpdateTileAndNeighbors(new TileCoord(x, y0));
-            UpdateTileAndNeighbors(new TileCoord(x, y1));
-        }
-        for (int y = y0 + 1; y < y1; y++)
-        {
-            _sim.PaintTerrain(x0, y, terrainId, colorIndex);
-            _sim.PaintTerrain(x1, y, terrainId, colorIndex);
-            UpdateTileAndNeighbors(new TileCoord(x0, y));
-            UpdateTileAndNeighbors(new TileCoord(x1, y));
-        }
+        var paintedTiles = _sim.PaintRectangleOutline(
+            start.X,
+            start.Y,
+            end.X,
+            end.Y,
+            terrainId,
+            colorIndex
+        );
+        var tilesToUpdate = _sim.GetTilesWithNeighbors(paintedTiles);
+        SyncTiles(tilesToUpdate);
     }
 
     // Fill a rectangle of tiles with the selected terrain/color
     private void FillRectangle(TileCoord start, TileCoord end, int terrainId, int colorIndex)
     {
-        int x0 = Mathf.Min(start.X, end.X);
-        int x1 = Mathf.Max(start.X, end.X);
-        int y0 = Mathf.Min(start.Y, end.Y);
-        int y1 = Mathf.Max(start.Y, end.Y);
-        for (int x = x0; x <= x1; x++)
-        {
-            for (int y = y0; y <= y1; y++)
-            {
-                _sim.PaintTerrain(x, y, terrainId, colorIndex);
-                UpdateTileAndNeighbors(new TileCoord(x, y));
-            }
-        }
+        var paintedTiles = _sim.PaintRectangle(
+            start.X,
+            start.Y,
+            end.X,
+            end.Y,
+            terrainId,
+            colorIndex
+        );
+        var tilesToUpdate = _sim.GetTilesWithNeighbors(paintedTiles);
+        SyncTiles(tilesToUpdate);
     }
 
     private TileCoord ScreenToTileCoord(Vector2 screenPos)
@@ -645,7 +634,7 @@ public partial class GameRoot : Node2D
         }
 
         // Update all tiles to calculate autotile variants for paths
-        SyncTiles();
+        SyncAllTiles();
     }
 
     private void DrawHoverPreview(TileCoord coord)
@@ -901,13 +890,20 @@ public partial class GameRoot : Node2D
         _infoPanel.ShowPawn(pawn, needs, buffs, _sim.Content);
     }
 
-    private void SyncTiles()
+    private void SyncTiles(TileCoord[] coords)
     {
-        // Update all tile colors based on current terrain state
-        foreach (var (coord, tileNode) in _tileNodes)
+        foreach (var coord in coords)
         {
-            UpdateSingleTile(coord);
+            if (_tileNodes.ContainsKey(coord))
+            {
+                UpdateSingleTile(coord);
+            }
         }
+    }
+
+    private void SyncAllTiles()
+    {
+        SyncTiles(_tileNodes.Keys.ToArray());
     }
 
     /// <summary>

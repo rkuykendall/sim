@@ -336,6 +336,135 @@ public sealed class Simulation
     }
 
     /// <summary>
+    /// Paint a filled rectangle of tiles with the specified terrain and color.
+    /// Returns the coordinates of all tiles that were painted.
+    /// </summary>
+    /// <param name="x0">Starting X coordinate (inclusive)</param>
+    /// <param name="y0">Starting Y coordinate (inclusive)</param>
+    /// <param name="x1">Ending X coordinate (inclusive)</param>
+    /// <param name="y1">Ending Y coordinate (inclusive)</param>
+    /// <param name="terrainDefId">The terrain ID to paint</param>
+    /// <param name="colorIndex">The color index to use</param>
+    /// <returns>Array of tile coordinates that were painted</returns>
+    public TileCoord[] PaintRectangle(
+        int x0,
+        int y0,
+        int x1,
+        int y1,
+        int terrainDefId,
+        int colorIndex = 0
+    )
+    {
+        // Normalize coordinates to ensure x0 <= x1 and y0 <= y1
+        int minX = Math.Min(x0, x1);
+        int maxX = Math.Max(x0, x1);
+        int minY = Math.Min(y0, y1);
+        int maxY = Math.Max(y0, y1);
+
+        var paintedTiles = new List<TileCoord>();
+
+        for (int x = minX; x <= maxX; x++)
+        {
+            for (int y = minY; y <= maxY; y++)
+            {
+                PaintTerrain(x, y, terrainDefId, colorIndex);
+                paintedTiles.Add(new TileCoord(x, y));
+            }
+        }
+
+        return paintedTiles.ToArray();
+    }
+
+    /// <summary>
+    /// Paint only the outline of a rectangle with the specified terrain and color.
+    /// Returns the coordinates of all tiles that were painted.
+    /// </summary>
+    /// <param name="x0">Starting X coordinate (inclusive)</param>
+    /// <param name="y0">Starting Y coordinate (inclusive)</param>
+    /// <param name="x1">Ending X coordinate (inclusive)</param>
+    /// <param name="y1">Ending Y coordinate (inclusive)</param>
+    /// <param name="terrainDefId">The terrain ID to paint</param>
+    /// <param name="colorIndex">The color index to use</param>
+    /// <returns>Array of tile coordinates that were painted</returns>
+    public TileCoord[] PaintRectangleOutline(
+        int x0,
+        int y0,
+        int x1,
+        int y1,
+        int terrainDefId,
+        int colorIndex = 0
+    )
+    {
+        // Normalize coordinates to ensure x0 <= x1 and y0 <= y1
+        int minX = Math.Min(x0, x1);
+        int maxX = Math.Max(x0, x1);
+        int minY = Math.Min(y0, y1);
+        int maxY = Math.Max(y0, y1);
+
+        var paintedTiles = new List<TileCoord>();
+
+        // Paint top and bottom edges
+        for (int x = minX; x <= maxX; x++)
+        {
+            PaintTerrain(x, minY, terrainDefId, colorIndex);
+            paintedTiles.Add(new TileCoord(x, minY));
+            PaintTerrain(x, maxY, terrainDefId, colorIndex);
+            paintedTiles.Add(new TileCoord(x, maxY));
+        }
+
+        // Paint left and right edges (excluding corners already painted)
+        for (int y = minY + 1; y < maxY; y++)
+        {
+            PaintTerrain(minX, y, terrainDefId, colorIndex);
+            paintedTiles.Add(new TileCoord(minX, y));
+            PaintTerrain(maxX, y, terrainDefId, colorIndex);
+            paintedTiles.Add(new TileCoord(maxX, y));
+        }
+
+        return paintedTiles.ToArray();
+    }
+
+    /// <summary>
+    /// Expands an array of tile coordinates to include all 8-neighbors of each tile.
+    /// Useful for autotiling updates where changing a tile affects its neighbors.
+    /// </summary>
+    /// <param name="tiles">Array of tile coordinates to expand</param>
+    /// <returns>Array containing all input tiles plus their 8-neighbors (deduplicated)</returns>
+    public TileCoord[] GetTilesWithNeighbors(TileCoord[] tiles)
+    {
+        var result = new HashSet<TileCoord>();
+
+        // 8-directional offsets (including diagonals)
+        var offsets = new[]
+        {
+            new TileCoord(-1, -1), // top-left
+            new TileCoord(0, -1), // top
+            new TileCoord(1, -1), // top-right
+            new TileCoord(-1, 0), // left
+            new TileCoord(0, 0), // center (the tile itself)
+            new TileCoord(1, 0), // right
+            new TileCoord(-1, 1), // bottom-left
+            new TileCoord(0, 1), // bottom
+            new TileCoord(1, 1), // bottom-right
+        };
+
+        foreach (var tile in tiles)
+        {
+            foreach (var offset in offsets)
+            {
+                var neighborCoord = new TileCoord(tile.X + offset.X, tile.Y + offset.Y);
+                // Only include tiles that are within world bounds
+                if (World.IsInBounds(neighborCoord))
+                {
+                    result.Add(neighborCoord);
+                }
+            }
+        }
+
+        return result.ToArray();
+    }
+
+    /// <summary>
     /// Delete an object at the specified position (if any). Returns true if an object was deleted.
     /// </summary>
     public bool TryDeleteObject(int x, int y)
