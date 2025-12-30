@@ -111,7 +111,7 @@ public sealed class Simulation
         {
             foreach (var (objectDefId, x, y) in config.Objects)
             {
-                CreateObject(objectDefId, x, y);
+                CreateObject(objectDefId, new TileCoord(x, y));
             }
 
             foreach (var pawnConfig in config.Pawns)
@@ -159,7 +159,7 @@ public sealed class Simulation
     /// </summary>
     /// <exception cref="ArgumentException">Thrown when objectDefId is not a valid object definition.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the tile is already occupied by another object.</exception>
-    public EntityId CreateObject(int objectDefId, int x, int y, int colorIndex = 0)
+    public EntityId CreateObject(int objectDefId, TileCoord coord, int colorIndex = 0)
     {
         if (!Content.Objects.ContainsKey(objectDefId))
             throw new ArgumentException(
@@ -168,12 +168,11 @@ public sealed class Simulation
             );
 
         var objDef = Content.Objects[objectDefId];
-        var coord = new TileCoord(x, y);
 
         // Check if tile is already occupied by an object
         if (!World.GetTile(coord).Walkable)
             throw new InvalidOperationException(
-                $"Cannot place object at ({x}, {y}): tile is already occupied"
+                $"Cannot place object at {coord}: tile is already occupied"
             );
 
         // Clamp colorIndex to palette size
@@ -217,7 +216,7 @@ public sealed class Simulation
     /// Paint terrain at a tile, updating its properties based on the terrain definition.
     /// </summary>
     /// <exception cref="ArgumentException">Thrown when terrainDefId is not a valid terrain definition.</exception>
-    public void PaintTerrain(int x, int y, int terrainDefId, int colorIndex = 0)
+    public void PaintTerrain(TileCoord coord, int terrainDefId, int colorIndex = 0)
     {
         if (!Content.Terrains.ContainsKey(terrainDefId))
             throw new ArgumentException(
@@ -225,7 +224,6 @@ public sealed class Simulation
                 nameof(terrainDefId)
             );
 
-        var coord = new TileCoord(x, y);
         if (!World.IsInBounds(coord))
             return;
 
@@ -270,13 +268,11 @@ public sealed class Simulation
     /// Flood fill all connected tiles of the same terrain and color with a new terrain and color.
     /// Only fills tiles that exactly match the starting tile's base terrain, overlay terrain, and color.
     /// </summary>
-    /// <param name="startX">X coordinate of the starting tile</param>
-    /// <param name="startY">Y coordinate of the starting tile</param>
+    /// <param name="start">Starting tile coordinate for the flood fill</param>
     /// <param name="newTerrainId">The terrain ID to fill with</param>
     /// <param name="newColorIndex">The color index to fill with</param>
-    public void FloodFill(int startX, int startY, int newTerrainId, int newColorIndex)
+    public void FloodFill(TileCoord start, int newTerrainId, int newColorIndex)
     {
-        var start = new TileCoord(startX, startY);
         if (!World.IsInBounds(start))
             return;
 
@@ -305,7 +301,7 @@ public sealed class Simulation
             // Use TileHash to match identical tiles
             if (t.TileHash == oldTileHash)
             {
-                PaintTerrain(coord.X, coord.Y, newTerrainId, newColorIndex);
+                PaintTerrain(coord, newTerrainId, newColorIndex);
 
                 for (int dir = 0; dir < 4; dir++)
                 {
@@ -339,27 +335,23 @@ public sealed class Simulation
     /// Paint a filled rectangle of tiles with the specified terrain and color.
     /// Returns the coordinates of all tiles that were painted.
     /// </summary>
-    /// <param name="x0">Starting X coordinate (inclusive)</param>
-    /// <param name="y0">Starting Y coordinate (inclusive)</param>
-    /// <param name="x1">Ending X coordinate (inclusive)</param>
-    /// <param name="y1">Ending Y coordinate (inclusive)</param>
+    /// <param name="start">Starting corner of the rectangle</param>
+    /// <param name="end">Ending corner of the rectangle</param>
     /// <param name="terrainDefId">The terrain ID to paint</param>
     /// <param name="colorIndex">The color index to use</param>
     /// <returns>Array of tile coordinates that were painted</returns>
     public TileCoord[] PaintRectangle(
-        int x0,
-        int y0,
-        int x1,
-        int y1,
+        TileCoord start,
+        TileCoord end,
         int terrainDefId,
         int colorIndex = 0
     )
     {
-        // Normalize coordinates to ensure x0 <= x1 and y0 <= y1
-        int minX = Math.Min(x0, x1);
-        int maxX = Math.Max(x0, x1);
-        int minY = Math.Min(y0, y1);
-        int maxY = Math.Max(y0, y1);
+        // Normalize coordinates to ensure minX <= maxX and minY <= maxY
+        int minX = Math.Min(start.X, end.X);
+        int maxX = Math.Max(start.X, end.X);
+        int minY = Math.Min(start.Y, end.Y);
+        int maxY = Math.Max(start.Y, end.Y);
 
         var paintedTiles = new List<TileCoord>();
 
@@ -367,8 +359,9 @@ public sealed class Simulation
         {
             for (int y = minY; y <= maxY; y++)
             {
-                PaintTerrain(x, y, terrainDefId, colorIndex);
-                paintedTiles.Add(new TileCoord(x, y));
+                var coord = new TileCoord(x, y);
+                PaintTerrain(coord, terrainDefId, colorIndex);
+                paintedTiles.Add(coord);
             }
         }
 
@@ -379,46 +372,46 @@ public sealed class Simulation
     /// Paint only the outline of a rectangle with the specified terrain and color.
     /// Returns the coordinates of all tiles that were painted.
     /// </summary>
-    /// <param name="x0">Starting X coordinate (inclusive)</param>
-    /// <param name="y0">Starting Y coordinate (inclusive)</param>
-    /// <param name="x1">Ending X coordinate (inclusive)</param>
-    /// <param name="y1">Ending Y coordinate (inclusive)</param>
+    /// <param name="start">Starting corner of the rectangle</param>
+    /// <param name="end">Ending corner of the rectangle</param>
     /// <param name="terrainDefId">The terrain ID to paint</param>
     /// <param name="colorIndex">The color index to use</param>
     /// <returns>Array of tile coordinates that were painted</returns>
     public TileCoord[] PaintRectangleOutline(
-        int x0,
-        int y0,
-        int x1,
-        int y1,
+        TileCoord start,
+        TileCoord end,
         int terrainDefId,
         int colorIndex = 0
     )
     {
-        // Normalize coordinates to ensure x0 <= x1 and y0 <= y1
-        int minX = Math.Min(x0, x1);
-        int maxX = Math.Max(x0, x1);
-        int minY = Math.Min(y0, y1);
-        int maxY = Math.Max(y0, y1);
+        // Normalize coordinates to ensure minX <= maxX and minY <= maxY
+        int minX = Math.Min(start.X, end.X);
+        int maxX = Math.Max(start.X, end.X);
+        int minY = Math.Min(start.Y, end.Y);
+        int maxY = Math.Max(start.Y, end.Y);
 
         var paintedTiles = new List<TileCoord>();
 
         // Paint top and bottom edges
         for (int x = minX; x <= maxX; x++)
         {
-            PaintTerrain(x, minY, terrainDefId, colorIndex);
-            paintedTiles.Add(new TileCoord(x, minY));
-            PaintTerrain(x, maxY, terrainDefId, colorIndex);
-            paintedTiles.Add(new TileCoord(x, maxY));
+            var topCoord = new TileCoord(x, minY);
+            PaintTerrain(topCoord, terrainDefId, colorIndex);
+            paintedTiles.Add(topCoord);
+            var bottomCoord = new TileCoord(x, maxY);
+            PaintTerrain(bottomCoord, terrainDefId, colorIndex);
+            paintedTiles.Add(bottomCoord);
         }
 
         // Paint left and right edges (excluding corners already painted)
         for (int y = minY + 1; y < maxY; y++)
         {
-            PaintTerrain(minX, y, terrainDefId, colorIndex);
-            paintedTiles.Add(new TileCoord(minX, y));
-            PaintTerrain(maxX, y, terrainDefId, colorIndex);
-            paintedTiles.Add(new TileCoord(maxX, y));
+            var leftCoord = new TileCoord(minX, y);
+            PaintTerrain(leftCoord, terrainDefId, colorIndex);
+            paintedTiles.Add(leftCoord);
+            var rightCoord = new TileCoord(maxX, y);
+            PaintTerrain(rightCoord, terrainDefId, colorIndex);
+            paintedTiles.Add(rightCoord);
         }
 
         return paintedTiles.ToArray();
@@ -467,10 +460,8 @@ public sealed class Simulation
     /// <summary>
     /// Delete an object at the specified position (if any). Returns true if an object was deleted.
     /// </summary>
-    public bool TryDeleteObject(int x, int y)
+    public bool TryDeleteObject(TileCoord coord)
     {
-        var coord = new TileCoord(x, y);
-
         // Find object at this position
         foreach (var objId in Entities.AllObjects())
         {
@@ -487,14 +478,13 @@ public sealed class Simulation
     /// Smart delete tool that removes objects, overlay terrain, or resets to flat terrain.
     /// Priority: 1) Delete object if present, 2) Clear overlay terrain if present, 3) Reset base to flat.
     /// </summary>
-    public void DeleteAtTile(int x, int y)
+    public void DeleteAtTile(TileCoord coord)
     {
-        var coord = new TileCoord(x, y);
         if (!World.IsInBounds(coord))
             return;
 
         // Priority 1: Try to delete an object at this position
-        if (TryDeleteObject(x, y))
+        if (TryDeleteObject(coord))
             return;
 
         var tile = World.GetTile(coord);

@@ -274,8 +274,7 @@ public partial class GameRoot : Node2D
                     {
                         _isPaintingTerrain = true;
                         _sim.PaintTerrain(
-                            tileCoord.X,
-                            tileCoord.Y,
+                            tileCoord,
                             BuildToolState.SelectedTerrainDefId.Value,
                             BuildToolState.SelectedColorIndex
                         );
@@ -302,8 +301,7 @@ public partial class GameRoot : Node2D
                     )
                     {
                         _sim.FloodFill(
-                            tileCoord.X,
-                            tileCoord.Y,
+                            tileCoord,
                             BuildToolState.SelectedTerrainDefId.Value,
                             BuildToolState.SelectedColorIndex
                         );
@@ -363,17 +361,14 @@ public partial class GameRoot : Node2D
                 {
                     _sim.CreateObject(
                         BuildToolState.SelectedObjectDefId.Value,
-                        tileCoord.X,
-                        tileCoord.Y,
+                        tileCoord,
                         BuildToolState.SelectedColorIndex
                     );
                 }
                 catch (System.InvalidOperationException)
                 {
                     // Tile occupied, show error feedback (future: visual shake/red flash)
-                    GD.Print(
-                        $"Cannot place object at ({tileCoord.X}, {tileCoord.Y}): tile occupied"
-                    );
+                    GD.Print($"Cannot place object at {tileCoord}: tile occupied");
                 }
                 catch (System.ArgumentException ex)
                 {
@@ -384,7 +379,7 @@ public partial class GameRoot : Node2D
 
             if (BuildToolState.Mode == BuildToolMode.Delete)
             {
-                _sim.DeleteAtTile(tileCoord.X, tileCoord.Y);
+                _sim.DeleteAtTile(tileCoord);
                 UpdateTileAndNeighbors(tileCoord);
                 return; // Consume event
             }
@@ -464,8 +459,7 @@ public partial class GameRoot : Node2D
                 var localPos = GetLocalMousePosition();
                 var tileCoord = ScreenToTileCoord(localPos);
                 _sim.PaintTerrain(
-                    tileCoord.X,
-                    tileCoord.Y,
+                    tileCoord,
                     BuildToolState.SelectedTerrainDefId.Value,
                     BuildToolState.SelectedColorIndex
                 );
@@ -493,14 +487,7 @@ public partial class GameRoot : Node2D
     // Paint only the outline of a rectangle of tiles
     private void OutlineRectangle(TileCoord start, TileCoord end, int terrainId, int colorIndex)
     {
-        var paintedTiles = _sim.PaintRectangleOutline(
-            start.X,
-            start.Y,
-            end.X,
-            end.Y,
-            terrainId,
-            colorIndex
-        );
+        var paintedTiles = _sim.PaintRectangleOutline(start, end, terrainId, colorIndex);
         var tilesToUpdate = _sim.GetTilesWithNeighbors(paintedTiles);
         SyncTiles(tilesToUpdate);
     }
@@ -508,14 +495,7 @@ public partial class GameRoot : Node2D
     // Fill a rectangle of tiles with the selected terrain/color
     private void FillRectangle(TileCoord start, TileCoord end, int terrainId, int colorIndex)
     {
-        var paintedTiles = _sim.PaintRectangle(
-            start.X,
-            start.Y,
-            end.X,
-            end.Y,
-            terrainId,
-            colorIndex
-        );
+        var paintedTiles = _sim.PaintRectangle(start, end, terrainId, colorIndex);
         var tilesToUpdate = _sim.GetTilesWithNeighbors(paintedTiles);
         SyncTiles(tilesToUpdate);
     }

@@ -575,7 +575,7 @@ public class PawnMovementTests
 
         // Paint an impassable vertical wall between the pawn and the fridge (x = 1)
         for (int y = 0; y <= 4; y++)
-            sim.PaintTerrain(1, y, wallId);
+            sim.PaintTerrain(new TileCoord(1, y), wallId);
 
         var pawnId = sim.GetPawnByName("HungryPawn");
         Assert.NotNull(pawnId);

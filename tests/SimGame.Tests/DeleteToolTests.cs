@@ -20,16 +20,16 @@ public class DeleteToolTests
         var sim = builder.Build();
 
         // Paint grass, then path, then place object
-        sim.PaintTerrain(2, 2, grassId);
-        sim.PaintTerrain(2, 2, pathId);
-        sim.CreateObject(bedId, 2, 2);
+        sim.PaintTerrain(new TileCoord(2, 2), grassId);
+        sim.PaintTerrain(new TileCoord(2, 2), pathId);
+        sim.CreateObject(bedId, new TileCoord(2, 2));
 
         var tile = sim.World.GetTile(new TileCoord(2, 2));
         Assert.Equal(grassId, tile.BaseTerrainTypeId);
         Assert.Equal(pathId, tile.OverlayTerrainTypeId);
 
         // Act: First delete - should remove object only
-        sim.DeleteAtTile(2, 2);
+        sim.DeleteAtTile(new TileCoord(2, 2));
 
         // Assert: Object removed, path and grass remain
         tile = sim.World.GetTile(new TileCoord(2, 2));
@@ -49,15 +49,15 @@ public class DeleteToolTests
         var sim = builder.Build();
 
         // Paint grass, then path
-        sim.PaintTerrain(2, 2, grassId);
-        sim.PaintTerrain(2, 2, pathId);
+        sim.PaintTerrain(new TileCoord(2, 2), grassId);
+        sim.PaintTerrain(new TileCoord(2, 2), pathId);
 
         var tile = sim.World.GetTile(new TileCoord(2, 2));
         Assert.Equal(grassId, tile.BaseTerrainTypeId);
         Assert.Equal(pathId, tile.OverlayTerrainTypeId);
 
         // Act: Delete - should clear overlay only
-        sim.DeleteAtTile(2, 2);
+        sim.DeleteAtTile(new TileCoord(2, 2));
 
         // Assert: Overlay cleared, grass base remains
         tile = sim.World.GetTile(new TileCoord(2, 2));
@@ -76,14 +76,14 @@ public class DeleteToolTests
         var sim = builder.Build();
 
         // Paint grass
-        sim.PaintTerrain(2, 2, grassId);
+        sim.PaintTerrain(new TileCoord(2, 2), grassId);
 
         var tile = sim.World.GetTile(new TileCoord(2, 2));
         Assert.Equal(grassId, tile.BaseTerrainTypeId);
         Assert.Null(tile.OverlayTerrainTypeId);
 
         // Act: Delete - should reset to flat
-        sim.DeleteAtTile(2, 2);
+        sim.DeleteAtTile(new TileCoord(2, 2));
 
         // Assert: Base reset to flat
         tile = sim.World.GetTile(new TileCoord(2, 2));
@@ -105,25 +105,25 @@ public class DeleteToolTests
         var sim = builder.Build();
 
         // Setup: grass + path + object
-        sim.PaintTerrain(2, 2, grassId);
-        sim.PaintTerrain(2, 2, pathId);
-        sim.CreateObject(bedId, 2, 2);
+        sim.PaintTerrain(new TileCoord(2, 2), grassId);
+        sim.PaintTerrain(new TileCoord(2, 2), pathId);
+        sim.CreateObject(bedId, new TileCoord(2, 2));
 
         // Act & Assert: Click 1 - Remove object
-        sim.DeleteAtTile(2, 2);
+        sim.DeleteAtTile(new TileCoord(2, 2));
         var tile = sim.World.GetTile(new TileCoord(2, 2));
         Assert.Equal(grassId, tile.BaseTerrainTypeId);
         Assert.Equal(pathId, tile.OverlayTerrainTypeId);
         Assert.False(sim.Entities.AllObjects().Any());
 
         // Act & Assert: Click 2 - Clear overlay
-        sim.DeleteAtTile(2, 2);
+        sim.DeleteAtTile(new TileCoord(2, 2));
         tile = sim.World.GetTile(new TileCoord(2, 2));
         Assert.Equal(grassId, tile.BaseTerrainTypeId);
         Assert.Null(tile.OverlayTerrainTypeId);
 
         // Act & Assert: Click 3 - Reset to flat
-        sim.DeleteAtTile(2, 2);
+        sim.DeleteAtTile(new TileCoord(2, 2));
         tile = sim.World.GetTile(new TileCoord(2, 2));
         Assert.Equal(flatId, tile.BaseTerrainTypeId);
         Assert.Null(tile.OverlayTerrainTypeId);

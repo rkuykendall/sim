@@ -18,7 +18,7 @@ public class ColorPaletteTests
         var sim = builder.Build();
 
         // Act: Create object with color index 2
-        var objectId = sim.CreateObject(objectDefId, 2, 2, colorIndex: 2);
+        var objectId = sim.CreateObject(objectDefId, new TileCoord(2, 2), colorIndex: 2);
 
         // Assert: Verify the color index is stored
         Assert.True(sim.Entities.Objects.TryGetValue(objectId, out var objComp));
@@ -34,7 +34,7 @@ public class ColorPaletteTests
         var sim = builder.Build();
 
         // Act: Create object without specifying color index
-        var objectId = sim.CreateObject(objectDefId, 2, 2);
+        var objectId = sim.CreateObject(objectDefId, new TileCoord(2, 2));
 
         // Assert: Verify the color index defaults to 0 (green)
         Assert.True(sim.Entities.Objects.TryGetValue(objectId, out var objComp));
@@ -51,7 +51,7 @@ public class ColorPaletteTests
         var sim = builder.Build();
 
         // Act: Paint terrain with color index
-        sim.PaintTerrain(3, 3, stoneDefId, colorIndex: 3);
+        sim.PaintTerrain(new TileCoord(3, 3), stoneDefId, colorIndex: 3);
 
         // Assert: Verify the color index is stored
         var tile = sim.World.GetTile(new TileCoord(3, 3));
@@ -69,7 +69,7 @@ public class ColorPaletteTests
         var sim = builder.Build();
 
         // Act: Paint terrain without specifying color index
-        sim.PaintTerrain(2, 2, newDefId);
+        sim.PaintTerrain(new TileCoord(2, 2), newDefId);
 
         // Assert: Verify the color index defaults to 0
         var tile = sim.World.GetTile(new TileCoord(2, 2));
@@ -86,9 +86,9 @@ public class ColorPaletteTests
         var sim = builder.Build();
 
         // Create objects with different colors
-        sim.CreateObject(bedDefId, 1, 1, colorIndex: 1);
-        sim.CreateObject(bedDefId, 2, 2, colorIndex: 2);
-        sim.CreateObject(bedDefId, 3, 3, colorIndex: 3);
+        sim.CreateObject(bedDefId, new TileCoord(1, 1), colorIndex: 1);
+        sim.CreateObject(bedDefId, new TileCoord(2, 2), colorIndex: 2);
+        sim.CreateObject(bedDefId, new TileCoord(3, 3), colorIndex: 3);
 
         // Act: Get render snapshot
         var snapshot = sim.CreateRenderSnapshot();
@@ -115,9 +115,9 @@ public class ColorPaletteTests
         var sim = builder.Build();
 
         // Act: Create multiple beds with different colors
-        var brownBed = sim.CreateObject(bedDefId, 1, 1, colorIndex: 1);
-        var redBed = sim.CreateObject(bedDefId, 2, 2, colorIndex: 2);
-        var purpleBed = sim.CreateObject(bedDefId, 3, 3, colorIndex: 3);
+        var brownBed = sim.CreateObject(bedDefId, new TileCoord(1, 1), colorIndex: 1);
+        var redBed = sim.CreateObject(bedDefId, new TileCoord(2, 2), colorIndex: 2);
+        var purpleBed = sim.CreateObject(bedDefId, new TileCoord(3, 3), colorIndex: 3);
 
         // Assert: Each object has its own color
         sim.Entities.Objects.TryGetValue(brownBed, out var brownObj);
@@ -141,15 +141,15 @@ public class ColorPaletteTests
         var coord = new TileCoord(2, 2);
 
         // Act: Paint the same tile with different colors
-        sim.PaintTerrain(2, 2, grassDefId, colorIndex: 1);
+        sim.PaintTerrain(new TileCoord(2, 2), grassDefId, colorIndex: 1);
         var tile1 = sim.World.GetTile(coord);
         Assert.Equal(1, tile1.ColorIndex);
 
-        sim.PaintTerrain(2, 2, grassDefId, colorIndex: 2);
+        sim.PaintTerrain(new TileCoord(2, 2), grassDefId, colorIndex: 2);
         var tile2 = sim.World.GetTile(coord);
         Assert.Equal(2, tile2.ColorIndex);
 
-        sim.PaintTerrain(2, 2, grassDefId, colorIndex: 3);
+        sim.PaintTerrain(new TileCoord(2, 2), grassDefId, colorIndex: 3);
         var tile3 = sim.World.GetTile(coord);
         Assert.Equal(3, tile3.ColorIndex);
     }
@@ -161,11 +161,11 @@ public class ColorPaletteTests
         var builder = new TestSimulationBuilder();
         var bedDefId = builder.DefineObject(key: "Bed");
         var sim = builder.Build();
-        var redBed = sim.CreateObject(bedDefId, 1, 1, colorIndex: 1);
-        var blueBed = sim.CreateObject(bedDefId, 2, 2, colorIndex: 2);
+        var redBed = sim.CreateObject(bedDefId, new TileCoord(1, 1), colorIndex: 1);
+        var blueBed = sim.CreateObject(bedDefId, new TileCoord(2, 2), colorIndex: 2);
 
         // Act: Delete the red bed
-        sim.TryDeleteObject(1, 1);
+        sim.TryDeleteObject(new TileCoord(1, 1));
 
         // Assert: Blue bed still has correct color
         Assert.False(sim.Entities.Objects.ContainsKey(redBed));

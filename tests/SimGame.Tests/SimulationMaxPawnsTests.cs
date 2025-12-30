@@ -22,7 +22,7 @@ public class SimulationMaxPawnsTests
         builder.WithWorldBounds(2, 2);
         var grassId = builder.DefineTerrain(key: "Grass", spriteKey: "grass");
         var sim = builder.Build();
-        sim.PaintTerrain(1, 1, grassId);
+        sim.PaintTerrain(new TileCoord(1, 1), grassId);
         // Small map, score/divisor is still 1
         Assert.Equal(0, sim.GetMaxPawns());
     }
@@ -36,7 +36,7 @@ public class SimulationMaxPawnsTests
         var sim = builder.Build();
         int before = sim.GetMaxPawns();
         for (int i = 0; i < 20; i++)
-            sim.CreateObject(bedId, i % 10, i / 10);
+            sim.CreateObject(bedId, new TileCoord(i % 10, i / 10));
         int after = sim.GetMaxPawns();
         Assert.True(after >= before, $"Expected after ({after}) >= before ({before})");
     }
@@ -53,7 +53,11 @@ public class SimulationMaxPawnsTests
 
         for (int x = 0; x < 10; x++)
         for (int y = 0; y < 10; y++)
-            sim.PaintTerrain(x, y, (x + y) % 2 == 0 ? terrain1 : terrain2, (x + y) % 2);
+            sim.PaintTerrain(
+                new TileCoord(x, y),
+                (x + y) % 2 == 0 ? terrain1 : terrain2,
+                (x + y) % 2
+            );
 
         Assert.True(
             sim.ScoreMapDiversity() > 10,

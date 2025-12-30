@@ -18,7 +18,7 @@ public class DiversityTests
         // Paint everything the same
         for (int x = 0; x <= 4; x++)
         for (int y = 0; y <= 4; y++)
-            sim.PaintTerrain(x, y, grassId, 0);
+            sim.PaintTerrain(new TileCoord(x, y), grassId, 0);
 
         var diversityMap = sim.GetDiversityMap();
 
@@ -40,7 +40,7 @@ public class DiversityTests
         for (int y = 0; y <= 4; y++)
         {
             int color = (x + y) % 2;
-            sim.PaintTerrain(x, y, grassId, color);
+            sim.PaintTerrain(new TileCoord(x, y), grassId, color);
         }
 
         var diversityMap = sim.GetDiversityMap();
@@ -82,7 +82,7 @@ public class DiversityTests
         {
             // Dense colorful base terrain (checkerboard of 4 colors)
             int color = ((x % 2) * 2 + (y % 2)) % 4;
-            sim.PaintTerrain(x, y, grassId, color);
+            sim.PaintTerrain(new TileCoord(x, y), grassId, color);
 
             // Add path overlay to every tile in varied pattern
             sim.World.GetTile(new TileCoord(x, y)).OverlayTerrainTypeId = pathId;
@@ -135,7 +135,7 @@ public class DiversityTests
 
         Assert.True(
             actualReduction >= requiredReduction,
-            $"Pawn at ({finalPos.Coord.X}, {finalPos.Coord.Y}) is {finalDistance} tiles from diverse area. "
+            $"Pawn at {finalPos.Coord} is {finalDistance} tiles from diverse area. "
                 + $"Started at {startDistance}, moved {actualReduction} tiles closer. Expected at least {requiredReduction} tiles closer."
         );
     }

@@ -23,7 +23,7 @@ public class FillToolTests
         {
             for (int y = 0; y < 10; y++)
             {
-                sim.PaintTerrain(x, y, grassId, 0);
+                sim.PaintTerrain(new TileCoord(x, y), grassId, 0);
             }
         }
 
@@ -31,14 +31,14 @@ public class FillToolTests
         // Top and bottom edges
         for (int x = 2; x <= 5; x++)
         {
-            sim.PaintTerrain(x, 2, wallId, 0); // Top edge
-            sim.PaintTerrain(x, 5, wallId, 0); // Bottom edge
+            sim.PaintTerrain(new TileCoord(x, 2), wallId, 0); // Top edge
+            sim.PaintTerrain(new TileCoord(x, 5), wallId, 0); // Bottom edge
         }
         // Left and right edges
         for (int y = 2; y <= 5; y++)
         {
-            sim.PaintTerrain(2, y, wallId, 0); // Left edge
-            sim.PaintTerrain(5, y, wallId, 0); // Right edge
+            sim.PaintTerrain(new TileCoord(2, y), wallId, 0); // Left edge
+            sim.PaintTerrain(new TileCoord(5, y), wallId, 0); // Right edge
         }
 
         // Inside the square should still be grass: (3,3), (3,4), (4,3), (4,4)
@@ -51,7 +51,7 @@ public class FillToolTests
 
         // Act: Flood fill from inside the square (3,3) with floor
         // This simulates clicking inside the walled area with the fill tool
-        sim.FloodFill(3, 3, floorId, 0);
+        sim.FloodFill(new TileCoord(3, 3), floorId, 0);
 
         // Assert: Only tiles inside the wall square should be floor
         // Inside tiles should be floor
@@ -86,18 +86,18 @@ public class FillToolTests
         // Paint everything grass (base layer)
         for (int x = 0; x <= 4; x++)
         for (int y = 0; y <= 4; y++)
-            sim.PaintTerrain(x, y, grassId, 0);
+            sim.PaintTerrain(new TileCoord(x, y), grassId, 0);
 
         // Draw a wall square from (1,1) to (3,3) - this goes into OVERLAY layer
         for (int x = 1; x <= 3; x++)
         {
-            sim.PaintTerrain(x, 1, wallId, 0); // Top
-            sim.PaintTerrain(x, 3, wallId, 0); // Bottom
+            sim.PaintTerrain(new TileCoord(x, 1), wallId, 0); // Top
+            sim.PaintTerrain(new TileCoord(x, 3), wallId, 0); // Bottom
         }
         for (int y = 1; y <= 3; y++)
         {
-            sim.PaintTerrain(1, y, wallId, 0); // Left
-            sim.PaintTerrain(3, y, wallId, 0); // Right
+            sim.PaintTerrain(new TileCoord(1, y), wallId, 0); // Left
+            sim.PaintTerrain(new TileCoord(3, y), wallId, 0); // Right
         }
 
         // Verify walls are in overlay layer (not base layer)
@@ -106,7 +106,7 @@ public class FillToolTests
         Assert.Equal(grassId, wallTile.BaseTerrainTypeId); // Base is still grass!
 
         // Act: Flood fill from inside the square (2,2) with floor
-        sim.FloodFill(2, 2, floorId, 0);
+        sim.FloodFill(new TileCoord(2, 2), floorId, 0);
 
         // Assert: Walls should still exist (not be removed)
         var wallTileAfter = sim.World.GetTile(new TileCoord(1, 1));
@@ -133,20 +133,20 @@ public class FillToolTests
         // Paint everything grass first
         for (int x = 0; x <= 6; x++)
         for (int y = 0; y <= 6; y++)
-            sim.PaintTerrain(x, y, grassId, 0);
+            sim.PaintTerrain(new TileCoord(x, y), grassId, 0);
 
         // Create a 5x5 outline of Block tiles (color 0) from (1,1) to (5,5)
         // Top and bottom edges
         for (int x = 1; x <= 5; x++)
         {
-            sim.PaintTerrain(x, 1, blockId, 0); // Top edge
-            sim.PaintTerrain(x, 5, blockId, 0); // Bottom edge
+            sim.PaintTerrain(new TileCoord(x, 1), blockId, 0); // Top edge
+            sim.PaintTerrain(new TileCoord(x, 5), blockId, 0); // Bottom edge
         }
         // Left and right edges
         for (int y = 1; y <= 5; y++)
         {
-            sim.PaintTerrain(1, y, blockId, 0); // Left edge
-            sim.PaintTerrain(5, y, blockId, 0); // Right edge
+            sim.PaintTerrain(new TileCoord(1, y), blockId, 0); // Left edge
+            sim.PaintTerrain(new TileCoord(5, y), blockId, 0); // Right edge
         }
 
         // Verify the outline is Block (autotiling goes to overlay)
@@ -159,7 +159,7 @@ public class FillToolTests
 
         // Act: Flood fill from a corner of the Block outline (1,1) with Brick (color 3)
         // This simulates: user created Block outline, switched to Brick + color 3, clicked fill
-        sim.FloodFill(1, 1, brickId, 3);
+        sim.FloodFill(new TileCoord(1, 1), brickId, 3);
 
         // Assert: ALL Block tiles in the outline should now be Brick (autotiling goes to overlay)
         // Top edge
@@ -223,25 +223,25 @@ public class FillToolTests
         // Paint everything stone first
         for (int x = 0; x <= 6; x++)
         for (int y = 0; y <= 4; y++)
-            sim.PaintTerrain(x, y, stoneId, 0);
+            sim.PaintTerrain(new TileCoord(x, y), stoneId, 0);
 
         // Left region: Grass only (color 0) - 3x3 square, should all be filled
         for (int x = 0; x <= 2; x++)
         for (int y = 0; y <= 2; y++)
-            sim.PaintTerrain(x, y, grassId, 0);
+            sim.PaintTerrain(new TileCoord(x, y), grassId, 0);
 
         // Middle region: Grass + Dirt overlay (color 0) - should NOT fill
         for (int x = 3; x <= 4; x++)
         for (int y = 0; y <= 2; y++)
         {
-            sim.PaintTerrain(x, y, grassId, 0);
+            sim.PaintTerrain(new TileCoord(x, y), grassId, 0);
             sim.World.GetTile(new TileCoord(x, y)).OverlayTerrainTypeId = dirtId;
         }
 
         // Right region: Grass only (color 1) - different color, should NOT fill
         for (int x = 5; x <= 6; x++)
         for (int y = 0; y <= 2; y++)
-            sim.PaintTerrain(x, y, grassId, 1);
+            sim.PaintTerrain(new TileCoord(x, y), grassId, 1);
 
         // Verify initial state
         Assert.Equal(grassId, sim.World.GetTile(new TileCoord(0, 0)).BaseTerrainTypeId);
@@ -257,7 +257,7 @@ public class FillToolTests
 
         // Act: Flood fill from (1,1) in left region (grass-only, color 0)
         // Replace with stone, color 2
-        sim.FloodFill(1, 1, stoneId, 2);
+        sim.FloodFill(new TileCoord(1, 1), stoneId, 2);
 
         // Assert: Only the left region (grass-only, color 0) should be filled with stone
         // All 9 tiles in left region should be stone now

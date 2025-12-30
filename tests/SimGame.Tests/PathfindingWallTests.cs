@@ -22,7 +22,7 @@ namespace SimGame.Tests
 
             // Paint a vertical wall at x=2
             for (int y = 0; y <= 4; y++)
-                sim.PaintTerrain(2, y, wallId);
+                sim.PaintTerrain(new TileCoord(2, y), wallId);
 
             var pawnId = sim.GetPawnByName("Alice");
             Assert.NotNull(pawnId);
@@ -47,8 +47,8 @@ namespace SimGame.Tests
             var sim = builder.Build();
 
             // Only block (2,1) and (2,3), leave (2,2) open
-            sim.PaintTerrain(2, 1, wallId);
-            sim.PaintTerrain(2, 3, wallId);
+            sim.PaintTerrain(new TileCoord(2, 1), wallId);
+            sim.PaintTerrain(new TileCoord(2, 3), wallId);
 
             var pawnId = sim.GetPawnByName("Bob");
             Assert.NotNull(pawnId);
@@ -72,7 +72,7 @@ namespace SimGame.Tests
             builder.AddObject(bedDefId, 2, 1);
             var sim = builder.Build();
 
-            sim.PaintTerrain(1, 1, wallId);
+            sim.PaintTerrain(new TileCoord(1, 1), wallId);
 
             var pawnId = sim.GetPawnByName("Carol");
             Assert.NotNull(pawnId);
@@ -117,7 +117,7 @@ namespace SimGame.Tests
             var sim = builder.Build();
 
             for (int x = 0; x <= 4; x++)
-                sim.PaintTerrain(4 - x, x, wallId);
+                sim.PaintTerrain(new TileCoord(4 - x, x), wallId);
 
             var pawnId = sim.GetPawnByName("Eve");
             Assert.NotNull(pawnId);
