@@ -92,7 +92,11 @@ void fragment()
 
 	// Film grain
 	if(enable_grain)
-		color.rgb = mix(color.rgb ,vec3(0.0), filmGrainNoise(TIME, SCREEN_UV) * grain_strength);
+	{
+		// Remap noise from 0.0-1.0 to -1.0 to +1.0 so it can darken or brighten equally
+		float noise = filmGrainNoise(TIME, SCREEN_UV) * 2.0 - 1.0;
+		color.rgb += noise * grain_strength;
+	}
 
 	// RGB grid
 	if(enable_rgb_grid)
