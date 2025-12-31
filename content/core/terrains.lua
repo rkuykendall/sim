@@ -22,6 +22,11 @@ Terrains = {
         spriteKey = "trees",
         isAutotiling = true,
     },
+    Rock = {
+        passability = "High",
+        spriteKey = "rock",
+        variantCount = 12,
+    },
     Dirt = {
         passability = "Ground",
         spriteKey = "dirt",

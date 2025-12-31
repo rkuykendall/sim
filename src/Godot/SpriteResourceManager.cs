@@ -25,6 +25,7 @@ public static class SpriteResourceManager
         ["water"] = "res://sprites/tiles/water.png",
         ["wall"] = "res://sprites/tiles/wall.png",
         ["trees"] = "res://sprites/tiles/trees.png",
+        ["rock"] = "res://sprites/tiles/rock.png",
 
         // Object sprites
         ["fridge"] = "res://sprites/objects/fridge.png",
