@@ -869,9 +869,16 @@ public sealed class AISystem : ISystem
         {
             for (int dist = 1; dist <= 3; dist++)
             {
-                potentialTargets.Add(
-                    new TileCoord(pos.Coord.X + dx * dist, pos.Coord.Y + dy * dist)
-                );
+                var newCoord = new TileCoord(pos.Coord.X + dx * dist, pos.Coord.Y + dy * dist);
+                potentialTargets.Add(newCoord);
+                // Cap diversity to max 1 for nearby tiles to avoid pawns getting stuck
+                if (ctx.World.IsInBounds(newCoord))
+                {
+                    diversityMap[newCoord.X, newCoord.Y] = Math.Min(
+                        1,
+                        diversityMap[newCoord.X, newCoord.Y]
+                    );
+                }
             }
         }
 
