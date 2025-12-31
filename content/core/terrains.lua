@@ -27,6 +27,11 @@ Terrains = {
         spriteKey = "rock",
         variantCount = 12,
     },
+    Plant = {
+        passability = "Ground",
+        spriteKey = "plant",
+        variantCount = 10,
+    },
     Dirt = {
         passability = "Ground",
         spriteKey = "dirt",

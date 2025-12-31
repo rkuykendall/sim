@@ -26,13 +26,13 @@ public static class SpriteResourceManager
         ["wall"] = "res://sprites/tiles/wall.png",
         ["trees"] = "res://sprites/tiles/trees.png",
         ["rock"] = "res://sprites/tiles/rock.png",
+        ["plant"] = "res://sprites/tiles/plant.png",
 
         // Object sprites
         ["fridge"] = "res://sprites/objects/fridge.png",
         ["bed"] = "res://sprites/objects/bed.png",
         ["tv"] = "res://sprites/objects/tv.png",
         ["shower"] = "res://sprites/objects/shower.png",
-        ["plant"] = "res://sprites/objects/plant.png",
         ["castle"] = "res://sprites/objects/castle.png",
         ["lamp"] = "res://sprites/objects/lamp.png",
 
