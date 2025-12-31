@@ -114,10 +114,6 @@ public partial class BuildToolbar : HBoxContainer
                     ),
                 BuildToolMode.PlaceObject
             ),
-            (
-                () => CreateToolButton("delete.png", BuildToolMode.Delete, "Delete"),
-                BuildToolMode.Delete
-            ),
         };
         if (_debugMode)
         {
@@ -223,14 +219,15 @@ public partial class BuildToolbar : HBoxContainer
             return;
 
         // Get options list based on current mode
-        var optionsList = new List<(int id, string spriteKey, string name, bool isObject)>();
+        var optionsList =
+            new List<(int id, string spriteKey, string name, bool isObject, bool isDelete)>();
 
         switch (BuildToolState.Mode)
         {
             case BuildToolMode.PlaceObject:
                 foreach (var (id, def) in _content.Objects.OrderBy(kv => kv.Value.Name))
                 {
-                    optionsList.Add((id, def.SpriteKey, def.Name, true));
+                    optionsList.Add((id, def.SpriteKey, def.Name, true, false));
                 }
                 break;
 
@@ -239,17 +236,21 @@ public partial class BuildToolbar : HBoxContainer
             case BuildToolMode.FillSquare:
             case BuildToolMode.OutlineSquare:
             case BuildToolMode.FloodFill:
+                // Add delete option first
+                optionsList.Add((-1, "delete.png", "Delete", false, true));
+
+                // Then add all terrain options
                 foreach (var (id, def) in _content.Terrains.OrderBy(kv => kv.Key))
                 {
-                    optionsList.Add((id, def.SpriteKey, id.ToString(), false));
+                    optionsList.Add((id, def.SpriteKey, id.ToString(), false, false));
                 }
                 break;
         }
 
         // Create option buttons
-        foreach (var (id, spriteKey, name, isObject) in optionsList)
+        foreach (var (id, spriteKey, name, isObject, isDelete) in optionsList)
         {
-            var button = CreateOptionButton(id, spriteKey, name, isObject);
+            var button = CreateOptionButton(id, spriteKey, name, isObject, isDelete);
             _optionButtons.Add(button);
             _optionsContainer?.AddChild(button);
         }
@@ -266,12 +267,21 @@ public partial class BuildToolbar : HBoxContainer
                 UpdateAllButtons();
             }
             else if (
-                BuildToolState.Mode == BuildToolMode.PlaceTerrain
-                && !BuildToolState.SelectedTerrainDefId.HasValue
+                (
+                    BuildToolState.Mode == BuildToolMode.PlaceTerrain
+                    || BuildToolState.Mode == BuildToolMode.FillSquare
+                    || BuildToolState.Mode == BuildToolMode.OutlineSquare
+                    || BuildToolState.Mode == BuildToolMode.FloodFill
+                ) && !BuildToolState.SelectedTerrainDefId.HasValue
             )
             {
-                BuildToolState.SelectedTerrainDefId = optionsList[0].id;
-                UpdateAllButtons();
+                // Find the first terrain option (skip delete option)
+                var firstTerrain = optionsList.FirstOrDefault(opt => !opt.isDelete);
+                if (firstTerrain.id != 0 || _content.Terrains.ContainsKey(0))
+                {
+                    BuildToolState.SelectedTerrainDefId = firstTerrain.id;
+                    UpdateAllButtons();
+                }
             }
         }
     }
@@ -280,7 +290,8 @@ public partial class BuildToolbar : HBoxContainer
         int id,
         string spriteKey,
         string name,
-        bool isObject
+        bool isObject,
+        bool isDelete
     )
     {
         var button = new SpriteIconButton
@@ -289,12 +300,24 @@ public partial class BuildToolbar : HBoxContainer
             TooltipText = name,
         };
 
-        var texture = SpriteResourceManager.GetTexture(spriteKey);
+        Texture2D? texture = null;
+
+        // For delete option, load from res://sprites/
+        if (isDelete)
+        {
+            texture = GD.Load<Texture2D>($"res://sprites/{spriteKey}");
+        }
+        else
+        {
+            texture = SpriteResourceManager.GetTexture(spriteKey);
+        }
+
         if (texture != null)
         {
             // For autotiled terrains, show only the 1x1 variant (lower-left 16x16)
             if (
                 !isObject
+                && !isDelete
                 && _content != null
                 && _content.Terrains.TryGetValue(id, out var terrainDef)
                 && terrainDef.IsAutotiling
@@ -305,6 +328,7 @@ public partial class BuildToolbar : HBoxContainer
             // For variant terrains, show only the first variant (top-left 16x16)
             else if (
                 !isObject
+                && !isDelete
                 && _content != null
                 && _content.Terrains.TryGetValue(id, out terrainDef)
                 && terrainDef.VariantCount > 1
@@ -318,6 +342,8 @@ public partial class BuildToolbar : HBoxContainer
 
         if (isObject)
             button.Pressed += () => OnObjectOptionSelected(id);
+        else if (isDelete)
+            button.Pressed += () => OnDeleteOptionSelected();
         else
             button.Pressed += () => OnTerrainOptionSelected(id);
 
@@ -427,6 +453,13 @@ public partial class BuildToolbar : HBoxContainer
         UpdateAllButtons();
     }
 
+    private void OnDeleteOptionSelected()
+    {
+        // Set terrain to null to enter deletion mode
+        BuildToolState.SelectedTerrainDefId = null;
+        UpdateAllButtons();
+    }
+
     private void UpdateAllButtons()
     {
         // Update color button highlights
@@ -496,22 +529,33 @@ public partial class BuildToolbar : HBoxContainer
                 }
             }
             else if (
-                (
-                    BuildToolState.Mode == BuildToolMode.PlaceTerrain
-                    || BuildToolState.Mode == BuildToolMode.FillSquare
-                    || BuildToolState.Mode == BuildToolMode.OutlineSquare
-                    || BuildToolState.Mode == BuildToolMode.FloodFill
-                ) && BuildToolState.SelectedTerrainDefId.HasValue
+                BuildToolState.Mode == BuildToolMode.PlaceTerrain
+                || BuildToolState.Mode == BuildToolMode.FillSquare
+                || BuildToolState.Mode == BuildToolMode.OutlineSquare
+                || BuildToolState.Mode == BuildToolMode.FloodFill
             )
             {
-                var terrains = _content?.Terrains.OrderBy(kv => kv.Key).ToList();
-                if (terrains != null)
+                var index = _optionButtons.IndexOf(button);
+
+                // Index 0 is the delete option
+                if (index == 0)
                 {
-                    var index = _optionButtons.IndexOf(button);
-                    if (index >= 0 && index < terrains.Count)
+                    isSelected = !BuildToolState.SelectedTerrainDefId.HasValue;
+                }
+                // Subsequent indices are terrain options
+                else if (BuildToolState.SelectedTerrainDefId.HasValue)
+                {
+                    var terrains = _content?.Terrains.OrderBy(kv => kv.Key).ToList();
+                    if (terrains != null)
                     {
-                        isSelected =
-                            terrains[index].Key == BuildToolState.SelectedTerrainDefId.Value;
+                        // Adjust index to account for delete option at index 0
+                        var terrainIndex = index - 1;
+                        if (terrainIndex >= 0 && terrainIndex < terrains.Count)
+                        {
+                            isSelected =
+                                terrains[terrainIndex].Key
+                                == BuildToolState.SelectedTerrainDefId.Value;
+                        }
                     }
                 }
             }

@@ -249,6 +249,53 @@ public sealed class Simulation
     }
 
     /// <summary>
+    /// Calculate all tiles affected by a flood fill starting from a coordinate.
+    /// Only returns tiles that match the starting tile's hash (exact terrain, overlay, and color match).
+    /// </summary>
+    /// <param name="start">Starting tile coordinate for the flood fill</param>
+    /// <returns>Array of all tiles that match the starting tile's hash</returns>
+    private TileCoord[] GetFloodTiles(TileCoord start)
+    {
+        if (!World.IsInBounds(start))
+            return Array.Empty<TileCoord>();
+
+        var tile = World.GetTile(start);
+        int targetHash = tile.TileHash;
+
+        var visited = new HashSet<TileCoord>();
+        var queue = new Queue<TileCoord>();
+        queue.Enqueue(start);
+        visited.Add(start);
+
+        int[] dx = { 0, 1, 0, -1 };
+        int[] dy = { -1, 0, 1, 0 };
+
+        while (queue.Count > 0)
+        {
+            var coord = queue.Dequeue();
+
+            for (int dir = 0; dir < 4; dir++)
+            {
+                int nx = coord.X + dx[dir];
+                int ny = coord.Y + dy[dir];
+                var ncoord = new TileCoord(nx, ny);
+
+                if (World.IsInBounds(ncoord) && !visited.Contains(ncoord))
+                {
+                    var ntile = World.GetTile(ncoord);
+                    if (ntile.TileHash == targetHash)
+                    {
+                        queue.Enqueue(ncoord);
+                        visited.Add(ncoord);
+                    }
+                }
+            }
+        }
+
+        return visited.ToArray();
+    }
+
+    /// <summary>
     /// Flood fill all connected tiles of the same terrain and color with a new terrain and color.
     /// Only fills tiles that exactly match the starting tile's base terrain, overlay terrain, and color.
     /// Returns all affected tiles including neighbors for autotiling updates.
@@ -259,66 +306,50 @@ public sealed class Simulation
     /// <returns>Array of all tiles affected by the flood fill (painted tiles and their neighbors)</returns>
     public TileCoord[] FloodFill(TileCoord start, int newTerrainId, int newColorIndex)
     {
-        if (!World.IsInBounds(start))
+        var tilesToPaint = GetFloodTiles(start);
+        if (tilesToPaint.Length == 0)
             return Array.Empty<TileCoord>();
 
-        var tile = World.GetTile(start);
-        int oldTileHash = tile.TileHash;
-
-        if (tile.BaseTerrainTypeId == newTerrainId && tile.ColorIndex == newColorIndex)
+        // Check if we're already this terrain+color (optimization)
+        var firstTile = World.GetTile(tilesToPaint[0]);
+        if (firstTile.BaseTerrainTypeId == newTerrainId && firstTile.ColorIndex == newColorIndex)
             return Array.Empty<TileCoord>();
 
-        var width = World.Width;
-        var height = World.Height;
-        var visited = new HashSet<TileCoord>();
-        var queue = new Queue<TileCoord>();
         var affectedTiles = new HashSet<TileCoord>();
-        queue.Enqueue(start);
-        visited.Add(start);
-
-        int[] dx = { 0, 1, 0, -1 };
-        int[] dy = { -1, 0, 1, 0 };
-
-        while (queue.Count > 0)
+        foreach (var coord in tilesToPaint)
         {
-            var coord = queue.Dequeue();
-            var t = World.GetTile(coord);
-
-            if (t.TileHash == oldTileHash)
+            var tiles = PaintTerrain(coord, newTerrainId, newColorIndex);
+            foreach (var t in tiles)
             {
-                var tilesToUpdate = PaintTerrain(coord, newTerrainId, newColorIndex);
-                foreach (var tileCoord in tilesToUpdate)
-                {
-                    affectedTiles.Add(tileCoord);
-                }
-
-                for (int dir = 0; dir < 4; dir++)
-                {
-                    int nx = coord.X + dx[dir];
-                    int ny = coord.Y + dy[dir];
-                    var ncoord = new TileCoord(nx, ny);
-
-                    if (
-                        nx >= 0
-                        && nx < width
-                        && ny >= 0
-                        && ny < height
-                        && !visited.Contains(ncoord)
-                    )
-                    {
-                        var ntile = World.GetTile(ncoord);
-
-                        if (ntile.TileHash == oldTileHash)
-                        {
-                            queue.Enqueue(ncoord);
-                            visited.Add(ncoord);
-                        }
-                    }
-                }
+                affectedTiles.Add(t);
             }
         }
 
         return affectedTiles.ToArray();
+    }
+
+    /// <summary>
+    /// Calculate all tiles in a filled rectangle.
+    /// </summary>
+    /// <param name="start">Starting corner of the rectangle</param>
+    /// <param name="end">Ending corner of the rectangle</param>
+    /// <returns>Array of all tile coordinates in the rectangle</returns>
+    private TileCoord[] GetRectangleTiles(TileCoord start, TileCoord end)
+    {
+        int minX = Math.Min(start.X, end.X);
+        int maxX = Math.Max(start.X, end.X);
+        int minY = Math.Min(start.Y, end.Y);
+        int maxY = Math.Max(start.Y, end.Y);
+
+        var tiles = new List<TileCoord>();
+        for (int x = minX; x <= maxX; x++)
+        {
+            for (int y = minY; y <= maxY; y++)
+            {
+                tiles.Add(new TileCoord(x, y));
+            }
+        }
+        return tiles.ToArray();
     }
 
     /// <summary>
@@ -337,24 +368,51 @@ public sealed class Simulation
         int colorIndex = 0
     )
     {
+        var tilesToPaint = GetRectangleTiles(start, end);
+        var affectedTiles = new HashSet<TileCoord>();
+
+        foreach (var coord in tilesToPaint)
+        {
+            var tiles = PaintTerrain(coord, terrainDefId, colorIndex);
+            foreach (var t in tiles)
+            {
+                affectedTiles.Add(t);
+            }
+        }
+
+        return affectedTiles.ToArray();
+    }
+
+    /// <summary>
+    /// Calculate all tiles in a rectangle outline.
+    /// </summary>
+    /// <param name="start">Starting corner of the rectangle</param>
+    /// <param name="end">Ending corner of the rectangle</param>
+    /// <returns>Array of all tile coordinates in the rectangle outline</returns>
+    private TileCoord[] GetRectangleOutlineTiles(TileCoord start, TileCoord end)
+    {
         int minX = Math.Min(start.X, end.X);
         int maxX = Math.Max(start.X, end.X);
         int minY = Math.Min(start.Y, end.Y);
         int maxY = Math.Max(start.Y, end.Y);
 
-        var paintedTiles = new List<TileCoord>();
+        var tiles = new HashSet<TileCoord>();
 
+        // Top and bottom edges
         for (int x = minX; x <= maxX; x++)
         {
-            for (int y = minY; y <= maxY; y++)
-            {
-                var coord = new TileCoord(x, y);
-                PaintTerrain(coord, terrainDefId, colorIndex);
-                paintedTiles.Add(coord);
-            }
+            tiles.Add(new TileCoord(x, minY));
+            tiles.Add(new TileCoord(x, maxY));
         }
 
-        return paintedTiles.ToArray();
+        // Left and right edges (excluding corners already added)
+        for (int y = minY + 1; y < maxY; y++)
+        {
+            tiles.Add(new TileCoord(minX, y));
+            tiles.Add(new TileCoord(maxX, y));
+        }
+
+        return tiles.ToArray();
     }
 
     /// <summary>
@@ -373,34 +431,19 @@ public sealed class Simulation
         int colorIndex = 0
     )
     {
-        int minX = Math.Min(start.X, end.X);
-        int maxX = Math.Max(start.X, end.X);
-        int minY = Math.Min(start.Y, end.Y);
-        int maxY = Math.Max(start.Y, end.Y);
+        var tilesToPaint = GetRectangleOutlineTiles(start, end);
+        var affectedTiles = new HashSet<TileCoord>();
 
-        var paintedTiles = new List<TileCoord>();
-
-        for (int x = minX; x <= maxX; x++)
+        foreach (var coord in tilesToPaint)
         {
-            var topCoord = new TileCoord(x, minY);
-            PaintTerrain(topCoord, terrainDefId, colorIndex);
-            paintedTiles.Add(topCoord);
-            var bottomCoord = new TileCoord(x, maxY);
-            PaintTerrain(bottomCoord, terrainDefId, colorIndex);
-            paintedTiles.Add(bottomCoord);
+            var tiles = PaintTerrain(coord, terrainDefId, colorIndex);
+            foreach (var t in tiles)
+            {
+                affectedTiles.Add(t);
+            }
         }
 
-        for (int y = minY + 1; y < maxY; y++)
-        {
-            var leftCoord = new TileCoord(minX, y);
-            PaintTerrain(leftCoord, terrainDefId, colorIndex);
-            paintedTiles.Add(leftCoord);
-            var rightCoord = new TileCoord(maxX, y);
-            PaintTerrain(rightCoord, terrainDefId, colorIndex);
-            paintedTiles.Add(rightCoord);
-        }
-
-        return paintedTiles.ToArray();
+        return affectedTiles.ToArray();
     }
 
     /// <summary>
@@ -494,6 +537,80 @@ public sealed class Simulation
         }
 
         return GetTilesWithNeighbors(new[] { coord });
+    }
+
+    /// <summary>
+    /// Flood delete all connected tiles that match the starting tile.
+    /// Applies DeleteAtTile logic to each tile in the contiguous area.
+    /// Returns all affected tiles including neighbors for autotiling updates.
+    /// </summary>
+    /// <param name="start">Starting tile coordinate for the flood delete</param>
+    /// <returns>Array of all tiles affected by the flood delete (deleted tiles and their neighbors)</returns>
+    public TileCoord[] FloodDelete(TileCoord start)
+    {
+        var tilesToDelete = GetFloodTiles(start);
+        var affectedTiles = new HashSet<TileCoord>();
+
+        foreach (var coord in tilesToDelete)
+        {
+            var tiles = DeleteAtTile(coord);
+            foreach (var t in tiles)
+            {
+                affectedTiles.Add(t);
+            }
+        }
+
+        return affectedTiles.ToArray();
+    }
+
+    /// <summary>
+    /// Delete all tiles in a filled rectangle.
+    /// Applies DeleteAtTile logic to each tile in the rectangle.
+    /// Returns all affected tiles including neighbors for autotiling updates.
+    /// </summary>
+    /// <param name="start">Starting corner of the rectangle</param>
+    /// <param name="end">Ending corner of the rectangle</param>
+    /// <returns>Array of all tiles affected by the delete (deleted tiles and their neighbors)</returns>
+    public TileCoord[] DeleteRectangle(TileCoord start, TileCoord end)
+    {
+        var tilesToDelete = GetRectangleTiles(start, end);
+        var affectedTiles = new HashSet<TileCoord>();
+
+        foreach (var coord in tilesToDelete)
+        {
+            var tiles = DeleteAtTile(coord);
+            foreach (var t in tiles)
+            {
+                affectedTiles.Add(t);
+            }
+        }
+
+        return affectedTiles.ToArray();
+    }
+
+    /// <summary>
+    /// Delete all tiles in a rectangle outline.
+    /// Applies DeleteAtTile logic to each tile in the outline.
+    /// Returns all affected tiles including neighbors for autotiling updates.
+    /// </summary>
+    /// <param name="start">Starting corner of the rectangle</param>
+    /// <param name="end">Ending corner of the rectangle</param>
+    /// <returns>Array of all tiles affected by the delete (deleted tiles and their neighbors)</returns>
+    public TileCoord[] DeleteRectangleOutline(TileCoord start, TileCoord end)
+    {
+        var tilesToDelete = GetRectangleOutlineTiles(start, end);
+        var affectedTiles = new HashSet<TileCoord>();
+
+        foreach (var coord in tilesToDelete)
+        {
+            var tiles = DeleteAtTile(coord);
+            foreach (var t in tiles)
+            {
+                affectedTiles.Add(t);
+            }
+        }
+
+        return affectedTiles.ToArray();
     }
 
     /// <summary>

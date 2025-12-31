@@ -249,25 +249,28 @@ public partial class GameRoot : Node2D
             {
                 if (mb.Pressed)
                 {
-                    if (
-                        BuildToolState.Mode == BuildToolMode.PlaceTerrain
-                        && BuildToolState.SelectedTerrainDefId.HasValue
-                    )
+                    if (BuildToolState.Mode == BuildToolMode.PlaceTerrain)
                     {
                         _isPaintingTerrain = true;
-                        var tilesToUpdate = _sim.PaintTerrain(
-                            tileCoord,
-                            BuildToolState.SelectedTerrainDefId.Value,
-                            BuildToolState.SelectedColorIndex
-                        );
+                        TileCoord[] tilesToUpdate;
+                        if (BuildToolState.SelectedTerrainDefId.HasValue)
+                        {
+                            tilesToUpdate = _sim.PaintTerrain(
+                                tileCoord,
+                                BuildToolState.SelectedTerrainDefId.Value,
+                                BuildToolState.SelectedColorIndex
+                            );
+                        }
+                        else
+                        {
+                            tilesToUpdate = _sim.DeleteAtTile(tileCoord);
+                        }
                         SyncTiles(tilesToUpdate);
                         return;
                     }
                     if (
-                        (
-                            BuildToolState.Mode == BuildToolMode.FillSquare
-                            || BuildToolState.Mode == BuildToolMode.OutlineSquare
-                        ) && BuildToolState.SelectedTerrainDefId.HasValue
+                        BuildToolState.Mode == BuildToolMode.FillSquare
+                        || BuildToolState.Mode == BuildToolMode.OutlineSquare
                     )
                     {
                         _brushDragStart = tileCoord;
@@ -275,16 +278,21 @@ public partial class GameRoot : Node2D
                         QueueRedraw();
                         return;
                     }
-                    if (
-                        BuildToolState.Mode == BuildToolMode.FloodFill
-                        && BuildToolState.SelectedTerrainDefId.HasValue
-                    )
+                    if (BuildToolState.Mode == BuildToolMode.FloodFill)
                     {
-                        var tilesToUpdate = _sim.FloodFill(
-                            tileCoord,
-                            BuildToolState.SelectedTerrainDefId.Value,
-                            BuildToolState.SelectedColorIndex
-                        );
+                        TileCoord[] tilesToUpdate;
+                        if (BuildToolState.SelectedTerrainDefId.HasValue)
+                        {
+                            tilesToUpdate = _sim.FloodFill(
+                                tileCoord,
+                                BuildToolState.SelectedTerrainDefId.Value,
+                                BuildToolState.SelectedColorIndex
+                            );
+                        }
+                        else
+                        {
+                            tilesToUpdate = _sim.FloodDelete(tileCoord);
+                        }
                         SyncTiles(tilesToUpdate);
                         return;
                     }
@@ -297,28 +305,49 @@ public partial class GameRoot : Node2D
                             BuildToolState.Mode == BuildToolMode.FillSquare
                             || BuildToolState.Mode == BuildToolMode.OutlineSquare
                         )
-                        && BuildToolState.SelectedTerrainDefId.HasValue
                         && _brushDragStart.HasValue
                         && _brushDragCurrent.HasValue
                     )
                     {
                         if (BuildToolState.Mode == BuildToolMode.FillSquare)
                         {
-                            FillRectangle(
-                                _brushDragStart.Value,
-                                _brushDragCurrent.Value,
-                                BuildToolState.SelectedTerrainDefId.Value,
-                                BuildToolState.SelectedColorIndex
-                            );
+                            if (BuildToolState.SelectedTerrainDefId.HasValue)
+                            {
+                                FillRectangle(
+                                    _brushDragStart.Value,
+                                    _brushDragCurrent.Value,
+                                    BuildToolState.SelectedTerrainDefId.Value,
+                                    BuildToolState.SelectedColorIndex
+                                );
+                            }
+                            else
+                            {
+                                var tilesToUpdate = _sim.DeleteRectangle(
+                                    _brushDragStart.Value,
+                                    _brushDragCurrent.Value
+                                );
+                                SyncTiles(tilesToUpdate);
+                            }
                         }
                         else if (BuildToolState.Mode == BuildToolMode.OutlineSquare)
                         {
-                            OutlineRectangle(
-                                _brushDragStart.Value,
-                                _brushDragCurrent.Value,
-                                BuildToolState.SelectedTerrainDefId.Value,
-                                BuildToolState.SelectedColorIndex
-                            );
+                            if (BuildToolState.SelectedTerrainDefId.HasValue)
+                            {
+                                OutlineRectangle(
+                                    _brushDragStart.Value,
+                                    _brushDragCurrent.Value,
+                                    BuildToolState.SelectedTerrainDefId.Value,
+                                    BuildToolState.SelectedColorIndex
+                                );
+                            }
+                            else
+                            {
+                                var tilesToUpdate = _sim.DeleteRectangleOutline(
+                                    _brushDragStart.Value,
+                                    _brushDragCurrent.Value
+                                );
+                                SyncTiles(tilesToUpdate);
+                            }
                         }
                         _brushDragStart = null;
                         _brushDragCurrent = null;
@@ -349,13 +378,6 @@ public partial class GameRoot : Node2D
                 {
                     GD.PrintErr($"Invalid object placement: {ex.Message}");
                 }
-                return;
-            }
-
-            if (BuildToolState.Mode == BuildToolMode.Delete)
-            {
-                var tilesToUpdate = _sim.DeleteAtTile(tileCoord);
-                SyncTiles(tilesToUpdate);
                 return;
             }
 
@@ -419,19 +441,23 @@ public partial class GameRoot : Node2D
 
         if (@event is InputEventMouseMotion)
         {
-            if (
-                _isPaintingTerrain
-                && BuildToolState.Mode == BuildToolMode.PlaceTerrain
-                && BuildToolState.SelectedTerrainDefId.HasValue
-            )
+            if (_isPaintingTerrain && BuildToolState.Mode == BuildToolMode.PlaceTerrain)
             {
                 var localPos = GetLocalMousePosition();
                 var tileCoord = ScreenToTileCoord(localPos);
-                var tilesToUpdate = _sim.PaintTerrain(
-                    tileCoord,
-                    BuildToolState.SelectedTerrainDefId.Value,
-                    BuildToolState.SelectedColorIndex
-                );
+                TileCoord[] tilesToUpdate;
+                if (BuildToolState.SelectedTerrainDefId.HasValue)
+                {
+                    tilesToUpdate = _sim.PaintTerrain(
+                        tileCoord,
+                        BuildToolState.SelectedTerrainDefId.Value,
+                        BuildToolState.SelectedColorIndex
+                    );
+                }
+                else
+                {
+                    tilesToUpdate = _sim.DeleteAtTile(tileCoord);
+                }
                 SyncTiles(tilesToUpdate);
                 return;
             }
@@ -439,9 +465,7 @@ public partial class GameRoot : Node2D
                 (
                     BuildToolState.Mode == BuildToolMode.FillSquare
                     || BuildToolState.Mode == BuildToolMode.OutlineSquare
-                )
-                && BuildToolState.SelectedTerrainDefId.HasValue
-                && _brushDragStart.HasValue
+                ) && _brushDragStart.HasValue
             )
             {
                 var localPos = GetLocalMousePosition();
@@ -572,21 +596,25 @@ public partial class GameRoot : Node2D
     {
         var rect = new Rect2(coord.X * TileSize, coord.Y * TileSize, TileSize, TileSize);
 
-        if (
-            BuildToolState.Mode == BuildToolMode.PlaceTerrain
-            && BuildToolState.SelectedTerrainDefId.HasValue
-        )
+        if (BuildToolState.Mode == BuildToolMode.PlaceTerrain)
         {
-            var color = _currentPalette[BuildToolState.SelectedColorIndex];
-            color.A = 0.5f;
-            DrawRect(rect, color, true);
+            if (BuildToolState.SelectedTerrainDefId.HasValue)
+            {
+                var color = _currentPalette[BuildToolState.SelectedColorIndex];
+                color.A = 0.5f;
+                DrawRect(rect, color, true);
+            }
+            else
+            {
+                var color = new Color(1.0f, 0.0f, 0.0f, 0.3f);
+                DrawRect(rect, color, true);
+            }
         }
         else if (
             (
                 BuildToolState.Mode == BuildToolMode.FillSquare
                 || BuildToolState.Mode == BuildToolMode.OutlineSquare
             )
-            && BuildToolState.SelectedTerrainDefId.HasValue
             && _brushDragStart.HasValue
             && _brushDragCurrent.HasValue
         )
@@ -595,8 +623,16 @@ public partial class GameRoot : Node2D
             int x1 = Mathf.Max(_brushDragStart.Value.X, _brushDragCurrent.Value.X);
             int y0 = Mathf.Min(_brushDragStart.Value.Y, _brushDragCurrent.Value.Y);
             int y1 = Mathf.Max(_brushDragStart.Value.Y, _brushDragCurrent.Value.Y);
-            var color = _currentPalette[BuildToolState.SelectedColorIndex];
-            color.A = 0.3f;
+            Color color;
+            if (BuildToolState.SelectedTerrainDefId.HasValue)
+            {
+                color = _currentPalette[BuildToolState.SelectedColorIndex];
+                color.A = 0.3f;
+            }
+            else
+            {
+                color = new Color(1.0f, 0.0f, 0.0f, 0.3f);
+            }
             var previewRect = new Rect2(
                 x0 * TileSize,
                 y0 * TileSize,
@@ -610,6 +646,20 @@ public partial class GameRoot : Node2D
             DrawRect(previewRect, Colors.White, false, 2f);
             return;
         }
+        else if (BuildToolState.Mode == BuildToolMode.FloodFill)
+        {
+            if (BuildToolState.SelectedTerrainDefId.HasValue)
+            {
+                var color = _currentPalette[BuildToolState.SelectedColorIndex];
+                color.A = 0.5f;
+                DrawRect(rect, color, true);
+            }
+            else
+            {
+                var color = new Color(1.0f, 0.0f, 0.0f, 0.3f);
+                DrawRect(rect, color, true);
+            }
+        }
         else if (
             BuildToolState.Mode == BuildToolMode.PlaceObject
             && BuildToolState.SelectedObjectDefId.HasValue
@@ -617,11 +667,6 @@ public partial class GameRoot : Node2D
         {
             var color = _currentPalette[BuildToolState.SelectedColorIndex];
             color.A = 0.5f;
-            DrawRect(rect, color, true);
-        }
-        else if (BuildToolState.Mode == BuildToolMode.Delete)
-        {
-            var color = new Color(1.0f, 0.0f, 0.0f, 0.3f);
             DrawRect(rect, color, true);
         }
 
