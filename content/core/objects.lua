@@ -33,14 +33,6 @@ Objects = {
         walkable = true,  -- pawn stands in the shower
         spriteKey = "shower"
     },
-
-    -- Decorations (non-interactive, walkable)
-    Plant = {
-        walkable = true,       -- can walk through
-        interactable = false,  -- no interaction
-        spriteKey = "plant"
-    },
-
     Castle = {
         satisfiesNeed = "Fun",
         satisfactionAmount = 40,
@@ -49,12 +41,6 @@ Objects = {
         walkable = false,
         interactable = true,
         spriteKey = "castle"
-    },
-
-    Lamp = {
-        walkable = true,
-        interactable = false,
-        spriteKey = "lamp"
     },
 }
 
