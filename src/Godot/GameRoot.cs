@@ -108,6 +108,8 @@ public partial class GameRoot : Node2D
 
     public override void _Ready()
     {
+        ZIndex = 2;
+
         var contentPath = ProjectSettings.GlobalizePath("res://content");
         var content = ContentLoader.LoadAll(contentPath);
 
