@@ -108,14 +108,14 @@ public class UseAreasTests
         // Arrange: TV at (2,1) with multiple use areas
         var builder = new TestSimulationBuilder();
         var funId = builder.DefineNeed(key: "Fun", decayPerTick: 0.001f);
-        var tvDefId = builder.DefineObject(
-            key: "TV",
+        var castleDefId = builder.DefineObject(
+            key: "Castle",
             satisfiesNeedId: funId,
             satisfactionAmount: 40f,
             interactionDuration: 30,
             useAreas: new List<(int, int)> { (-1, 0), (1, 0), (0, 1) }
         );
-        builder.AddObject(tvDefId, 2, 1);
+        builder.AddObject(castleDefId, 2, 1);
         builder.AddPawn("TestPawn", 0, 4, new Dictionary<int, float> { { funId, 10f } });
         var sim = builder.Build();
 

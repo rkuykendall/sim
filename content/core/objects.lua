@@ -10,6 +10,20 @@ Objects = {
         grantsBuff = "GoodMeal",
         spriteKey = "fridge"
     },
+    Oven = {
+        satisfiesNeed = "Hunger",
+        satisfactionAmount = 70,
+        interactionDuration = 300,
+        grantsBuff = "GoodMeal",
+        spriteKey = "oven"
+    },
+    Stove = {
+        satisfiesNeed = "Hunger",
+        satisfactionAmount = 60,
+        interactionDuration = 250,
+        grantsBuff = "GoodMeal",
+        spriteKey = "stove"
+    },
     Bed = {
         satisfiesNeed = "Energy",
         satisfactionAmount = 80,
@@ -18,20 +32,13 @@ Objects = {
         walkable = true,  -- pawn stands on the bed to sleep
         spriteKey = "bed"
     },
-    TV = {
-        satisfiesNeed = "Fun",
-        satisfactionAmount = 40,
-        interactionDuration = 300,
-        grantsBuff = "HadFun",
-        spriteKey = "tv"
-    },
-    Shower = {
+    Sink = {
         satisfiesNeed = "Hygiene",
         satisfactionAmount = 60,
         interactionDuration = 200,
         grantsBuff = "FeelingFresh",
-        walkable = true,  -- pawn stands in the shower
-        spriteKey = "shower"
+        walkable = true,  -- pawn stands in the sink
+        spriteKey = "sink"
     },
     Castle = {
         satisfiesNeed = "Fun",

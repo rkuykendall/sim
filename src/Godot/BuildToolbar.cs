@@ -334,17 +334,26 @@ public partial class BuildToolbar : HBoxContainer
             return originalTexture;
 
         // The 1x1 tile is in the lower-left corner
-        // Extract 16x16 region from position (0, height-16)
-        int tileSize = 16;
-        int sourceY = image.GetHeight() - tileSize;
+        // Extract source tile region from position (0, height - SourceTileSize)
+        int sourceY = image.GetHeight() - RenderingConstants.SourceTileSize;
 
         // Create a new image for the cropped region
-        var croppedImage = Image.CreateEmpty(tileSize, tileSize, false, image.GetFormat());
+        var croppedImage = Image.CreateEmpty(
+            RenderingConstants.SourceTileSize,
+            RenderingConstants.SourceTileSize,
+            false,
+            image.GetFormat()
+        );
 
-        // Copy the lower-left 16x16 pixels
+        // Copy the lower-left source tile pixels
         croppedImage.BlitRect(
             image,
-            new Rect2I(0, sourceY, tileSize, tileSize),
+            new Rect2I(
+                0,
+                sourceY,
+                RenderingConstants.SourceTileSize,
+                RenderingConstants.SourceTileSize
+            ),
             new Vector2I(0, 0)
         );
 
@@ -360,14 +369,21 @@ public partial class BuildToolbar : HBoxContainer
         if (image == null)
             return originalTexture;
 
-        // Extract top-left 16x16 region (first variant in 2x2 layout)
-        int tileSize = 16;
-
+        // Extract top-left source tile region (first variant in 2x2 layout)
         // Create a new image for the cropped region
-        var croppedImage = Image.CreateEmpty(tileSize, tileSize, false, image.GetFormat());
+        var croppedImage = Image.CreateEmpty(
+            RenderingConstants.SourceTileSize,
+            RenderingConstants.SourceTileSize,
+            false,
+            image.GetFormat()
+        );
 
-        // Copy the top-left 16x16 pixels
-        croppedImage.BlitRect(image, new Rect2I(0, 0, tileSize, tileSize), new Vector2I(0, 0));
+        // Copy the top-left source tile pixels
+        croppedImage.BlitRect(
+            image,
+            new Rect2I(0, 0, RenderingConstants.SourceTileSize, RenderingConstants.SourceTileSize),
+            new Vector2I(0, 0)
+        );
 
         return ImageTexture.CreateFromImage(croppedImage);
     }

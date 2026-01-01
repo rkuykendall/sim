@@ -12,11 +12,8 @@ public partial class GameRoot : Node2D
     private Simulation _sim = null!;
     private float _accumulator = 0f;
     private float _tickDelta;
-    private const int TileSize = 32;
     private const float PawnHitboxSize = 24f;
     private const float ObjectHitboxSize = 28f;
-    private const int AtlasTileSize = 16;
-    private const int VariantsPerRow = 2;
 
     private readonly Dictionary<int, Node2D> _pawnNodes = new();
     private readonly Dictionary<int, Node2D> _objectNodes = new();
@@ -108,7 +105,7 @@ public partial class GameRoot : Node2D
 
     public override void _Ready()
     {
-        ZIndex = 2;
+        ZIndex = ZIndexConstants.UIOverlay;
 
         var contentPath = ProjectSettings.GlobalizePath("res://content");
         var content = ContentLoader.LoadAll(contentPath);
@@ -186,8 +183,8 @@ public partial class GameRoot : Node2D
             _camera = GetNodeOrNull<Camera2D>(CameraPath);
             if (_camera != null)
             {
-                var worldCenterX = (_sim.World.Width * TileSize) / 2f;
-                var worldCenterY = (_sim.World.Height * TileSize) / 2f;
+                var worldCenterX = (_sim.World.Width * RenderingConstants.RenderedTileSize) / 2f;
+                var worldCenterY = (_sim.World.Height * RenderingConstants.RenderedTileSize) / 2f;
                 _camera.Position = new Vector2(worldCenterX, worldCenterY);
             }
         }
@@ -504,8 +501,8 @@ public partial class GameRoot : Node2D
     private TileCoord ScreenToTileCoord(Vector2 screenPos)
     {
         return new TileCoord(
-            Mathf.FloorToInt(screenPos.X / TileSize),
-            Mathf.FloorToInt(screenPos.Y / TileSize)
+            Mathf.FloorToInt(screenPos.X / RenderingConstants.RenderedTileSize),
+            Mathf.FloorToInt(screenPos.Y / RenderingConstants.RenderedTileSize)
         );
     }
 
@@ -533,12 +530,12 @@ public partial class GameRoot : Node2D
                     terrainDef.SpriteKey,
                     terrainDef.BlocksLight
                 ),
-                Scale = new Vector2(2, 2),
+                Scale = new Vector2(RenderingConstants.SpriteScale, RenderingConstants.SpriteScale),
             };
 
             if (terrainDef.BlocksLight)
             {
-                layer.ZIndex = 1;
+                layer.ZIndex = ZIndexConstants.TerrainBlockingAndPawns;
                 layer.YSortEnabled = true;
                 // TileMapLayer uses tile coordinates for y_sort_origin, not pixels. Each tile is 16x16 in the texture, scaled 2x to 32x32. MapToLocal returns center of tile, so to sort by bottom edge: offset from center (Y=8) to bottom (Y=16) = 8 pixels in local space
                 layer.YSortOrigin = 4;
@@ -546,7 +543,7 @@ public partial class GameRoot : Node2D
             }
             else
             {
-                layer.ZIndex = 0;
+                layer.ZIndex = ZIndexConstants.TerrainNonBlocking;
                 _tilesRoot.AddChild(layer);
             }
 
@@ -563,9 +560,12 @@ public partial class GameRoot : Node2D
                 var coord = new TileCoord(x, y);
                 var tileNode = new Node2D
                 {
-                    Position = new Vector2(x * TileSize, y * TileSize),
+                    Position = new Vector2(
+                        x * RenderingConstants.RenderedTileSize,
+                        y * RenderingConstants.RenderedTileSize
+                    ),
                     Name = $"Tile_{x}_{y}",
-                    ZIndex = -10,
+                    ZIndex = ZIndexConstants.TileNodes,
                 };
                 _tilesRoot.AddChild(tileNode);
 
@@ -575,10 +575,16 @@ public partial class GameRoot : Node2D
                 var baseTileSprite = new Sprite2D
                 {
                     Name = "BaseTileSprite",
-                    Position = new Vector2(TileSize / 2, TileSize / 2),
+                    Position = new Vector2(
+                        RenderingConstants.RenderedTileSize / 2,
+                        RenderingConstants.RenderedTileSize / 2
+                    ),
                     Centered = true,
                     Visible = false,
-                    Scale = new Vector2(2, 2),
+                    Scale = new Vector2(
+                        RenderingConstants.SpriteScale,
+                        RenderingConstants.SpriteScale
+                    ),
                 };
                 baseLayer.AddChild(baseTileSprite);
 
@@ -588,10 +594,16 @@ public partial class GameRoot : Node2D
                 var overlayTileSprite = new Sprite2D
                 {
                     Name = "OverlayTileSprite",
-                    Position = new Vector2(TileSize / 2, TileSize / 2),
+                    Position = new Vector2(
+                        RenderingConstants.RenderedTileSize / 2,
+                        RenderingConstants.RenderedTileSize / 2
+                    ),
                     Centered = true,
                     Visible = false,
-                    Scale = new Vector2(2, 2),
+                    Scale = new Vector2(
+                        RenderingConstants.SpriteScale,
+                        RenderingConstants.SpriteScale
+                    ),
                 };
                 overlayLayer.AddChild(overlayTileSprite);
 
@@ -605,7 +617,12 @@ public partial class GameRoot : Node2D
 
     private void DrawHoverPreview(TileCoord coord)
     {
-        var rect = new Rect2(coord.X * TileSize, coord.Y * TileSize, TileSize, TileSize);
+        var rect = new Rect2(
+            coord.X * RenderingConstants.RenderedTileSize,
+            coord.Y * RenderingConstants.RenderedTileSize,
+            RenderingConstants.RenderedTileSize,
+            RenderingConstants.RenderedTileSize
+        );
 
         if (BuildToolState.Mode == BuildToolMode.PlaceTerrain)
         {
@@ -645,10 +662,10 @@ public partial class GameRoot : Node2D
                 color = new Color(1.0f, 0.0f, 0.0f, 0.3f);
             }
             var previewRect = new Rect2(
-                x0 * TileSize,
-                y0 * TileSize,
-                (x1 - x0 + 1) * TileSize,
-                (y1 - y0 + 1) * TileSize
+                x0 * RenderingConstants.RenderedTileSize,
+                y0 * RenderingConstants.RenderedTileSize,
+                (x1 - x0 + 1) * RenderingConstants.RenderedTileSize,
+                (y1 - y0 + 1) * RenderingConstants.RenderedTileSize
             );
             if (BuildToolState.Mode == BuildToolMode.FillSquare)
             {
@@ -774,10 +791,10 @@ public partial class GameRoot : Node2D
                     foreach (var (dx, dy) in objDef.UseAreas)
                     {
                         var useAreaRect = new Rect2(
-                            (obj.X + dx) * TileSize,
-                            (obj.Y + dy) * TileSize,
-                            TileSize,
-                            TileSize
+                            (obj.X + dx) * RenderingConstants.RenderedTileSize,
+                            (obj.Y + dy) * RenderingConstants.RenderedTileSize,
+                            RenderingConstants.RenderedTileSize,
+                            RenderingConstants.RenderedTileSize
                         );
                         DrawRect(useAreaRect, new Color(0, 1, 0, 0.2f), true);
                         DrawRect(useAreaRect, Colors.Yellow, false, 1f);
@@ -788,8 +805,10 @@ public partial class GameRoot : Node2D
             foreach (var pawn in _lastSnapshot.Pawns)
             {
                 var pawnCenter = new Vector2(
-                    pawn.X * TileSize + TileSize / 2,
-                    pawn.Y * TileSize + TileSize / 2
+                    pawn.X * RenderingConstants.RenderedTileSize
+                        + RenderingConstants.RenderedTileSize / 2,
+                    pawn.Y * RenderingConstants.RenderedTileSize
+                        + RenderingConstants.RenderedTileSize / 2
                 );
 
                 if (pawn.CurrentPath != null && pawn.CurrentPath.Count > 0)
@@ -799,12 +818,16 @@ public partial class GameRoot : Node2D
                         var from = pawn.CurrentPath[i];
                         var to = pawn.CurrentPath[i + 1];
                         var fromPos = new Vector2(
-                            from.X * TileSize + TileSize / 2,
-                            from.Y * TileSize + TileSize / 2
+                            from.X * RenderingConstants.RenderedTileSize
+                                + RenderingConstants.RenderedTileSize / 2,
+                            from.Y * RenderingConstants.RenderedTileSize
+                                + RenderingConstants.RenderedTileSize / 2
                         );
                         var toPos = new Vector2(
-                            to.X * TileSize + TileSize / 2,
-                            to.Y * TileSize + TileSize / 2
+                            to.X * RenderingConstants.RenderedTileSize
+                                + RenderingConstants.RenderedTileSize / 2,
+                            to.Y * RenderingConstants.RenderedTileSize
+                                + RenderingConstants.RenderedTileSize / 2
                         );
                         DrawLine(fromPos, toPos, Colors.Orange, 2f);
                     }
@@ -813,8 +836,10 @@ public partial class GameRoot : Node2D
                     {
                         var nextTile = pawn.CurrentPath[pawn.PathIndex];
                         var nextPos = new Vector2(
-                            nextTile.X * TileSize + TileSize / 2,
-                            nextTile.Y * TileSize + TileSize / 2
+                            nextTile.X * RenderingConstants.RenderedTileSize
+                                + RenderingConstants.RenderedTileSize / 2,
+                            nextTile.Y * RenderingConstants.RenderedTileSize
+                                + RenderingConstants.RenderedTileSize / 2
                         );
                         DrawLine(pawnCenter, nextPos, Colors.White, 2f);
                     }
@@ -823,10 +848,10 @@ public partial class GameRoot : Node2D
                 if (pawn.TargetTile.HasValue)
                 {
                     var targetRect = new Rect2(
-                        pawn.TargetTile.Value.X * TileSize + 4,
-                        pawn.TargetTile.Value.Y * TileSize + 4,
-                        TileSize - 8,
-                        TileSize - 8
+                        pawn.TargetTile.Value.X * RenderingConstants.RenderedTileSize + 4,
+                        pawn.TargetTile.Value.Y * RenderingConstants.RenderedTileSize + 4,
+                        RenderingConstants.RenderedTileSize - 8,
+                        RenderingConstants.RenderedTileSize - 8
                     );
                     DrawRect(targetRect, new Color(1, 0.5f, 0, 0.3f), true);
                     DrawRect(targetRect, Colors.Orange, false, 2f);
@@ -1003,11 +1028,20 @@ public partial class GameRoot : Node2D
 
         if (terrainDef.VariantCount > 1)
         {
-            int atlasX = (variantIndex % VariantsPerRow) * AtlasTileSize;
-            int atlasY = (variantIndex / VariantsPerRow) * AtlasTileSize;
+            int atlasX =
+                (variantIndex % RenderingConstants.VariantsPerRow)
+                * RenderingConstants.SourceTileSize;
+            int atlasY =
+                (variantIndex / RenderingConstants.VariantsPerRow)
+                * RenderingConstants.SourceTileSize;
 
             sprite.RegionEnabled = true;
-            sprite.RegionRect = new Rect2(atlasX, atlasY, AtlasTileSize, AtlasTileSize);
+            sprite.RegionRect = new Rect2(
+                atlasX,
+                atlasY,
+                RenderingConstants.SourceTileSize,
+                RenderingConstants.SourceTileSize
+            );
         }
         else
         {
@@ -1079,8 +1113,10 @@ public partial class GameRoot : Node2D
         var worldWidth = _sim.World.Width;
         var worldHeight = _sim.World.Height;
 
-        var centerX = tileX * TileSize + TileSize / 2;
-        var centerY = tileY * TileSize + TileSize / 2;
+        var centerX =
+            tileX * RenderingConstants.RenderedTileSize + RenderingConstants.RenderedTileSize / 2;
+        var centerY =
+            tileY * RenderingConstants.RenderedTileSize + RenderingConstants.RenderedTileSize / 2;
 
         bool onLeftEdge = tileX == 0;
         bool onRightEdge = tileX == worldWidth - 1;
@@ -1088,22 +1124,34 @@ public partial class GameRoot : Node2D
         bool onBottomEdge = tileY == worldHeight - 1;
 
         if (onLeftEdge && onTopEdge)
-            return new Vector2(centerX - TileSize, centerY - TileSize);
+            return new Vector2(
+                centerX - RenderingConstants.RenderedTileSize,
+                centerY - RenderingConstants.RenderedTileSize
+            );
         if (onRightEdge && onTopEdge)
-            return new Vector2(centerX + TileSize, centerY - TileSize);
+            return new Vector2(
+                centerX + RenderingConstants.RenderedTileSize,
+                centerY - RenderingConstants.RenderedTileSize
+            );
         if (onLeftEdge && onBottomEdge)
-            return new Vector2(centerX - TileSize, centerY + TileSize);
+            return new Vector2(
+                centerX - RenderingConstants.RenderedTileSize,
+                centerY + RenderingConstants.RenderedTileSize
+            );
         if (onRightEdge && onBottomEdge)
-            return new Vector2(centerX + TileSize, centerY + TileSize);
+            return new Vector2(
+                centerX + RenderingConstants.RenderedTileSize,
+                centerY + RenderingConstants.RenderedTileSize
+            );
 
         if (onLeftEdge)
-            return new Vector2(centerX - TileSize, centerY);
+            return new Vector2(centerX - RenderingConstants.RenderedTileSize, centerY);
         if (onRightEdge)
-            return new Vector2(centerX + TileSize, centerY);
+            return new Vector2(centerX + RenderingConstants.RenderedTileSize, centerY);
         if (onTopEdge)
-            return new Vector2(centerX, centerY - TileSize);
+            return new Vector2(centerX, centerY - RenderingConstants.RenderedTileSize);
         if (onBottomEdge)
-            return new Vector2(centerX, centerY + TileSize);
+            return new Vector2(centerX, centerY + RenderingConstants.RenderedTileSize);
 
         return new Vector2(centerX, centerY);
     }
@@ -1138,8 +1186,10 @@ public partial class GameRoot : Node2D
             }
 
             var targetPosition = new Vector2(
-                pawn.X * TileSize + TileSize / 2,
-                pawn.Y * TileSize + TileSize / 2
+                pawn.X * RenderingConstants.RenderedTileSize
+                    + RenderingConstants.RenderedTileSize / 2,
+                pawn.Y * RenderingConstants.RenderedTileSize
+                    + RenderingConstants.RenderedTileSize / 2
             );
 
             if (node is PawnView pv)
@@ -1188,6 +1238,7 @@ public partial class GameRoot : Node2D
             if (!_objectNodes.TryGetValue(obj.Id.Value, out var node))
             {
                 node = ObjectScene?.Instantiate<Node2D>() ?? new Node2D();
+                node.ZIndex = ZIndexConstants.Objects;
                 _objectsRoot.GetParent().AddChild(node);
                 _objectNodes.Add(obj.Id.Value, node);
 
@@ -1205,8 +1256,10 @@ public partial class GameRoot : Node2D
             }
 
             node.Position = new Vector2(
-                obj.X * TileSize + TileSize / 2,
-                obj.Y * TileSize + TileSize / 2
+                obj.X * RenderingConstants.RenderedTileSize
+                    + RenderingConstants.RenderedTileSize / 2,
+                obj.Y * RenderingConstants.RenderedTileSize
+                    + RenderingConstants.RenderedTileSize / 2
             );
 
             if (node is ObjectView ov)

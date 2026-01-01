@@ -22,6 +22,7 @@ public partial class ObjectView : Node2D
     /// <summary>
     /// Initialize the object view with a sprite texture.
     /// Call this after instantiation if object has a sprite.
+    /// The sprite will be positioned so its bottom aligns with the bottom of the tile.
     /// </summary>
     public void InitializeWithSprite(Texture2D texture)
     {
@@ -35,15 +36,18 @@ public partial class ObjectView : Node2D
         _sprite = new Sprite2D
         {
             Texture = texture,
-            Centered = true, // Center on object position
+            Centered = true,
             Name = "Sprite",
         };
 
-        // Scale 16x16 sprite to 28x28 (object size)
-        if (texture.GetWidth() == 16)
-        {
-            _sprite.Scale = new Vector2(1.75f, 1.75f); // 16 * 1.75 = 28
-        }
+        _sprite.Scale = new Vector2(RenderingConstants.SpriteScale, RenderingConstants.SpriteScale);
+
+        // Position sprite so its bottom aligns with the bottom of the tile
+        // Since sprite is centered and scaled 2x, offset = RenderedTileSize/2 - texture height
+        _sprite.Position = new Vector2(
+            0,
+            RenderingConstants.RenderedTileSize / 2 - texture.GetHeight()
+        );
 
         AddChild(_sprite);
         _usesSprite = true;

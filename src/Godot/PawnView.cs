@@ -89,7 +89,7 @@ public partial class PawnView : Node2D
         {
             Centered = true,
             Name = "Sprite",
-            Scale = new Vector2(2f, 2f), // Scale 16x16 sprite to 32x32
+            Scale = new Vector2(RenderingConstants.SpriteScale, RenderingConstants.SpriteScale),
         };
 
         // Create sprite frames for animation

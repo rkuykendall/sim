@@ -451,24 +451,24 @@ public class PawnMovementTests
 
     /// <summary>
     /// Scenario: Two pawns want to use the SAME object (like your screenshot showing
-    /// Jordan trying to use the shower while blocked by Sam).
+    /// Jordan trying to use the sink while blocked by Sam).
     /// This tests the "object in use" logic and queuing.
     /// </summary>
     [Fact]
     public void TwoPawns_WantSameObject_OneWaitsOrFindsAlternative()
     {
-        // Arrange: 5x3 area with ONE shower, two pawns who both need hygiene
+        // Arrange: 5x3 area with ONE sink, two pawns who both need hygiene
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 2); // 5x3 area
         var hygieneId = builder.DefineNeed(key: "Hygiene", decayPerTick: 0.001f);
-        var showerDefId = builder.DefineObject(
-            key: "Shower",
+        var sinkDefId = builder.DefineObject(
+            key: "Sink",
             satisfiesNeedId: hygieneId,
             satisfactionAmount: 50f,
             interactionDuration: 40
         ); // Long interaction
-        builder.AddObject(showerDefId, 2, 1); // Shower at (2,1)
-        // Both pawns want the shower
+        builder.AddObject(sinkDefId, 2, 1); // Sink at (2,1)
+        // Both pawns want the sink
         builder.AddPawn("Sam", 0, 1, new Dictionary<int, float> { { hygieneId, 5f } });
         builder.AddPawn("Jordan", 4, 1, new Dictionary<int, float> { { hygieneId, 5f } });
         var sim = builder.Build();
@@ -480,8 +480,8 @@ public class PawnMovementTests
 
         var samPositions = new List<TileCoord>();
         var jordanPositions = new List<TileCoord>();
-        bool samShowered = false;
-        bool jordanShowered = false;
+        bool samSinked = false;
+        bool jordanSinked = false;
 
         // Act
         for (int tick = 0; tick < 500; tick++)
@@ -500,9 +500,9 @@ public class PawnMovementTests
             var jordanHygiene = sim.GetNeedValue(jordan.Value, "Hygiene");
 
             if (samHygiene > 40)
-                samShowered = true;
+                samSinked = true;
             if (jordanHygiene > 40)
-                jordanShowered = true;
+                jordanSinked = true;
 
             if (tick % 50 == 0 || tick < 10)
             {
@@ -540,10 +540,10 @@ public class PawnMovementTests
         _output.WriteLine(
             $"\nLast 100 ticks - Sam unique positions: {uniqueSam.Count}, Jordan unique positions: {uniqueJordan.Count}"
         );
-        _output.WriteLine($"Sam showered: {samShowered}, Jordan showered: {jordanShowered}");
+        _output.WriteLine($"Sam sinked: {samSinked}, Jordan sinked: {jordanSinked}");
 
-        // Both should eventually shower (one waits for the other, or they take turns)
-        Assert.True(samShowered || jordanShowered, "Neither pawn was able to use the shower");
+        // Both should eventually sink (one waits for the other, or they take turns)
+        Assert.True(samSinked || jordanSinked, "Neither pawn was able to use the sink");
 
         // At least one pawn should not be stuck in place forever
         Assert.True(
