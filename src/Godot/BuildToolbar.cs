@@ -63,6 +63,10 @@ public partial class BuildToolbar : HBoxContainer
             return;
         }
 
+        // Select first terrain by default
+        var firstTerrain = content.Terrains.OrderBy(kv => kv.Key).FirstOrDefault();
+        BuildToolState.SelectedTerrainDefId = firstTerrain.Key;
+
         CreateColorAndToolButtons();
         RebuildOptions();
         UpdateAllButtons();
@@ -253,36 +257,6 @@ public partial class BuildToolbar : HBoxContainer
             var button = CreateOptionButton(id, spriteKey, name, isObject, isDelete);
             _optionButtons.Add(button);
             _optionsContainer?.AddChild(button);
-        }
-
-        // Auto-select first option if none selected, but do not trigger if already selected
-        if (optionsList.Count > 0)
-        {
-            if (
-                BuildToolState.Mode == BuildToolMode.PlaceObject
-                && !BuildToolState.SelectedObjectDefId.HasValue
-            )
-            {
-                BuildToolState.SelectedObjectDefId = optionsList[0].id;
-                UpdateAllButtons();
-            }
-            else if (
-                (
-                    BuildToolState.Mode == BuildToolMode.PlaceTerrain
-                    || BuildToolState.Mode == BuildToolMode.FillSquare
-                    || BuildToolState.Mode == BuildToolMode.OutlineSquare
-                    || BuildToolState.Mode == BuildToolMode.FloodFill
-                ) && !BuildToolState.SelectedTerrainDefId.HasValue
-            )
-            {
-                // Find the first terrain option (skip delete option)
-                var firstTerrain = optionsList.FirstOrDefault(opt => !opt.isDelete);
-                if (firstTerrain.id != 0 || _content.Terrains.ContainsKey(0))
-                {
-                    BuildToolState.SelectedTerrainDefId = firstTerrain.id;
-                    UpdateAllButtons();
-                }
-            }
         }
     }
 
