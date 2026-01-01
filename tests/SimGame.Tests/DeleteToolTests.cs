@@ -29,7 +29,10 @@ public class DeleteToolTests
         Assert.Equal(pathId, tile.OverlayTerrainTypeId);
 
         // Act: First delete - should remove object only
-        sim.DeleteAtTile(new TileCoord(2, 2));
+        var tilesToUpdate = sim.DeleteAtTile(new TileCoord(2, 2));
+
+        Assert.Equal(9, tilesToUpdate.Length);
+        Assert.Contains(new TileCoord(2, 2), tilesToUpdate);
 
         // Assert: Object removed, path and grass remain
         tile = sim.World.GetTile(new TileCoord(2, 2));

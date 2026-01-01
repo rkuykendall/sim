@@ -15,6 +15,8 @@ public partial class GameRoot : Node2D
     private const int TileSize = 32;
     private const float PawnHitboxSize = 24f;
     private const float ObjectHitboxSize = 28f;
+    private const int AtlasTileSize = 16;
+    private const int VariantsPerRow = 2;
 
     private readonly Dictionary<int, Node2D> _pawnNodes = new();
     private readonly Dictionary<int, Node2D> _objectNodes = new();
@@ -88,6 +90,10 @@ public partial class GameRoot : Node2D
     private Node2D _objectsRoot = null!;
     private Node2D _tilesRoot = null!;
     private Dictionary<int, ModulatableTileMapLayer> _autoTileLayers = new();
+    private Dictionary<TileCoord, (Sprite2D baseSprite, Sprite2D overlaySprite)> _tileSprites =
+        new();
+    private Dictionary<int, List<(Vector2I coord, Color color)>> _autotileUpdates = new();
+    private Dictionary<int, List<Vector2I>> _autotileClearCells = new();
     private PawnInfoPanel? _infoPanel;
     private ObjectInfoPanel? _objectInfoPanel;
     private TimeDisplay? _timeDisplay;
@@ -127,13 +133,15 @@ public partial class GameRoot : Node2D
 
         InitializeTileNodes();
 
+        var allTiles = new List<TileCoord>();
         for (int x = 0; x < _sim.World.Width; x++)
         {
             for (int y = 0; y < _sim.World.Height; y++)
             {
-                UpdateSingleTile(new TileCoord(x, y));
+                allTiles.Add(new TileCoord(x, y));
             }
         }
+        SyncTiles(allTiles.ToArray());
 
         if (!string.IsNullOrEmpty(InfoPanelPath))
             _infoPanel = GetNodeOrNull<PawnInfoPanel>(InfoPanelPath);
@@ -586,6 +594,7 @@ public partial class GameRoot : Node2D
                 overlayLayer.AddChild(overlayTileSprite);
 
                 _tileNodes[coord] = tileNode;
+                _tileSprites[coord] = (baseTileSprite, overlayTileSprite);
             }
         }
 
@@ -852,184 +861,210 @@ public partial class GameRoot : Node2D
         _infoPanel.ShowPawn(pawn, needs, buffs, _sim.Content);
     }
 
+    /// <summary>
+    /// Synchronizes tile rendering state for the specified tile coordinates.
+    /// Updates both sprite-based tiles and autotile layers.
+    /// </summary>
     private void SyncTiles(TileCoord[] coords)
     {
+        PrepareAutotileBatches();
+
         foreach (var coord in coords)
         {
-            if (_tileNodes.ContainsKey(coord))
-            {
-                UpdateSingleTile(coord);
-            }
+            SyncSingleTile(coord);
         }
+
+        ApplyAutotileBatches();
     }
 
     /// <summary>
-    /// Update a single display tile by updating both base and overlay layers.
+    /// Prepares autotile batch collections for updates.
     /// </summary>
-    private void UpdateSingleTile(TileCoord coord)
+    private void PrepareAutotileBatches()
     {
-        if (!_tileNodes.TryGetValue(coord, out var tileNode))
-            return;
-
-        UpdateBaseLayer(coord, tileNode);
-        UpdateOverlayLayer(coord, tileNode);
-    }
-
-    /// <summary>
-    /// Update the base layer which renders full-tile textures for flat terrains.
-    /// In dual-grid system, display tile at coord shows the world tile at the same coord.
-    /// </summary>
-    private void UpdateBaseLayer(TileCoord coord, Node2D tileNode)
-    {
-        var baseLayer = tileNode.GetNode<Node2D>("BaseLayer");
-        var sprite = baseLayer.GetNode<Sprite2D>("BaseTileSprite");
-        var tileMapCoord = new Vector2I(coord.X, coord.Y);
-
-        if (!_sim.World.IsInBounds(coord))
+        foreach (var (terrainId, _) in _autoTileLayers)
         {
-            sprite.Visible = false;
-            return;
-        }
-
-        var tile = _sim.World.GetTile(coord);
-
-        if (!_sim.Content.Terrains.TryGetValue(tile.BaseTerrainTypeId, out var terrainDef))
-        {
-            sprite.Visible = false;
-            return;
-        }
-
-        if (
-            terrainDef.IsAutotiling
-            && _autoTileLayers.TryGetValue(tile.BaseTerrainTypeId, out var layer)
-        )
-        {
-            sprite.Visible = false;
-            var color = _currentPalette[tile.ColorIndex];
-            var cellsArray = new Godot.Collections.Array<Vector2I> { tileMapCoord };
-            layer.SetCellsTerrainConnect(cellsArray, 0, 0, false);
-            layer.SetTileColor(tileMapCoord, color);
-        }
-        else
-        {
-            var flatTexture = SpriteResourceManager.GetTexture(terrainDef.SpriteKey);
-            if (flatTexture != null)
+            if (!_autotileUpdates.ContainsKey(terrainId))
             {
-                sprite.Texture = flatTexture;
-                sprite.Modulate = _currentPalette[tile.ColorIndex];
-
-                if (terrainDef.VariantCount > 1)
-                {
-                    int variantIndex = tile.BaseVariantIndex;
-
-                    int variantsPerRow = 2;
-                    int tileSize = 16;
-                    int atlasX = (variantIndex % variantsPerRow) * tileSize;
-                    int atlasY = (variantIndex / variantsPerRow) * tileSize;
-
-                    sprite.RegionEnabled = true;
-                    sprite.RegionRect = new Rect2(atlasX, atlasY, tileSize, tileSize);
-                }
-                else
-                {
-                    sprite.RegionEnabled = false;
-                }
-
-                sprite.Visible = true;
+                _autotileUpdates[terrainId] = new List<(Vector2I, Color)>();
+                _autotileClearCells[terrainId] = new List<Vector2I>();
             }
             else
             {
-                sprite.Visible = false;
+                _autotileUpdates[terrainId].Clear();
+                _autotileClearCells[terrainId].Clear();
             }
         }
     }
 
     /// <summary>
-    /// Update the overlay layer which renders decorative terrains (grass, walls, paths).
-    /// Supports both autotiling (TileMapLayer) and sprite-based (with variants).
+    /// Synchronizes rendering state for a single tile.
     /// </summary>
-    private void UpdateOverlayLayer(TileCoord coord, Node2D tileNode)
+    private void SyncSingleTile(TileCoord coord)
     {
-        var overlayLayer = tileNode.GetNode<Node2D>("OverlayLayer");
-        var sprite = overlayLayer.GetNode<Sprite2D>("OverlayTileSprite");
+        if (!_tileSprites.TryGetValue(coord, out var sprites))
+            return;
+
+        var (baseSprite, overlaySprite) = sprites;
+        var tile = _sim.World.GetTile(coord);
         var tileMapCoord = new Vector2I(coord.X, coord.Y);
 
-        if (!_sim.World.IsInBounds(coord))
+        // Get terrain definitions
+        _sim.Content.Terrains.TryGetValue(tile.BaseTerrainTypeId, out var baseTerrainDef);
+        TerrainDef? overlayTerrainDef = null;
+        if (tile.OverlayTerrainTypeId.HasValue)
+        {
+            _sim.Content.Terrains.TryGetValue(
+                tile.OverlayTerrainTypeId.Value,
+                out overlayTerrainDef
+            );
+        }
+
+        ProcessAutotileLayers(tile, baseTerrainDef, overlayTerrainDef, tileMapCoord);
+        UpdateTerrainSprite(
+            baseSprite,
+            baseTerrainDef,
+            tile.ColorIndex,
+            tile.BaseVariantIndex,
+            baseTerrainDef?.IsAutotiling ?? false
+        );
+        UpdateTerrainSprite(
+            overlaySprite,
+            overlayTerrainDef,
+            tile.OverlayColorIndex,
+            tile.OverlayVariantIndex,
+            overlayTerrainDef?.IsAutotiling ?? false
+        );
+    }
+
+    /// <summary>
+    /// Processes autotile layers for a tile, adding it to active layers and marking all layers for clearing.
+    /// Clearing all layers ensures SetCellsTerrainConnect properly recalculates terrain connections.
+    /// </summary>
+    private void ProcessAutotileLayers(
+        Tile tile,
+        TerrainDef? baseTerrainDef,
+        TerrainDef? overlayTerrainDef,
+        Vector2I tileMapCoord
+    )
+    {
+        // Add to active autotile layers
+        if (baseTerrainDef != null && baseTerrainDef.IsAutotiling)
+        {
+            var color = _currentPalette[tile.ColorIndex];
+            _autotileUpdates[tile.BaseTerrainTypeId].Add((tileMapCoord, color));
+        }
+
+        if (
+            overlayTerrainDef != null
+            && overlayTerrainDef.IsAutotiling
+            && tile.OverlayTerrainTypeId.HasValue
+        )
+        {
+            var color = _currentPalette[tile.OverlayColorIndex];
+            _autotileUpdates[tile.OverlayTerrainTypeId.Value].Add((tileMapCoord, color));
+        }
+
+        // Mark ALL layers for clearing to ensure SetCellsTerrainConnect properly recalculates
+        foreach (var (terrainId, _) in _autoTileLayers)
+        {
+            _autotileClearCells[terrainId].Add(tileMapCoord);
+        }
+    }
+
+    /// <summary>
+    /// Updates a terrain sprite with texture, color, and variant information.
+    /// </summary>
+    private void UpdateTerrainSprite(
+        Sprite2D sprite,
+        TerrainDef? terrainDef,
+        int colorIndex,
+        int variantIndex,
+        bool isAutotiling
+    )
+    {
+        if (terrainDef == null || isAutotiling)
         {
             sprite.Visible = false;
             return;
         }
 
-        var tile = _sim.World.GetTile(coord);
+        var texture = SpriteResourceManager.GetTexture(terrainDef.SpriteKey);
+        if (texture == null)
+        {
+            sprite.Visible = false;
+            return;
+        }
 
+        sprite.Texture = texture;
+        sprite.Modulate = _currentPalette[colorIndex];
+
+        if (terrainDef.VariantCount > 1)
+        {
+            int atlasX = (variantIndex % VariantsPerRow) * AtlasTileSize;
+            int atlasY = (variantIndex / VariantsPerRow) * AtlasTileSize;
+
+            sprite.RegionEnabled = true;
+            sprite.RegionRect = new Rect2(atlasX, atlasY, AtlasTileSize, AtlasTileSize);
+        }
+        else
+        {
+            sprite.RegionEnabled = false;
+        }
+
+        sprite.Visible = true;
+    }
+
+    /// <summary>
+    /// Applies all batched autotile updates to their respective layers.
+    /// Clears inactive cells first so SetCellsTerrainConnect can see which cells are empty.
+    /// </summary>
+    private void ApplyAutotileBatches()
+    {
         foreach (var (terrainId, layer) in _autoTileLayers)
         {
-            if (terrainId == tile.BaseTerrainTypeId)
-                continue;
-
-            layer.EraseCell(tileMapCoord);
-            layer.ClearTileColor(tileMapCoord);
+            ClearInactiveCellsFromLayer(layer, terrainId);
+            ApplyAutotileUpdatesToLayer(layer, terrainId);
         }
+    }
 
-        if (!tile.OverlayTerrainTypeId.HasValue)
-        {
-            sprite.Visible = false;
+    /// <summary>
+    /// Applies batched updates to a single autotile layer.
+    /// </summary>
+    private void ApplyAutotileUpdatesToLayer(ModulatableTileMapLayer layer, int terrainId)
+    {
+        var updates = _autotileUpdates[terrainId];
+        if (updates.Count == 0)
             return;
+
+        var cellsArray = new Godot.Collections.Array<Vector2I>();
+        foreach (var (coord, _) in updates)
+        {
+            cellsArray.Add(coord);
         }
 
-        if (
-            !_sim.Content.Terrains.TryGetValue(
-                tile.OverlayTerrainTypeId.Value,
-                out var overlayTerrainDef
-            )
-        )
+        layer.SetCellsTerrainConnect(cellsArray, 0, 0, false);
+
+        // Apply colors
+        foreach (var (coord, color) in updates)
         {
-            sprite.Visible = false;
+            layer.SetTileColor(coord, color);
+        }
+    }
+
+    /// <summary>
+    /// Clears inactive cells from a single autotile layer.
+    /// </summary>
+    private void ClearInactiveCellsFromLayer(ModulatableTileMapLayer layer, int terrainId)
+    {
+        var clears = _autotileClearCells[terrainId];
+        if (clears.Count == 0)
             return;
-        }
 
-        if (
-            overlayTerrainDef.IsAutotiling
-            && _autoTileLayers.TryGetValue(tile.OverlayTerrainTypeId.Value, out var autoTileLayer)
-        )
+        foreach (var cell in clears)
         {
-            sprite.Visible = false;
-            var color = _currentPalette[tile.OverlayColorIndex];
-            var cellsArray = new Godot.Collections.Array<Vector2I> { tileMapCoord };
-            autoTileLayer.SetCellsTerrainConnect(cellsArray, 0, 0, false);
-            autoTileLayer.SetTileColor(tileMapCoord, color);
-        }
-        else
-        {
-            var overlayTexture = SpriteResourceManager.GetTexture(overlayTerrainDef.SpriteKey);
-            if (overlayTexture != null)
-            {
-                sprite.Texture = overlayTexture;
-                sprite.Modulate = _currentPalette[tile.OverlayColorIndex];
-
-                if (overlayTerrainDef.VariantCount > 1)
-                {
-                    int variantIndex = tile.OverlayVariantIndex;
-
-                    int variantsPerRow = 2;
-                    int tileSize = 16;
-                    int atlasX = (variantIndex % variantsPerRow) * tileSize;
-                    int atlasY = (variantIndex / variantsPerRow) * tileSize;
-
-                    sprite.RegionEnabled = true;
-                    sprite.RegionRect = new Rect2(atlasX, atlasY, tileSize, tileSize);
-                }
-                else
-                {
-                    sprite.RegionEnabled = false;
-                }
-
-                sprite.Visible = true;
-            }
-            else
-            {
-                sprite.Visible = false;
-            }
+            layer.EraseCell(cell);
+            layer.ClearTileColor(cell);
         }
     }
 
