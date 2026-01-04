@@ -81,7 +81,7 @@ public sealed class SleepytimeTheme : Theme
     private int _lastDayRan = -1;
 
     public override string Name => "Sleepytime";
-    public override string? MusicFile => "res://music/gymnopedie_1.mid";
+    public override string? MusicFile => "res://music/37_gymnopedie_1.mid";
 
     /// <summary>
     /// Returns priority 10 if it's nighttime and we haven't run yet today.
