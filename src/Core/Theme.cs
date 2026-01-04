@@ -43,27 +43,38 @@ public abstract class Theme
 }
 
 /// <summary>
-/// The default silent theme (4'33" - named after John Cage's composition).
-/// Plays no music and has no gameplay effects.
-/// Always available as a fallback with priority 1.
+/// Daytime theme with relaxing Satie Gnossiennes.
+/// Plays during daytime hours, randomly selecting from 3 Gnossienne pieces.
 /// </summary>
-public sealed class SilentTheme : Theme
+public sealed class DayTheme : Theme
 {
-    public override string Name => "4'33\"";
-    public override string? MusicFile => null;
+    private static readonly string[] GnossiennePieces = new[]
+    {
+        "res://music/2035_gnossienne_1.mid",
+        "res://music/2130_gnossienne_2.mid",
+        "res://music/2131_gnossienne_3.mid",
+    };
+
+    private string? _selectedMusicFile;
+
+    public override string Name => "Day";
+    public override string? MusicFile => _selectedMusicFile;
 
     /// <summary>
-    /// Silent theme always returns priority 1 - it's the default fallback
-    /// when no other themes have higher priority.
+    /// Day theme has priority 5 during daytime (higher than default but lower than night theme).
     /// </summary>
-    public override int GetPriority(SimContext ctx) => 1;
+    public override int GetPriority(SimContext ctx) => ctx.Time.IsNight ? 0 : 5;
 
-    public override void OnStart(SimContext ctx) { }
+    public override void OnStart(SimContext ctx)
+    {
+        // Randomly select a Gnossienne piece
+        _selectedMusicFile = GnossiennePieces[ctx.Random.Next(GnossiennePieces.Length)];
+    }
 
     public override void OnTick(SimContext ctx) { }
 
     /// <summary>
-    /// Silent theme never completes on its own - it only ends when replaced by another theme.
+    /// Day theme never completes on its own - only when music finishes.
     /// </summary>
     public override bool IsComplete(SimContext ctx, int themeStartTick) => false;
 
@@ -71,60 +82,54 @@ public sealed class SilentTheme : Theme
 }
 
 /// <summary>
-/// Sleepytime theme that triggers near sunset.
-/// Sets all pawn Energy to 0, forcing them to seek beds.
-/// Plays Satie's Gymnopédie No. 1 until completion.
-/// Only runs once per day.
+/// Nighttime theme with calming Satie Gymnopédies.
+/// Plays during nighttime hours, randomly selecting from 3 Gymnopédie pieces.
+/// Sets all pawn Energy to 0 on first transition to night, encouraging sleep.
 /// </summary>
-public sealed class SleepytimeTheme : Theme
+public sealed class NightTheme : Theme
 {
-    private int _lastDayRan = -1;
+    private static readonly string[] GymnopeidiePieces = new[]
+    {
+        "res://music/37_gymnopedie_1.mid",
+        "res://music/38_gymnopedie_2.mid",
+        "res://music/39_gymnopedie_3.mid",
+    };
 
-    public override string Name => "Sleepytime";
-    public override string? MusicFile => "res://music/37_gymnopedie_1.mid";
+    private int _lastDayRan = -1;
+    private string? _selectedMusicFile;
+
+    public override string Name => "Night";
+    public override string? MusicFile => _selectedMusicFile;
 
     /// <summary>
-    /// Returns priority 10 if it's nighttime and we haven't run yet today.
-    /// Returns 0 otherwise.
+    /// Night theme has priority 10 during nighttime (higher than day theme).
     /// </summary>
-    public override int GetPriority(SimContext ctx)
-    {
-        // Only run once per day
-        if (_lastDayRan == ctx.Time.Day)
-        {
-            return 0;
-        }
-
-        // Only run at night
-        if (!ctx.Time.IsNight)
-        {
-            return 0;
-        }
-
-        return 10;
-    }
+    public override int GetPriority(SimContext ctx) => ctx.Time.IsNight ? 10 : 0;
 
     public override void OnStart(SimContext ctx)
     {
-        // Track that we ran on this day
-        _lastDayRan = ctx.Time.Day;
+        // Randomly select a Gymnopédie piece
+        _selectedMusicFile = GymnopeidiePieces[ctx.Random.Next(GymnopeidiePieces.Length)];
 
-        // Set all pawn energy to 0 when theme starts
-        var energyNeedId = ctx.Content.GetNeedId("Energy");
-        if (!energyNeedId.HasValue)
+        // Set all pawn energy to 0 when first starting night (once per day)
+        if (_lastDayRan != ctx.Time.Day)
         {
-            return;
-        }
+            _lastDayRan = ctx.Time.Day;
 
-        int pawnCount = 0;
-        foreach (var pawnId in ctx.Entities.AllPawns())
-        {
-            if (ctx.Entities.Needs.TryGetValue(pawnId, out var needs))
+            var energyNeedId = ctx.Content.GetNeedId("Energy");
+            if (!energyNeedId.HasValue)
             {
-                if (needs.Needs.ContainsKey(energyNeedId.Value))
+                return;
+            }
+
+            foreach (var pawnId in ctx.Entities.AllPawns())
+            {
+                if (ctx.Entities.Needs.TryGetValue(pawnId, out var needs))
                 {
-                    needs.Needs[energyNeedId.Value] = 0f;
-                    pawnCount++;
+                    if (needs.Needs.ContainsKey(energyNeedId.Value))
+                    {
+                        needs.Needs[energyNeedId.Value] = 0f;
+                    }
                 }
             }
         }

@@ -1188,8 +1188,8 @@ public sealed class ThemeSystem : ISystem
         // Register all available themes
         _availableThemes = new List<Theme>
         {
-            new SilentTheme(),
-            new SleepytimeTheme(),
+            new DayTheme(),
+            new NightTheme(),
             // Future themes can be added here
         };
     }
@@ -1265,10 +1265,10 @@ public sealed class ThemeSystem : ISystem
             }
         }
 
-        // If no themes have priority, fallback to SilentTheme
+        // If no themes have priority, fallback to DayTheme
         if (themesWithPriority.Count == 0)
         {
-            return new SilentTheme();
+            return new DayTheme();
         }
 
         // Find max priority
