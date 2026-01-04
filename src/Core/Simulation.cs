@@ -25,6 +25,11 @@ public sealed class SimulationConfig
     public int? StartHour { get; set; }
 
     /// <summary>
+    /// If true, disables the theme system. Useful for tests that need deterministic behavior.
+    /// </summary>
+    public bool DisableThemes { get; set; } = false;
+
+    /// <summary>
     /// Objects to place in the world: (ObjectDefId, X, Y)
     /// </summary>
     public List<(int ObjectDefId, int X, int Y)> Objects { get; set; } = new();
@@ -59,6 +64,7 @@ public sealed class Simulation
     public ContentRegistry Content { get; }
     public int Seed { get; }
     public int SelectedPaletteId { get; }
+    public ThemeSystem ThemeSystem { get; }
 
     private readonly SystemManager _systems = new();
 
@@ -94,10 +100,16 @@ public sealed class Simulation
 
         InitializeWorldTerrain();
 
+        ThemeSystem = new ThemeSystem(this, config?.DisableThemes ?? false);
+
         _systems.Add(new NeedsSystem());
         _systems.Add(new ProximitySocialSystem());
         _systems.Add(new BuffSystem());
         _systems.Add(new MoodSystem());
+        if (!(config?.DisableThemes ?? false))
+        {
+            _systems.Add(ThemeSystem);
+        }
         _systems.Add(new ActionSystem());
         _systems.Add(new AISystem());
 

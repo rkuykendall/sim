@@ -46,11 +46,19 @@ public sealed class RenderTime
     public float DayFraction { get; init; }
 }
 
+public sealed class RenderTheme
+{
+    public string? CurrentThemeName { get; init; }
+    public string? CurrentMusicFile { get; init; }
+    public string? QueuedThemeName { get; init; }
+}
+
 public sealed class RenderSnapshot
 {
     public IReadOnlyList<RenderPawn> Pawns { get; init; } = Array.Empty<RenderPawn>();
     public IReadOnlyList<RenderObject> Objects { get; init; } = Array.Empty<RenderObject>();
     public RenderTime Time { get; init; } = new();
+    public RenderTheme Theme { get; init; } = new();
     public IReadOnlyList<ColorDef> ColorPalette { get; init; } = Array.Empty<ColorDef>();
 }
 
@@ -188,11 +196,20 @@ public static class RenderSnapshotBuilder
             ? palette.Colors
             : Array.Empty<ColorDef>();
 
+        // Get current theme state
+        var theme = new RenderTheme
+        {
+            CurrentThemeName = sim.ThemeSystem?.CurrentTheme?.Name,
+            CurrentMusicFile = sim.ThemeSystem?.CurrentTheme?.MusicFile,
+            QueuedThemeName = sim.ThemeSystem?.QueuedTheme?.Name,
+        };
+
         return new RenderSnapshot
         {
             Pawns = pawns,
             Objects = objects,
             Time = time,
+            Theme = theme,
             ColorPalette = colorPalette,
         };
     }

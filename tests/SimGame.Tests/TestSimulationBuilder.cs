@@ -14,6 +14,7 @@ public sealed class TestSimulationBuilder
     {
         Seed = 12345, // Fixed seed to ensure deterministic palette selection
         WorldBounds = (0, 4, 0, 4), // Default 5x5 world
+        DisableThemes = true, // Disable themes by default for deterministic tests
     };
 
     private readonly ContentRegistry _content = new();
@@ -65,6 +66,22 @@ public sealed class TestSimulationBuilder
     public void WithWorldBounds(int maxX, int maxY)
     {
         _config.WorldBounds = (0, maxX, 0, maxY);
+    }
+
+    /// <summary>
+    /// Enable themes for this test (disabled by default for deterministic behavior).
+    /// </summary>
+    public void WithThemesEnabled()
+    {
+        _config.DisableThemes = false;
+    }
+
+    /// <summary>
+    /// Set the starting hour of day (0-23).
+    /// </summary>
+    public void WithStartHour(int hour)
+    {
+        _config.StartHour = hour;
     }
 
     /// <summary>

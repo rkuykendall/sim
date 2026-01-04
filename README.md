@@ -74,8 +74,6 @@ For more options, see the [dotnet test documentation](https://learn.microsoft.co
 
 The simulation runs independently of rendering at 20 ticks/second. Godot receives read-only `RenderSnapshot` data each frame. See `DESIGN.md` for details.
 
-## Art guide
-
 ## Credits
 
 - [Pixel Simple Human Character 16x16 px by Brysia](https://brysiaa.itch.io/pixel-simple-human-character-16x16-px)
@@ -83,6 +81,11 @@ The simulation runs independently of rendering at 20 ticks/second. Godot receive
 - [Tileset Templates by Patrik](https://patrik-arts.itch.io/tileset-templates)
 - [Puny World by Shade](https://merchant-shade.itch.io/16x16-puny-world)
 - [Webtyler by Alexander Nadeau](https://wareya.github.io/webtyler/)
+- [Steinway Model-C Soundfont by Warren S. Trachtman](https://archive.org/details/keppys-steinway-piano-lite)
+- [godot-midi-player-g4 by きのもと結衣](https://archive.org/details/WST25FStein_00Sep22.sf2)
+- [Nocturne No. 1 in B-flat minor by F. F. Chopin](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=582)
+
+## Art guide
 
 ```
 #FFF <- highlights

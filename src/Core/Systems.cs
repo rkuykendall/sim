@@ -1161,3 +1161,154 @@ public sealed class AISystem : ISystem
         return (null, null);
     }
 }
+
+/// <summary>
+/// System that manages themes and their transitions.
+/// Themes can control music, pawn behavior, pathfinding, weather, and other gameplay effects.
+/// Themes transition smoothly when the current theme completes.
+/// Uses a priority-based selection system where themes determine their own priority.
+/// </summary>
+public sealed class ThemeSystem : ISystem
+{
+    private readonly Simulation _sim;
+    private readonly List<Theme> _availableThemes;
+    private readonly bool _disabled;
+    private Theme? _currentTheme;
+    private Theme? _queuedTheme;
+    private int _currentThemeStartTick;
+
+    public Theme? CurrentTheme => _currentTheme;
+    public Theme? QueuedTheme => _queuedTheme;
+
+    public ThemeSystem(Simulation sim, bool disabled = false)
+    {
+        _sim = sim ?? throw new ArgumentNullException(nameof(sim));
+        _disabled = disabled;
+
+        // Register all available themes
+        _availableThemes = new List<Theme>
+        {
+            new SilentTheme(),
+            new SleepytimeTheme(),
+            // Future themes can be added here
+        };
+    }
+
+    public void Tick(SimContext ctx)
+    {
+        // Skip all theme logic if disabled
+        if (_disabled)
+            return;
+
+        // Initialize with the highest priority theme if no theme is active
+        if (_currentTheme == null)
+        {
+            var initialTheme = SelectThemeByPriority(ctx);
+            StartTheme(ctx, initialTheme);
+        }
+
+        // Theme composer/DJ logic: select next theme if none queued
+        if (_queuedTheme == null)
+        {
+            var nextTheme = SelectThemeByPriority(ctx);
+
+            // Only queue if different from current theme
+            if (nextTheme != null && nextTheme.GetType() != _currentTheme?.GetType())
+            {
+                _queuedTheme = nextTheme;
+
+                // If current theme has no music, transition immediately
+                // (No need to wait for a non-existent song to finish)
+                if (_currentTheme?.MusicFile == null)
+                {
+                    TransitionToNextTheme(ctx);
+                    return; // Exit early since we just transitioned
+                }
+            }
+        }
+
+        // Tick current theme
+        _currentTheme?.OnTick(ctx);
+
+        // Check if current theme is complete
+        if (_currentTheme != null && _currentTheme.IsComplete(ctx, _currentThemeStartTick))
+        {
+            TransitionToNextTheme(ctx);
+        }
+    }
+
+    /// <summary>
+    /// Called by Godot MusicManager when a music file finishes playing.
+    /// Triggers transition to the next queued theme.
+    /// </summary>
+    public void OnMusicFinished()
+    {
+        var ctx = new SimContext(_sim);
+        TransitionToNextTheme(ctx);
+    }
+
+    /// <summary>
+    /// Selects a theme based on priority.
+    /// Loops through all available themes, finds the highest priority,
+    /// and randomly selects from themes with that priority.
+    /// </summary>
+    private Theme SelectThemeByPriority(SimContext ctx)
+    {
+        // Calculate priority for each theme
+        var themesWithPriority = new List<(Theme theme, int priority)>();
+        foreach (var theme in _availableThemes)
+        {
+            int priority = theme.GetPriority(ctx);
+            if (priority > 0)
+            {
+                themesWithPriority.Add((theme, priority));
+            }
+        }
+
+        // If no themes have priority, fallback to SilentTheme
+        if (themesWithPriority.Count == 0)
+        {
+            return new SilentTheme();
+        }
+
+        // Find max priority
+        int maxPriority = themesWithPriority.Max(t => t.priority);
+
+        // Get all themes with max priority
+        var topThemes = themesWithPriority
+            .Where(t => t.priority == maxPriority)
+            .Select(t => t.theme)
+            .ToList();
+
+        // Randomly select from top themes
+        var selected = topThemes[ctx.Random.Next(topThemes.Count)];
+        return selected;
+    }
+
+    private void StartTheme(SimContext ctx, Theme theme)
+    {
+        if (_currentTheme != null)
+        {
+            _currentTheme.OnEnd(ctx);
+        }
+
+        _currentTheme = theme;
+        _currentThemeStartTick = ctx.Time.Tick;
+        theme.OnStart(ctx);
+    }
+
+    private void TransitionToNextTheme(SimContext ctx)
+    {
+        if (_queuedTheme != null)
+        {
+            StartTheme(ctx, _queuedTheme);
+            _queuedTheme = null;
+        }
+        else
+        {
+            // Select highest priority theme
+            var nextTheme = SelectThemeByPriority(ctx);
+            StartTheme(ctx, nextTheme);
+        }
+    }
+}

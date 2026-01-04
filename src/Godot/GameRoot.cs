@@ -83,6 +83,9 @@ public partial class GameRoot : Node2D
     [Export]
     public NodePath ToolbarPath { get; set; } = "";
 
+    [Export]
+    public NodePath MusicManagerPath { get; set; } = "";
+
     private Node2D _pawnsRoot = null!;
     private Node2D _objectsRoot = null!;
     private Node2D _tilesRoot = null!;
@@ -100,6 +103,7 @@ public partial class GameRoot : Node2D
     private Camera2D? _camera;
     private CanvasLayer? _uiLayer;
     private BuildToolbar? _toolbar;
+    private MusicManager? _musicManager;
 
     private bool DebugMode => _debugMode;
 
@@ -174,8 +178,6 @@ public partial class GameRoot : Node2D
                 };
 
                 _shadowShaderMaterial.SetShaderParameter("shadow_gradient", gradientTexture);
-
-                GD.Print("[DEBUG] SDF shadow system initialized with hard shadow gradient");
             }
         }
         if (!string.IsNullOrEmpty(CameraPath))
@@ -197,6 +199,9 @@ public partial class GameRoot : Node2D
             _toolbar?.Initialize(_sim.Content, DebugMode);
             // Don't call UpdatePalette here - modal isn't ready yet, _Process() will call it on first frame
         }
+
+        if (!string.IsNullOrEmpty(MusicManagerPath))
+            _musicManager = GetNodeOrNull<MusicManager>(MusicManagerPath);
     }
 
     public override void _Process(double delta)
@@ -218,6 +223,9 @@ public partial class GameRoot : Node2D
             _currentPaletteId = _sim.SelectedPaletteId;
             _toolbar?.UpdatePalette(_currentPalette);
         }
+
+        // Update music manager with current theme state
+        _musicManager?.UpdateMusicState(snapshot);
 
         SyncPawns(snapshot);
         SyncObjects(snapshot);
@@ -1355,5 +1363,14 @@ public partial class GameRoot : Node2D
 
             _shadowShaderMaterial.SetShaderParameter("shadow_color", shadowColor);
         }
+    }
+
+    /// <summary>
+    /// Called by MusicManager when a music file finishes playing.
+    /// Notifies the Core simulation's ThemeSystem to transition themes.
+    /// </summary>
+    public void OnMusicFinished()
+    {
+        _sim.ThemeSystem?.OnMusicFinished();
     }
 }
