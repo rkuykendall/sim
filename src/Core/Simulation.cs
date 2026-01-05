@@ -660,19 +660,28 @@ public sealed class Simulation
     }
 
     /// <summary>
-    /// Gets the maximum number of pawns allowed in the simulation based on map diversity and object count.
+    /// Gets the maximum number of pawns allowed in the simulation based on housing (bed count).
+    /// Each bed can house one pawn.
     /// </summary>
     public int GetMaxPawns()
     {
-        int score = ScoreMapDiversity();
-        int numPawns = Entities.AllPawns().Count();
+        var bedId = Content.GetObjectId("Bed");
+        if (!bedId.HasValue)
+            return 0;
 
-        if (score > 10 && numPawns < 1)
+        int bedCount = 0;
+        foreach (var objId in Entities.AllObjects())
         {
-            return 1;
+            if (Entities.Objects.TryGetValue(objId, out var objComp))
+            {
+                if (objComp.ObjectDefId == bedId.Value)
+                {
+                    bedCount++;
+                }
+            }
         }
 
-        return Math.Min(10, score / 50);
+        return bedCount;
     }
 
     /// <summary>
