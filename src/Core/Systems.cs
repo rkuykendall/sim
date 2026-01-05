@@ -271,6 +271,9 @@ public sealed class ActionSystem : ISystem
                 case ActionType.UseObject:
                     ExecuteUseObject(ctx, pawnId, actionComp);
                     break;
+                case ActionType.Work:
+                    ExecuteWork(ctx, pawnId, actionComp);
+                    break;
                 case ActionType.Idle:
                     if (ctx.Time.Tick - actionComp.ActionStartTick >= action.DurationTicks)
                         actionComp.CurrentAction = null;
@@ -492,9 +495,32 @@ public sealed class ActionSystem : ISystem
         int elapsed = ctx.Time.Tick - actionComp.ActionStartTick;
         if (elapsed >= action.DurationTicks)
         {
-            // Satisfy the need
+            // Check if object has resources and deplete them
+            bool hasResources = true;
             if (
-                action.SatisfiesNeedId.HasValue
+                objComp != null
+                && ctx.Entities.Resources.TryGetValue(targetId, out var resourceComp)
+            )
+            {
+                if (resourceComp.CurrentAmount > 0)
+                {
+                    // Deplete resources (20 per use, scaled by depletionMult)
+                    float depletionAmount = 20f * resourceComp.DepletionMult;
+                    resourceComp.CurrentAmount = Math.Max(
+                        0f,
+                        resourceComp.CurrentAmount - depletionAmount
+                    );
+                }
+                else
+                {
+                    hasResources = false;
+                }
+            }
+
+            // Satisfy the need only if resources are available
+            if (
+                hasResources
+                && action.SatisfiesNeedId.HasValue
                 && ctx.Entities.Needs.TryGetValue(pawnId, out var needs)
             )
             {
@@ -508,8 +534,8 @@ public sealed class ActionSystem : ISystem
                 }
             }
 
-            // Grant buff from object if applicable
-            if (objComp != null)
+            // Grant buff from object if applicable (only if resources were available)
+            if (objComp != null && hasResources)
             {
                 var objDef2 = ctx.Content.Objects[objComp.ObjectDefId];
                 if (
@@ -544,12 +570,16 @@ public sealed class ActionSystem : ISystem
                         attachmentComp.UserAttachments[pawnId] + 1
                     );
                 }
+            }
 
+            // Release the object
+            if (objComp != null)
+            {
                 objComp.InUse = false;
                 objComp.UsedBy = null;
             }
 
-            // Add a brief happy idle action showing satisfaction with the object used
+            // Add a brief idle action showing result
             if (objComp != null && action.SatisfiesNeedId.HasValue)
             {
                 var objDef3 = ctx.Content.Objects[objComp.ObjectDefId];
@@ -558,8 +588,188 @@ public sealed class ActionSystem : ISystem
                     {
                         Type = ActionType.Idle,
                         Animation = AnimationType.Idle,
-                        DurationTicks = 10, // Brief satisfaction moment
-                        DisplayName = "Satisfied",
+                        DurationTicks = 10, // Brief moment
+                        DisplayName = hasResources ? "Satisfied" : "Out of Resources",
+                        Expression = hasResources ? ExpressionType.Happy : ExpressionType.Complaint,
+                        ExpressionIconDefId = objDef3.Id,
+                    }
+                );
+            }
+
+            actionComp.CurrentAction = null;
+        }
+    }
+
+    private void ExecuteWork(SimContext ctx, EntityId pawnId, ActionComponent actionComp)
+    {
+        var action = actionComp.CurrentAction!;
+        if (action.TargetEntity == null)
+        {
+            actionComp.CurrentAction = null;
+            return;
+        }
+
+        var targetId = action.TargetEntity.Value;
+
+        if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
+            return;
+        if (!ctx.Entities.Positions.TryGetValue(targetId, out var objPos))
+            return;
+        if (!ctx.Entities.Objects.TryGetValue(targetId, out var objCompCheck))
+            return;
+
+        var objDefForCheck = ctx.Content.Objects[objCompCheck.ObjectDefId];
+
+        // Check if pawn is in a valid use area for this object
+        bool inUseArea = IsInUseArea(pawnPos.Coord, objPos.Coord, objDefForCheck);
+
+        if (!inUseArea)
+        {
+            // Need to move to a valid use area first
+            var useAreaTarget = FindValidUseArea(
+                ctx.World,
+                ctx.Entities,
+                objPos.Coord,
+                pawnPos.Coord,
+                objDefForCheck,
+                pawnId
+            );
+
+            if (useAreaTarget == null)
+            {
+                // No valid use area available (all blocked) - cancel action
+                actionComp.CurrentAction = null;
+                actionComp.ActionQueue.Clear();
+                return;
+            }
+
+            actionComp.ActionQueue = new Queue<ActionDef>(
+                new[] { action }.Concat(actionComp.ActionQueue)
+            );
+            actionComp.CurrentAction = new ActionDef
+            {
+                Type = ActionType.MoveTo,
+                Animation = AnimationType.Walk,
+                TargetCoord = useAreaTarget,
+                DurationTicks = 0,
+                DisplayName = $"Going to work at {objDefForCheck.Name}",
+            };
+            actionComp.ActionStartTick = ctx.Time.Tick;
+            return;
+        }
+
+        if (ctx.Entities.Objects.TryGetValue(targetId, out var objComp))
+        {
+            objComp.InUse = true;
+            objComp.UsedBy = pawnId;
+
+            // Update display name to "Working at X" now that we're actually working
+            var objDef = ctx.Content.Objects[objComp.ObjectDefId];
+            if (action.DisplayName != $"Working at {objDef.Name}")
+            {
+                actionComp.CurrentAction = new ActionDef
+                {
+                    Type = action.Type,
+                    Animation = AnimationType.Pickaxe,
+                    TargetCoord = action.TargetCoord,
+                    TargetEntity = action.TargetEntity,
+                    DurationTicks = action.DurationTicks,
+                    SatisfiesNeedId = action.SatisfiesNeedId,
+                    NeedSatisfactionAmount = action.NeedSatisfactionAmount,
+                    DisplayName = $"Working at {objDef.Name}",
+                };
+                action = actionComp.CurrentAction;
+            }
+        }
+
+        int elapsed = ctx.Time.Tick - actionComp.ActionStartTick;
+        if (elapsed >= action.DurationTicks)
+        {
+            // Replenish object resources if applicable
+            if (
+                objComp != null
+                && ctx.Entities.Resources.TryGetValue(targetId, out var resourceComp)
+            )
+            {
+                // Add 30 resources per work action
+                resourceComp.CurrentAmount = Math.Min(
+                    resourceComp.MaxAmount,
+                    resourceComp.CurrentAmount + 30f
+                );
+            }
+
+            // Satisfy the Purpose need
+            if (
+                action.SatisfiesNeedId.HasValue
+                && ctx.Entities.Needs.TryGetValue(pawnId, out var needs)
+            )
+            {
+                if (needs.Needs.ContainsKey(action.SatisfiesNeedId.Value))
+                {
+                    needs.Needs[action.SatisfiesNeedId.Value] = Math.Clamp(
+                        needs.Needs[action.SatisfiesNeedId.Value] + action.NeedSatisfactionAmount,
+                        0f,
+                        100f
+                    );
+                }
+            }
+
+            // Grant "Productive" buff
+            if (objComp != null)
+            {
+                var productiveBuffId = ctx.Content.GetBuffId("Productive");
+                if (
+                    productiveBuffId.HasValue
+                    && ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs)
+                )
+                {
+                    var buffDef = ctx.Content.Buffs[productiveBuffId.Value];
+
+                    // Remove existing instance of this buff (refresh it)
+                    buffs.ActiveBuffs.RemoveAll(b => b.BuffDefId == productiveBuffId.Value);
+
+                    buffs.ActiveBuffs.Add(
+                        new BuffInstance
+                        {
+                            BuffDefId = productiveBuffId.Value,
+                            StartTick = ctx.Time.Tick,
+                            EndTick = ctx.Time.Tick + buffDef.DurationTicks,
+                        }
+                    );
+                }
+
+                // Increment attachment to this work building (cap at 10)
+                if (ctx.Entities.Attachments.TryGetValue(targetId, out var attachmentComp))
+                {
+                    if (!attachmentComp.UserAttachments.ContainsKey(pawnId))
+                    {
+                        attachmentComp.UserAttachments[pawnId] = 0;
+                    }
+                    attachmentComp.UserAttachments[pawnId] = Math.Min(
+                        10,
+                        attachmentComp.UserAttachments[pawnId] + 1
+                    );
+                }
+            }
+
+            // Release the object
+            if (objComp != null)
+            {
+                objComp.InUse = false;
+                objComp.UsedBy = null;
+            }
+
+            // Add a brief happy idle action showing satisfaction
+            if (objComp != null && action.SatisfiesNeedId.HasValue)
+            {
+                var objDef3 = ctx.Content.Objects[objComp.ObjectDefId];
+                actionComp.ActionQueue.Enqueue(
+                    new ActionDef
+                    {
+                        Type = ActionType.Idle,
+                        Animation = AnimationType.Idle,
+                        DurationTicks = 10, // Brief moment
+                        DisplayName = "Feeling Productive",
                         Expression = ExpressionType.Happy,
                         ExpressionIconDefId = objDef3.Id,
                     }
@@ -667,9 +877,13 @@ public sealed class AISystem : ISystem
     {
         var urgentNeeds = CalculateUrgentNeeds(ctx, pawnId, needs);
 
+        // Get Purpose need ID for special handling
+        var purposeNeedId = ctx.Content.GetNeedId("Purpose");
+
         // Try to find an available object for any of our urgent needs
         // Only seek objects when the need is actually pressing (urgency < 50)
         EntityId? targetObject = null;
+        bool isWorkAction = false;
         foreach (var (needId, urgency) in urgentNeeds)
         {
             // Only pursue objects for needs that are actually low or causing issues
@@ -678,15 +892,35 @@ public sealed class AISystem : ISystem
             // - Need has a debuff (urgency gets -50 or -100 modifier)
             if (urgency < 50)
             {
-                targetObject = FindObjectForNeed(ctx, pawnId, needId);
-                if (targetObject != null)
-                    break;
+                // Purpose need is satisfied by working, not consuming
+                if (purposeNeedId.HasValue && needId == purposeNeedId.Value)
+                {
+                    targetObject = FindObjectToWorkAt(ctx, pawnId);
+                    if (targetObject != null)
+                    {
+                        isWorkAction = true;
+                        break;
+                    }
+                }
+                else
+                {
+                    targetObject = FindObjectForNeed(ctx, pawnId, needId);
+                    if (targetObject != null)
+                        break;
+                }
             }
         }
 
         if (targetObject != null)
         {
-            QueueUseObject(ctx, actionComp, targetObject.Value);
+            if (isWorkAction)
+            {
+                QueueWorkAtObject(ctx, actionComp, targetObject.Value, purposeNeedId!.Value);
+            }
+            else
+            {
+                QueueUseObject(ctx, actionComp, targetObject.Value);
+            }
         }
         else if (urgentNeeds.Count > 0 && urgentNeeds[0].urgency < -50)
         {
@@ -789,6 +1023,32 @@ public sealed class AISystem : ISystem
                 SatisfiesNeedId = objDef.SatisfiesNeedId,
                 NeedSatisfactionAmount = objDef.NeedSatisfactionAmount,
                 DisplayName = $"Going to {objDef.Name}",
+            }
+        );
+    }
+
+    /// <summary>
+    /// Queue an action to work at a specific object (replenish resources).
+    /// </summary>
+    private void QueueWorkAtObject(
+        SimContext ctx,
+        ActionComponent actionComp,
+        EntityId targetObject,
+        int purposeNeedId
+    )
+    {
+        var objComp = ctx.Entities.Objects[targetObject];
+        var objDef = ctx.Content.Objects[objComp.ObjectDefId];
+        actionComp.ActionQueue.Enqueue(
+            new ActionDef
+            {
+                Type = ActionType.Work,
+                Animation = AnimationType.Pickaxe,
+                TargetEntity = targetObject,
+                DurationTicks = 2500, // Work takes 2.5 seconds
+                SatisfiesNeedId = purposeNeedId,
+                NeedSatisfactionAmount = 40f, // Working satisfies Purpose moderately
+                DisplayName = $"Going to work at {objDef.Name}",
             }
         );
     }
@@ -975,6 +1235,14 @@ public sealed class AISystem : ISystem
                 continue;
             if (objComp.InUse)
                 continue;
+
+            // Skip objects that have resources but are empty
+            if (ctx.Entities.Resources.TryGetValue(objId, out var resourceComp))
+            {
+                if (resourceComp.CurrentAmount <= 0)
+                    continue;
+            }
+
             if (!IsObjectReachable(ctx, pawnId, objId))
                 continue;
 
@@ -1004,6 +1272,81 @@ public sealed class AISystem : ISystem
                     }
                 }
                 score -= highestOtherAttachment * 15;
+            }
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = objId;
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>
+    /// Find an object that needs workers (has depleted resources and can be worked at).
+    /// </summary>
+    private EntityId? FindObjectToWorkAt(SimContext ctx, EntityId pawnId)
+    {
+        if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
+            return null;
+
+        EntityId? best = null;
+        float bestScore = float.MinValue;
+
+        foreach (var objId in ctx.Entities.AllObjects())
+        {
+            var objComp = ctx.Entities.Objects[objId];
+            var objDef = ctx.Content.Objects[objComp.ObjectDefId];
+
+            // Only consider objects that can be worked at
+            if (!objDef.CanBeWorkedAt)
+                continue;
+            if (objComp.InUse)
+                continue;
+
+            // Only work at objects that have resources and need replenishment
+            if (!ctx.Entities.Resources.TryGetValue(objId, out var resourceComp))
+                continue;
+
+            // Calculate resource percentage
+            float resourcePercent = resourceComp.CurrentAmount / resourceComp.MaxAmount;
+
+            // Only work at objects that are below 80% capacity
+            if (resourcePercent >= 0.8f)
+                continue;
+
+            if (!IsObjectReachable(ctx, pawnId, objId))
+                continue;
+
+            if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos))
+                continue;
+
+            int dist =
+                Math.Abs(pawnPos.Coord.X - objPos.Coord.X)
+                + Math.Abs(pawnPos.Coord.Y - objPos.Coord.Y);
+
+            // Calculate work preference score
+            // Higher urgency (low resources) and attachment increase score
+            float score = (100 - resourcePercent * 100) - (dist * 0.5f);
+
+            if (ctx.Entities.Attachments.TryGetValue(objId, out var attachmentComp))
+            {
+                // My attachment to this job increases preference
+                int myAttachment = attachmentComp.UserAttachments.GetValueOrDefault(pawnId, 0);
+                score += myAttachment * 10;
+
+                // Others' attachment slightly decreases preference (but urgency can override)
+                int highestOtherAttachment = 0;
+                foreach (var (otherId, attachment) in attachmentComp.UserAttachments)
+                {
+                    if (otherId != pawnId && attachment > highestOtherAttachment)
+                    {
+                        highestOtherAttachment = attachment;
+                    }
+                }
+                score -= highestOtherAttachment * 5;
             }
 
             if (score > bestScore)

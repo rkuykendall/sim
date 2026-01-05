@@ -182,6 +182,17 @@ public sealed class Simulation
 
         var id = Entities.CreateObject(coord, objectDefId, safeColorIndex);
 
+        // Create resource component if this object has a resource type
+        if (objDef.ResourceType != null)
+        {
+            Entities.Resources[id] = new ResourceComponent
+            {
+                ResourceType = objDef.ResourceType,
+                CurrentAmount = objDef.MaxResourceAmount,
+                MaxAmount = objDef.MaxResourceAmount,
+                DepletionMult = objDef.DepletionMult,
+            };
+        }
         // Create attachment component for all objects (tracks which pawns use them)
         Entities.Attachments[id] = new AttachmentComponent();
 
@@ -189,6 +200,7 @@ public sealed class Simulation
         {
             World.GetTile(coord).ObjectBlocksMovement = true;
         }
+
         return id;
     }
 
@@ -847,7 +859,7 @@ public sealed class Simulation
     }
 
     /// <summary>
-    /// Format an EntityId for display (e.g., "Pawn #1" or "Object #5").
+    /// Format an EntityId as "Pawn #X" or "Object #X" for debugging and UI display.
     /// </summary>
     public string FormatEntityId(EntityId id)
     {

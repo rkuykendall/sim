@@ -239,6 +239,21 @@ public static class ContentLoader
             var spriteKeyData = data.Get("spriteKey");
             var spriteKey = spriteKeyData.IsNil() ? "" : spriteKeyData.String;
 
+            // Load resource properties (optional)
+            var resourceTypeData = data.Get("resourceType");
+            var resourceType = resourceTypeData.IsNil() ? null : resourceTypeData.String;
+
+            var maxResourceAmountData = data.Get("maxResourceAmount");
+            var maxResourceAmount = maxResourceAmountData.IsNil()
+                ? 100f
+                : (float)maxResourceAmountData.Number;
+
+            var depletionMultData = data.Get("depletionMult");
+            var depletionMult = depletionMultData.IsNil() ? 1f : (float)depletionMultData.Number;
+
+            var canBeWorkedAtData = data.Get("canBeWorkedAt");
+            var canBeWorkedAt = !canBeWorkedAtData.IsNil() && canBeWorkedAtData.Boolean;
+
             var obj = new ObjectDef
             {
                 Name = key,
@@ -259,6 +274,10 @@ public static class ContentLoader
                 ),
                 UseAreas = useAreas,
                 SpriteKey = spriteKey,
+                ResourceType = resourceType,
+                MaxResourceAmount = maxResourceAmount,
+                DepletionMult = depletionMult,
+                CanBeWorkedAt = canBeWorkedAt,
             };
 
             registry.RegisterObject(key, obj);

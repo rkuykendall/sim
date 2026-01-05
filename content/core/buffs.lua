@@ -53,6 +53,16 @@ Buffs = {
         moodOffset = -8,
         isFromNeed = true
     },
+    Aimless = {
+        name = "Aimless!",
+        moodOffset = -22,
+        isFromNeed = true
+    },
+    Unfulfilled = {
+        name = "Unfulfilled",
+        moodOffset = -7,
+        isFromNeed = true
+    },
 
     -- Positive buffs from actions
     GoodMeal = {
@@ -74,6 +84,11 @@ Buffs = {
         name = "Feeling Fresh",
         moodOffset = 8,
         durationTicks = 2000
+    },
+    Productive = {
+        name = "Productive",
+        moodOffset = 12,
+        durationTicks = 3000  -- 2.5 minutes
     },
 }
 

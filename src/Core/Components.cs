@@ -53,6 +53,15 @@ public sealed class ObjectComponent
     public int ColorIndex { get; set; } = 0; // Index into color palette
 }
 
+// Resource storage (for buildings that provide resources like food, water)
+public sealed class ResourceComponent
+{
+    public string ResourceType { get; set; } = ""; // "food", "water", etc.
+    public float CurrentAmount { get; set; } = 100f; // 0..MaxAmount
+    public float MaxAmount { get; set; } = 100f;
+    public float DepletionMult { get; set; } = 1f; // Multiplier for resource depletion (0 = never depletes)
+}
+
 // Attachment tracking (which pawns use this object regularly)
 public sealed class AttachmentComponent
 {

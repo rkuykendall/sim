@@ -893,7 +893,7 @@ public partial class GameRoot : Node2D
         var entityId = new EntityId(_selectedPawnId.Value);
         _sim.Entities.Needs.TryGetValue(entityId, out var needs);
         _sim.Entities.Buffs.TryGetValue(entityId, out var buffs);
-        _infoPanel.ShowPawn(pawn, needs, buffs, _sim.Content);
+        _infoPanel.ShowPawn(pawn, needs, buffs, _sim.Content, _sim);
     }
 
     /// <summary>

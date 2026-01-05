@@ -19,14 +19,20 @@ public partial class PawnInfoPanel : PanelContainer
     [Export]
     public NodePath BuffsContainerPath { get; set; } = null!;
 
+    [Export]
+    public NodePath AttachmentsContainerPath { get; set; } = null!;
+
     private Label? _nameLabel;
     private Label? _moodLabel;
     private Label? _actionLabel;
     private VBoxContainer? _needsContainer;
     private VBoxContainer? _buffsContainer;
+    private VBoxContainer? _attachmentsContainer;
+    private Simulation? _sim;
 
     private readonly Dictionary<int, ProgressBar> _needBars = new();
     private readonly List<Label> _buffLabels = new();
+    private readonly List<Label> _attachmentLabels = new();
 
     public override void _Ready()
     {
@@ -35,6 +41,7 @@ public partial class PawnInfoPanel : PanelContainer
         _actionLabel = GetNodeOrNull<Label>(ActionLabelPath);
         _needsContainer = GetNodeOrNull<VBoxContainer>(NeedsContainerPath);
         _buffsContainer = GetNodeOrNull<VBoxContainer>(BuffsContainerPath);
+        _attachmentsContainer = GetNodeOrNull<VBoxContainer>(AttachmentsContainerPath);
 
         // Start hidden until a pawn is selected
         Visible = false;
@@ -44,9 +51,11 @@ public partial class PawnInfoPanel : PanelContainer
         RenderPawn pawn,
         NeedsComponent? needs,
         BuffComponent? buffs,
-        ContentRegistry content
+        ContentRegistry content,
+        Simulation sim
     )
     {
+        _sim = sim;
         Visible = true;
 
         if (_nameLabel != null)
@@ -92,6 +101,9 @@ public partial class PawnInfoPanel : PanelContainer
 
         // Update buffs
         UpdateBuffsDisplay(buffs, content);
+
+        // Update attachments
+        UpdateAttachmentsDisplay(pawn);
     }
 
     private void UpdateBuffsDisplay(BuffComponent? buffs, ContentRegistry content)
@@ -131,6 +143,44 @@ public partial class PawnInfoPanel : PanelContainer
 
             _buffsContainer.AddChild(label);
             _buffLabels.Add(label);
+        }
+    }
+
+    private void UpdateAttachmentsDisplay(RenderPawn pawn)
+    {
+        if (_attachmentsContainer == null)
+            return;
+
+        // Clear old attachment labels
+        foreach (var label in _attachmentLabels)
+            label.QueueFree();
+        _attachmentLabels.Clear();
+
+        if (pawn.Attachments == null || pawn.Attachments.Count == 0)
+        {
+            var noAttachLabel = new Label { Text = "(none)", Modulate = Colors.Gray };
+            noAttachLabel.AddThemeFontSizeOverride("font_size", 14);
+            _attachmentsContainer.AddChild(noAttachLabel);
+            _attachmentLabels.Add(noAttachLabel);
+            return;
+        }
+
+        foreach (var (objectId, strength) in pawn.Attachments)
+        {
+            var formattedId = _sim?.FormatEntityId(objectId) ?? objectId.ToString();
+            var label = new Label { Text = $"{formattedId}: {strength}/10" };
+            label.AddThemeFontSizeOverride("font_size", 14);
+
+            // Color based on attachment strength
+            if (strength >= 8)
+                label.Modulate = Colors.Lime;
+            else if (strength >= 5)
+                label.Modulate = Colors.Yellow;
+            else
+                label.Modulate = Colors.White;
+
+            _attachmentsContainer.AddChild(label);
+            _attachmentLabels.Add(label);
         }
     }
 

@@ -45,6 +45,12 @@ public sealed class ObjectDef : IContentDef
     public int? GrantsBuffId { get; init; } // Buff to apply when interaction completes (set during content loading)
     public IReadOnlyList<(int dx, int dy)> UseAreas { get; init; } = Array.Empty<(int, int)>(); // Relative tile offsets where pawn can use this object
     public string SpriteKey { get; init; } = ""; // Path to sprite texture
+
+    // Resource system
+    public string? ResourceType { get; init; } // "food", "water", etc. - null if object doesn't use resources
+    public float MaxResourceAmount { get; init; } = 100f;
+    public float DepletionMult { get; init; } = 1f; // 0 = infinite resources, 1 = normal depletion
+    public bool CanBeWorkedAt { get; init; } = false; // Can pawns work here to replenish resources?
 }
 
 // Action definition
@@ -54,6 +60,7 @@ public enum ActionType
     MoveTo,
     UseObject,
     Socialize,
+    Work,
 }
 
 /// <summary>

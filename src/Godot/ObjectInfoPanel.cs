@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Godot;
 using SimGame.Core;
 
@@ -86,6 +85,39 @@ public partial class ObjectInfoPanel : PanelContainer
             label.QueueFree();
         _debugLabels.Clear();
 
+        // Resource info
+        if (obj.ResourceType != null && obj.CurrentResource.HasValue && obj.MaxResource.HasValue)
+        {
+            var resourceLabel = new Label
+            {
+                Text =
+                    $"Resources: {obj.CurrentResource.Value:0}/{obj.MaxResource.Value:0} {obj.ResourceType}",
+            };
+            resourceLabel.AddThemeFontSizeOverride("font_size", 14);
+
+            // Color based on resource level
+            float percent = obj.CurrentResource.Value / obj.MaxResource.Value;
+            if (percent < 0.2f)
+                resourceLabel.Modulate = Colors.Red;
+            else if (percent < 0.5f)
+                resourceLabel.Modulate = Colors.Orange;
+            else
+                resourceLabel.Modulate = Colors.Lime;
+
+            _debugContainer.AddChild(resourceLabel);
+            _debugLabels.Add(resourceLabel);
+
+            // Can be worked at flag
+            if (obj.CanBeWorkedAt == true)
+            {
+                var workLabel = new Label { Text = "Can be worked at" };
+                workLabel.AddThemeFontSizeOverride("font_size", 14);
+                workLabel.Modulate = Colors.Cyan;
+                _debugContainer.AddChild(workLabel);
+                _debugLabels.Add(workLabel);
+            }
+        }
+
         // Attachment info
         if (obj.Attachments != null && obj.Attachments.Count > 0)
         {
@@ -95,9 +127,9 @@ public partial class ObjectInfoPanel : PanelContainer
             _debugContainer.AddChild(attachHeader);
             _debugLabels.Add(attachHeader);
 
-            foreach (var (pawnId, strength) in obj.Attachments.OrderByDescending(kv => kv.Value))
+            foreach (var (pawnId, strength) in obj.Attachments)
             {
-                var formattedId = _sim?.FormatEntityId(pawnId) ?? $"Pawn #{pawnId.Value}";
+                var formattedId = _sim?.FormatEntityId(pawnId) ?? pawnId.ToString();
                 var attachLabel = new Label { Text = $"  {formattedId}: {strength}/10" };
                 attachLabel.AddThemeFontSizeOverride("font_size", 14);
 

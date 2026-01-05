@@ -20,6 +20,9 @@ public sealed class RenderPawn
     public (int X, int Y)? TargetTile { get; init; }
     public IReadOnlyList<(int X, int Y)>? CurrentPath { get; init; }
     public int PathIndex { get; init; }
+
+    // Debug: attachment info (object ID -> attachment strength)
+    public IReadOnlyDictionary<EntityId, int>? Attachments { get; init; }
 }
 
 public sealed class RenderObject
@@ -32,7 +35,15 @@ public sealed class RenderObject
     public bool InUse { get; init; }
     public string? UsedByName { get; init; }
     public int ColorIndex { get; init; }
-    public Dictionary<EntityId, int> Attachments { get; init; } = new();
+
+    // Debug: Resource info
+    public string? ResourceType { get; init; }
+    public float? CurrentResource { get; init; }
+    public float? MaxResource { get; init; }
+    public bool? CanBeWorkedAt { get; init; }
+
+    // Debug: Attachment info (pawn ID -> attachment strength)
+    public IReadOnlyDictionary<EntityId, int>? Attachments { get; init; }
 }
 
 public sealed class RenderTime
@@ -79,31 +90,42 @@ public static class RenderSnapshotBuilder
             if (pos == null)
                 continue;
 
-            string? actionName = null;
-            if (action?.CurrentAction != null)
+            string? actionName = action?.CurrentAction?.DisplayName;
+
+            // Reconstruct a friendly action name when DisplayName is missing/blank
+            if (string.IsNullOrWhiteSpace(actionName) && action?.CurrentAction != null)
             {
-                // Use DisplayName if set, otherwise fall back to type-based naming
-                if (!string.IsNullOrEmpty(action.CurrentAction.DisplayName))
+                var current = action.CurrentAction;
+
+                if (current.TargetEntity.HasValue)
                 {
-                    actionName = action.CurrentAction.DisplayName;
-                }
-                else if (
-                    action.CurrentAction.Type == ActionType.UseObject
-                    && action.CurrentAction.TargetEntity.HasValue
-                )
-                {
-                    var targetId = action.CurrentAction.TargetEntity.Value;
+                    var targetId = current.TargetEntity.Value;
+                    string targetName = sim.FormatEntityId(targetId);
+
                     if (
                         sim.Entities.Objects.TryGetValue(targetId, out var objComp)
                         && sim.Content.Objects.TryGetValue(objComp.ObjectDefId, out var objDef)
                     )
                     {
-                        actionName = $"Using {objDef.Name}";
+                        targetName = objDef.Name;
                     }
+
+                    actionName = current.Type switch
+                    {
+                        ActionType.UseObject => $"Using {targetName}",
+                        ActionType.Work => $"Working at {targetName}",
+                        ActionType.MoveTo => $"Going to {targetName}",
+                        _ => current.Type.ToString(),
+                    };
+                }
+                else if (current.TargetCoord.HasValue && current.Type == ActionType.MoveTo)
+                {
+                    var tc = current.TargetCoord.Value;
+                    actionName = $"Going to ({tc.X},{tc.Y})";
                 }
                 else
                 {
-                    actionName = action.CurrentAction.Type.ToString();
+                    actionName = current.Type.ToString();
                 }
             }
 
@@ -123,6 +145,20 @@ public static class RenderSnapshotBuilder
                 pathIndex = action.PathIndex;
             }
 
+            // Gather attachment info (which objects this pawn is attached to)
+            var pawnAttachments = new Dictionary<EntityId, int>();
+            foreach (var objId in sim.Entities.AllObjects())
+            {
+                if (
+                    sim.Entities.Attachments.TryGetValue(objId, out var attachComp)
+                    && attachComp.UserAttachments.TryGetValue(pawnId, out var strength)
+                    && strength > 0
+                )
+                {
+                    pawnAttachments[objId] = strength;
+                }
+            }
+
             pawns.Add(
                 new RenderPawn
                 {
@@ -138,6 +174,7 @@ public static class RenderSnapshotBuilder
                     TargetTile = targetTile,
                     CurrentPath = pathCoords,
                     PathIndex = pathIndex,
+                    Attachments = pawnAttachments,
                 }
             );
         }
@@ -163,10 +200,35 @@ public static class RenderSnapshotBuilder
                     usedByName = userPawn.Name;
             }
 
-            var attachments = new Dictionary<EntityId, int>();
-            if (sim.Entities.Attachments.TryGetValue(objId, out var attachmentComp))
+            // Get resource info
+            string? resourceType = null;
+            float? currentResource = null;
+            float? maxResource = null;
+            bool? canBeWorkedAt = null;
+
+            if (sim.Entities.Resources.TryGetValue(objId, out var resourceComp))
             {
-                attachments = new Dictionary<EntityId, int>(attachmentComp.UserAttachments);
+                resourceType = resourceComp.ResourceType;
+                currentResource = resourceComp.CurrentAmount;
+                maxResource = resourceComp.MaxAmount;
+            }
+
+            if (objDef.CanBeWorkedAt)
+            {
+                canBeWorkedAt = true;
+            }
+
+            // Get attachment info (which pawns are attached to this object)
+            var objectAttachments = new Dictionary<EntityId, int>();
+            if (sim.Entities.Attachments.TryGetValue(objId, out var attachComp))
+            {
+                foreach (var (attachedPawnId, strength) in attachComp.UserAttachments)
+                {
+                    if (strength > 0)
+                    {
+                        objectAttachments[attachedPawnId] = strength;
+                    }
+                }
             }
 
             objects.Add(
@@ -180,7 +242,11 @@ public static class RenderSnapshotBuilder
                     InUse = obj.InUse,
                     UsedByName = usedByName,
                     ColorIndex = obj.ColorIndex,
-                    Attachments = attachments,
+                    ResourceType = resourceType,
+                    CurrentResource = currentResource,
+                    MaxResource = maxResource,
+                    CanBeWorkedAt = canBeWorkedAt,
+                    Attachments = objectAttachments,
                 }
             );
         }

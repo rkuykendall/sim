@@ -42,6 +42,14 @@ Needs = {
         criticalDebuff = "Filthy",
         lowDebuff = "Dirty"
     },
+    Purpose = {
+        name = "Purpose",
+        decayPerTick = 0.006,
+        criticalThreshold = 20,
+        lowThreshold = 40,
+        criticalDebuff = "Aimless",
+        lowDebuff = "Unfulfilled"
+    },
 }
 
 return Needs

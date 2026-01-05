@@ -8,21 +8,33 @@ Objects = {
         satisfactionAmount = 50,
         interactionDuration = 2000,
         grantsBuff = "GoodMeal",
-        spriteKey = "fridge"
+        spriteKey = "fridge",
+        resourceType = "food",
+        maxResourceAmount = 100,
+        depletionMult = 1.0,
+        canBeWorkedAt = true
     },
     Oven = {
         satisfiesNeed = "Hunger",
         satisfactionAmount = 70,
         interactionDuration = 3000,
         grantsBuff = "GoodMeal",
-        spriteKey = "oven"
+        spriteKey = "oven",
+        resourceType = "food",
+        maxResourceAmount = 100,
+        depletionMult = 1.0,
+        canBeWorkedAt = true
     },
     Stove = {
         satisfiesNeed = "Hunger",
         satisfactionAmount = 60,
         interactionDuration = 2500,
         grantsBuff = "GoodMeal",
-        spriteKey = "stove"
+        spriteKey = "stove",
+        resourceType = "food",
+        maxResourceAmount = 100,
+        depletionMult = 1.0,
+        canBeWorkedAt = true
     },
     Bed = {
         satisfiesNeed = "Energy",
