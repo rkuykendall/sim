@@ -22,9 +22,9 @@ public partial class ObjectView : Node2D
     /// <summary>
     /// Initialize the object view with a sprite texture.
     /// Call this after instantiation if object has a sprite.
-    /// The sprite will be positioned so its bottom aligns with the bottom of the tile.
+    /// For multi-tile objects, the sprite is centered within the object's footprint.
     /// </summary>
-    public void InitializeWithSprite(Texture2D texture)
+    public void InitializeWithSprite(Texture2D texture, int tileSize = 1)
     {
         // Hide/remove ColorRect body
         if (Body != null)
@@ -42,11 +42,19 @@ public partial class ObjectView : Node2D
 
         _sprite.Scale = new Vector2(RenderingConstants.SpriteScale, RenderingConstants.SpriteScale);
 
-        // Position sprite so its bottom aligns with the bottom of the tile
-        // Since sprite is centered and scaled 2x, offset = RenderedTileSize/2 - texture height
+        // For multi-tile objects, center the sprite horizontally and align bottom with footprint bottom
+        // The object's node position is at the anchor (top-left tile center)
+        float footprintCenterOffsetX = (tileSize - 1) * RenderingConstants.RenderedTileSize / 2f;
+
+        // Bottom of footprint from node center: (tileSize - 0.5) * tileSize
+        // For 1x1: (1 - 0.5) * 32 = 16
+        // For 2x2: (2 - 0.5) * 32 = 48
+        float footprintBottom = (tileSize - 0.5f) * RenderingConstants.RenderedTileSize;
+
+        // Position sprite so its bottom aligns with the bottom of the entire footprint
         _sprite.Position = new Vector2(
-            0,
-            RenderingConstants.RenderedTileSize / 2 - texture.GetHeight()
+            footprintCenterOffsetX,
+            footprintBottom - texture.GetHeight()
         );
 
         AddChild(_sprite);

@@ -212,27 +212,40 @@ public static class ContentLoader
             var key = pair.Key.String;
             var data = pair.Value.Table;
 
-            // Derive use areas from walkable property
-            var useAreas = new List<(int dx, int dy)>();
-
             // Load walkable property (defaults to false if not specified)
             var walkableData = data.Get("walkable");
             var walkable = !walkableData.IsNil() && walkableData.Boolean;
 
+            // Load tileSize property (defaults to 1 if not specified)
+            var tileSizeData = data.Get("tileSize");
+            var tileSize = tileSizeData.IsNil() ? 1 : (int)tileSizeData.Number;
+
+            // Validate tileSize
+            if (tileSize < 1)
+            {
+                throw new InvalidOperationException(
+                    $"Object '{key}' has invalid tileSize {tileSize}. Must be positive integer."
+                );
+            }
+
+            // Derive use areas from walkable property and tile size
+            var useAreas = new List<(int dx, int dy)>();
+
             if (walkable)
             {
-                useAreas.Add((0, 0));
+                // For walkable objects, use areas are all occupied tiles
+                for (int dx = 0; dx < tileSize; dx++)
+                {
+                    for (int dy = 0; dy < tileSize; dy++)
+                    {
+                        useAreas.Add((dx, dy));
+                    }
+                }
             }
             else
             {
-                useAreas.Add((0, 1));
-                useAreas.Add((1, 0));
-                useAreas.Add((0, -1));
-                useAreas.Add((-1, 0));
-                useAreas.Add((1, 1));
-                useAreas.Add((1, -1));
-                useAreas.Add((-1, 1));
-                useAreas.Add((-1, -1));
+                // For non-walkable objects, use areas are all adjacent tiles
+                useAreas = ObjectUtilities.GenerateUseAreasForSize(tileSize);
             }
 
             // Load sprite key (defaults to empty string if not specified)
@@ -258,6 +271,7 @@ public static class ContentLoader
             {
                 Name = key,
                 Walkable = walkable,
+                TileSize = tileSize,
                 SatisfiesNeedId = ResolveReference(
                     data.Get("satisfiesNeed"),
                     registry.GetNeedId,

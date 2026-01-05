@@ -42,7 +42,8 @@ Objects = {
         interactionDuration = 4000,
         grantsBuff = "WellRested",
         walkable = true,  -- pawn stands on the bed to sleep
-        spriteKey = "bed"
+        spriteKey = "bed",
+        tileSize = 2  -- 2x2 bed
     },
     Sink = {
         satisfiesNeed = "Hygiene",

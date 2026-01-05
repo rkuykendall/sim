@@ -170,10 +170,28 @@ public sealed class Simulation
 
         var objDef = Content.Objects[objectDefId];
 
-        if (!World.GetTile(coord).Walkable)
-            throw new InvalidOperationException(
-                $"Cannot place object at {coord}: tile is already occupied"
-            );
+        // Get all tiles this object will occupy
+        var occupiedTiles = ObjectUtilities.GetOccupiedTiles(coord, objDef);
+
+        // Validate ALL occupied tiles are in bounds
+        foreach (var tile in occupiedTiles)
+        {
+            if (!World.IsInBounds(tile))
+                throw new InvalidOperationException(
+                    $"Cannot place {objDef.TileSize}x{objDef.TileSize} object at {coord}: "
+                        + $"tile {tile} is out of bounds"
+                );
+        }
+
+        // Validate ALL occupied tiles are walkable (not blocked)
+        foreach (var tile in occupiedTiles)
+        {
+            if (!World.GetTile(tile).Walkable)
+                throw new InvalidOperationException(
+                    $"Cannot place {objDef.TileSize}x{objDef.TileSize} object at {coord}: "
+                        + $"tile {tile} is already occupied"
+                );
+        }
 
         int paletteSize = 1;
         if (Content.ColorPalettes.TryGetValue(SelectedPaletteId, out var paletteDef))
@@ -196,9 +214,13 @@ public sealed class Simulation
         // Create attachment component for all objects (tracks which pawns use them)
         Entities.Attachments[id] = new AttachmentComponent();
 
+        // Mark ALL occupied tiles as blocked if object is not walkable
         if (!objDef.Walkable)
         {
-            World.GetTile(coord).ObjectBlocksMovement = true;
+            foreach (var tile in occupiedTiles)
+            {
+                World.GetTile(tile).ObjectBlocksMovement = true;
+            }
         }
 
         return id;
@@ -217,7 +239,15 @@ public sealed class Simulation
             var objDef = Content.Objects[objComp.ObjectDefId];
             if (!objDef.Walkable)
             {
-                World.GetTile(pos.Coord).ObjectBlocksMovement = false;
+                // Unblock ALL occupied tiles
+                var occupiedTiles = ObjectUtilities.GetOccupiedTiles(pos.Coord, objDef);
+                foreach (var tile in occupiedTiles)
+                {
+                    if (World.IsInBounds(tile))
+                    {
+                        World.GetTile(tile).ObjectBlocksMovement = false;
+                    }
+                }
             }
         }
 
@@ -513,15 +543,26 @@ public sealed class Simulation
 
     /// <summary>
     /// Delete an object at the specified position (if any). Returns true if an object was deleted.
+    /// For multi-tile objects, clicking any occupied tile will delete the entire object.
     /// </summary>
     public bool TryDeleteObject(TileCoord coord)
     {
         foreach (var objId in Entities.AllObjects())
         {
-            if (Entities.Positions.TryGetValue(objId, out var pos) && pos.Coord == coord)
+            if (
+                Entities.Positions.TryGetValue(objId, out var pos)
+                && Entities.Objects.TryGetValue(objId, out var objComp)
+            )
             {
-                DestroyEntity(objId);
-                return true;
+                var objDef = Content.Objects[objComp.ObjectDefId];
+                var occupiedTiles = ObjectUtilities.GetOccupiedTiles(pos.Coord, objDef);
+
+                // Check if clicked tile is within any occupied tile
+                if (occupiedTiles.Any(t => t == coord))
+                {
+                    DestroyEntity(objId);
+                    return true;
+                }
             }
         }
         return false;

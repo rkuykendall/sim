@@ -711,9 +711,32 @@ public partial class GameRoot : Node2D
             && BuildToolState.SelectedObjectDefId.HasValue
         )
         {
-            var color = _currentPalette[BuildToolState.SelectedColorIndex];
-            color.A = 0.5f;
-            DrawRect(rect, color, true);
+            // Get object definition to determine its size
+            if (
+                _sim.Content.Objects.TryGetValue(
+                    BuildToolState.SelectedObjectDefId.Value,
+                    out var objDef
+                )
+            )
+            {
+                // Calculate all tiles that will be occupied
+                var occupiedTiles = ObjectUtilities.GetOccupiedTiles(coord, objDef);
+
+                var color = _currentPalette[BuildToolState.SelectedColorIndex];
+                color.A = 0.5f;
+
+                // Draw all occupied tiles for multi-tile objects
+                foreach (var tile in occupiedTiles)
+                {
+                    var tileRect = new Rect2(
+                        tile.X * RenderingConstants.RenderedTileSize,
+                        tile.Y * RenderingConstants.RenderedTileSize,
+                        RenderingConstants.RenderedTileSize,
+                        RenderingConstants.RenderedTileSize
+                    );
+                    DrawRect(tileRect, color, true);
+                }
+            }
         }
 
         if (
@@ -724,7 +747,33 @@ public partial class GameRoot : Node2D
             )
         )
         {
-            DrawRect(rect, Colors.White, false, 2f);
+            // For multi-tile objects, draw borders around all occupied tiles
+            if (
+                BuildToolState.Mode == BuildToolMode.PlaceObject
+                && BuildToolState.SelectedObjectDefId.HasValue
+                && _sim.Content.Objects.TryGetValue(
+                    BuildToolState.SelectedObjectDefId.Value,
+                    out var objDef
+                )
+            )
+            {
+                var occupiedTiles = ObjectUtilities.GetOccupiedTiles(coord, objDef);
+                foreach (var tile in occupiedTiles)
+                {
+                    var tileRect = new Rect2(
+                        tile.X * RenderingConstants.RenderedTileSize,
+                        tile.Y * RenderingConstants.RenderedTileSize,
+                        RenderingConstants.RenderedTileSize,
+                        RenderingConstants.RenderedTileSize
+                    );
+                    DrawRect(tileRect, Colors.White, false, 2f);
+                }
+            }
+            else
+            {
+                // For single-tile tools, draw single border
+                DrawRect(rect, Colors.White, false, 2f);
+            }
         }
     }
 
@@ -753,12 +802,30 @@ public partial class GameRoot : Node2D
 
         foreach (var (id, node) in _objectNodes)
         {
+            // Get object definition to determine size
+            var objSnapshot = _lastSnapshot?.Objects.FirstOrDefault(o => o.Id.Value == id);
+            if (objSnapshot == null)
+                continue;
+
+            if (!_sim.Content.Objects.TryGetValue(objSnapshot.ObjectDefId, out var objDef))
+                continue;
+
+            // Calculate hitbox based on tile size
+            // For a 2x2 object, the hitbox should cover 2x2 tiles
             var objPos = node.Position;
+
+            // Expand hitbox for multi-tile objects
+            // The anchor is at tile center, need to extend to cover all tiles
+            float rightExpand =
+                (objDef.TileSize - 1) * RenderingConstants.RenderedTileSize + halfSize;
+            float downExpand =
+                (objDef.TileSize - 1) * RenderingConstants.RenderedTileSize + halfSize;
+
             bool hit =
                 pos.X >= objPos.X - halfSize
-                && pos.X <= objPos.X + halfSize
+                && pos.X <= objPos.X + rightExpand
                 && pos.Y >= objPos.Y - halfSize
-                && pos.Y <= objPos.Y + halfSize;
+                && pos.Y <= objPos.Y + downExpand;
 
             if (hit)
                 return id;
@@ -788,16 +855,32 @@ public partial class GameRoot : Node2D
             DrawRect(rect, Colors.Magenta, false, 2f);
         }
 
-        const float objHalf = ObjectHitboxSize / 2f;
+        // Draw occupied tiles for multi-tile objects
         foreach (var (id, node) in _objectNodes)
         {
-            var rect = new Rect2(
-                node.Position.X - objHalf,
-                node.Position.Y - objHalf,
-                ObjectHitboxSize,
-                ObjectHitboxSize
-            );
-            DrawRect(rect, Colors.Cyan, false, 2f);
+            var objSnapshot = _lastSnapshot?.Objects.FirstOrDefault(o => o.Id.Value == id);
+            if (
+                objSnapshot != null
+                && _sim.Content.Objects.TryGetValue(objSnapshot.ObjectDefId, out var objDef)
+            )
+            {
+                // Draw occupied tiles for multi-tile objects
+                var occupiedTiles = ObjectUtilities.GetOccupiedTiles(
+                    new TileCoord(objSnapshot.X, objSnapshot.Y),
+                    objDef
+                );
+
+                foreach (var tile in occupiedTiles)
+                {
+                    var tileRect = new Rect2(
+                        tile.X * RenderingConstants.RenderedTileSize,
+                        tile.Y * RenderingConstants.RenderedTileSize,
+                        RenderingConstants.RenderedTileSize,
+                        RenderingConstants.RenderedTileSize
+                    );
+                    DrawRect(tileRect, Colors.Cyan, false, 2f);
+                }
+            }
         }
 
         if (_lastSnapshot != null)
@@ -1267,7 +1350,7 @@ public partial class GameRoot : Node2D
                         var texture = SpriteResourceManager.GetTexture(objDef.SpriteKey);
                         if (texture != null)
                         {
-                            ovInit.InitializeWithSprite(texture);
+                            ovInit.InitializeWithSprite(texture, objDef.TileSize);
                         }
                     }
                 }
