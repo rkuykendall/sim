@@ -241,6 +241,7 @@ public static class ContentLoader
 
             var obj = new ObjectDef
             {
+                Name = key,
                 Walkable = walkable,
                 SatisfiesNeedId = ResolveReference(
                     data.Get("satisfiesNeed"),

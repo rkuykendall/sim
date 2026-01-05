@@ -72,6 +72,7 @@ public sealed class EntityManager
     public readonly Dictionary<EntityId, BuffComponent> Buffs = new();
     public readonly Dictionary<EntityId, ActionComponent> Actions = new();
     public readonly Dictionary<EntityId, ObjectComponent> Objects = new();
+    public readonly Dictionary<EntityId, AttachmentComponent> Attachments = new();
 
     public IEnumerable<EntityId> AllPawns() => Pawns.Keys;
 
@@ -145,5 +146,6 @@ public sealed class EntityManager
         Buffs.Remove(id);
         Actions.Remove(id);
         Objects.Remove(id);
+        Attachments.Remove(id);
     }
 }

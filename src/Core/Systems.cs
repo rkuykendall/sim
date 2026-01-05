@@ -532,6 +532,19 @@ public sealed class ActionSystem : ISystem
                     );
                 }
 
+                // Increment attachment (cap at 10)
+                if (ctx.Entities.Attachments.TryGetValue(targetId, out var attachmentComp))
+                {
+                    if (!attachmentComp.UserAttachments.ContainsKey(pawnId))
+                    {
+                        attachmentComp.UserAttachments[pawnId] = 0;
+                    }
+                    attachmentComp.UserAttachments[pawnId] = Math.Min(
+                        10,
+                        attachmentComp.UserAttachments[pawnId] + 1
+                    );
+                }
+
                 objComp.InUse = false;
                 objComp.UsedBy = null;
             }
@@ -951,7 +964,7 @@ public sealed class AISystem : ISystem
             return null;
 
         EntityId? best = null;
-        int bestDist = int.MaxValue;
+        float bestScore = float.MinValue;
 
         foreach (var objId in ctx.Entities.AllObjects())
         {
@@ -972,9 +985,30 @@ public sealed class AISystem : ISystem
                 Math.Abs(pawnPos.Coord.X - objPos.Coord.X)
                 + Math.Abs(pawnPos.Coord.Y - objPos.Coord.Y);
 
-            if (dist < bestDist)
+            // Calculate preference score based on attachment
+            float score = -dist; // Closer is better
+
+            if (ctx.Entities.Attachments.TryGetValue(objId, out var attachmentComp))
             {
-                bestDist = dist;
+                // My attachment increases preference
+                int myAttachment = attachmentComp.UserAttachments.GetValueOrDefault(pawnId, 0);
+                score += myAttachment * 20;
+
+                // Others' attachment decreases preference
+                int highestOtherAttachment = 0;
+                foreach (var (otherId, attachment) in attachmentComp.UserAttachments)
+                {
+                    if (otherId != pawnId && attachment > highestOtherAttachment)
+                    {
+                        highestOtherAttachment = attachment;
+                    }
+                }
+                score -= highestOtherAttachment * 15;
+            }
+
+            if (score > bestScore)
+            {
+                bestScore = score;
                 best = objId;
             }
         }

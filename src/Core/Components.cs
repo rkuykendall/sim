@@ -52,3 +52,11 @@ public sealed class ObjectComponent
     public EntityId? UsedBy { get; set; }
     public int ColorIndex { get; set; } = 0; // Index into color palette
 }
+
+// Attachment tracking (which pawns use this object regularly)
+public sealed class AttachmentComponent
+{
+    // Pawn ID → attachment strength (0-10)
+    // Higher values = pawn uses this object more often
+    public Dictionary<EntityId, int> UserAttachments { get; set; } = new();
+}

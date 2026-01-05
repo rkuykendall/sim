@@ -182,6 +182,9 @@ public sealed class Simulation
 
         var id = Entities.CreateObject(coord, objectDefId, safeColorIndex);
 
+        // Create attachment component for all objects (tracks which pawns use them)
+        Entities.Attachments[id] = new AttachmentComponent();
+
         if (!objDef.Walkable)
         {
             World.GetTile(coord).ObjectBlocksMovement = true;
