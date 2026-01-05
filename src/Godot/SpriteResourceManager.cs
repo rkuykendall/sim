@@ -28,12 +28,12 @@ public static class SpriteResourceManager
         ["rock"] = "res://sprites/tiles/rock.png",
         ["plant"] = "res://sprites/tiles/plant.png",
 
-        // Object sprites (Medieval Fantasy Buildings)
-        ["home"] = "res://sprites/objects/home.png",
-        ["farm"] = "res://sprites/objects/farm.png",
-        ["market"] = "res://sprites/objects/market.png",
-        ["well"] = "res://sprites/objects/well.png",
-        ["tavern"] = "res://sprites/objects/tavern.png",
+        // Building sprites
+        ["home"] = "res://sprites/buildings/home.png",
+        ["farm"] = "res://sprites/buildings/farm.png",
+        ["market"] = "res://sprites/buildings/market.png",
+        ["well"] = "res://sprites/buildings/well.png",
+        ["tavern"] = "res://sprites/buildings/tavern.png",
 
         // Character sprites
         ["character_walk"] = "res://sprites/characters/character_walk.png",

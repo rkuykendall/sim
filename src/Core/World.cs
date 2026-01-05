@@ -45,9 +45,9 @@ public readonly struct TileCoord : IEquatable<TileCoord>
 /// A single tile in the world grid.
 /// </summary>
 /// <remarks>
-/// Tiles store terrain data (texture, walkability). Objects placed on tiles
+/// Tiles store terrain data (texture, walkability). Buildings placed on tiles
 /// are separate entities tracked by EntityManager, not stored on the tile itself.
-/// When an object is placed, it may modify tile properties (e.g., ObjectBlocksMovement = true).
+/// When a building is placed, it may modify tile properties (e.g., BuildingBlocksMovement = true).
 /// Tiles now support layering with a base terrain (always visible) and optional overlay terrain (autotiling paths, etc.)
 /// </remarks>
 public sealed class Tile
@@ -91,14 +91,14 @@ public sealed class Tile
     /// <summary>Height/walkability level of the terrain (from base terrain definition).</summary>
     public TerrainPassability Passability { get; set; } = TerrainPassability.Ground;
 
-    /// <summary>Whether this tile blocks light (from terrain or placed objects).</summary>
+    /// <summary>Whether this tile blocks light (from terrain or placed buildings).</summary>
     public bool BlocksLight { get; set; } = false;
 
-    /// <summary>Whether a placed object blocks movement on this tile.</summary>
-    public bool ObjectBlocksMovement { get; set; } = false;
+    /// <summary>Whether a placed building blocks movement on this tile.</summary>
+    public bool BuildingBlocksMovement { get; set; } = false;
 
-    /// <summary>Whether pawns can walk through this tile. Computed from Passability and ObjectBlocksMovement.</summary>
-    public bool Walkable => Passability == TerrainPassability.Ground && !ObjectBlocksMovement;
+    /// <summary>Whether pawns can walk through this tile. Computed from Passability and BuildingBlocksMovement.</summary>
+    public bool Walkable => Passability == TerrainPassability.Ground && !BuildingBlocksMovement;
 }
 
 /// <summary>
@@ -106,8 +106,8 @@ public sealed class Tile
 /// </summary>
 /// <remarks>
 /// The world is a simple 2D array of tiles with defined bounds.
-/// Objects are stored as entities in EntityManager, not on tiles.
-/// Placing an object should update the tile's Walkable properties as needed.
+/// Buildings are stored as entities in EntityManager, not on tiles.
+/// Placing a building should update the tile's Walkable properties as needed.
 /// </remarks>
 public sealed class World
 {
@@ -164,7 +164,7 @@ public sealed class World
         coord.X >= 0 && coord.X < Width && coord.Y >= 0 && coord.Y < Height;
 
     /// <summary>
-    /// Check if a tile is walkable (in bounds and not blocked by terrain/objects).
+    /// Check if a tile is walkable (in bounds and not blocked by terrain/buildings).
     /// </summary>
     public bool IsWalkable(TileCoord coord) =>
         IsInBounds(coord) && _tiles[coord.X, coord.Y].Walkable;

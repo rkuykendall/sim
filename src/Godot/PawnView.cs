@@ -325,10 +325,10 @@ public partial class PawnView : Node2D
         // Get icon sprite key from content def
         string? iconKey = null;
 
-        // Try to get sprite key from ObjectDef
-        if (content.Objects.TryGetValue(iconDefId.Value, out var objDef))
+        // Try to get sprite key from BuildingDef
+        if (content.Buildings.TryGetValue(iconDefId.Value, out var buildingDef))
         {
-            iconKey = objDef.SpriteKey;
+            iconKey = buildingDef.SpriteKey;
         }
         // Try BuffDef (buffs don't currently have sprite keys, so we'll use placeholder icons)
         else if (content.Buffs.TryGetValue(iconDefId.Value, out var buffDef))

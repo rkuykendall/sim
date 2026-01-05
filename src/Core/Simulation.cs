@@ -30,9 +30,9 @@ public sealed class SimulationConfig
     public bool DisableThemes { get; set; } = false;
 
     /// <summary>
-    /// Objects to place in the world: (ObjectDefId, X, Y)
+    /// Buildings to place in the world: (BuildingDefId, X, Y)
     /// </summary>
-    public List<(int ObjectDefId, int X, int Y)> Objects { get; set; } = new();
+    public List<(int BuildingDefId, int X, int Y)> Buildings { get; set; } = new();
 
     /// <summary>
     /// Pawns to create: (Name, X, Y, NeedsDict)
@@ -115,9 +115,9 @@ public sealed class Simulation
 
         if (config != null)
         {
-            foreach (var (objectDefId, x, y) in config.Objects)
+            foreach (var (buildingDefId, x, y) in config.Buildings)
             {
-                CreateObject(objectDefId, new TileCoord(x, y));
+                CreateBuilding(buildingDefId, new TileCoord(x, y));
             }
 
             foreach (var pawnConfig in config.Pawns)
@@ -156,29 +156,29 @@ public sealed class Simulation
     }
 
     /// <summary>
-    /// Create an object in the world at the specified position.
+    /// Create a building in the world at the specified position.
     /// </summary>
-    /// <exception cref="ArgumentException">Thrown when objectDefId is not a valid object definition.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the tile is already occupied by another object.</exception>
-    public EntityId CreateObject(int objectDefId, TileCoord coord, int colorIndex = 0)
+    /// <exception cref="ArgumentException">Thrown when buildingDefId is not a valid building definition.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the tile is already occupied by another building.</exception>
+    public EntityId CreateBuilding(int buildingDefId, TileCoord coord, int colorIndex = 0)
     {
-        if (!Content.Objects.ContainsKey(objectDefId))
+        if (!Content.Buildings.ContainsKey(buildingDefId))
             throw new ArgumentException(
-                $"Unknown object definition ID: {objectDefId}",
-                nameof(objectDefId)
+                $"Unknown building definition ID: {buildingDefId}",
+                nameof(buildingDefId)
             );
 
-        var objDef = Content.Objects[objectDefId];
+        var buildingDef = Content.Buildings[buildingDefId];
 
-        // Get all tiles this object will occupy
-        var occupiedTiles = ObjectUtilities.GetOccupiedTiles(coord, objDef);
+        // Get all tiles this building will occupy
+        var occupiedTiles = BuildingUtilities.GetOccupiedTiles(coord, buildingDef);
 
         // Validate ALL occupied tiles are in bounds
         foreach (var tile in occupiedTiles)
         {
             if (!World.IsInBounds(tile))
                 throw new InvalidOperationException(
-                    $"Cannot place {objDef.TileSize}x{objDef.TileSize} object at {coord}: "
+                    $"Cannot place {buildingDef.TileSize}x{buildingDef.TileSize} building at {coord}: "
                         + $"tile {tile} is out of bounds"
                 );
         }
@@ -188,7 +188,7 @@ public sealed class Simulation
         {
             if (!World.GetTile(tile).Walkable)
                 throw new InvalidOperationException(
-                    $"Cannot place {objDef.TileSize}x{objDef.TileSize} object at {coord}: "
+                    $"Cannot place {buildingDef.TileSize}x{buildingDef.TileSize} building at {coord}: "
                         + $"tile {tile} is already occupied"
                 );
         }
@@ -198,28 +198,28 @@ public sealed class Simulation
             paletteSize = paletteDef.Colors.Count;
         int safeColorIndex = GetSafeColorIndex(colorIndex, paletteSize);
 
-        var id = Entities.CreateObject(coord, objectDefId, safeColorIndex);
+        var id = Entities.CreateBuilding(coord, buildingDefId, safeColorIndex);
 
-        // Create resource component if this object has a resource type
-        if (objDef.ResourceType != null)
+        // Create resource component if this building has a resource type
+        if (buildingDef.ResourceType != null)
         {
             Entities.Resources[id] = new ResourceComponent
             {
-                ResourceType = objDef.ResourceType,
-                CurrentAmount = objDef.MaxResourceAmount,
-                MaxAmount = objDef.MaxResourceAmount,
-                DepletionMult = objDef.DepletionMult,
+                ResourceType = buildingDef.ResourceType,
+                CurrentAmount = buildingDef.MaxResourceAmount,
+                MaxAmount = buildingDef.MaxResourceAmount,
+                DepletionMult = buildingDef.DepletionMult,
             };
         }
-        // Create attachment component for all objects (tracks which pawns use them)
+        // Create attachment component for all buildings (tracks which pawns use them)
         Entities.Attachments[id] = new AttachmentComponent();
 
-        // Mark ALL occupied tiles as blocked if object is not walkable
-        if (!objDef.Walkable)
+        // Mark ALL occupied tiles as blocked if building is not walkable
+        if (!buildingDef.Walkable)
         {
             foreach (var tile in occupiedTiles)
             {
-                World.GetTile(tile).ObjectBlocksMovement = true;
+                World.GetTile(tile).BuildingBlocksMovement = true;
             }
         }
 
@@ -227,25 +227,25 @@ public sealed class Simulation
     }
 
     /// <summary>
-    /// Destroy an entity and clean up world state (e.g., restore tile walkability for objects).
+    /// Destroy an entity and clean up world state (e.g., restore tile walkability for buildings).
     /// </summary>
     public void DestroyEntity(EntityId id)
     {
         if (
-            Entities.Objects.TryGetValue(id, out var objComp)
+            Entities.Buildings.TryGetValue(id, out var buildingComp)
             && Entities.Positions.TryGetValue(id, out var pos)
         )
         {
-            var objDef = Content.Objects[objComp.ObjectDefId];
-            if (!objDef.Walkable)
+            var buildingDef = Content.Buildings[buildingComp.BuildingDefId];
+            if (!buildingDef.Walkable)
             {
                 // Unblock ALL occupied tiles
-                var occupiedTiles = ObjectUtilities.GetOccupiedTiles(pos.Coord, objDef);
+                var occupiedTiles = BuildingUtilities.GetOccupiedTiles(pos.Coord, buildingDef);
                 foreach (var tile in occupiedTiles)
                 {
                     if (World.IsInBounds(tile))
                     {
-                        World.GetTile(tile).ObjectBlocksMovement = false;
+                        World.GetTile(tile).BuildingBlocksMovement = false;
                     }
                 }
             }
@@ -542,20 +542,20 @@ public sealed class Simulation
     }
 
     /// <summary>
-    /// Delete an object at the specified position (if any). Returns true if an object was deleted.
-    /// For multi-tile objects, clicking any occupied tile will delete the entire object.
+    /// Delete a building at the specified position (if any). Returns true if a building was deleted.
+    /// For multi-tile buildings, clicking any occupied tile will delete the entire building.
     /// </summary>
-    public bool TryDeleteObject(TileCoord coord)
+    public bool TryDeleteBuilding(TileCoord coord)
     {
-        foreach (var objId in Entities.AllObjects())
+        foreach (var objId in Entities.AllBuildings())
         {
             if (
                 Entities.Positions.TryGetValue(objId, out var pos)
-                && Entities.Objects.TryGetValue(objId, out var objComp)
+                && Entities.Buildings.TryGetValue(objId, out var buildingComp)
             )
             {
-                var objDef = Content.Objects[objComp.ObjectDefId];
-                var occupiedTiles = ObjectUtilities.GetOccupiedTiles(pos.Coord, objDef);
+                var buildingDef = Content.Buildings[buildingComp.BuildingDefId];
+                var occupiedTiles = BuildingUtilities.GetOccupiedTiles(pos.Coord, buildingDef);
 
                 // Check if clicked tile is within any occupied tile
                 if (occupiedTiles.Any(t => t == coord))
@@ -569,8 +569,8 @@ public sealed class Simulation
     }
 
     /// <summary>
-    /// Smart delete tool that removes objects, overlay terrain, or resets to flat terrain.
-    /// Priority: 1) Delete object if present, 2) Clear overlay terrain if present, 3) Reset base to flat.
+    /// Smart delete tool that removes buildings, overlay terrain, or resets to flat terrain.
+    /// Priority: 1) Delete building if present, 2) Clear overlay terrain if present, 3) Reset base to flat.
     /// Returns the deleted tile plus all its 8-neighbors for autotiling updates.
     /// </summary>
     /// <returns>Array containing the deleted tile and its neighbors (for rendering updates)</returns>
@@ -579,7 +579,7 @@ public sealed class Simulation
         if (!World.IsInBounds(coord))
             return Array.Empty<TileCoord>();
 
-        if (TryDeleteObject(coord))
+        if (TryDeleteBuilding(coord))
             return GetTilesWithNeighbors(new[] { coord });
 
         var tile = World.GetTile(coord);
@@ -721,16 +721,16 @@ public sealed class Simulation
     /// </summary>
     public int GetMaxPawns()
     {
-        var bedId = Content.GetObjectId("Home");
+        var bedId = Content.GetBuildingId("Home");
         if (!bedId.HasValue)
             return 0;
 
         int bedCount = 0;
-        foreach (var objId in Entities.AllObjects())
+        foreach (var objId in Entities.AllBuildings())
         {
-            if (Entities.Objects.TryGetValue(objId, out var objComp))
+            if (Entities.Buildings.TryGetValue(objId, out var buildingComp))
             {
-                if (objComp.ObjectDefId == bedId.Value)
+                if (buildingComp.BuildingDefId == bedId.Value)
                 {
                     bedCount++;
                 }
@@ -799,7 +799,7 @@ public sealed class Simulation
                 score += diversityMap[x, y];
             }
         }
-        score += Entities.AllObjects().Count();
+        score += Entities.AllBuildings().Count();
         return score;
     }
 
@@ -865,7 +865,7 @@ public sealed class Simulation
     }
 
     /// <summary>
-    /// Example: When initializing test/demo objects, assign color indices safely.
+    /// Example: When initializing test/demo buildings, assign color indices safely.
     /// </summary>
     private int GetSafeColorIndex(int requestedIndex, int paletteSize)
     {
@@ -900,14 +900,14 @@ public sealed class Simulation
     }
 
     /// <summary>
-    /// Format an EntityId as "Pawn #X" or "Object #X" for debugging and UI display.
+    /// Format an EntityId as "Pawn #X" or "Building #X" for debugging and UI display.
     /// </summary>
     public string FormatEntityId(EntityId id)
     {
         if (Entities.Pawns.ContainsKey(id))
             return $"Pawn #{id.Value}";
-        if (Entities.Objects.ContainsKey(id))
-            return $"Object #{id.Value}";
+        if (Entities.Buildings.ContainsKey(id))
+            return $"Building #{id.Value}";
         return $"Entity #{id.Value}";
     }
 }

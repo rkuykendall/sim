@@ -30,7 +30,7 @@
     <Compile Include="../../src/Core/ContentStore.cs" Link="Core/ContentStore.cs" />
     <Compile Include="../../src/Core/Definitions.cs" Link="Core/Definitions.cs" />
     <Compile Include="../../src/Core/EntityManager.cs" Link="Core/EntityManager.cs" />
-    <Compile Include="../../src/Core/ObjectUtilities.cs" Link="Core/ObjectUtilities.cs" />
+    <Compile Include="../../src/Core/BuildingUtilities.cs" Link="Core/BuildingUtilities.cs" />
     <Compile Include="../../src/Core/Pathfinder.cs" Link="Core/Pathfinder.cs" />
     <Compile Include="../../src/Core/RenderSnapshot.cs" Link="Core/RenderSnapshot.cs" />
     <Compile Include="../../src/Core/Simulation.cs" Link="Core/Simulation.cs" />

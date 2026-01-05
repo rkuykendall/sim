@@ -32,23 +32,23 @@ public sealed class NeedDef : IContentDef
     public int? LowDebuffId { get; init; } // Buff applied when below low threshold (set during content loading)
 }
 
-// Object/building definition
-public sealed class ObjectDef : IContentDef
+// Building definition
+public sealed class BuildingDef : IContentDef
 {
     public int Id { get; set; }
     public string Name { get; init; } = "";
     public bool Walkable { get; init; } = false;
     public bool Interactable { get; init; } = true;
-    public int TileSize { get; init; } = 1; // 1 = 1x1, 2 = 2x2, 3 = 3x3 (square objects only)
+    public int TileSize { get; init; } = 1; // 1 = 1x1, 2 = 2x2, 3 = 3x3 (square buildings only)
     public int? SatisfiesNeedId { get; init; } // Set during content loading
     public float NeedSatisfactionAmount { get; init; } = 30f;
     public int InteractionDurationTicks { get; init; } = 100;
     public int? GrantsBuffId { get; init; } // Buff to apply when interaction completes (set during content loading)
-    public IReadOnlyList<(int dx, int dy)> UseAreas { get; init; } = Array.Empty<(int, int)>(); // Relative tile offsets where pawn can use this object
+    public IReadOnlyList<(int dx, int dy)> UseAreas { get; init; } = Array.Empty<(int, int)>(); // Relative tile offsets where pawn can use this building
     public string SpriteKey { get; init; } = ""; // Path to sprite texture
 
     // Resource system
-    public string? ResourceType { get; init; } // "food", "water", etc. - null if object doesn't use resources
+    public string? ResourceType { get; init; } // "food", "water", etc. - null if building doesn't use resources
     public float MaxResourceAmount { get; init; } = 100f;
     public float DepletionMult { get; init; } = 1f; // 0 = infinite resources, 1 = normal depletion
     public bool CanBeWorkedAt { get; init; } = false; // Can pawns work here to replenish resources?
@@ -59,7 +59,7 @@ public enum ActionType
 {
     Idle,
     MoveTo,
-    UseObject,
+    UseBuilding,
     Socialize,
     Work,
 }
@@ -106,5 +106,5 @@ public sealed class ActionDef
 
     // Expression bubble data (shown while performing this action)
     public ExpressionType? Expression { get; init; }
-    public int? ExpressionIconDefId { get; init; } // Object/Terrain/Buff def ID for icon
+    public int? ExpressionIconDefId { get; init; } // Building/Terrain/Buff def ID for icon
 }

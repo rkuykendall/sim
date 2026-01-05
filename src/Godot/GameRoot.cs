@@ -13,10 +13,10 @@ public partial class GameRoot : Node2D
     private float _accumulator = 0f;
     private float _tickDelta;
     private const float PawnHitboxSize = 24f;
-    private const float ObjectHitboxSize = 28f;
+    private const float BuildingHitboxSize = 28f;
 
     private readonly Dictionary<int, Node2D> _pawnNodes = new();
-    private readonly Dictionary<int, Node2D> _objectNodes = new();
+    private readonly Dictionary<int, Node2D> _buildingNodes = new();
     private readonly Dictionary<TileCoord, Node2D> _tileNodes = new();
 
     // Reusable collections for sync operations (avoid per-frame allocations)
@@ -36,7 +36,7 @@ public partial class GameRoot : Node2D
     private Texture2D? _lookUpSprite = null;
 
     private int? _selectedPawnId = null;
-    private int? _selectedObjectId = null;
+    private int? _selectedBuildingId = null;
     private bool _debugMode = false;
     private TileCoord? _hoveredTile = null;
     private RenderSnapshot? _lastSnapshot = null;
@@ -49,13 +49,13 @@ public partial class GameRoot : Node2D
     public PackedScene PawnScene { get; set; } = null!;
 
     [Export]
-    public PackedScene ObjectScene { get; set; } = null!;
+    public PackedScene BuildingScene { get; set; } = null!;
 
     [Export]
     public NodePath PawnsRootPath { get; set; } = ".";
 
     [Export]
-    public NodePath ObjectsRootPath { get; set; } = ".";
+    public NodePath BuildingsRootPath { get; set; } = ".";
 
     [Export]
     public NodePath TilesRootPath { get; set; } = ".";
@@ -64,7 +64,7 @@ public partial class GameRoot : Node2D
     public NodePath InfoPanelPath { get; set; } = "";
 
     [Export]
-    public NodePath ObjectInfoPanelPath { get; set; } = "";
+    public NodePath BuildingInfoPanelPath { get; set; } = "";
 
     [Export]
     public NodePath TimeDisplayPath { get; set; } = "";
@@ -88,7 +88,7 @@ public partial class GameRoot : Node2D
     public NodePath MusicManagerPath { get; set; } = "";
 
     private Node2D _pawnsRoot = null!;
-    private Node2D _objectsRoot = null!;
+    private Node2D _buildingsRoot = null!;
     private Node2D _tilesRoot = null!;
     private Dictionary<int, ModulatableTileMapLayer> _autoTileLayers = new();
     private Dictionary<TileCoord, (Sprite2D baseSprite, Sprite2D overlaySprite)> _tileSprites =
@@ -96,7 +96,7 @@ public partial class GameRoot : Node2D
     private Dictionary<int, List<(Vector2I coord, Color color)>> _autotileUpdates = new();
     private Dictionary<int, List<Vector2I>> _autotileClearCells = new();
     private PawnInfoPanel? _infoPanel;
-    private ObjectInfoPanel? _objectInfoPanel;
+    private BuildingInfoPanel? _BuildingInfoPanel;
     private TimeDisplay? _timeDisplay;
     private ColorRect? _shadowRect;
     private ShaderMaterial? _shadowShaderMaterial;
@@ -126,7 +126,7 @@ public partial class GameRoot : Node2D
         _lookUpSprite = SpriteResourceManager.GetTexture("character_look_up");
 
         _pawnsRoot = GetNode<Node2D>(PawnsRootPath);
-        _objectsRoot = GetNode<Node2D>(ObjectsRootPath);
+        _buildingsRoot = GetNode<Node2D>(BuildingsRootPath);
         _tilesRoot = GetNode<Node2D>(TilesRootPath);
 
         InitializeAutoTileLayers();
@@ -149,8 +149,8 @@ public partial class GameRoot : Node2D
 
         if (!string.IsNullOrEmpty(InfoPanelPath))
             _infoPanel = GetNodeOrNull<PawnInfoPanel>(InfoPanelPath);
-        if (!string.IsNullOrEmpty(ObjectInfoPanelPath))
-            _objectInfoPanel = GetNodeOrNull<ObjectInfoPanel>(ObjectInfoPanelPath);
+        if (!string.IsNullOrEmpty(BuildingInfoPanelPath))
+            _BuildingInfoPanel = GetNodeOrNull<BuildingInfoPanel>(BuildingInfoPanelPath);
         if (!string.IsNullOrEmpty(TimeDisplayPath))
             _timeDisplay = GetNodeOrNull<TimeDisplay>(TimeDisplayPath);
         if (!string.IsNullOrEmpty(CRTShaderLayerPath))
@@ -229,9 +229,9 @@ public partial class GameRoot : Node2D
         _musicManager?.UpdateMusicState(snapshot);
 
         SyncPawns(snapshot);
-        SyncObjects(snapshot);
+        SyncBuildings(snapshot);
         UpdateInfoPanel(snapshot);
-        UpdateObjectInfoPanel(snapshot);
+        UpdateBuildingInfoPanel(snapshot);
         UpdateTimeDisplay(snapshot);
         UpdateNightOverlay(snapshot);
 
@@ -314,25 +314,25 @@ public partial class GameRoot : Node2D
                         return;
                     }
                     if (
-                        BuildToolState.Mode == BuildToolMode.PlaceObject
-                        && BuildToolState.SelectedObjectDefId.HasValue
+                        BuildToolState.Mode == BuildToolMode.PlaceBuilding
+                        && BuildToolState.SelectedBuildingDefId.HasValue
                     )
                     {
                         try
                         {
-                            _sim.CreateObject(
-                                BuildToolState.SelectedObjectDefId.Value,
+                            _sim.CreateBuilding(
+                                BuildToolState.SelectedBuildingDefId.Value,
                                 tileCoord,
                                 BuildToolState.SelectedColorIndex
                             );
                         }
                         catch (System.InvalidOperationException)
                         {
-                            GD.Print($"Cannot place object at {tileCoord}: tile occupied");
+                            GD.Print($"Cannot place building at {tileCoord}: tile occupied");
                         }
                         catch (System.ArgumentException ex)
                         {
-                            GD.PrintErr($"Invalid object placement: {ex.Message}");
+                            GD.PrintErr($"Invalid building placement: {ex.Message}");
                         }
                         return;
                     }
@@ -412,8 +412,8 @@ public partial class GameRoot : Node2D
                 }
 
                 _selectedPawnId = clickedPawnId;
-                _selectedObjectId = null;
-                _objectInfoPanel?.Hide();
+                _selectedBuildingId = null;
+                _BuildingInfoPanel?.Hide();
 
                 if (_pawnNodes.TryGetValue(_selectedPawnId.Value, out var newNode))
                 {
@@ -423,9 +423,9 @@ public partial class GameRoot : Node2D
                 return;
             }
 
-            var clickedObjectId = FindObjectAtPosition(localPos);
+            var clickedBuildingId = FindBuildingAtPosition(localPos);
 
-            if (clickedObjectId.HasValue)
+            if (clickedBuildingId.HasValue)
             {
                 if (
                     _selectedPawnId.HasValue
@@ -437,7 +437,7 @@ public partial class GameRoot : Node2D
                 }
 
                 _selectedPawnId = null;
-                _selectedObjectId = clickedObjectId;
+                _selectedBuildingId = clickedBuildingId;
                 _infoPanel?.Hide();
                 return;
             }
@@ -451,9 +451,9 @@ public partial class GameRoot : Node2D
                     pv.SetSelected(false);
             }
             _selectedPawnId = null;
-            _selectedObjectId = null;
+            _selectedBuildingId = null;
             _infoPanel?.Hide();
-            _objectInfoPanel?.Hide();
+            _BuildingInfoPanel?.Hide();
         }
 
         if (@event is InputEventMouseMotion)
@@ -707,25 +707,25 @@ public partial class GameRoot : Node2D
             }
         }
         else if (
-            BuildToolState.Mode == BuildToolMode.PlaceObject
-            && BuildToolState.SelectedObjectDefId.HasValue
+            BuildToolState.Mode == BuildToolMode.PlaceBuilding
+            && BuildToolState.SelectedBuildingDefId.HasValue
         )
         {
-            // Get object definition to determine its size
+            // Get building definition to determine its size
             if (
-                _sim.Content.Objects.TryGetValue(
-                    BuildToolState.SelectedObjectDefId.Value,
-                    out var objDef
+                _sim.Content.Buildings.TryGetValue(
+                    BuildToolState.SelectedBuildingDefId.Value,
+                    out var buildingDef
                 )
             )
             {
                 // Calculate all tiles that will be occupied
-                var occupiedTiles = ObjectUtilities.GetOccupiedTiles(coord, objDef);
+                var occupiedTiles = BuildingUtilities.GetOccupiedTiles(coord, buildingDef);
 
                 var color = _currentPalette[BuildToolState.SelectedColorIndex];
                 color.A = 0.5f;
 
-                // Draw all occupied tiles for multi-tile objects
+                // Draw all occupied tiles for multi-tile buildings
                 foreach (var tile in occupiedTiles)
                 {
                     var tileRect = new Rect2(
@@ -747,17 +747,17 @@ public partial class GameRoot : Node2D
             )
         )
         {
-            // For multi-tile objects, draw borders around all occupied tiles
+            // For multi-tile buildings, draw borders around all occupied tiles
             if (
-                BuildToolState.Mode == BuildToolMode.PlaceObject
-                && BuildToolState.SelectedObjectDefId.HasValue
-                && _sim.Content.Objects.TryGetValue(
-                    BuildToolState.SelectedObjectDefId.Value,
-                    out var objDef
+                BuildToolState.Mode == BuildToolMode.PlaceBuilding
+                && BuildToolState.SelectedBuildingDefId.HasValue
+                && _sim.Content.Buildings.TryGetValue(
+                    BuildToolState.SelectedBuildingDefId.Value,
+                    out var buildingDef2
                 )
             )
             {
-                var occupiedTiles = ObjectUtilities.GetOccupiedTiles(coord, objDef);
+                var occupiedTiles = BuildingUtilities.GetOccupiedTiles(coord, buildingDef2);
                 foreach (var tile in occupiedTiles)
                 {
                     var tileRect = new Rect2(
@@ -796,30 +796,32 @@ public partial class GameRoot : Node2D
         return null;
     }
 
-    private int? FindObjectAtPosition(Vector2 pos)
+    private int? FindBuildingAtPosition(Vector2 pos)
     {
-        const float halfSize = ObjectHitboxSize / 2f;
+        const float halfSize = BuildingHitboxSize / 2f;
 
-        foreach (var (id, node) in _objectNodes)
+        foreach (var (id, node) in _buildingNodes)
         {
-            // Get object definition to determine size
-            var objSnapshot = _lastSnapshot?.Objects.FirstOrDefault(o => o.Id.Value == id);
+            // Get building definition to determine size
+            var objSnapshot = _lastSnapshot?.Buildings.FirstOrDefault(o => o.Id.Value == id);
             if (objSnapshot == null)
                 continue;
 
-            if (!_sim.Content.Objects.TryGetValue(objSnapshot.ObjectDefId, out var objDef))
+            if (
+                !_sim.Content.Buildings.TryGetValue(objSnapshot.BuildingDefId, out var buildingDef3)
+            )
                 continue;
 
             // Calculate hitbox based on tile size
-            // For a 2x2 object, the hitbox should cover 2x2 tiles
+            // For a 2x2 building, the hitbox should cover 2x2 tiles
             var objPos = node.Position;
 
-            // Expand hitbox for multi-tile objects
+            // Expand hitbox for multi-tile buildings
             // The anchor is at tile center, need to extend to cover all tiles
             float rightExpand =
-                (objDef.TileSize - 1) * RenderingConstants.RenderedTileSize + halfSize;
+                (buildingDef3.TileSize - 1) * RenderingConstants.RenderedTileSize + halfSize;
             float downExpand =
-                (objDef.TileSize - 1) * RenderingConstants.RenderedTileSize + halfSize;
+                (buildingDef3.TileSize - 1) * RenderingConstants.RenderedTileSize + halfSize;
 
             bool hit =
                 pos.X >= objPos.X - halfSize
@@ -855,19 +857,22 @@ public partial class GameRoot : Node2D
             DrawRect(rect, Colors.Magenta, false, 2f);
         }
 
-        // Draw occupied tiles for multi-tile objects
-        foreach (var (id, node) in _objectNodes)
+        // Draw occupied tiles for multi-tile buildings
+        foreach (var (id, node) in _buildingNodes)
         {
-            var objSnapshot = _lastSnapshot?.Objects.FirstOrDefault(o => o.Id.Value == id);
+            var objSnapshot = _lastSnapshot?.Buildings.FirstOrDefault(o => o.Id.Value == id);
             if (
                 objSnapshot != null
-                && _sim.Content.Objects.TryGetValue(objSnapshot.ObjectDefId, out var objDef)
+                && _sim.Content.Buildings.TryGetValue(
+                    objSnapshot.BuildingDefId,
+                    out var buildingDef4
+                )
             )
             {
-                // Draw occupied tiles for multi-tile objects
-                var occupiedTiles = ObjectUtilities.GetOccupiedTiles(
+                // Draw occupied tiles for multi-tile buildings
+                var occupiedTiles = BuildingUtilities.GetOccupiedTiles(
                     new TileCoord(objSnapshot.X, objSnapshot.Y),
-                    objDef
+                    buildingDef4
                 );
 
                 foreach (var tile in occupiedTiles)
@@ -885,11 +890,11 @@ public partial class GameRoot : Node2D
 
         if (_lastSnapshot != null)
         {
-            foreach (var obj in _lastSnapshot.Objects)
+            foreach (var obj in _lastSnapshot.Buildings)
             {
-                if (_sim.Content.Objects.TryGetValue(obj.ObjectDefId, out var objDef))
+                if (_sim.Content.Buildings.TryGetValue(obj.BuildingDefId, out var buildingDef5))
                 {
-                    foreach (var (dx, dy) in objDef.UseAreas)
+                    foreach (var (dx, dy) in buildingDef5.UseAreas)
                     {
                         var useAreaRect = new Rect2(
                             (obj.X + dx) * RenderingConstants.RenderedTileSize,
@@ -1328,29 +1333,29 @@ public partial class GameRoot : Node2D
         }
     }
 
-    private void SyncObjects(RenderSnapshot snapshot)
+    private void SyncBuildings(RenderSnapshot snapshot)
     {
         _activeIds.Clear();
 
-        foreach (var obj in snapshot.Objects)
+        foreach (var obj in snapshot.Buildings)
         {
             _activeIds.Add(obj.Id.Value);
 
-            if (!_objectNodes.TryGetValue(obj.Id.Value, out var node))
+            if (!_buildingNodes.TryGetValue(obj.Id.Value, out var node))
             {
-                node = ObjectScene?.Instantiate<Node2D>() ?? new Node2D();
-                node.ZIndex = ZIndexConstants.Objects;
-                _objectsRoot.GetParent().AddChild(node);
-                _objectNodes.Add(obj.Id.Value, node);
+                node = BuildingScene?.Instantiate<Node2D>() ?? new Node2D();
+                node.ZIndex = ZIndexConstants.Buildings;
+                _buildingsRoot.GetParent().AddChild(node);
+                _buildingNodes.Add(obj.Id.Value, node);
 
-                if (node is ObjectView ovInit)
+                if (node is BuildingView ovInit)
                 {
-                    if (_sim.Content.Objects.TryGetValue(obj.ObjectDefId, out var objDef))
+                    if (_sim.Content.Buildings.TryGetValue(obj.BuildingDefId, out var buildingDef6))
                     {
-                        var texture = SpriteResourceManager.GetTexture(objDef.SpriteKey);
+                        var texture = SpriteResourceManager.GetTexture(buildingDef6.SpriteKey);
                         if (texture != null)
                         {
-                            ovInit.InitializeWithSprite(texture, objDef.TileSize);
+                            ovInit.InitializeWithSprite(texture, buildingDef6.TileSize);
                         }
                     }
                 }
@@ -1363,51 +1368,51 @@ public partial class GameRoot : Node2D
                     + RenderingConstants.RenderedTileSize / 2
             );
 
-            if (node is ObjectView ov)
+            if (node is BuildingView ov)
             {
-                ov.SetObjectInfo(obj.Name, obj.InUse, obj.ColorIndex, _currentPalette);
+                ov.SetBuildingInfo(obj.Name, obj.InUse, obj.ColorIndex, _currentPalette);
             }
         }
 
         _idsToRemove.Clear();
-        foreach (var id in _objectNodes.Keys)
+        foreach (var id in _buildingNodes.Keys)
         {
             if (!_activeIds.Contains(id))
                 _idsToRemove.Add(id);
         }
         foreach (var id in _idsToRemove)
         {
-            _objectNodes[id].QueueFree();
-            _objectNodes.Remove(id);
+            _buildingNodes[id].QueueFree();
+            _buildingNodes.Remove(id);
 
-            if (_selectedObjectId == id)
+            if (_selectedBuildingId == id)
             {
-                _selectedObjectId = null;
-                _objectInfoPanel?.Hide();
+                _selectedBuildingId = null;
+                _BuildingInfoPanel?.Hide();
             }
         }
     }
 
-    private void UpdateObjectInfoPanel(RenderSnapshot snapshot)
+    private void UpdateBuildingInfoPanel(RenderSnapshot snapshot)
     {
-        if (_objectInfoPanel == null)
+        if (_BuildingInfoPanel == null)
             return;
 
-        if (!_selectedObjectId.HasValue)
+        if (!_selectedBuildingId.HasValue)
         {
-            _objectInfoPanel.Hide();
+            _BuildingInfoPanel.Hide();
             return;
         }
 
-        var obj = snapshot.Objects.FirstOrDefault(o => o.Id.Value == _selectedObjectId.Value);
+        var obj = snapshot.Buildings.FirstOrDefault(o => o.Id.Value == _selectedBuildingId.Value);
         if (obj == null)
         {
-            _objectInfoPanel.Hide();
-            _selectedObjectId = null;
+            _BuildingInfoPanel.Hide();
+            _selectedBuildingId = null;
             return;
         }
 
-        _objectInfoPanel.ShowObject(obj, _sim.Content, _sim);
+        _BuildingInfoPanel.ShowBuilding(obj, _sim.Content, _sim);
     }
 
     private void UpdateTimeDisplay(RenderSnapshot snapshot)
@@ -1415,7 +1420,7 @@ public partial class GameRoot : Node2D
         if (_timeDisplay == null)
             return;
 
-        if (!_selectedPawnId.HasValue && !_selectedObjectId.HasValue)
+        if (!_selectedPawnId.HasValue && !_selectedBuildingId.HasValue)
         {
             _timeDisplay.Show();
             _timeDisplay.UpdateTime(snapshot.Time);

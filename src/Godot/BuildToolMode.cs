@@ -7,7 +7,7 @@ namespace SimGame.Godot;
 /// </summary>
 public enum BuildToolMode
 {
-    PlaceObject,
+    PlaceBuilding,
     PlaceTerrain,
     FillSquare,
     OutlineSquare,
@@ -51,7 +51,7 @@ public static class GameColorPalette
 public static class BuildToolState
 {
     public static BuildToolMode Mode { get; set; } = BuildToolMode.PlaceTerrain;
-    public static int? SelectedObjectDefId { get; set; } = null;
+    public static int? SelectedBuildingDefId { get; set; } = null;
     public static int? SelectedTerrainDefId { get; set; } = null;
     public static int SelectedColorIndex { get; set; } = 0;
 }

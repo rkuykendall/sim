@@ -165,9 +165,9 @@ public partial class PawnInfoPanel : PanelContainer
             return;
         }
 
-        foreach (var (objectId, strength) in pawn.Attachments)
+        foreach (var (buildingId, strength) in pawn.Attachments)
         {
-            var formattedId = _sim?.FormatEntityId(objectId) ?? objectId.ToString();
+            var formattedId = _sim?.FormatEntityId(buildingId) ?? buildingId.ToString();
             var label = new Label { Text = $"{formattedId}: {strength}/10" };
             label.AddThemeFontSizeOverride("font_size", 14);
 

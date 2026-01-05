@@ -32,14 +32,14 @@ public static class ContentLoader
         // Load color palettes first (no dependencies)
         LoadColorPalettes(registry, contentPath);
 
-        // Load in order: buffs first (needs reference them), then needs, then terrains, then objects
+        // Load in order: buffs first (needs reference them), then needs, then terrains, then buildings
         LoadBuffs(script, registry, Path.Combine(contentPath, "core", "buffs.lua"));
         LoadNeeds(script, registry, Path.Combine(contentPath, "core", "needs.lua"));
         LoadTerrains(script, registry, Path.Combine(contentPath, "core", "terrains.lua"));
-        LoadObjects(script, registry, Path.Combine(contentPath, "core", "objects.lua"));
+        LoadBuildings(script, registry, Path.Combine(contentPath, "core", "buildings.lua"));
 
         Log?.Invoke(
-            $"ContentLoader: Loaded {registry.ColorPalettes.Count} color palettes, {registry.Buffs.Count} buffs, {registry.Needs.Count} needs, {registry.Terrains.Count} terrains, {registry.Objects.Count} objects"
+            $"ContentLoader: Loaded {registry.ColorPalettes.Count} color palettes, {registry.Buffs.Count} buffs, {registry.Needs.Count} needs, {registry.Terrains.Count} terrains, {registry.Buildings.Count} buildings"
         );
 
         return registry;
@@ -201,9 +201,9 @@ public static class ContentLoader
         }
     }
 
-    private static void LoadObjects(Script script, ContentRegistry registry, string path)
+    private static void LoadBuildings(Script script, ContentRegistry registry, string path)
     {
-        var table = LoadLuaTable(script, path, "Objects");
+        var table = LoadLuaTable(script, path, "Buildings");
         if (table == null)
             return;
 
@@ -224,7 +224,7 @@ public static class ContentLoader
             if (tileSize < 1)
             {
                 throw new InvalidOperationException(
-                    $"Object '{key}' has invalid tileSize {tileSize}. Must be positive integer."
+                    $"Building '{key}' has invalid tileSize {tileSize}. Must be positive integer."
                 );
             }
 
@@ -233,7 +233,7 @@ public static class ContentLoader
 
             if (walkable)
             {
-                // For walkable objects, use areas are all occupied tiles
+                // For walkable buildings, use areas are all occupied tiles
                 for (int dx = 0; dx < tileSize; dx++)
                 {
                     for (int dy = 0; dy < tileSize; dy++)
@@ -244,8 +244,8 @@ public static class ContentLoader
             }
             else
             {
-                // For non-walkable objects, use areas are all adjacent tiles
-                useAreas = ObjectUtilities.GenerateUseAreasForSize(tileSize);
+                // For non-walkable buildings, use areas are all adjacent tiles
+                useAreas = BuildingUtilities.GenerateUseAreasForSize(tileSize);
             }
 
             // Load sprite key (defaults to empty string if not specified)
@@ -267,7 +267,7 @@ public static class ContentLoader
             var canBeWorkedAtData = data.Get("canBeWorkedAt");
             var canBeWorkedAt = !canBeWorkedAtData.IsNil() && canBeWorkedAtData.Boolean;
 
-            var obj = new ObjectDef
+            var building = new BuildingDef
             {
                 Name = key,
                 Walkable = walkable,
@@ -294,7 +294,7 @@ public static class ContentLoader
                 CanBeWorkedAt = canBeWorkedAt,
             };
 
-            registry.RegisterObject(key, obj);
+            registry.RegisterBuilding(key, building);
         }
     }
 

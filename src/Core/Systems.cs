@@ -235,7 +235,7 @@ public sealed class MoodSystem : ISystem
     }
 }
 
-// Action execution (movement, using objects)
+// Action execution (movement, using buildings)
 public sealed class ActionSystem : ISystem
 {
     private const int MoveTicksPerTile = 10;
@@ -268,8 +268,8 @@ public sealed class ActionSystem : ISystem
                 case ActionType.MoveTo:
                     ExecuteMoveTo(ctx, pawnId, actionComp);
                     break;
-                case ActionType.UseObject:
-                    ExecuteUseObject(ctx, pawnId, actionComp);
+                case ActionType.UseBuilding:
+                    ExecuteUseBuilding(ctx, pawnId, actionComp);
                     break;
                 case ActionType.Work:
                     ExecuteWork(ctx, pawnId, actionComp);
@@ -310,7 +310,7 @@ public sealed class ActionSystem : ISystem
             if (actionComp.CurrentPath == null || actionComp.CurrentPath.Count == 0)
             {
                 // Can't reach destination - clear this action AND any queued actions
-                // (e.g., if we can't reach an object, don't keep trying to use it)
+                // (e.g., if we can't reach a building, don't keep trying to use it)
                 actionComp.CurrentAction = null;
                 actionComp.ActionQueue.Clear();
                 return;
@@ -410,7 +410,7 @@ public sealed class ActionSystem : ISystem
         }
     }
 
-    private void ExecuteUseObject(SimContext ctx, EntityId pawnId, ActionComponent actionComp)
+    private void ExecuteUseBuilding(SimContext ctx, EntityId pawnId, ActionComponent actionComp)
     {
         var action = actionComp.CurrentAction!;
         if (action.TargetEntity == null)
@@ -425,12 +425,12 @@ public sealed class ActionSystem : ISystem
             return;
         if (!ctx.Entities.Positions.TryGetValue(targetId, out var objPos))
             return;
-        if (!ctx.Entities.Objects.TryGetValue(targetId, out var objCompCheck))
+        if (!ctx.Entities.Buildings.TryGetValue(targetId, out var objCompCheck))
             return;
 
-        var objDefForCheck = ctx.Content.Objects[objCompCheck.ObjectDefId];
+        var objDefForCheck = ctx.Content.Buildings[objCompCheck.BuildingDefId];
 
-        // Check if pawn is in a valid use area for this object
+        // Check if pawn is in a valid use area for this building
         bool inUseArea = IsInUseArea(pawnPos.Coord, objPos.Coord, objDefForCheck);
 
         if (!inUseArea)
@@ -468,14 +468,14 @@ public sealed class ActionSystem : ISystem
             return;
         }
 
-        if (ctx.Entities.Objects.TryGetValue(targetId, out var objComp))
+        if (ctx.Entities.Buildings.TryGetValue(targetId, out var buildingComp))
         {
-            objComp.InUse = true;
-            objComp.UsedBy = pawnId;
+            buildingComp.InUse = true;
+            buildingComp.UsedBy = pawnId;
 
             // Update display name to "Using X" now that we're actually using it
-            var objDef = ctx.Content.Objects[objComp.ObjectDefId];
-            if (action.DisplayName != $"Using {objDef.Name}")
+            var buildingDef = ctx.Content.Buildings[buildingComp.BuildingDefId];
+            if (action.DisplayName != $"Using {buildingDef.Name}")
             {
                 actionComp.CurrentAction = new ActionDef
                 {
@@ -486,7 +486,7 @@ public sealed class ActionSystem : ISystem
                     DurationTicks = action.DurationTicks,
                     SatisfiesNeedId = action.SatisfiesNeedId,
                     NeedSatisfactionAmount = action.NeedSatisfactionAmount,
-                    DisplayName = $"Using {objDef.Name}",
+                    DisplayName = $"Using {buildingDef.Name}",
                 };
                 action = actionComp.CurrentAction;
             }
@@ -495,10 +495,10 @@ public sealed class ActionSystem : ISystem
         int elapsed = ctx.Time.Tick - actionComp.ActionStartTick;
         if (elapsed >= action.DurationTicks)
         {
-            // Check if object has resources and deplete them
+            // Check if building has resources and deplete them
             bool hasResources = true;
             if (
-                objComp != null
+                buildingComp != null
                 && ctx.Entities.Resources.TryGetValue(targetId, out var resourceComp)
             )
             {
@@ -534,24 +534,26 @@ public sealed class ActionSystem : ISystem
                 }
             }
 
-            // Grant buff from object if applicable (only if resources were available)
-            if (objComp != null && hasResources)
+            // Grant buff from building if applicable (only if resources were available)
+            if (buildingComp != null && hasResources)
             {
-                var objDef2 = ctx.Content.Objects[objComp.ObjectDefId];
+                var buildingDef2 = ctx.Content.Buildings[buildingComp.BuildingDefId];
                 if (
-                    objDef2.GrantsBuffId.HasValue
+                    buildingDef2.GrantsBuffId.HasValue
                     && ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs)
                 )
                 {
-                    var buffDef = ctx.Content.Buffs[objDef2.GrantsBuffId.Value];
+                    var buffDef = ctx.Content.Buffs[buildingDef2.GrantsBuffId.Value];
 
                     // Remove existing instance of this buff (refresh it)
-                    buffs.ActiveBuffs.RemoveAll(b => b.BuffDefId == objDef2.GrantsBuffId.Value);
+                    buffs.ActiveBuffs.RemoveAll(b =>
+                        b.BuffDefId == buildingDef2.GrantsBuffId.Value
+                    );
 
                     buffs.ActiveBuffs.Add(
                         new BuffInstance
                         {
-                            BuffDefId = objDef2.GrantsBuffId.Value,
+                            BuffDefId = buildingDef2.GrantsBuffId.Value,
                             StartTick = ctx.Time.Tick,
                             EndTick = ctx.Time.Tick + buffDef.DurationTicks,
                         }
@@ -572,17 +574,17 @@ public sealed class ActionSystem : ISystem
                 }
             }
 
-            // Release the object
-            if (objComp != null)
+            // Release the building
+            if (buildingComp != null)
             {
-                objComp.InUse = false;
-                objComp.UsedBy = null;
+                buildingComp.InUse = false;
+                buildingComp.UsedBy = null;
             }
 
             // Add a brief idle action showing result
-            if (objComp != null && action.SatisfiesNeedId.HasValue)
+            if (buildingComp != null && action.SatisfiesNeedId.HasValue)
             {
-                var objDef3 = ctx.Content.Objects[objComp.ObjectDefId];
+                var buildingDef3 = ctx.Content.Buildings[buildingComp.BuildingDefId];
                 actionComp.ActionQueue.Enqueue(
                     new ActionDef
                     {
@@ -591,7 +593,7 @@ public sealed class ActionSystem : ISystem
                         DurationTicks = 10, // Brief moment
                         DisplayName = hasResources ? "Satisfied" : "Out of Resources",
                         Expression = hasResources ? ExpressionType.Happy : ExpressionType.Complaint,
-                        ExpressionIconDefId = objDef3.Id,
+                        ExpressionIconDefId = buildingDef3.Id,
                     }
                 );
             }
@@ -615,12 +617,12 @@ public sealed class ActionSystem : ISystem
             return;
         if (!ctx.Entities.Positions.TryGetValue(targetId, out var objPos))
             return;
-        if (!ctx.Entities.Objects.TryGetValue(targetId, out var objCompCheck))
+        if (!ctx.Entities.Buildings.TryGetValue(targetId, out var objCompCheck))
             return;
 
-        var objDefForCheck = ctx.Content.Objects[objCompCheck.ObjectDefId];
+        var objDefForCheck = ctx.Content.Buildings[objCompCheck.BuildingDefId];
 
-        // Check if pawn is in a valid use area for this object
+        // Check if pawn is in a valid use area for this building
         bool inUseArea = IsInUseArea(pawnPos.Coord, objPos.Coord, objDefForCheck);
 
         if (!inUseArea)
@@ -658,14 +660,14 @@ public sealed class ActionSystem : ISystem
             return;
         }
 
-        if (ctx.Entities.Objects.TryGetValue(targetId, out var objComp))
+        if (ctx.Entities.Buildings.TryGetValue(targetId, out var buildingComp2))
         {
-            objComp.InUse = true;
-            objComp.UsedBy = pawnId;
+            buildingComp2.InUse = true;
+            buildingComp2.UsedBy = pawnId;
 
             // Update display name to "Working at X" now that we're actually working
-            var objDef = ctx.Content.Objects[objComp.ObjectDefId];
-            if (action.DisplayName != $"Working at {objDef.Name}")
+            var buildingDef2 = ctx.Content.Buildings[buildingComp2.BuildingDefId];
+            if (action.DisplayName != $"Working at {buildingDef2.Name}")
             {
                 actionComp.CurrentAction = new ActionDef
                 {
@@ -676,7 +678,7 @@ public sealed class ActionSystem : ISystem
                     DurationTicks = action.DurationTicks,
                     SatisfiesNeedId = action.SatisfiesNeedId,
                     NeedSatisfactionAmount = action.NeedSatisfactionAmount,
-                    DisplayName = $"Working at {objDef.Name}",
+                    DisplayName = $"Working at {buildingDef2.Name}",
                 };
                 action = actionComp.CurrentAction;
             }
@@ -685,9 +687,9 @@ public sealed class ActionSystem : ISystem
         int elapsed = ctx.Time.Tick - actionComp.ActionStartTick;
         if (elapsed >= action.DurationTicks)
         {
-            // Replenish object resources if applicable
+            // Replenish building resources if applicable
             if (
-                objComp != null
+                buildingComp2 != null
                 && ctx.Entities.Resources.TryGetValue(targetId, out var resourceComp)
             )
             {
@@ -715,7 +717,7 @@ public sealed class ActionSystem : ISystem
             }
 
             // Grant "Productive" buff
-            if (objComp != null)
+            if (buildingComp2 != null)
             {
                 var productiveBuffId = ctx.Content.GetBuffId("Productive");
                 if (
@@ -752,17 +754,17 @@ public sealed class ActionSystem : ISystem
                 }
             }
 
-            // Release the object
-            if (objComp != null)
+            // Release the building
+            if (buildingComp2 != null)
             {
-                objComp.InUse = false;
-                objComp.UsedBy = null;
+                buildingComp2.InUse = false;
+                buildingComp2.UsedBy = null;
             }
 
             // Add a brief happy idle action showing satisfaction
-            if (objComp != null && action.SatisfiesNeedId.HasValue)
+            if (buildingComp2 != null && action.SatisfiesNeedId.HasValue)
             {
-                var objDef3 = ctx.Content.Objects[objComp.ObjectDefId];
+                var buildingDef3 = ctx.Content.Buildings[buildingComp2.BuildingDefId];
                 actionComp.ActionQueue.Enqueue(
                     new ActionDef
                     {
@@ -771,7 +773,7 @@ public sealed class ActionSystem : ISystem
                         DurationTicks = 10, // Brief moment
                         DisplayName = "Feeling Productive",
                         Expression = ExpressionType.Happy,
-                        ExpressionIconDefId = objDef3.Id,
+                        ExpressionIconDefId = buildingDef3.Id,
                     }
                 );
             }
@@ -781,18 +783,18 @@ public sealed class ActionSystem : ISystem
     }
 
     /// <summary>
-    /// Check if a pawn position is within a valid use area for an object.
+    /// Check if a pawn position is within a valid use area for a building.
     /// </summary>
-    private bool IsInUseArea(TileCoord pawnCoord, TileCoord objCoord, ObjectDef objDef)
+    private bool IsInUseArea(TileCoord pawnCoord, TileCoord objCoord, BuildingDef buildingDef)
     {
         // If no use areas defined, fall back to adjacent (distance 1)
-        if (objDef.UseAreas.Count == 0)
+        if (buildingDef.UseAreas.Count == 0)
         {
             int dist = Math.Abs(pawnCoord.X - objCoord.X) + Math.Abs(pawnCoord.Y - objCoord.Y);
             return dist <= 1;
         }
 
-        foreach (var (dx, dy) in objDef.UseAreas)
+        foreach (var (dx, dy) in buildingDef.UseAreas)
         {
             var useAreaCoord = new TileCoord(objCoord.X + dx, objCoord.Y + dy);
             if (pawnCoord == useAreaCoord)
@@ -802,7 +804,7 @@ public sealed class ActionSystem : ISystem
     }
 
     /// <summary>
-    /// Find the closest valid use area for an object that is walkable and not occupied.
+    /// Find the closest valid use area for a building that is walkable and not occupied.
     /// Returns null if no valid use area is available.
     /// </summary>
     private TileCoord? FindValidUseArea(
@@ -810,16 +812,16 @@ public sealed class ActionSystem : ISystem
         EntityManager entities,
         TileCoord objCoord,
         TileCoord from,
-        ObjectDef objDef,
+        BuildingDef buildingDef,
         EntityId? excludePawn = null
     )
     {
         var candidates = new List<(TileCoord coord, int dist)>();
 
-        // Use the object's defined use areas, or fall back to cardinal directions
+        // Use the building's defined use areas, or fall back to cardinal directions
         var useAreas =
-            objDef.UseAreas.Count > 0
-                ? objDef.UseAreas
+            buildingDef.UseAreas.Count > 0
+                ? buildingDef.UseAreas
                 : new List<(int dx, int dy)> { (0, 1), (0, -1), (1, 0), (-1, 0) };
 
         foreach (var (dx, dy) in useAreas)
@@ -880,13 +882,13 @@ public sealed class AISystem : ISystem
         // Get Purpose need ID for special handling
         var purposeNeedId = ctx.Content.GetNeedId("Purpose");
 
-        // Try to find an available object for any of our urgent needs
-        // Only seek objects when the need is actually pressing (urgency < 50)
-        EntityId? targetObject = null;
+        // Try to find an available building for any of our urgent needs
+        // Only seek buildings when the need is actually pressing (urgency < 50)
+        EntityId? targetBuilding = null;
         bool isWorkAction = false;
         foreach (var (needId, urgency) in urgentNeeds)
         {
-            // Only pursue objects for needs that are actually low or causing issues
+            // Only pursue buildings for needs that are actually low or causing issues
             // Urgency < 50 means either:
             // - Need value is very low (< 50), OR
             // - Need has a debuff (urgency gets -50 or -100 modifier)
@@ -895,8 +897,8 @@ public sealed class AISystem : ISystem
                 // Purpose need is satisfied by working, not consuming
                 if (purposeNeedId.HasValue && needId == purposeNeedId.Value)
                 {
-                    targetObject = FindObjectToWorkAt(ctx, pawnId);
-                    if (targetObject != null)
+                    targetBuilding = FindBuildingToWorkAt(ctx, pawnId);
+                    if (targetBuilding != null)
                     {
                         isWorkAction = true;
                         break;
@@ -904,28 +906,28 @@ public sealed class AISystem : ISystem
                 }
                 else
                 {
-                    targetObject = FindObjectForNeed(ctx, pawnId, needId);
-                    if (targetObject != null)
+                    targetBuilding = FindBuildingForNeed(ctx, pawnId, needId);
+                    if (targetBuilding != null)
                         break;
                 }
             }
         }
 
-        if (targetObject != null)
+        if (targetBuilding != null)
         {
             if (isWorkAction)
             {
-                QueueWorkAtObject(ctx, actionComp, targetObject.Value, purposeNeedId!.Value);
+                QueueWorkAtBuilding(ctx, actionComp, targetBuilding.Value, purposeNeedId!.Value);
             }
             else
             {
-                QueueUseObject(ctx, actionComp, targetObject.Value);
+                QueueUseBuilding(ctx, actionComp, targetBuilding.Value);
             }
         }
         else if (urgentNeeds.Count > 0 && urgentNeeds[0].urgency < -50)
         {
-            // Critical needs but no available objects - wait near an object
-            QueueWaitForObject(ctx, pawnId, actionComp, urgentNeeds);
+            // Critical needs but no available buildings - wait near a building
+            QueueWaitForBuilding(ctx, pawnId, actionComp, urgentNeeds);
         }
         else
         {
@@ -1007,76 +1009,80 @@ public sealed class AISystem : ISystem
     }
 
     /// <summary>
-    /// Queue an action to use a specific object.
+    /// Queue an action to use a specific building.
     /// </summary>
-    private void QueueUseObject(SimContext ctx, ActionComponent actionComp, EntityId targetObject)
+    private void QueueUseBuilding(
+        SimContext ctx,
+        ActionComponent actionComp,
+        EntityId targetBuilding
+    )
     {
-        var objComp = ctx.Entities.Objects[targetObject];
-        var objDef = ctx.Content.Objects[objComp.ObjectDefId];
+        var buildingComp = ctx.Entities.Buildings[targetBuilding];
+        var buildingDef = ctx.Content.Buildings[buildingComp.BuildingDefId];
         actionComp.ActionQueue.Enqueue(
             new ActionDef
             {
-                Type = ActionType.UseObject,
+                Type = ActionType.UseBuilding,
                 Animation = AnimationType.Idle,
-                TargetEntity = targetObject,
-                DurationTicks = objDef.InteractionDurationTicks,
-                SatisfiesNeedId = objDef.SatisfiesNeedId,
-                NeedSatisfactionAmount = objDef.NeedSatisfactionAmount,
-                DisplayName = $"Going to {objDef.Name}",
+                TargetEntity = targetBuilding,
+                DurationTicks = buildingDef.InteractionDurationTicks,
+                SatisfiesNeedId = buildingDef.SatisfiesNeedId,
+                NeedSatisfactionAmount = buildingDef.NeedSatisfactionAmount,
+                DisplayName = $"Going to {buildingDef.Name}",
             }
         );
     }
 
     /// <summary>
-    /// Queue an action to work at a specific object (replenish resources).
+    /// Queue an action to work at a specific building (replenish resources).
     /// </summary>
-    private void QueueWorkAtObject(
+    private void QueueWorkAtBuilding(
         SimContext ctx,
         ActionComponent actionComp,
-        EntityId targetObject,
+        EntityId targetBuilding,
         int purposeNeedId
     )
     {
-        var objComp = ctx.Entities.Objects[targetObject];
-        var objDef = ctx.Content.Objects[objComp.ObjectDefId];
+        var buildingComp2 = ctx.Entities.Buildings[targetBuilding];
+        var buildingDef2 = ctx.Content.Buildings[buildingComp2.BuildingDefId];
         actionComp.ActionQueue.Enqueue(
             new ActionDef
             {
                 Type = ActionType.Work,
                 Animation = AnimationType.Pickaxe,
-                TargetEntity = targetObject,
+                TargetEntity = targetBuilding,
                 DurationTicks = 2500, // Work takes 2.5 seconds
                 SatisfiesNeedId = purposeNeedId,
                 NeedSatisfactionAmount = 40f, // Working satisfies Purpose moderately
-                DisplayName = $"Going to work at {objDef.Name}",
+                DisplayName = $"Going to work at {buildingDef2.Name}",
             }
         );
     }
 
     /// <summary>
-    /// Queue an action to wait near an object when all relevant objects are in use.
+    /// Queue an action to wait near a building when all relevant buildings are in use.
     /// </summary>
-    private void QueueWaitForObject(
+    private void QueueWaitForBuilding(
         SimContext ctx,
         EntityId pawnId,
         ActionComponent actionComp,
         List<(int needId, float urgency)> urgentNeeds
     )
     {
-        var waitTarget = FindAnyObjectForNeeds(
+        var waitTarget = FindAnyBuildingForNeeds(
             ctx,
             pawnId,
             urgentNeeds.Select(n => n.needId).ToList()
         );
         if (waitTarget == null)
         {
-            // No objects exist at all for our needs - wander
+            // No buildings exist at all for our needs - wander
             WanderRandomly(ctx, pawnId, actionComp);
             return;
         }
 
-        var objComp = ctx.Entities.Objects[waitTarget.Value];
-        var objDef = ctx.Content.Objects[objComp.ObjectDefId];
+        var objComp = ctx.Entities.Buildings[waitTarget.Value];
+        var objDef = ctx.Content.Buildings[objComp.BuildingDefId];
         var objPos = ctx.Entities.Positions[waitTarget.Value];
 
         var waitSpot = FindWaitingSpot(ctx, objPos.Coord, pawnId);
@@ -1218,7 +1224,7 @@ public sealed class AISystem : ISystem
         );
     }
 
-    private EntityId? FindObjectForNeed(SimContext ctx, EntityId pawnId, int needId)
+    private EntityId? FindBuildingForNeed(SimContext ctx, EntityId pawnId, int needId)
     {
         if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
             return null;
@@ -1226,24 +1232,24 @@ public sealed class AISystem : ISystem
         EntityId? best = null;
         float bestScore = float.MinValue;
 
-        foreach (var objId in ctx.Entities.AllObjects())
+        foreach (var objId in ctx.Entities.AllBuildings())
         {
-            var objComp = ctx.Entities.Objects[objId];
-            var objDef = ctx.Content.Objects[objComp.ObjectDefId];
+            var objComp = ctx.Entities.Buildings[objId];
+            var objDef = ctx.Content.Buildings[objComp.BuildingDefId];
 
             if (objDef.SatisfiesNeedId != needId)
                 continue;
             if (objComp.InUse)
                 continue;
 
-            // Skip objects that have resources but are empty
+            // Skip buildings that have resources but are empty
             if (ctx.Entities.Resources.TryGetValue(objId, out var resourceComp))
             {
                 if (resourceComp.CurrentAmount <= 0)
                     continue;
             }
 
-            if (!IsObjectReachable(ctx, pawnId, objId))
+            if (!IsBuildingReachable(ctx, pawnId, objId))
                 continue;
 
             if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos))
@@ -1285,9 +1291,9 @@ public sealed class AISystem : ISystem
     }
 
     /// <summary>
-    /// Find an object that needs workers (has depleted resources and can be worked at).
+    /// Find an building that needs workers (has depleted resources and can be worked at).
     /// </summary>
-    private EntityId? FindObjectToWorkAt(SimContext ctx, EntityId pawnId)
+    private EntityId? FindBuildingToWorkAt(SimContext ctx, EntityId pawnId)
     {
         if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
             return null;
@@ -1295,29 +1301,29 @@ public sealed class AISystem : ISystem
         EntityId? best = null;
         float bestScore = float.MinValue;
 
-        foreach (var objId in ctx.Entities.AllObjects())
+        foreach (var objId in ctx.Entities.AllBuildings())
         {
-            var objComp = ctx.Entities.Objects[objId];
-            var objDef = ctx.Content.Objects[objComp.ObjectDefId];
+            var objComp = ctx.Entities.Buildings[objId];
+            var objDef = ctx.Content.Buildings[objComp.BuildingDefId];
 
-            // Only consider objects that can be worked at
+            // Only consider buildings that can be worked at
             if (!objDef.CanBeWorkedAt)
                 continue;
             if (objComp.InUse)
                 continue;
 
-            // Only work at objects that have resources and need replenishment
+            // Only work at buildings that have resources and need replenishment
             if (!ctx.Entities.Resources.TryGetValue(objId, out var resourceComp))
                 continue;
 
             // Calculate resource percentage
             float resourcePercent = resourceComp.CurrentAmount / resourceComp.MaxAmount;
 
-            // Only work at objects that are below 80% capacity
+            // Only work at buildings that are below 80% capacity
             if (resourcePercent >= 0.8f)
                 continue;
 
-            if (!IsObjectReachable(ctx, pawnId, objId))
+            if (!IsBuildingReachable(ctx, pawnId, objId))
                 continue;
 
             if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos))
@@ -1360,10 +1366,10 @@ public sealed class AISystem : ISystem
     }
 
     /// <summary>
-    /// Find any object (even if in use) that could satisfy one of the given needs.
-    /// Used for finding a place to wait when all relevant objects are busy.
+    /// Find any building (even if in use) that could satisfy one of the given needs.
+    /// Used for finding a place to wait when all relevant bu are busy.
     /// </summary>
-    private EntityId? FindAnyObjectForNeeds(SimContext ctx, EntityId pawnId, List<int> needIds)
+    private EntityId? FindAnyBuildingForNeeds(SimContext ctx, EntityId pawnId, List<int> needIds)
     {
         if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
             return null;
@@ -1371,15 +1377,15 @@ public sealed class AISystem : ISystem
         EntityId? best = null;
         int bestDist = int.MaxValue;
 
-        foreach (var objId in ctx.Entities.AllObjects())
+        foreach (var objId in ctx.Entities.AllBuildings())
         {
-            var objComp = ctx.Entities.Objects[objId];
-            var objDef = ctx.Content.Objects[objComp.ObjectDefId];
+            var objComp = ctx.Entities.Buildings[objId];
+            var objDef = ctx.Content.Buildings[objComp.BuildingDefId];
 
-            // Check if this object satisfies any of our needs
+            // Check if this building satisfies any of our needs
             if (!objDef.SatisfiesNeedId.HasValue || !needIds.Contains(objDef.SatisfiesNeedId.Value))
                 continue;
-            if (!IsObjectReachable(ctx, pawnId, objId))
+            if (!IsBuildingReachable(ctx, pawnId, objId))
                 continue;
 
             if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos))
@@ -1400,19 +1406,19 @@ public sealed class AISystem : ISystem
     }
 
     /// <summary>
-    /// Find a walkable tile near an object where a pawn can wait.
+    /// Find a walkable tile near a building where a pawn can wait.
     /// </summary>
-    private TileCoord? FindWaitingSpot(SimContext ctx, TileCoord objectPos, EntityId pawnId)
+    private TileCoord? FindWaitingSpot(SimContext ctx, TileCoord buildingPos, EntityId pawnId)
     {
-        // Look for walkable tiles within 2 tiles of the object
+        // Look for walkable tiles within 2 tiles of the building
         for (int dx = -2; dx <= 2; dx++)
         {
             for (int dy = -2; dy <= 2; dy++)
             {
                 if (dx == 0 && dy == 0)
-                    continue; // Skip the object tile itself
+                    continue; // Skip the building tile itself
 
-                var candidate = new TileCoord(objectPos.X + dx, objectPos.Y + dy);
+                var candidate = new TileCoord(buildingPos.X + dx, buildingPos.Y + dy);
 
                 if (
                     ctx.World.IsWalkable(candidate)
@@ -1427,16 +1433,16 @@ public sealed class AISystem : ISystem
         return null;
     }
 
-    private bool IsObjectReachable(SimContext ctx, EntityId pawnId, EntityId objId)
+    private bool IsBuildingReachable(SimContext ctx, EntityId pawnId, EntityId objId)
     {
         if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
             return false;
         if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos))
             return false;
-        if (!ctx.Entities.Objects.TryGetValue(objId, out var objComp))
+        if (!ctx.Entities.Buildings.TryGetValue(objId, out var objComp))
             return false;
 
-        var objDef = ctx.Content.Objects[objComp.ObjectDefId];
+        var objDef = ctx.Content.Buildings[objComp.BuildingDefId];
         var useAreas =
             objDef.UseAreas.Count > 0
                 ? objDef.UseAreas
@@ -1522,14 +1528,14 @@ public sealed class AISystem : ISystem
 
             if (lowestNeedId.HasValue)
             {
-                // Find an object that satisfies this need
-                var satisfyingObject = ctx.Content.Objects.Values.FirstOrDefault(o =>
+                // Find an building that satisfies this need
+                var satisfyingBuilding = ctx.Content.Buildings.Values.FirstOrDefault(o =>
                     o.SatisfiesNeedId.HasValue && o.SatisfiesNeedId.Value == lowestNeedId.Value
                 );
 
-                if (satisfyingObject != null)
+                if (satisfyingBuilding != null)
                 {
-                    return (ExpressionType.Thought, satisfyingObject.Id);
+                    return (ExpressionType.Thought, satisfyingBuilding.Id);
                 }
             }
         }

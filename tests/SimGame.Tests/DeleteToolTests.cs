@@ -4,47 +4,47 @@ using Xunit;
 namespace SimGame.Tests;
 
 /// <summary>
-/// Tests for the smart delete tool that removes objects, overlay terrain, or resets to flat.
+/// Tests for the smart delete tool that removes buildings, overlay terrain, or resets to flat.
 /// </summary>
 public class DeleteToolTests
 {
     [Fact]
-    public void DeleteAtTile_WithObject_RemovesObjectOnly()
+    public void DeleteAtTile_WithBuilding_RemovesBuildingOnly()
     {
-        // Arrange: Create a world with grass base + path overlay + object
+        // Arrange: Create a world with grass base + path overlay + building
         var builder = new TestSimulationBuilder();
 
         var grassId = builder.DefineTerrain(key: "Grass", spriteKey: "grass");
         var pathId = builder.DefineTerrain(key: "Path", spriteKey: "path", isAutotiling: true);
-        var bedId = builder.DefineObject(key: "Bed");
+        var bedId = builder.DefineBuilding(key: "Home");
         var sim = builder.Build();
 
-        // Paint grass, then path, then place object
+        // Paint grass, then path, then place building
         sim.PaintTerrain(new TileCoord(2, 2), grassId);
         sim.PaintTerrain(new TileCoord(2, 2), pathId);
-        sim.CreateObject(bedId, new TileCoord(2, 2));
+        sim.CreateBuilding(bedId, new TileCoord(2, 2));
 
         var tile = sim.World.GetTile(new TileCoord(2, 2));
         Assert.Equal(grassId, tile.BaseTerrainTypeId);
         Assert.Equal(pathId, tile.OverlayTerrainTypeId);
 
-        // Act: First delete - should remove object only
+        // Act: First delete - should remove building only
         var tilesToUpdate = sim.DeleteAtTile(new TileCoord(2, 2));
 
         Assert.Equal(9, tilesToUpdate.Length);
         Assert.Contains(new TileCoord(2, 2), tilesToUpdate);
 
-        // Assert: Object removed, path and grass remain
+        // Assert: Building removed, path and grass remain
         tile = sim.World.GetTile(new TileCoord(2, 2));
         Assert.Equal(grassId, tile.BaseTerrainTypeId);
         Assert.Equal(pathId, tile.OverlayTerrainTypeId);
-        Assert.False(sim.Entities.AllObjects().Any()); // No objects remain
+        Assert.False(sim.Entities.AllBuildings().Any()); // No buildings remain
     }
 
     [Fact]
     public void DeleteAtTile_WithOverlay_ClearsOverlayOnly()
     {
-        // Arrange: Create a world with grass base + path overlay (no object)
+        // Arrange: Create a world with grass base + path overlay (no building)
         var builder = new TestSimulationBuilder();
 
         var grassId = builder.DefineTerrain(key: "Grass", spriteKey: "grass");
@@ -71,7 +71,7 @@ public class DeleteToolTests
     [Fact]
     public void DeleteAtTile_WithoutOverlay_ResetsToFlat()
     {
-        // Arrange: Create a world with just grass base (no overlay, no object)
+        // Arrange: Create a world with just grass base (no overlay, no building)
         var builder = new TestSimulationBuilder();
 
         var grassId = builder.DefineTerrain(key: "Grass", spriteKey: "grass");
@@ -98,26 +98,26 @@ public class DeleteToolTests
     [Fact]
     public void DeleteAtTile_ThreeClicks_RemovesAllLayers()
     {
-        // Arrange: Create a world with grass + path + object
+        // Arrange: Create a world with grass + path + building
         var builder = new TestSimulationBuilder();
 
         var grassId = builder.DefineTerrain(key: "Grass", spriteKey: "grass");
         var pathId = builder.DefineTerrain(key: "Path", spriteKey: "path", isAutotiling: true);
         var flatId = builder.DefineTerrain(key: "Flat", spriteKey: "flat");
-        var bedId = builder.DefineObject(key: "Bed");
+        var bedId = builder.DefineBuilding(key: "Home");
         var sim = builder.Build();
 
-        // Setup: grass + path + object
+        // Setup: grass + path + building
         sim.PaintTerrain(new TileCoord(2, 2), grassId);
         sim.PaintTerrain(new TileCoord(2, 2), pathId);
-        sim.CreateObject(bedId, new TileCoord(2, 2));
+        sim.CreateBuilding(bedId, new TileCoord(2, 2));
 
-        // Act & Assert: Click 1 - Remove object
+        // Act & Assert: Click 1 - Remove building
         sim.DeleteAtTile(new TileCoord(2, 2));
         var tile = sim.World.GetTile(new TileCoord(2, 2));
         Assert.Equal(grassId, tile.BaseTerrainTypeId);
         Assert.Equal(pathId, tile.OverlayTerrainTypeId);
-        Assert.False(sim.Entities.AllObjects().Any());
+        Assert.False(sim.Entities.AllBuildings().Any());
 
         // Act & Assert: Click 2 - Clear overlay
         sim.DeleteAtTile(new TileCoord(2, 2));

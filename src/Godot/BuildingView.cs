@@ -1,7 +1,7 @@
 using Godot;
 using SimGame.Godot;
 
-public partial class ObjectView : Node2D
+public partial class BuildingView : Node2D
 {
     [Export]
     public Label? NameLabel { get; set; }
@@ -20,9 +20,9 @@ public partial class ObjectView : Node2D
     }
 
     /// <summary>
-    /// Initialize the object view with a sprite texture.
-    /// Call this after instantiation if object has a sprite.
-    /// For multi-tile objects, the sprite is centered within the object's footprint.
+    /// Initialize the building view with a sprite texture.
+    /// Call this after instantiation if building has a sprite.
+    /// For multi-tile buildings, the sprite is centered within the building's footprint.
     /// </summary>
     public void InitializeWithSprite(Texture2D texture, int tileSize = 1)
     {
@@ -42,8 +42,8 @@ public partial class ObjectView : Node2D
 
         _sprite.Scale = new Vector2(RenderingConstants.SpriteScale, RenderingConstants.SpriteScale);
 
-        // For multi-tile objects, center the sprite horizontally and align bottom with footprint bottom
-        // The object's node position is at the anchor (top-left tile center)
+        // For multi-tile buildings, center the sprite horizontally and align bottom with footprint bottom
+        // The building's node position is at the anchor (top-left tile center)
         float footprintCenterOffsetX = (tileSize - 1) * RenderingConstants.RenderedTileSize / 2f;
 
         // Bottom of footprint from node center: (tileSize - 0.5) * tileSize
@@ -61,7 +61,7 @@ public partial class ObjectView : Node2D
         _usesSprite = true;
     }
 
-    public void SetObjectInfo(string name, bool inUse, int colorIndex, Color[] palette)
+    public void SetBuildingInfo(string name, bool inUse, int colorIndex, Color[] palette)
     {
         if (NameLabel != null)
             NameLabel.Text = name;

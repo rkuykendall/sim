@@ -21,16 +21,16 @@ public sealed class RenderPawn
     public IReadOnlyList<(int X, int Y)>? CurrentPath { get; init; }
     public int PathIndex { get; init; }
 
-    // Debug: attachment info (object ID -> attachment strength)
+    // Debug: attachment info (building ID -> attachment strength)
     public IReadOnlyDictionary<EntityId, int>? Attachments { get; init; }
 }
 
-public sealed class RenderObject
+public sealed class RenderBuilding
 {
     public EntityId Id { get; init; }
     public int X { get; init; }
     public int Y { get; init; }
-    public int ObjectDefId { get; init; }
+    public int BuildingDefId { get; init; }
     public string Name { get; init; } = "";
     public bool InUse { get; init; }
     public string? UsedByName { get; init; }
@@ -68,7 +68,7 @@ public sealed class RenderTheme
 public sealed class RenderSnapshot
 {
     public IReadOnlyList<RenderPawn> Pawns { get; init; } = Array.Empty<RenderPawn>();
-    public IReadOnlyList<RenderObject> Objects { get; init; } = Array.Empty<RenderObject>();
+    public IReadOnlyList<RenderBuilding> Buildings { get; init; } = Array.Empty<RenderBuilding>();
     public RenderTime Time { get; init; } = new();
     public RenderTheme Theme { get; init; } = new();
     public IReadOnlyList<ColorDef> ColorPalette { get; init; } = Array.Empty<ColorDef>();
@@ -103,16 +103,19 @@ public static class RenderSnapshotBuilder
                     string targetName = sim.FormatEntityId(targetId);
 
                     if (
-                        sim.Entities.Objects.TryGetValue(targetId, out var objComp)
-                        && sim.Content.Objects.TryGetValue(objComp.ObjectDefId, out var objDef)
+                        sim.Entities.Buildings.TryGetValue(targetId, out var buildingComp)
+                        && sim.Content.Buildings.TryGetValue(
+                            buildingComp.BuildingDefId,
+                            out var buildingDef
+                        )
                     )
                     {
-                        targetName = objDef.Name;
+                        targetName = buildingDef.Name;
                     }
 
                     actionName = current.Type switch
                     {
-                        ActionType.UseObject => $"Using {targetName}",
+                        ActionType.UseBuilding => $"Using {targetName}",
                         ActionType.Work => $"Working at {targetName}",
                         ActionType.MoveTo => $"Going to {targetName}",
                         _ => current.Type.ToString(),
@@ -145,9 +148,9 @@ public static class RenderSnapshotBuilder
                 pathIndex = action.PathIndex;
             }
 
-            // Gather attachment info (which objects this pawn is attached to)
+            // Gather attachment info (which buildings this pawn is attached to)
             var pawnAttachments = new Dictionary<EntityId, int>();
-            foreach (var objId in sim.Entities.AllObjects())
+            foreach (var objId in sim.Entities.AllBuildings())
             {
                 if (
                     sim.Entities.Attachments.TryGetValue(objId, out var attachComp)
@@ -179,20 +182,20 @@ public static class RenderSnapshotBuilder
             );
         }
 
-        var objects = new List<RenderObject>();
+        var buildings = new List<RenderBuilding>();
 
-        foreach (var objId in sim.Entities.AllObjects())
+        foreach (var objId in sim.Entities.AllBuildings())
         {
             sim.Entities.Positions.TryGetValue(objId, out var pos);
-            sim.Entities.Objects.TryGetValue(objId, out var obj);
+            sim.Entities.Buildings.TryGetValue(objId, out var obj);
 
             if (pos == null || obj == null)
                 continue;
 
-            if (!sim.Content.Objects.TryGetValue(obj.ObjectDefId, out var objDef))
+            if (!sim.Content.Buildings.TryGetValue(obj.BuildingDefId, out var buildingDef))
                 continue;
 
-            // Get name of pawn using this object
+            // Get name of pawn using this building
             string? usedByName = null;
             if (obj.InUse && obj.UsedBy.HasValue)
             {
@@ -213,32 +216,32 @@ public static class RenderSnapshotBuilder
                 maxResource = resourceComp.MaxAmount;
             }
 
-            if (objDef.CanBeWorkedAt)
+            if (buildingDef.CanBeWorkedAt)
             {
                 canBeWorkedAt = true;
             }
 
-            // Get attachment info (which pawns are attached to this object)
-            var objectAttachments = new Dictionary<EntityId, int>();
+            // Get attachment info (which pawns are attached to this building)
+            var buildingAttachments = new Dictionary<EntityId, int>();
             if (sim.Entities.Attachments.TryGetValue(objId, out var attachComp))
             {
                 foreach (var (attachedPawnId, strength) in attachComp.UserAttachments)
                 {
                     if (strength > 0)
                     {
-                        objectAttachments[attachedPawnId] = strength;
+                        buildingAttachments[attachedPawnId] = strength;
                     }
                 }
             }
 
-            objects.Add(
-                new RenderObject
+            buildings.Add(
+                new RenderBuilding
                 {
                     Id = objId,
                     X = pos.Coord.X,
                     Y = pos.Coord.Y,
-                    ObjectDefId = obj.ObjectDefId,
-                    Name = objDef.Name,
+                    BuildingDefId = obj.BuildingDefId,
+                    Name = buildingDef.Name,
                     InUse = obj.InUse,
                     UsedByName = usedByName,
                     ColorIndex = obj.ColorIndex,
@@ -246,7 +249,7 @@ public static class RenderSnapshotBuilder
                     CurrentResource = currentResource,
                     MaxResource = maxResource,
                     CanBeWorkedAt = canBeWorkedAt,
-                    Attachments = objectAttachments,
+                    Attachments = buildingAttachments,
                 }
             );
         }
@@ -281,7 +284,7 @@ public static class RenderSnapshotBuilder
         return new RenderSnapshot
         {
             Pawns = pawns,
-            Objects = objects,
+            Buildings = buildings,
             Time = time,
             Theme = theme,
             ColorPalette = colorPalette,

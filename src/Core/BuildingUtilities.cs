@@ -3,13 +3,13 @@ using System.Collections.Generic;
 namespace SimGame.Core;
 
 /// <summary>
-/// Utility methods for multi-tile object calculations.
+/// Utility methods for multi-tile building calculations.
 /// </summary>
-public static class ObjectUtilities
+public static class BuildingUtilities
 {
     /// <summary>
-    /// Calculate all tiles occupied by an object given its anchor position and size.
-    /// For a 2x2 object at (5,5), returns [(5,5), (6,5), (5,6), (6,6)].
+    /// Calculate all tiles occupied by a building given its anchor position and size.
+    /// For a 2x2 building at (5,5), returns [(5,5), (6,5), (5,6), (6,6)].
     /// </summary>
     public static List<TileCoord> GetOccupiedTiles(TileCoord anchorCoord, int tileSize)
     {
@@ -25,16 +25,16 @@ public static class ObjectUtilities
     }
 
     /// <summary>
-    /// Calculate all tiles occupied by an object given its anchor position and definition.
+    /// Calculate all tiles occupied by a building given its anchor position and definition.
     /// </summary>
-    public static List<TileCoord> GetOccupiedTiles(TileCoord anchorCoord, ObjectDef objDef)
+    public static List<TileCoord> GetOccupiedTiles(TileCoord anchorCoord, BuildingDef buildingDef)
     {
-        return GetOccupiedTiles(anchorCoord, objDef.TileSize);
+        return GetOccupiedTiles(anchorCoord, buildingDef.TileSize);
     }
 
     /// <summary>
-    /// Generate all tiles adjacent to a multi-tile object for use areas.
-    /// Returns all tiles that touch any edge of the object's footprint.
+    /// Generate all tiles adjacent to a multi-tile building for use areas.
+    /// Returns all tiles that touch any edge of the building's footprint.
     /// </summary>
     public static List<(int dx, int dy)> GenerateUseAreasForSize(int tileSize)
     {

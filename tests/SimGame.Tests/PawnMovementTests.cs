@@ -30,14 +30,14 @@ public class PawnMovementTests
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(9, 0); // 10x1 corridor
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        var fridgeDefId = builder.DefineObject(
+        var fridgeDefId = builder.DefineBuilding(
             key: "Fridge",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (-1, 0), (1, 0) }
         ); // Both sides work in corridor
-        builder.AddObject(fridgeDefId, 5, 0); // Fridge in middle
+        builder.AddBuilding(fridgeDefId, 5, 0); // Fridge in middle
         builder.AddPawn("LeftPawn", 0, 0, new Dictionary<int, float> { { hungerId, 10f } });
         builder.AddPawn("RightPawn", 9, 0, new Dictionary<int, float> { { hungerId, 10f } });
         var sim = builder.Build();
@@ -104,7 +104,7 @@ public class PawnMovementTests
         );
 
         // If a pawn is stuck, it will have only 1-2 unique positions in the last 100 ticks
-        // A healthy pawn should be moving around (wandering or going to objects)
+        // A healthy pawn should be moving around (wandering or going to building)
         Assert.True(
             uniqueLeftPositions.Count > 2 || uniqueRightPositions.Count > 2,
             "Both pawns appear to be stuck - neither moved significantly in the last 100 ticks"
@@ -123,15 +123,15 @@ public class PawnMovementTests
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(3, 0); // 4x1: [Fridge][Pawn1][Pawn2][Fridge]
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        var fridgeDefId = builder.DefineObject(
+        var fridgeDefId = builder.DefineBuilding(
             key: "Fridge",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (1, 0), (-1, 0) }
         ); // Use from either side
-        builder.AddObject(fridgeDefId, 0, 0); // Fridge at left
-        builder.AddObject(fridgeDefId, 3, 0); // Fridge at right (same type, different instance)
+        builder.AddBuilding(fridgeDefId, 0, 0); // Fridge at left
+        builder.AddBuilding(fridgeDefId, 3, 0); // Fridge at right (same type, different instance)
         builder.AddPawn("Pawn1", 1, 0, new Dictionary<int, float> { { hungerId, 10f } });
         builder.AddPawn("Pawn2", 2, 0, new Dictionary<int, float> { { hungerId, 10f } });
         var sim = builder.Build();
@@ -197,13 +197,13 @@ public class PawnMovementTests
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 2); // 5x3 area
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        var fridgeDefId = builder.DefineObject(
+        var fridgeDefId = builder.DefineBuilding(
             key: "Fridge",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
-        builder.AddObject(fridgeDefId, 2, 1); // Fridge in center
+        builder.AddBuilding(fridgeDefId, 2, 1); // Fridge in center
         builder.AddPawn("TopPawn", 0, 0, new Dictionary<int, float> { { hungerId, 5f } });
         builder.AddPawn("BottomPawn", 4, 2, new Dictionary<int, float> { { hungerId, 5f } });
         var sim = builder.Build();
@@ -268,20 +268,20 @@ public class PawnMovementTests
         builder.WithWorldBounds(6, 2); // 7x3 area
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         var energyId = builder.DefineNeed(key: "Energy", decayPerTick: 0.001f);
-        var fridgeDefId = builder.DefineObject(
+        var fridgeDefId = builder.DefineBuilding(
             key: "Fridge",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
-        var bedDefId = builder.DefineObject(
-            key: "Bed",
+        var bedDefId = builder.DefineBuilding(
+            key: "Home",
             satisfiesNeedId: energyId,
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
-        builder.AddObject(fridgeDefId, 0, 0); // Fridge at left
-        builder.AddObject(bedDefId, 6, 0); // Bed at right
+        builder.AddBuilding(fridgeDefId, 0, 0); // Fridge at left
+        builder.AddBuilding(bedDefId, 6, 0); // Bed at right
         // Pawn1 is hungry (will go left to fridge)
         builder.AddPawn(
             "HungryPawn",
@@ -403,13 +403,13 @@ public class PawnMovementTests
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(2, 0); // 3x1 corridor
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        var fridgeDefId = builder.DefineObject(
+        var fridgeDefId = builder.DefineBuilding(
             key: "Fridge",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
-        builder.AddObject(fridgeDefId, 0, 0);
+        builder.AddBuilding(fridgeDefId, 0, 0);
         builder.AddPawn("BlockedPawn", 1, 0, new Dictionary<int, float> { { hungerId, 5f } }); // Wants fridge
         builder.AddPawn("BlockerPawn", 2, 0, new Dictionary<int, float> { { hungerId, 100f } }); // Doesn't need fridge
         var sim = builder.Build();
@@ -450,24 +450,24 @@ public class PawnMovementTests
     }
 
     /// <summary>
-    /// Scenario: Two pawns want to use the SAME object (like your screenshot showing
+    /// Scenario: Two pawns want to use the SAME building (like your screenshot showing
     /// Jordan trying to use the sink while blocked by Sam).
-    /// This tests the "object in use" logic and queuing.
+    /// This tests the "building in use" logic and queuing.
     /// </summary>
     [Fact]
-    public void TwoPawns_WantSameObject_OneWaitsOrFindsAlternative()
+    public void TwoPawns_WantSameBuilding_OneWaitsOrFindsAlternative()
     {
         // Arrange: 5x3 area with ONE sink, two pawns who both need hygiene
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 2); // 5x3 area
         var hygieneId = builder.DefineNeed(key: "Hygiene", decayPerTick: 0.001f);
-        var sinkDefId = builder.DefineObject(
+        var sinkDefId = builder.DefineBuilding(
             key: "Sink",
             satisfiesNeedId: hygieneId,
             satisfactionAmount: 50f,
             interactionDuration: 40
         ); // Long interaction
-        builder.AddObject(sinkDefId, 2, 1); // Sink at (2,1)
+        builder.AddBuilding(sinkDefId, 2, 1); // Sink at (2,1)
         // Both pawns want the sink
         builder.AddPawn("Sam", 0, 1, new Dictionary<int, float> { { hygieneId, 5f } });
         builder.AddPawn("Jordan", 4, 1, new Dictionary<int, float> { { hygieneId, 5f } });
@@ -553,16 +553,16 @@ public class PawnMovementTests
     }
 
     /// <summary>
-    /// Scenario: A pawn needs an object that is unreachable (behind a solid wall).
-    /// The pawn should not thrash between idle and repeatedly trying to go to the object.
+    /// Scenario: A pawn needs a building that is unreachable (behind a solid wall).
+    /// The pawn should not thrash between idle and repeatedly trying to go to the building.
     /// </summary>
     [Fact]
-    public void PawnWithNeed_UnreachableObject_DoesNotThrash()
+    public void PawnWithNeed_UnreachableBuilding_DoesNotThrash()
     {
         var builder = new TestSimulationBuilder();
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         var wallId = builder.DefineTerrain(key: "Wall", walkable: false);
-        var fridgeDefId = builder.DefineObject(
+        var fridgeDefId = builder.DefineBuilding(
             key: "Fridge",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
@@ -570,7 +570,7 @@ public class PawnMovementTests
         );
 
         builder.AddPawn("HungryPawn", 0, 2, new Dictionary<int, float> { { hungerId, 5f } });
-        builder.AddObject(fridgeDefId, 4, 2);
+        builder.AddBuilding(fridgeDefId, 4, 2);
         var sim = builder.Build();
 
         // Paint an impassable vertical wall between the pawn and the fridge (x = 1)
@@ -579,7 +579,7 @@ public class PawnMovementTests
 
         var pawnId = sim.GetPawnByName("HungryPawn");
         Assert.NotNull(pawnId);
-        var fridgeId = sim.Entities.AllObjects().First();
+        var fridgeId = sim.Entities.AllBuildings().First();
 
         int goingToFridgeTicks = 0;
         for (int tick = 0; tick < 60; tick++)

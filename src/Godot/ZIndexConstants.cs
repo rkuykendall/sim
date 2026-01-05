@@ -22,10 +22,10 @@ public static class ZIndexConstants
     public const int TerrainBlockingAndPawns = 1;
 
     /// <summary>
-    /// Game objects (trees, rocks, furniture, etc.).
+    /// Game buildings
     /// Drawn above terrain and pawns.
     /// </summary>
-    public const int Objects = 2;
+    public const int Buildings = 2;
 
     /// <summary>
     /// UI overlays (cursor preview, debug visualizations).

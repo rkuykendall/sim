@@ -35,13 +35,13 @@ public class PawnLifecycleTests
             lowThreshold: 35f,
             lowDebuffId: hungryBuffId
         );
-        var fridgeDefId = builder.DefineObject(
+        var fridgeDefId = builder.DefineBuilding(
             key: "Fridge",
             satisfiesNeedId: hungerNeedId,
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
-        builder.AddObject(fridgeDefId, 5, 5);
+        builder.AddBuilding(fridgeDefId, 5, 5);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerNeedId, 10f } });
         var sim = builder.Build();
 
@@ -152,14 +152,14 @@ public class PawnLifecycleTests
             lowThreshold: 35f,
             lowDebuffId: hungryBuffId
         );
-        var fridgeDefId = builder.DefineObject(
+        var fridgeDefId = builder.DefineBuilding(
             key: "Fridge",
             satisfiesNeedId: hungerNeedId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (-1, 0) }
         );
-        builder.AddObject(fridgeDefId, 4, 0);
+        builder.AddBuilding(fridgeDefId, 4, 0);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerNeedId, 30f } });
         var sim = builder.Build();
 
@@ -198,13 +198,13 @@ public class PawnLifecycleTests
             lowThreshold: 35f,
             lowDebuffId: hungryBuffId
         );
-        var fridgeDefId = builder.DefineObject(
+        var fridgeDefId = builder.DefineBuilding(
             key: "Fridge",
             satisfiesNeedId: hungerNeedId,
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
-        builder.AddObject(fridgeDefId, 4, 0);
+        builder.AddBuilding(fridgeDefId, 4, 0);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerNeedId, 95f } });
         var sim = builder.Build();
 
@@ -240,13 +240,13 @@ public class PawnLifecycleTests
             lowThreshold: 35f,
             lowDebuffId: hungryBuffId
         );
-        var fridgeDefId = builder.DefineObject(
+        var fridgeDefId = builder.DefineBuilding(
             key: "Fridge",
             satisfiesNeedId: hungerNeedId,
             satisfactionAmount: 60f,
             interactionDuration: 20
         );
-        builder.AddObject(fridgeDefId, 5, 5);
+        builder.AddBuilding(fridgeDefId, 5, 5);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerNeedId, 50f } });
         var sim = builder.Build();
 

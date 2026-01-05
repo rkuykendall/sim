@@ -3,9 +3,9 @@
 [ext_resource type="Script" path="res://src/Godot/GameRoot.cs" id="1"]
 [ext_resource type="Script" path="res://src/Godot/CameraController.cs" id="1_camera"]
 [ext_resource type="PackedScene" uid="uid://pawn" path="res://scenes/Pawn.tscn" id="2"]
-[ext_resource type="PackedScene" uid="uid://object" path="res://scenes/Object.tscn" id="3"]
-[ext_resource type="PackedScene" uid="uid://doo1qhnw0n04b" path="res://scenes/PawnInfoPanel.tscn" id="4"]
-[ext_resource type="PackedScene" uid="uid://cdrc4op6sef7d" path="res://scenes/ObjectInfoPanel.tscn" id="5"]
+[ext_resource type="PackedScene" uid="uid://building" path="res://scenes/Building.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://PawnInfoPanel" path="res://scenes/PawnInfoPanel.tscn" id="4"]
+[ext_resource type="PackedScene" uid="uid://BuildingInfoPanel" path="res://scenes/BuildingInfoPanel.tscn" id="5"]
 [ext_resource type="PackedScene" uid="uid://timedisplay" path="res://scenes/TimeDisplay.tscn" id="6"]
 [ext_resource type="PackedScene" uid="uid://buildtoolbar" path="res://scenes/BuildToolbar.tscn" id="7"]
 [ext_resource type="Script" path="res://src/Godot/CRTShaderController.cs" id="8"]
@@ -33,19 +33,19 @@ offset_bottom = 2560.0
 mouse_filter = 2
 color = Color(0, 0, 0, 0)
 
-[node name="Objects" type="Node2D" parent="."]
+[node name="Buildings" type="Node2D" parent="."]
 
 [node name="Pawns" type="Node2D" parent="."]
 
 [node name="GameRoot" type="Node2D" parent="."]
 script = ExtResource("1")
 PawnScene = ExtResource("2")
-ObjectScene = ExtResource("3")
+BuildingScene = ExtResource("3")
 PawnsRootPath = NodePath("../Pawns")
-ObjectsRootPath = NodePath("../Objects")
+BuildingsRootPath = NodePath("../Buildings")
 TilesRootPath = NodePath("../Tiles")
 InfoPanelPath = NodePath("../UI/PawnInfoPanel")
-ObjectInfoPanelPath = NodePath("../UI/ObjectInfoPanel")
+BuildingInfoPanelPath = NodePath("../UI/BuildingInfoPanel")
 TimeDisplayPath = NodePath("../UI/TimeDisplay")
 ShadowRectPath = NodePath("../ShadowLayer/ShadowRect")
 CRTShaderLayerPath = NodePath("../CRTShaderLayer")
@@ -62,7 +62,7 @@ offset_top = 0.0
 offset_right = 0.0
 offset_bottom = 200.0
 
-[node name="ObjectInfoPanel" parent="UI" instance=ExtResource("5")]
+[node name="BuildingInfoPanel" parent="UI" instance=ExtResource("5")]
 offset_left = -205.0
 offset_top = 0.0
 offset_right = 0.0

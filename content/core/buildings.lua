@@ -1,8 +1,8 @@
--- Object definitions (Medieval Fantasy Buildings)
+-- Building definitions
 -- Buildings are interactable structures that satisfy needs
 -- useAreas: automatically derived from walkable property and tileSize
 
-Objects = {
+Buildings = {
     Home = {
         satisfiesNeed = "Energy",
         satisfactionAmount = 80,
@@ -61,4 +61,4 @@ Objects = {
     }
 }
 
-return Objects
+return Buildings

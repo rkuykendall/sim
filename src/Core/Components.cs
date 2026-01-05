@@ -44,10 +44,10 @@ public sealed class ActionComponent
     public int WaitUntilTick { get; set; } = -1; // Wait before repathing (randomized to break dance)
 }
 
-// World object (furniture, etc.)
-public sealed class ObjectComponent
+// World building (furniture, etc.)
+public sealed class BuildingComponent
 {
-    public int ObjectDefId { get; set; }
+    public int BuildingDefId { get; set; }
     public bool InUse { get; set; }
     public EntityId? UsedBy { get; set; }
     public int ColorIndex { get; set; } = 0; // Index into color palette
@@ -62,10 +62,10 @@ public sealed class ResourceComponent
     public float DepletionMult { get; set; } = 1f; // Multiplier for resource depletion (0 = never depletes)
 }
 
-// Attachment tracking (which pawns use this object regularly)
+// Attachment tracking (which pawns use this building regularly)
 public sealed class AttachmentComponent
 {
     // Pawn ID → attachment strength (0-10)
-    // Higher values = pawn uses this object more often
+    // Higher values = pawn uses this building more often
     public Dictionary<EntityId, int> UserAttachments { get; set; } = new();
 }

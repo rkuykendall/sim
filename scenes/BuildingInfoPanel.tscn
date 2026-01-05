@@ -1,6 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://objectinfopanel"]
+[gd_scene load_steps=3 format=3 uid="uid://BuildingInfoPanel"]
 
-[ext_resource type="Script" path="res://src/Godot/ObjectInfoPanel.cs" id="1"]
+[ext_resource type="Script" path="res://src/Godot/BuildingInfoPanel.cs" id="1"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.1, 0.1, 0.1, 0.8)
@@ -9,7 +9,7 @@ corner_radius_top_right = 0
 corner_radius_bottom_right = 0
 corner_radius_bottom_left = 0
 
-[node name="ObjectInfoPanel" type="PanelContainer"]
+[node name="BuildingInfoPanel" type="PanelContainer"]
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 anchors_preset = 1
 anchor_left = 1.0
@@ -37,7 +37,7 @@ layout_mode = 2
 [node name="NameLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
-text = "Object Name"
+text = "Building Name"
 
 [node name="StatusLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2

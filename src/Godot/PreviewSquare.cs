@@ -76,21 +76,21 @@ public partial class PreviewSquare : Button
     /// Updates the preview to show the current color and selected sprite.
     /// </summary>
     /// <param name="colorIndex">Index into color palette</param>
-    /// <param name="objectDefId">Selected object ID, or null</param>
+    /// <param name="buildingDefId">Selected building ID, or null</param>
     /// <param name="terrainDefId">Selected terrain ID, or null</param>
     /// <param name="content">Content registry for looking up definitions</param>
     /// <param name="palette">Current color palette</param>
-    /// <param name="isObjectPreview">True if this is the object preview (shows generic-object.png when null)</param>
+    /// <param name="isBuildingPreview">True if this is the building preview (shows generic-building.png when null)</param>
     /// <param name="isTerrainPreview">True if this is the terrain preview (shows generic-terrain.png when null)</param>
     /// <param name="isDeletePreview">True if this is the delete preview (shows delete.png)</param>
     /// <param name="isSelectPreview">True if this is the select preview (shows select.png)</param>
     public void UpdatePreview(
         int colorIndex,
-        int? objectDefId,
+        int? buildingDefId,
         int? terrainDefId,
         ContentRegistry? content,
         Color[] palette,
-        bool isObjectPreview = false,
+        bool isBuildingPreview = false,
         bool isTerrainPreview = false,
         bool isDeletePreview = false,
         bool isSelectPreview = false
@@ -106,11 +106,11 @@ public partial class PreviewSquare : Button
         if (content != null)
         {
             if (
-                objectDefId.HasValue
-                && content.Objects.TryGetValue(objectDefId.Value, out var objDef)
+                buildingDefId.HasValue
+                && content.Buildings.TryGetValue(buildingDefId.Value, out var buildingDef)
             )
             {
-                texture = SpriteResourceManager.GetTexture(objDef.SpriteKey);
+                texture = SpriteResourceManager.GetTexture(buildingDef.SpriteKey);
             }
             else if (
                 terrainDefId.HasValue
@@ -122,7 +122,7 @@ public partial class PreviewSquare : Button
         }
 
         // Fallback to unknown.png if sprite key exists but texture not found
-        if (texture == null && (objectDefId.HasValue || terrainDefId.HasValue))
+        if (texture == null && (buildingDefId.HasValue || terrainDefId.HasValue))
         {
             texture = GD.Load<Texture2D>("res://sprites/unknown.png");
         }
@@ -132,9 +132,9 @@ public partial class PreviewSquare : Button
         {
             texture = GD.Load<Texture2D>("res://sprites/select.png");
         }
-        else if (texture == null && isObjectPreview)
+        else if (texture == null && isBuildingPreview)
         {
-            texture = GD.Load<Texture2D>("res://sprites/generic-object.png");
+            texture = GD.Load<Texture2D>("res://sprites/generic-building.png");
         }
         else if (texture == null && isTerrainPreview)
         {

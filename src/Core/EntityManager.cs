@@ -55,13 +55,17 @@ public sealed class EntityManager
     }
 
     /// <summary>
-    /// Factory method to create an object with all required components.
+    /// Factory method to create a building with all required components.
     /// </summary>
-    public EntityId CreateObject(TileCoord position, int objectDefId, int colorIndex)
+    public EntityId CreateBuilding(TileCoord position, int buildingDefId, int colorIndex)
     {
         var id = Create();
         Positions[id] = new PositionComponent { Coord = position };
-        Objects[id] = new ObjectComponent { ObjectDefId = objectDefId, ColorIndex = colorIndex };
+        Buildings[id] = new BuildingComponent
+        {
+            BuildingDefId = buildingDefId,
+            ColorIndex = colorIndex,
+        };
         return id;
     }
 
@@ -71,13 +75,13 @@ public sealed class EntityManager
     public readonly Dictionary<EntityId, MoodComponent> Moods = new();
     public readonly Dictionary<EntityId, BuffComponent> Buffs = new();
     public readonly Dictionary<EntityId, ActionComponent> Actions = new();
-    public readonly Dictionary<EntityId, ObjectComponent> Objects = new();
+    public readonly Dictionary<EntityId, BuildingComponent> Buildings = new();
     public readonly Dictionary<EntityId, ResourceComponent> Resources = new();
     public readonly Dictionary<EntityId, AttachmentComponent> Attachments = new();
 
     public IEnumerable<EntityId> AllPawns() => Pawns.Keys;
 
-    public IEnumerable<EntityId> AllObjects() => Objects.Keys;
+    public IEnumerable<EntityId> AllBuildings() => Buildings.Keys;
 
     /// <summary>
     /// Check if a tile is occupied by any pawn other than the excluded one.
@@ -146,7 +150,7 @@ public sealed class EntityManager
         Moods.Remove(id);
         Buffs.Remove(id);
         Actions.Remove(id);
-        Objects.Remove(id);
+        Buildings.Remove(id);
         Resources.Remove(id);
         Attachments.Remove(id);
     }

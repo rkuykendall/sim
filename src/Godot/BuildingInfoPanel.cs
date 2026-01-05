@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Godot;
 using SimGame.Core;
 
-public partial class ObjectInfoPanel : PanelContainer
+public partial class BuildingInfoPanel : PanelContainer
 {
     [Export]
     public NodePath NameLabelPath { get; set; } = null!;
@@ -34,19 +34,19 @@ public partial class ObjectInfoPanel : PanelContainer
         Visible = false;
     }
 
-    public void ShowObject(RenderObject obj, ContentRegistry content, Simulation sim)
+    public void ShowBuilding(RenderBuilding building, ContentRegistry content, Simulation sim)
     {
         _sim = sim;
         Visible = true;
 
         if (_nameLabel != null)
-            _nameLabel.Text = obj.Name;
+            _nameLabel.Text = building.Name;
 
         if (_statusLabel != null)
         {
-            if (obj.InUse && obj.UsedByName != null)
+            if (building.InUse && building.UsedByName != null)
             {
-                _statusLabel.Text = $"In use by {obj.UsedByName}";
+                _statusLabel.Text = $"In use by {building.UsedByName}";
                 _statusLabel.Modulate = Colors.Yellow;
             }
             else
@@ -58,24 +58,25 @@ public partial class ObjectInfoPanel : PanelContainer
 
         if (
             _descriptionLabel != null
-            && content.Objects.TryGetValue(obj.ObjectDefId, out var objDef)
+            && content.Buildings.TryGetValue(building.BuildingDefId, out var buildingDef)
         )
         {
             string needName = "nothing";
             if (
-                objDef.SatisfiesNeedId.HasValue
-                && content.Needs.TryGetValue(objDef.SatisfiesNeedId.Value, out var needDef)
+                buildingDef.SatisfiesNeedId.HasValue
+                && content.Needs.TryGetValue(buildingDef.SatisfiesNeedId.Value, out var needDef)
             )
                 needName = needDef.Name;
 
-            _descriptionLabel.Text = $"Satisfies: {needName} (+{objDef.NeedSatisfactionAmount:0})";
+            _descriptionLabel.Text =
+                $"Satisfies: {needName} (+{buildingDef.NeedSatisfactionAmount:0})";
         }
 
         // Update debug info
-        UpdateDebugDisplay(obj);
+        UpdateDebugDisplay(building);
     }
 
-    private void UpdateDebugDisplay(RenderObject obj)
+    private void UpdateDebugDisplay(RenderBuilding building)
     {
         if (_debugContainer == null)
             return;
@@ -86,17 +87,21 @@ public partial class ObjectInfoPanel : PanelContainer
         _debugLabels.Clear();
 
         // Resource info
-        if (obj.ResourceType != null && obj.CurrentResource.HasValue && obj.MaxResource.HasValue)
+        if (
+            building.ResourceType != null
+            && building.CurrentResource.HasValue
+            && building.MaxResource.HasValue
+        )
         {
             var resourceLabel = new Label
             {
                 Text =
-                    $"Resources: {obj.CurrentResource.Value:0}/{obj.MaxResource.Value:0} {obj.ResourceType}",
+                    $"Resources: {building.CurrentResource.Value:0}/{building.MaxResource.Value:0} {building.ResourceType}",
             };
             resourceLabel.AddThemeFontSizeOverride("font_size", 14);
 
             // Color based on resource level
-            float percent = obj.CurrentResource.Value / obj.MaxResource.Value;
+            float percent = building.CurrentResource.Value / building.MaxResource.Value;
             if (percent < 0.2f)
                 resourceLabel.Modulate = Colors.Red;
             else if (percent < 0.5f)
@@ -108,7 +113,7 @@ public partial class ObjectInfoPanel : PanelContainer
             _debugLabels.Add(resourceLabel);
 
             // Can be worked at flag
-            if (obj.CanBeWorkedAt == true)
+            if (building.CanBeWorkedAt == true)
             {
                 var workLabel = new Label { Text = "Can be worked at" };
                 workLabel.AddThemeFontSizeOverride("font_size", 14);
@@ -119,7 +124,7 @@ public partial class ObjectInfoPanel : PanelContainer
         }
 
         // Attachment info
-        if (obj.Attachments != null && obj.Attachments.Count > 0)
+        if (building.Attachments != null && building.Attachments.Count > 0)
         {
             var attachHeader = new Label { Text = "Attachments:" };
             attachHeader.AddThemeFontSizeOverride("font_size", 14);
@@ -127,7 +132,7 @@ public partial class ObjectInfoPanel : PanelContainer
             _debugContainer.AddChild(attachHeader);
             _debugLabels.Add(attachHeader);
 
-            foreach (var (pawnId, strength) in obj.Attachments)
+            foreach (var (pawnId, strength) in building.Attachments)
             {
                 var formattedId = _sim?.FormatEntityId(pawnId) ?? pawnId.ToString();
                 var attachLabel = new Label { Text = $"  {formattedId}: {strength}/10" };

@@ -7,8 +7,8 @@ namespace SimGame.Tests;
 
 /// <summary>
 /// Integration tests for the attachment-based preference scoring system.
-/// Tests verify that pawns prefer objects they've used before (high attachment)
-/// and avoid objects claimed by other pawns (high others' attachment).
+/// Tests verify that pawns prefer buildings they've used before (high attachment)
+/// and avoid buildings claimed by other pawns (high others' attachment).
 ///
 /// This is tested through simulation scenarios rather than direct unit tests,
 /// as attachment scoring is internal to the AI decision-making system.
@@ -23,22 +23,22 @@ public class AttachmentPreferenceScoringTests
     }
 
     [Fact]
-    public void Pawn_WithNoAttachments_SelectsClosestObject()
+    public void Pawn_WithNoAttachments_SelectsClosestBuilding()
     {
         // When pawns have no attachment history, they should pick the closest bed
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(20, 10);
         var sleepNeedId = builder.DefineNeed("Sleep", decayPerTick: 0.001f);
-        var bedDefId = builder.DefineObject(
-            key: "Bed",
+        var bedDefId = builder.DefineBuilding(
+            key: "Home",
             satisfiesNeedId: sleepNeedId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (0, 1) }
         );
 
-        builder.AddObject(bedDefId, 1, 0); // Close bed at (1,0)
-        builder.AddObject(bedDefId, 10, 0); // Distant bed at (10,0)
+        builder.AddBuilding(bedDefId, 1, 0); // Close bed at (1,0)
+        builder.AddBuilding(bedDefId, 10, 0); // Distant bed at (10,0)
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { sleepNeedId, 10f } });
         var sim = builder.Build();
 
@@ -66,22 +66,22 @@ public class AttachmentPreferenceScoringTests
     }
 
     [Fact]
-    public void Pawn_PrefersAttachedObject_OverCloserUnused()
+    public void Pawn_PrefersAttachedBuilding_OverCloserUnused()
     {
         // A pawn should prefer beds they've used before, even if further away
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(20, 10);
         var sleepNeedId = builder.DefineNeed("Sleep", decayPerTick: 0.01f);
-        var bedDefId = builder.DefineObject(
-            key: "Bed",
+        var bedDefId = builder.DefineBuilding(
+            key: "Home",
             satisfiesNeedId: sleepNeedId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (0, 1) }
         );
 
-        builder.AddObject(bedDefId, 1, 0); // Close unused bed
-        builder.AddObject(bedDefId, 5, 0); // Far bed that will get attachment
+        builder.AddBuilding(bedDefId, 1, 0); // Close unused bed
+        builder.AddBuilding(bedDefId, 5, 0); // Far bed that will get attachment
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { sleepNeedId, 10f } });
         var sim = builder.Build();
 
@@ -118,8 +118,8 @@ public class AttachmentPreferenceScoringTests
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(12, 10);
         var sleepNeedId = builder.DefineNeed("Sleep", decayPerTick: 0.001f);
-        var bedDefId = builder.DefineObject(
-            key: "Bed",
+        var bedDefId = builder.DefineBuilding(
+            key: "Home",
             satisfiesNeedId: sleepNeedId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
@@ -129,8 +129,8 @@ public class AttachmentPreferenceScoringTests
         // Place both beds at same distance from pawn2's starting position
         // Bed1 at x=4 (distance 4 from pawn2 at x=8)
         // Bed2 at x=2 (distance 6 from pawn2 at x=8)  -- further so pawn1 naturally uses it first
-        builder.AddObject(bedDefId, 4, 0); // Bed1 - will be claimed by pawn1
-        builder.AddObject(bedDefId, 8, 0); // Bed2 - closer to pawn2
+        builder.AddBuilding(bedDefId, 4, 0); // Bed1 - will be claimed by pawn1
+        builder.AddBuilding(bedDefId, 8, 0); // Bed2 - closer to pawn2
         builder.AddPawn("Pawn1", 0, 0, new Dictionary<int, float> { { sleepNeedId, 10f } });
         builder.AddPawn("Pawn2", 8, 0, new Dictionary<int, float> { { sleepNeedId, 10f } });
         var sim = builder.Build();
@@ -163,8 +163,8 @@ public class AttachmentPreferenceScoringTests
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(30, 10);
         var sleepNeedId = builder.DefineNeed("Sleep", decayPerTick: 0.001f);
-        var bedDefId = builder.DefineObject(
-            key: "Bed",
+        var bedDefId = builder.DefineBuilding(
+            key: "Home",
             satisfiesNeedId: sleepNeedId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
@@ -172,9 +172,9 @@ public class AttachmentPreferenceScoringTests
         );
 
         // Create 3 beds spread apart
-        builder.AddObject(bedDefId, 5, 0);
-        builder.AddObject(bedDefId, 15, 0);
-        builder.AddObject(bedDefId, 25, 0);
+        builder.AddBuilding(bedDefId, 5, 0);
+        builder.AddBuilding(bedDefId, 15, 0);
+        builder.AddBuilding(bedDefId, 25, 0);
 
         // Create 3 pawns starting near beds 1, 2, and 3
         builder.AddPawn("Pawn1", 3, 0, new Dictionary<int, float> { { sleepNeedId, 10f } });
@@ -231,16 +231,16 @@ public class AttachmentPreferenceScoringTests
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(20, 10);
         var sleepNeedId = builder.DefineNeed("Sleep", decayPerTick: 0.001f);
-        var bedDefId = builder.DefineObject(
-            key: "Bed",
+        var bedDefId = builder.DefineBuilding(
+            key: "Home",
             satisfiesNeedId: sleepNeedId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (0, 1) }
         );
 
-        builder.AddObject(bedDefId, 5, 0); // Preferred bed
-        builder.AddObject(bedDefId, 7, 0); // Alternative bed
+        builder.AddBuilding(bedDefId, 5, 0); // Preferred bed
+        builder.AddBuilding(bedDefId, 7, 0); // Alternative bed
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { sleepNeedId, 10f } });
         var sim = builder.Build();
 

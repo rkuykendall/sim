@@ -4,7 +4,7 @@ namespace SimGame.Godot;
 
 /// <summary>
 /// A button that displays a sprite icon with optional color modulation.
-/// Used for visual selection of objects and terrains in the build toolbar.
+/// Used for visual selection of buildings and terrains in the build toolbar.
 /// </summary>
 public partial class SpriteIconButton : Button
 {

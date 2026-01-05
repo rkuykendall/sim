@@ -85,7 +85,7 @@ public sealed class TestSimulationBuilder
     }
 
     /// <summary>
-    /// Define a buff that can be granted by objects or applied by needs.
+    /// Define a buff that can be granted by building or applied by needs.
     /// ID is auto-generated.
     /// </summary>
     public int DefineBuff(
@@ -106,7 +106,7 @@ public sealed class TestSimulationBuilder
     }
 
     /// <summary>
-    /// Define a need type that can be used by pawns and objects.
+    /// Define a need type that can be used by pawns and buildings.
     /// ID is auto-generated. Accepts debuff IDs directly.
     /// </summary>
     public int DefineNeed(
@@ -132,10 +132,10 @@ public sealed class TestSimulationBuilder
     }
 
     /// <summary>
-    /// Define an object type that can be placed in the world.
+    /// Define a building type that can be placed in the world.
     /// ID is auto-generated. Accepts need and buff IDs directly.
     /// </summary>
-    public int DefineObject(
+    public int DefineBuilding(
         string key = "",
         int? satisfiesNeedId = null,
         float satisfactionAmount = 50f,
@@ -145,7 +145,7 @@ public sealed class TestSimulationBuilder
         bool walkable = false
     )
     {
-        var obj = new ObjectDef
+        var obj = new BuildingDef
         {
             Id = 0, // Auto-generated
             Name = key,
@@ -156,7 +156,7 @@ public sealed class TestSimulationBuilder
             SatisfiesNeedId = satisfiesNeedId,
             GrantsBuffId = grantsBuffId,
         };
-        return _content.RegisterObject(key, obj);
+        return _content.RegisterBuilding(key, obj);
     }
 
     /// <summary>
@@ -187,11 +187,11 @@ public sealed class TestSimulationBuilder
     }
 
     /// <summary>
-    /// Add an object instance to the world by its object ID.
+    /// Add a building instance to the world by its building definition ID.
     /// </summary>
-    public void AddObject(int objectId, int x = 0, int y = 0)
+    public void AddBuilding(int buildingDefId, int x = 0, int y = 0)
     {
-        _config.Objects.Add((objectId, x, y));
+        _config.Buildings.Add((buildingDefId, x, y));
     }
 
     /// <summary>
@@ -235,7 +235,7 @@ public static class SimulationTestExtensions
     public static void RenderWorld(this Simulation sim)
     {
         var pawnPositions = sim.GetAllPawnPositions() ?? new HashSet<TileCoord>();
-        var objectPositions = sim.GetAllObjectPositions() ?? new HashSet<TileCoord>();
+        var buildingPositions = sim.GetAllBuildingPositions() ?? new HashSet<TileCoord>();
         int width = sim.World.Width;
         int height = sim.World.Height;
 
@@ -246,8 +246,8 @@ public static class SimulationTestExtensions
                 var coord = new TileCoord(x, y);
                 if (pawnPositions.Contains(coord))
                     Console.Write("P"); // Pawn
-                else if (objectPositions.Contains(coord))
-                    Console.Write("O"); // Object
+                else if (buildingPositions.Contains(coord))
+                    Console.Write("B"); // Building
                 else if (!sim.World.IsWalkable(coord))
                     Console.Write("#"); // Wall/non-walkable
                 else
@@ -272,12 +272,12 @@ public static class SimulationTestExtensions
     }
 
     /// <summary>
-    /// Get all object positions in the simulation.
+    /// Get all building positions in the simulation.
     /// </summary>
-    public static HashSet<TileCoord>? GetAllObjectPositions(this Simulation sim)
+    public static HashSet<TileCoord>? GetAllBuildingPositions(this Simulation sim)
     {
         var result = new HashSet<TileCoord>();
-        foreach (var id in sim.Entities.AllObjects())
+        foreach (var id in sim.Entities.AllBuildings())
         {
             if (sim.Entities.Positions.TryGetValue(id, out var pos))
                 result.Add(pos.Coord);

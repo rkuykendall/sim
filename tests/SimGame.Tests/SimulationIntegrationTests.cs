@@ -27,7 +27,7 @@ public class SimulationIntegrationTests
             moodOffset: 15,
             durationTicks: 2400
         );
-        var fridgeDefId = builder.DefineObject(
+        var fridgeDefId = builder.DefineBuilding(
             key: "Fridge",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
@@ -35,7 +35,7 @@ public class SimulationIntegrationTests
             grantsBuffId: goodMealBuffId,
             useAreas: new List<(int, int)> { (-1, 0) }
         );
-        builder.AddObject(fridgeDefId, 4, 0);
+        builder.AddBuilding(fridgeDefId, 4, 0);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerId, 0f } });
         var sim = builder.Build();
 
@@ -80,7 +80,7 @@ public class SimulationIntegrationTests
             moodOffset: 15,
             durationTicks: 2400
         );
-        var fridgeDefId = builder.DefineObject(
+        var fridgeDefId = builder.DefineBuilding(
             key: "Fridge",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
@@ -88,7 +88,7 @@ public class SimulationIntegrationTests
             grantsBuffId: goodMealBuffId,
             useAreas: new List<(int, int)> { (-1, 0) }
         );
-        builder.AddObject(fridgeDefId, 4, 0);
+        builder.AddBuilding(fridgeDefId, 4, 0);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerId, 100f } });
         var sim = builder.Build();
 
@@ -125,7 +125,7 @@ public class SimulationIntegrationTests
     }
 
     /// <summary>
-    /// Scenario: Needs decay over time when no objects satisfy them.
+    /// Scenario: Needs decay over time when no buildings satisfy them.
     /// </summary>
     [Fact]
     public void Needs_DecayOverTime()
@@ -165,10 +165,10 @@ public class SimulationIntegrationTests
     }
 
     /// <summary>
-    /// Scenario: Pawn can reach and use an object that's not directly adjacent.
+    /// Scenario: Pawn can reach and use a building that's not directly adjacent.
     /// </summary>
     [Fact]
-    public void Pawn_NavigatesToObject_AndUsesIt()
+    public void Pawn_NavigatesToBuilding_AndUsesIt()
     {
         // Arrange: Larger world with pawn far from fridge
         var builder = new TestSimulationBuilder();
@@ -180,7 +180,7 @@ public class SimulationIntegrationTests
             moodOffset: 15,
             durationTicks: 2400
         );
-        var fridgeDefId = builder.DefineObject(
+        var fridgeDefId = builder.DefineBuilding(
             key: "Fridge",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
@@ -188,14 +188,14 @@ public class SimulationIntegrationTests
             grantsBuffId: goodMealBuffId,
             useAreas: new List<(int, int)> { (-1, 0) }
         );
-        builder.AddObject(fridgeDefId, 9, 0);
+        builder.AddBuilding(fridgeDefId, 9, 0);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerId, 10f } });
         var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
         Assert.NotNull(pawnId);
 
-        // Act: Run enough ticks to walk ~9 tiles and use object
+        // Act: Run enough ticks to walk ~9 tiles and use building
         // 9 tiles * 10 ticks/tile + 20 ticks interaction + buffer
         sim.RunTicks(200);
 
@@ -208,38 +208,38 @@ public class SimulationIntegrationTests
     }
 
     /// <summary>
-    /// Scenario: Destroying an object restores tile walkability.
+    /// Scenario: Destroying a building restores tile walkability.
     /// </summary>
     [Fact]
-    public void DestroyEntity_RestoresTileWalkability_ForObjects()
+    public void DestroyEntity_RestoresTileWalkability_ForBuildings()
     {
-        // Arrange: Create a world with an object
+        // Arrange: Create a world with a building
         var builder = new TestSimulationBuilder();
         var hungerId = builder.DefineNeed(key: "Hunger");
-        var fridgeDefId = builder.DefineObject(key: "Fridge", satisfiesNeedId: hungerId);
-        builder.AddObject(fridgeDefId, 2, 2);
+        var fridgeDefId = builder.DefineBuilding(key: "Fridge", satisfiesNeedId: hungerId);
+        builder.AddBuilding(fridgeDefId, 2, 2);
         var sim = builder.Build();
 
-        var objectId = sim.Entities.AllObjects().First();
+        var buildingId = sim.Entities.AllBuildings().First();
         var coord = new TileCoord(2, 2);
 
         // Verify tile is not walkable before destruction
         Assert.False(
             sim.World.GetTile(coord).Walkable,
-            "Tile should not be walkable with object on it"
+            "Tile should not be walkable with building on it"
         );
 
-        // Act: Destroy the object
-        sim.DestroyEntity(objectId);
+        // Act: Destroy the building
+        sim.DestroyEntity(buildingId);
 
         // Assert: Tile should be walkable again
         Assert.True(
             sim.World.GetTile(coord).Walkable,
-            "Tile should be walkable after object destruction"
+            "Tile should be walkable after building destruction"
         );
         Assert.False(
-            sim.Entities.Objects.ContainsKey(objectId),
-            "Object should be removed from entities"
+            sim.Entities.Buildings.ContainsKey(buildingId),
+            "Building should be removed from entities"
         );
     }
 }

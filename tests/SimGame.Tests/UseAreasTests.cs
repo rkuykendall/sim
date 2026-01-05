@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 namespace SimGame.Tests;
 
 /// <summary>
-/// Tests for UseAreas - verifying pawns respect object use areas when interacting.
+/// Tests for UseAreas - verifying pawns respect building use areas when interacting.
 /// </summary>
 public class UseAreasTests
 {
@@ -18,8 +18,8 @@ public class UseAreasTests
     }
 
     /// <summary>
-    /// Bug test: A pawn should only be able to use an object from its defined UseAreas.
-    /// If UseAreas is {(0, 1)} (south of object), pawn should not use it from (0, -1) (north).
+    /// Bug test: A pawn should only be able to use an building from its defined UseAreas.
+    /// If UseAreas is {(0, 1)} (south of building), pawn should not use it from (0, -1) (north).
     ///
     /// Layout (5x3 world):
     ///   Y=0: [ ][ ][F][ ][ ]   F = Fridge at (2,0)
@@ -29,20 +29,20 @@ public class UseAreasTests
     /// The pawn should walk to (2,1) to use the fridge, NOT to (2,-1) or adjacent cardinal tiles.
     /// </summary>
     [Fact]
-    public void Pawn_UsesObject_OnlyFromDefinedUseAreas()
+    public void Pawn_UsesBuilding_OnlyFromDefinedUseAreas()
     {
         // Arrange: Fridge at (2,0) with UseArea only at (0,1) meaning pawn must stand at (2,1)
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 2);
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        var fridgeDefId = builder.DefineObject(
+        var fridgeDefId = builder.DefineBuilding(
             key: "Fridge",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (0, 1) }
         );
-        builder.AddObject(fridgeDefId, 2, 0);
+        builder.AddBuilding(fridgeDefId, 2, 0);
         builder.AddPawn("TestPawn", 0, 2, new Dictionary<int, float> { { hungerId, 10f } });
         var sim = builder.Build();
 
@@ -65,7 +65,7 @@ public class UseAreasTests
             // Check if pawn is using the fridge
             if (
                 sim.Entities.Actions.TryGetValue(pawnId.Value, out var actionComp)
-                && actionComp.CurrentAction?.Type == ActionType.UseObject
+                && actionComp.CurrentAction?.Type == ActionType.UseBuilding
             )
             {
                 positionWhenUsingFridge = pos;
@@ -91,7 +91,7 @@ public class UseAreasTests
     }
 
     /// <summary>
-    /// Test that pawns can use objects with multiple UseAreas and pick the closest one.
+    /// Test that pawns can use buildings with multiple UseAreas and pick the closest one.
     ///
     /// Layout (5x5 world):
     ///   Y=0: [ ][ ][ ][ ][ ]
@@ -108,14 +108,14 @@ public class UseAreasTests
         // Arrange: TV at (2,1) with multiple use areas
         var builder = new TestSimulationBuilder();
         var funId = builder.DefineNeed(key: "Fun", decayPerTick: 0.001f);
-        var castleDefId = builder.DefineObject(
+        var castleDefId = builder.DefineBuilding(
             key: "Castle",
             satisfiesNeedId: funId,
             satisfactionAmount: 40f,
             interactionDuration: 30,
             useAreas: new List<(int, int)> { (-1, 0), (1, 0), (0, 1) }
         );
-        builder.AddObject(castleDefId, 2, 1);
+        builder.AddBuilding(castleDefId, 2, 1);
         builder.AddPawn("TestPawn", 0, 4, new Dictionary<int, float> { { funId, 10f } });
         var sim = builder.Build();
 
@@ -137,7 +137,7 @@ public class UseAreasTests
 
             if (
                 sim.Entities.Actions.TryGetValue(pawnId.Value, out var actionComp)
-                && actionComp.CurrentAction?.Type == ActionType.UseObject
+                && actionComp.CurrentAction?.Type == ActionType.UseBuilding
             )
             {
                 positionWhenUsingTV = pos;
@@ -172,25 +172,25 @@ public class UseAreasTests
     }
 
     /// <summary>
-    /// Test that pawn cannot use object if all UseAreas are blocked.
+    /// Test that pawn cannot use building if all UseAreas are blocked.
     /// </summary>
     [Fact]
-    public void Pawn_CannotUseObject_WhenAllUseAreasBlocked()
+    public void Pawn_CannotUseBuilding_WhenAllUseAreasBlocked()
     {
-        // Arrange: Fridge with single use area that's blocked by another object
+        // Arrange: Fridge with single use area that's blocked by another building
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 2);
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        var fridgeDefId = builder.DefineObject(
+        var fridgeDefId = builder.DefineBuilding(
             key: "Fridge",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (0, 1) }
         );
-        var blockerDefId = builder.DefineObject(key: "Blocker");
-        builder.AddObject(fridgeDefId, 2, 0);
-        builder.AddObject(blockerDefId, 2, 1);
+        var blockerDefId = builder.DefineBuilding(key: "Blocker");
+        builder.AddBuilding(fridgeDefId, 2, 0);
+        builder.AddBuilding(blockerDefId, 2, 1);
         builder.AddPawn("TestPawn", 0, 2, new Dictionary<int, float> { { hungerId, 10f } });
         var sim = builder.Build();
 
@@ -198,7 +198,7 @@ public class UseAreasTests
         Assert.NotNull(pawnId);
 
         _output.WriteLine("=== Blocked UseArea Test ===");
-        _output.WriteLine("Fridge at (2,0), UseArea at (2,1) is BLOCKED by another object");
+        _output.WriteLine("Fridge at (2,0), UseArea at (2,1) is BLOCKED by another building");
 
         float initialHunger = sim.GetNeedValue(pawnId.Value, "Hunger");
 

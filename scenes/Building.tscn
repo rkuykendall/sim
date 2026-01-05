@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://object"]
+[gd_scene load_steps=2 format=3 uid="uid://building"]
 
-[ext_resource type="Script" path="res://src/Godot/ObjectView.cs" id="1"]
+[ext_resource type="Script" path="res://src/Godot/BuildingView.cs" id="1"]
 
-[node name="Object" type="Node2D"]
+[node name="Building" type="Node2D"]
 y_sort_enabled = true
 y_sort_origin = 14
 script = ExtResource("1")

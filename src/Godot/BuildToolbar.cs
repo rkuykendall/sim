@@ -112,11 +112,11 @@ public partial class BuildToolbar : HBoxContainer
             (
                 () =>
                     CreateToolButton(
-                        "generic-object.png",
-                        BuildToolMode.PlaceObject,
-                        "Place Object"
+                        "generic-building.png",
+                        BuildToolMode.PlaceBuilding,
+                        "Place Building"
                     ),
-                BuildToolMode.PlaceObject
+                BuildToolMode.PlaceBuilding
             ),
         };
         if (_debugMode)
@@ -224,12 +224,12 @@ public partial class BuildToolbar : HBoxContainer
 
         // Get options list based on current mode
         var optionsList =
-            new List<(int id, string spriteKey, string name, bool isObject, bool isDelete)>();
+            new List<(int id, string spriteKey, string name, bool isBuilding, bool isDelete)>();
 
         switch (BuildToolState.Mode)
         {
-            case BuildToolMode.PlaceObject:
-                foreach (var (id, def) in _content.Objects.OrderBy(kv => kv.Value.Name))
+            case BuildToolMode.PlaceBuilding:
+                foreach (var (id, def) in _content.Buildings.OrderBy(kv => kv.Value.Name))
                 {
                     optionsList.Add((id, def.SpriteKey, def.Name, true, false));
                 }
@@ -252,9 +252,9 @@ public partial class BuildToolbar : HBoxContainer
         }
 
         // Create option buttons
-        foreach (var (id, spriteKey, name, isObject, isDelete) in optionsList)
+        foreach (var (id, spriteKey, name, isBuilding, isDelete) in optionsList)
         {
-            var button = CreateOptionButton(id, spriteKey, name, isObject, isDelete);
+            var button = CreateOptionButton(id, spriteKey, name, isBuilding, isDelete);
             _optionButtons.Add(button);
             _optionsContainer?.AddChild(button);
         }
@@ -264,7 +264,7 @@ public partial class BuildToolbar : HBoxContainer
         int id,
         string spriteKey,
         string name,
-        bool isObject,
+        bool isBuilding,
         bool isDelete
     )
     {
@@ -290,7 +290,7 @@ public partial class BuildToolbar : HBoxContainer
         {
             // For autotiled terrains, show only the 1x1 variant (lower-left 16x16)
             if (
-                !isObject
+                !isBuilding
                 && !isDelete
                 && _content != null
                 && _content.Terrains.TryGetValue(id, out var terrainDef)
@@ -301,7 +301,7 @@ public partial class BuildToolbar : HBoxContainer
             }
             // For variant terrains, show only the first variant (top-left 16x16)
             else if (
-                !isObject
+                !isBuilding
                 && !isDelete
                 && _content != null
                 && _content.Terrains.TryGetValue(id, out terrainDef)
@@ -314,8 +314,8 @@ public partial class BuildToolbar : HBoxContainer
             button.SetSprite(texture, _currentPalette[BuildToolState.SelectedColorIndex]);
         }
 
-        if (isObject)
-            button.Pressed += () => OnObjectOptionSelected(id);
+        if (isBuilding)
+            button.Pressed += () => OnBuildingOptionSelected(id);
         else if (isDelete)
             button.Pressed += () => OnDeleteOptionSelected();
         else
@@ -402,7 +402,7 @@ public partial class BuildToolbar : HBoxContainer
                 null,
                 _content,
                 _currentPalette,
-                isObjectPreview: false,
+                isBuildingPreview: false,
                 isTerrainPreview: false,
                 isDeletePreview: false,
                 isSelectPreview: false
@@ -429,10 +429,10 @@ public partial class BuildToolbar : HBoxContainer
         UpdateAllButtons();
     }
 
-    private void OnObjectOptionSelected(int objectDefId)
+    private void OnBuildingOptionSelected(int buildingDefId)
     {
-        BuildToolState.Mode = BuildToolMode.PlaceObject;
-        BuildToolState.SelectedObjectDefId = objectDefId;
+        BuildToolState.Mode = BuildToolMode.PlaceBuilding;
+        BuildToolState.SelectedBuildingDefId = buildingDefId;
         UpdateAllButtons();
     }
 
@@ -474,14 +474,14 @@ public partial class BuildToolbar : HBoxContainer
                     null,
                     _content,
                     _currentPalette,
-                    isObjectPreview: false,
+                    isBuildingPreview: false,
                     isTerrainPreview: true,
                     isDeletePreview: false,
                     isSelectPreview: false
                 );
                 paintPreview.SetSelected(isActive);
             }
-            // Handle sprite icon buttons (Select, Object, Delete)
+            // Handle sprite icon buttons (Select, Building, Delete)
             else if (button is SpriteIconButton spriteBtn)
             {
                 // Update color modulation
@@ -503,18 +503,19 @@ public partial class BuildToolbar : HBoxContainer
             bool isSelected = false;
 
             if (
-                BuildToolState.Mode == BuildToolMode.PlaceObject
-                && BuildToolState.SelectedObjectDefId.HasValue
+                BuildToolState.Mode == BuildToolMode.PlaceBuilding
+                && BuildToolState.SelectedBuildingDefId.HasValue
             )
             {
-                // Check if this button's ID matches the selected object
-                var objects = _content?.Objects.OrderBy(kv => kv.Value.Name).ToList();
-                if (objects != null)
+                // Check if this button's ID matches the selected building
+                var buildings = _content?.Buildings.OrderBy(kv => kv.Value.Name).ToList();
+                if (buildings != null)
                 {
                     var index = _optionButtons.IndexOf(button);
-                    if (index >= 0 && index < objects.Count)
+                    if (index >= 0 && index < buildings.Count)
                     {
-                        isSelected = objects[index].Key == BuildToolState.SelectedObjectDefId.Value;
+                        isSelected =
+                            buildings[index].Key == BuildToolState.SelectedBuildingDefId.Value;
                     }
                 }
             }
