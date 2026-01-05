@@ -845,4 +845,16 @@ public sealed class Simulation
     {
         return RenderSnapshotBuilder.Build(this);
     }
+
+    /// <summary>
+    /// Format an EntityId for display (e.g., "Pawn #1" or "Object #5").
+    /// </summary>
+    public string FormatEntityId(EntityId id)
+    {
+        if (Entities.Pawns.ContainsKey(id))
+            return $"Pawn #{id.Value}";
+        if (Entities.Objects.ContainsKey(id))
+            return $"Object #{id.Value}";
+        return $"Entity #{id.Value}";
+    }
 }

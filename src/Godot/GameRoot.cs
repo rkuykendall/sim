@@ -1314,7 +1314,7 @@ public partial class GameRoot : Node2D
             return;
         }
 
-        _objectInfoPanel.ShowObject(obj, _sim.Content);
+        _objectInfoPanel.ShowObject(obj, _sim.Content, _sim);
     }
 
     private void UpdateTimeDisplay(RenderSnapshot snapshot)

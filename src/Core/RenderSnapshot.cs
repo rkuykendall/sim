@@ -32,6 +32,7 @@ public sealed class RenderObject
     public bool InUse { get; init; }
     public string? UsedByName { get; init; }
     public int ColorIndex { get; init; }
+    public Dictionary<EntityId, int> Attachments { get; init; } = new();
 }
 
 public sealed class RenderTime
@@ -162,6 +163,12 @@ public static class RenderSnapshotBuilder
                     usedByName = userPawn.Name;
             }
 
+            var attachments = new Dictionary<EntityId, int>();
+            if (sim.Entities.Attachments.TryGetValue(objId, out var attachmentComp))
+            {
+                attachments = new Dictionary<EntityId, int>(attachmentComp.UserAttachments);
+            }
+
             objects.Add(
                 new RenderObject
                 {
@@ -173,6 +180,7 @@ public static class RenderSnapshotBuilder
                     InUse = obj.InUse,
                     UsedByName = usedByName,
                     ColorIndex = obj.ColorIndex,
+                    Attachments = attachments,
                 }
             );
         }
