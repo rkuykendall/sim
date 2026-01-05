@@ -90,6 +90,11 @@ Buffs = {
         moodOffset = 12,
         durationTicks = 3000  -- 2.5 minutes
     },
+    Socialized = {
+        name = "Socialized",
+        moodOffset = 12,
+        durationTicks = 3000  -- 2.5 minutes
+    },
 }
 
 return Buffs

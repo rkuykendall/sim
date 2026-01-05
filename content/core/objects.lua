@@ -1,67 +1,64 @@
--- Object definitions
--- Objects are interactable items that satisfy needs
--- useAreas: list of {dx, dy} relative tile offsets where pawn can stand to use object
+-- Object definitions (Medieval Fantasy Buildings)
+-- Buildings are interactable structures that satisfy needs
+-- useAreas: automatically derived from walkable property and tileSize
 
 Objects = {
-    Fridge = {
-        satisfiesNeed = "Hunger",
-        satisfactionAmount = 50,
-        interactionDuration = 2000,
-        grantsBuff = "GoodMeal",
-        spriteKey = "fridge",
-        resourceType = "food",
-        maxResourceAmount = 100,
-        depletionMult = 1.0,
-        canBeWorkedAt = true
-    },
-    Oven = {
-        satisfiesNeed = "Hunger",
-        satisfactionAmount = 70,
-        interactionDuration = 3000,
-        grantsBuff = "GoodMeal",
-        spriteKey = "oven",
-        resourceType = "food",
-        maxResourceAmount = 100,
-        depletionMult = 1.0,
-        canBeWorkedAt = true
-    },
-    Stove = {
-        satisfiesNeed = "Hunger",
-        satisfactionAmount = 60,
-        interactionDuration = 2500,
-        grantsBuff = "GoodMeal",
-        spriteKey = "stove",
-        resourceType = "food",
-        maxResourceAmount = 100,
-        depletionMult = 1.0,
-        canBeWorkedAt = true
-    },
-    Bed = {
+    Home = {
         satisfiesNeed = "Energy",
         satisfactionAmount = 80,
         interactionDuration = 4000,
         grantsBuff = "WellRested",
-        walkable = true,  -- pawn stands on the bed to sleep
-        spriteKey = "bed",
-        tileSize = 2  -- 2x2 bed
+        walkable = true,  -- pawns stand in home to sleep
+        spriteKey = "home",
+        tileSize = 2
     },
-    Sink = {
+    Farm = {
+        satisfiesNeed = "Hunger",
+        satisfactionAmount = 60,
+        interactionDuration = 3000,
+        grantsBuff = "GoodMeal",
+        spriteKey = "farm",
+        resourceType = "food",
+        maxResourceAmount = 100,
+        depletionMult = 1.0,
+        canBeWorkedAt = true,
+        tileSize = 2,
+        walkable = false
+    },
+    Market = {
+        satisfiesNeed = "Hunger",
+        satisfactionAmount = 50,
+        interactionDuration = 2000,
+        grantsBuff = "GoodMeal",
+        spriteKey = "market",
+        resourceType = "food",
+        maxResourceAmount = 100,
+        depletionMult = 1.0,
+        canBeWorkedAt = true,
+        tileSize = 2,
+        walkable = false
+    },
+    Well = {
         satisfiesNeed = "Hygiene",
         satisfactionAmount = 60,
         interactionDuration = 2000,
         grantsBuff = "FeelingFresh",
-        walkable = true,  -- pawn stands in the sink
-        spriteKey = "sink"
-    },
-    Castle = {
-        satisfiesNeed = "Fun",
-        satisfactionAmount = 40,
-        interactionDuration = 3000,
-        grantsBuff = "HadFun",
+        spriteKey = "well",
+        resourceType = "water",
+        maxResourceAmount = 999,
+        depletionMult = 0.0,  -- Infinite water
         walkable = false,
-        interactable = true,
-        spriteKey = "castle"
+        tileSize = 1
     },
+    Tavern = {
+        satisfiesNeed = "Social",
+        satisfactionAmount = 50,
+        interactionDuration = 2500,
+        grantsBuff = "Socialized",
+        walkable = false,
+        spriteKey = "tavern",
+        tileSize = 2
+    }
 }
 
 return Objects

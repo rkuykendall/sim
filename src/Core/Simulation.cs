@@ -716,12 +716,12 @@ public sealed class Simulation
     }
 
     /// <summary>
-    /// Gets the maximum number of pawns allowed in the simulation based on housing (bed count).
-    /// Each bed can house one pawn.
+    /// Gets the maximum number of pawns allowed in the simulation based on housing.
+    /// Each home can house one pawn.
     /// </summary>
     public int GetMaxPawns()
     {
-        var bedId = Content.GetObjectId("Bed");
+        var bedId = Content.GetObjectId("Home");
         if (!bedId.HasValue)
             return 0;
 
