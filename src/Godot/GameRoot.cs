@@ -43,6 +43,7 @@ public partial class GameRoot : Node2D
 
     // Track mouse button state for drag painting
     private bool _isPaintingTerrain = false;
+    private TileCoord? _lastPaintedTile = null;
 
     [Export]
     public PackedScene PawnScene { get; set; } = null!;
@@ -267,6 +268,7 @@ public partial class GameRoot : Node2D
                     if (BuildToolState.Mode == BuildToolMode.PlaceTerrain)
                     {
                         _isPaintingTerrain = true;
+                        _lastPaintedTile = tileCoord;
                         TileCoord[] tilesToUpdate;
                         if (BuildToolState.SelectedTerrainDefId.HasValue)
                         {
@@ -311,10 +313,34 @@ public partial class GameRoot : Node2D
                         SyncTiles(tilesToUpdate);
                         return;
                     }
+                    if (
+                        BuildToolState.Mode == BuildToolMode.PlaceObject
+                        && BuildToolState.SelectedObjectDefId.HasValue
+                    )
+                    {
+                        try
+                        {
+                            _sim.CreateObject(
+                                BuildToolState.SelectedObjectDefId.Value,
+                                tileCoord,
+                                BuildToolState.SelectedColorIndex
+                            );
+                        }
+                        catch (System.InvalidOperationException)
+                        {
+                            GD.Print($"Cannot place object at {tileCoord}: tile occupied");
+                        }
+                        catch (System.ArgumentException ex)
+                        {
+                            GD.PrintErr($"Invalid object placement: {ex.Message}");
+                        }
+                        return;
+                    }
                 }
                 else
                 {
                     _isPaintingTerrain = false;
+                    _lastPaintedTile = null;
                     if (
                         (
                             BuildToolState.Mode == BuildToolMode.FillSquare
@@ -370,30 +396,6 @@ public partial class GameRoot : Node2D
                         return;
                     }
                 }
-            }
-
-            if (
-                BuildToolState.Mode == BuildToolMode.PlaceObject
-                && BuildToolState.SelectedObjectDefId.HasValue
-            )
-            {
-                try
-                {
-                    _sim.CreateObject(
-                        BuildToolState.SelectedObjectDefId.Value,
-                        tileCoord,
-                        BuildToolState.SelectedColorIndex
-                    );
-                }
-                catch (System.InvalidOperationException)
-                {
-                    GD.Print($"Cannot place object at {tileCoord}: tile occupied");
-                }
-                catch (System.ArgumentException ex)
-                {
-                    GD.PrintErr($"Invalid object placement: {ex.Message}");
-                }
-                return;
             }
 
             var clickedPawnId = FindPawnAtPosition(localPos);
@@ -460,6 +462,14 @@ public partial class GameRoot : Node2D
             {
                 var localPos = GetLocalMousePosition();
                 var tileCoord = ScreenToTileCoord(localPos);
+
+                // Skip if we're still on the same tile we just painted
+                if (tileCoord == _lastPaintedTile)
+                {
+                    return;
+                }
+
+                _lastPaintedTile = tileCoord;
                 TileCoord[] tilesToUpdate;
                 if (BuildToolState.SelectedTerrainDefId.HasValue)
                 {
