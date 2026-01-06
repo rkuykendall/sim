@@ -12,6 +12,18 @@ public partial class GameRoot : Node2D
     private Simulation _sim = null!;
     private float _accumulator = 0f;
     private float _tickDelta;
+    private const int MaxTicksPerFrame = 100; // Safety cap for frame spikes
+    private SimulationSpeed _simulationSpeed = SimulationSpeed.Normal;
+
+    private enum SimulationSpeed
+    {
+        Paused = 0,
+        Normal = 1,
+        Fast4x = 4,
+        Fast16x = 16,
+        Fast64x = 64,
+    }
+
     private const float PawnHitboxSize = 24f;
     private const float BuildingHitboxSize = 28f;
 
@@ -203,16 +215,33 @@ public partial class GameRoot : Node2D
 
         if (!string.IsNullOrEmpty(MusicManagerPath))
             _musicManager = GetNodeOrNull<MusicManager>(MusicManagerPath);
+
+        // Initialize speed display
+        UpdateSpeedDisplay();
     }
 
     public override void _Process(double delta)
     {
-        _accumulator += (float)delta;
+        // Apply speed multiplier to delta (0 when paused)
+        float effectiveDelta =
+            _simulationSpeed == SimulationSpeed.Paused ? 0f : (float)delta * (int)_simulationSpeed;
 
-        while (_accumulator >= _tickDelta)
+        _accumulator += effectiveDelta;
+
+        // Safety: cap ticks per frame to prevent runaway on frame spikes
+        int ticksProcessed = 0;
+        while (_accumulator >= _tickDelta && ticksProcessed < MaxTicksPerFrame)
         {
             _sim.Tick();
             _accumulator -= _tickDelta;
+            ticksProcessed++;
+        }
+
+        // If we hit the cap, reset accumulator and warn
+        if (ticksProcessed >= MaxTicksPerFrame && _accumulator >= _tickDelta)
+        {
+            _accumulator = 0;
+            GD.PushWarning($"Simulation tick cap reached, resetting accumulator");
         }
 
         var snapshot = _sim.CreateRenderSnapshot();
@@ -252,6 +281,43 @@ public partial class GameRoot : Node2D
                 GD.Print($"Debug mode: {_debugMode}");
                 _toolbar?.SetDebugMode(_debugMode);
                 QueueRedraw();
+                return;
+            }
+
+            // Speed control keys 0-3
+            if (key.Keycode == Key.Key0)
+            {
+                _simulationSpeed = SimulationSpeed.Paused;
+                GD.Print("Simulation paused");
+                UpdateSpeedDisplay();
+                return;
+            }
+            if (key.Keycode == Key.Key1)
+            {
+                _simulationSpeed = SimulationSpeed.Normal;
+                GD.Print("Simulation speed: 1x (normal)");
+                UpdateSpeedDisplay();
+                return;
+            }
+            if (key.Keycode == Key.Key2)
+            {
+                _simulationSpeed = SimulationSpeed.Fast4x;
+                GD.Print("Simulation speed: 4x");
+                UpdateSpeedDisplay();
+                return;
+            }
+            if (key.Keycode == Key.Key3)
+            {
+                _simulationSpeed = SimulationSpeed.Fast16x;
+                GD.Print("Simulation speed: 16x");
+                UpdateSpeedDisplay();
+                return;
+            }
+            if (key.Keycode == Key.Key4)
+            {
+                _simulationSpeed = SimulationSpeed.Fast64x;
+                GD.Print("Simulation speed: 64x");
+                UpdateSpeedDisplay();
                 return;
             }
         }
@@ -1429,6 +1495,24 @@ public partial class GameRoot : Node2D
         {
             _timeDisplay.Hide();
         }
+    }
+
+    private void UpdateSpeedDisplay()
+    {
+        if (_timeDisplay == null)
+            return;
+
+        string speedText = _simulationSpeed switch
+        {
+            SimulationSpeed.Paused => "PAUSED",
+            SimulationSpeed.Normal => "1x",
+            SimulationSpeed.Fast4x => "4x",
+            SimulationSpeed.Fast16x => "16x",
+            SimulationSpeed.Fast64x => "64x",
+            _ => "1x",
+        };
+
+        _timeDisplay.UpdateSpeed(speedText);
     }
 
     private void UpdateNightOverlay(RenderSnapshot snapshot)
