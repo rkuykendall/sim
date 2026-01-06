@@ -59,7 +59,7 @@ public partial class PawnInfoPanel : PanelContainer
         Visible = true;
 
         if (_nameLabel != null)
-            _nameLabel.Text = pawn.Name;
+            _nameLabel.Text = sim.FormatEntityId(pawn.Id);
 
         if (_moodLabel != null)
         {

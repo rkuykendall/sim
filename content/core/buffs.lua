@@ -23,16 +23,6 @@ Buffs = {
         moodOffset = -8,
         isFromNeed = true
     },
-    Bored = {
-        name = "Bored!",
-        moodOffset = -20,
-        isFromNeed = true
-    },
-    Understimulated = {
-        name = "Understimulated",
-        moodOffset = -5,
-        isFromNeed = true
-    },
     Lonely = {
         name = "Lonely!",
         moodOffset = -25,
@@ -74,11 +64,6 @@ Buffs = {
         name = "Well Rested",
         moodOffset = 20,
         durationTicks = 4800  -- 4 minutes
-    },
-    HadFun = {
-        name = "Had Fun",
-        moodOffset = 10,
-        durationTicks = 1800  -- 1.5 minutes
     },
     FeelingFresh = {
         name = "Feeling Fresh",

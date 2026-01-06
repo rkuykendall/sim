@@ -103,7 +103,6 @@ public sealed class Simulation
         ThemeSystem = new ThemeSystem(this, config?.DisableThemes ?? false);
 
         _systems.Add(new NeedsSystem());
-        _systems.Add(new ProximitySocialSystem());
         _systems.Add(new BuffSystem());
         _systems.Add(new MoodSystem());
         if (!(config?.DisableThemes ?? false))
@@ -900,14 +899,17 @@ public sealed class Simulation
     }
 
     /// <summary>
-    /// Format an EntityId as "Pawn #X" or "Building #X" for debugging and UI display.
+    /// Format an EntityId as "Pawn #X" or "BuildingType #X" for debugging and UI display.
     /// </summary>
     public string FormatEntityId(EntityId id)
     {
         if (Entities.Pawns.ContainsKey(id))
             return $"Pawn #{id.Value}";
-        if (Entities.Buildings.ContainsKey(id))
-            return $"Building #{id.Value}";
+        if (Entities.Buildings.TryGetValue(id, out var buildingComp))
+        {
+            var buildingDef = Content.Buildings[buildingComp.BuildingDefId];
+            return $"{buildingDef.Name} #{id.Value}";
+        }
         return $"Entity #{id.Value}";
     }
 }

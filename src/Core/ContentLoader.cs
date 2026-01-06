@@ -267,6 +267,16 @@ public static class ContentLoader
             var canBeWorkedAtData = data.Get("canBeWorkedAt");
             var canBeWorkedAt = !canBeWorkedAtData.IsNil() && canBeWorkedAtData.Boolean;
 
+            var satisfactionAmountData = data.Get("satisfactionAmount");
+            var satisfactionAmount = satisfactionAmountData.IsNil()
+                ? 100f
+                : (float)satisfactionAmountData.Number;
+
+            var interactionDurationData = data.Get("interactionDuration");
+            var interactionDuration = interactionDurationData.IsNil()
+                ? 1000
+                : (int)interactionDurationData.Number;
+
             var building = new BuildingDef
             {
                 Name = key,
@@ -278,8 +288,8 @@ public static class ContentLoader
                     key,
                     "satisfiesNeed"
                 ),
-                NeedSatisfactionAmount = (float)data.Get("satisfactionAmount").Number,
-                InteractionDurationTicks = (int)data.Get("interactionDuration").Number,
+                NeedSatisfactionAmount = satisfactionAmount,
+                InteractionDurationTicks = interactionDuration,
                 GrantsBuffId = ResolveReference(
                     data.Get("grantsBuff"),
                     registry.GetBuffId,

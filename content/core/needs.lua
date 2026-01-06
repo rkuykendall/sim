@@ -18,14 +18,6 @@ Needs = {
         criticalDebuff = "Exhausted",
         lowDebuff = "Tired"
     },
-    Fun = {
-        name = "Fun",
-        decayPerTick = 0.008,
-        criticalThreshold = 20,
-        lowThreshold = 40,
-        criticalDebuff = "Bored",
-        lowDebuff = "Understimulated"
-    },
     Social = {
         name = "Social",
         decayPerTick = 0.005,

@@ -40,7 +40,7 @@ public partial class BuildingInfoPanel : PanelContainer
         Visible = true;
 
         if (_nameLabel != null)
-            _nameLabel.Text = building.Name;
+            _nameLabel.Text = sim.FormatEntityId(building.Id);
 
         if (_statusLabel != null)
         {

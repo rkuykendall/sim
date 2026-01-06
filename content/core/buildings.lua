@@ -5,8 +5,6 @@
 Buildings = {
     Home = {
         satisfiesNeed = "Energy",
-        satisfactionAmount = 80,
-        interactionDuration = 4000,
         grantsBuff = "WellRested",
         walkable = true,  -- pawns stand in home to sleep
         spriteKey = "home",
@@ -14,8 +12,6 @@ Buildings = {
     },
     Farm = {
         satisfiesNeed = "Hunger",
-        satisfactionAmount = 60,
-        interactionDuration = 3000,
         grantsBuff = "GoodMeal",
         spriteKey = "farm",
         resourceType = "food",
@@ -27,8 +23,6 @@ Buildings = {
     },
     Market = {
         satisfiesNeed = "Hunger",
-        satisfactionAmount = 50,
-        interactionDuration = 2000,
         grantsBuff = "GoodMeal",
         spriteKey = "market",
         resourceType = "food",
@@ -40,8 +34,6 @@ Buildings = {
     },
     Well = {
         satisfiesNeed = "Hygiene",
-        satisfactionAmount = 60,
-        interactionDuration = 2000,
         grantsBuff = "FeelingFresh",
         spriteKey = "well",
         resourceType = "water",
@@ -52,8 +44,6 @@ Buildings = {
     },
     Tavern = {
         satisfiesNeed = "Social",
-        satisfactionAmount = 50,
-        interactionDuration = 2500,
         grantsBuff = "Socialized",
         walkable = false,
         spriteKey = "tavern",

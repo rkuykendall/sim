@@ -41,8 +41,8 @@ public sealed class BuildingDef : IContentDef
     public bool Interactable { get; init; } = true;
     public int TileSize { get; init; } = 1; // 1 = 1x1, 2 = 2x2, 3 = 3x3 (square buildings only)
     public int? SatisfiesNeedId { get; init; } // Set during content loading
-    public float NeedSatisfactionAmount { get; init; } = 30f;
-    public int InteractionDurationTicks { get; init; } = 100;
+    public float NeedSatisfactionAmount { get; init; } = 100f;
+    public int InteractionDurationTicks { get; init; } = 1000;
     public int? GrantsBuffId { get; init; } // Buff to apply when interaction completes (set during content loading)
     public IReadOnlyList<(int dx, int dy)> UseAreas { get; init; } = Array.Empty<(int, int)>(); // Relative tile offsets where pawn can use this building
     public string SpriteKey { get; init; } = ""; // Path to sprite texture
