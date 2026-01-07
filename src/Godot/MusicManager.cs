@@ -5,45 +5,42 @@ namespace SimGame.Godot;
 
 /// <summary>
 /// Manages music playback in response to MusicSystem state changes.
-/// Reads theme changes from RenderSnapshot and controls the MidiPlayer.
+/// Reads theme changes from RenderSnapshot and controls the AudioStreamPlayer.
 /// Signals back to Core when music finishes playing.
 /// </summary>
 public partial class MusicManager : Node
 {
-    private GodotObject? _midiPlayer;
+    private AudioStreamPlayer? _audioPlayer;
     private string? _currentPlayingFile;
     private string? _lastThemeName;
     private GameRoot? _gameRoot;
 
     [Export]
-    public NodePath MidiPlayerPath { get; set; } = "";
+    public NodePath AudioPlayerPath { get; set; } = "";
 
     [Export]
     public NodePath GameRootPath { get; set; } = "";
 
     public override void _Ready()
     {
-        if (!string.IsNullOrEmpty(MidiPlayerPath))
+        if (!string.IsNullOrEmpty(AudioPlayerPath))
         {
-            _midiPlayer = GetNodeOrNull(MidiPlayerPath);
-            if (_midiPlayer == null)
+            _audioPlayer = GetNodeOrNull<AudioStreamPlayer>(AudioPlayerPath);
+            if (_audioPlayer == null)
             {
-                GD.PushWarning($"MusicManager: Could not find MidiPlayer at {MidiPlayerPath}");
+                GD.PushWarning(
+                    $"MusicManager: Could not find AudioStreamPlayer at {AudioPlayerPath}"
+                );
             }
             else
             {
-                // Connect to MidiPlayer's "finished" signal
-                _midiPlayer.Connect("finished", Callable.From(OnMusicFinished));
-
-                // Log initial MidiPlayer state
-                var initialFile = _midiPlayer.Get("file");
-                var initialPlaying = _midiPlayer.Get("playing");
-                var volume = _midiPlayer.Get("volume_db");
+                // Connect to AudioStreamPlayer's "finished" signal
+                _audioPlayer.Finished += OnMusicFinished;
             }
         }
         else
         {
-            GD.PrintErr("[MusicManager] ERROR: MidiPlayerPath is empty!");
+            GD.PrintErr("[MusicManager] ERROR: AudioPlayerPath is empty!");
         }
 
         if (!string.IsNullOrEmpty(GameRootPath))
@@ -66,7 +63,7 @@ public partial class MusicManager : Node
     /// </summary>
     public void UpdateMusicState(RenderSnapshot snapshot)
     {
-        if (_midiPlayer == null)
+        if (_audioPlayer == null)
             return;
 
         var themeState = snapshot.Theme;
@@ -97,42 +94,44 @@ public partial class MusicManager : Node
 
     private void PlayMusicFile(string filePath)
     {
-        if (_midiPlayer == null)
+        if (_audioPlayer == null)
         {
-            GD.PrintErr("[MusicManager] ERROR: MidiPlayer is null!");
+            GD.PrintErr("[MusicManager] ERROR: AudioStreamPlayer is null!");
             return;
         }
 
         GD.Print($"[MusicManager] Playing: {filePath}");
 
         // Stop current playback
-        _midiPlayer.Call("stop");
+        _audioPlayer.Stop();
 
-        // Set new file
-        _midiPlayer.Set("file", filePath);
-        _midiPlayer.Set("loop", false); // Don't loop - theme decides duration
+        // Load and set the audio stream
+        var audioStream = GD.Load<AudioStream>(filePath);
+        if (audioStream == null)
+        {
+            GD.PrintErr($"[MusicManager] ERROR: Could not load audio file at {filePath}");
+            return;
+        }
 
-        // Start playback using play() method (not just setting playing property)
-        _midiPlayer.Call("play");
+        _audioPlayer.Stream = audioStream;
 
-        // Verify the file was set correctly
-        var actualFile = _midiPlayer.Get("file");
-        var isPlaying = _midiPlayer.Get("playing");
+        // Start playback
+        _audioPlayer.Play();
 
         _currentPlayingFile = filePath;
     }
 
     private void StopMusic()
     {
-        if (_midiPlayer == null)
+        if (_audioPlayer == null)
             return;
 
-        _midiPlayer.Call("stop");
+        _audioPlayer.Stop();
         _currentPlayingFile = null;
     }
 
     /// <summary>
-    /// Called by MidiPlayer when music file finishes.
+    /// Called by AudioStreamPlayer when music file finishes.
     /// Notifies the Core simulation that the music has completed.
     /// </summary>
     private void OnMusicFinished()

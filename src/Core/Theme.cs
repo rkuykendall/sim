@@ -13,8 +13,8 @@ public abstract class Theme
     public abstract string Name { get; }
 
     /// <summary>
-    /// Path to the MIDI file to play, or null for no music.
-    /// Example: "res://music/gymnopedie_1.mid"
+    /// Path to the music file to play, or null for no music.
+    /// Example: "res://Music/Classics/Gymnopédie No.1.ogg"
     /// </summary>
     public abstract string? MusicFile { get; }
 
@@ -43,16 +43,25 @@ public abstract class Theme
 }
 
 /// <summary>
-/// Daytime theme with relaxing Satie Gnossiennes.
-/// Plays during daytime hours, randomly selecting from 3 Gnossienne pieces.
+/// Daytime theme with relaxing ambient music.
+/// Plays during daytime hours, randomly selecting from available tracks.
 /// </summary>
 public sealed class DayTheme : Theme
 {
-    private static readonly string[] GnossiennePieces = new[]
+    private static readonly string[] DayTracks = new[]
     {
-        "res://music/2035_gnossienne_1.mid",
-        "res://music/2130_gnossienne_2.mid",
-        "res://music/2131_gnossienne_3.mid",
+        "res://music/Tracks/Cuddle Clouds.ogg",
+        "res://music/Tracks/Drifting Memories.ogg",
+        "res://music/Tracks/Evening Harmony.ogg",
+        "res://music/Tracks/Floating Dream.ogg",
+        "res://music/Tracks/Forgotten Biomes.ogg",
+        "res://music/Tracks/Gentle Breeze.ogg",
+        "res://music/Tracks/Golden Gleam.ogg",
+        "res://music/Tracks/Polar Lights.ogg",
+        "res://music/Tracks/Strange Worlds.ogg",
+        "res://music/Tracks/Sunlight Through Leaves.ogg",
+        "res://music/Tracks/Wanderers Tale.ogg",
+        "res://music/Tracks/Whispering Woods.ogg",
     };
 
     private string? _selectedMusicFile;
@@ -67,8 +76,8 @@ public sealed class DayTheme : Theme
 
     public override void OnStart(SimContext ctx)
     {
-        // Randomly select a Gnossienne piece
-        _selectedMusicFile = GnossiennePieces[ctx.Random.Next(GnossiennePieces.Length)];
+        // Randomly select a day track
+        _selectedMusicFile = DayTracks[ctx.Random.Next(DayTracks.Length)];
     }
 
     public override void OnTick(SimContext ctx) { }
@@ -82,24 +91,16 @@ public sealed class DayTheme : Theme
 }
 
 /// <summary>
-/// Nighttime theme with calming Satie Gymnopédies.
-/// Plays during nighttime hours, randomly selecting from 3 Gymnopédie pieces.
+/// Nighttime theme with calming Satie Gymnopédie.
+/// Plays during nighttime hours.
 /// Sets all pawn Energy to 0 on first transition to night, encouraging sleep.
 /// </summary>
 public sealed class NightTheme : Theme
 {
-    private static readonly string[] GymnopeidiePieces = new[]
-    {
-        "res://music/37_gymnopedie_1.mid",
-        "res://music/38_gymnopedie_2.mid",
-        "res://music/39_gymnopedie_3.mid",
-    };
-
     private int _lastDayRan = -1;
-    private string? _selectedMusicFile;
 
     public override string Name => "Night";
-    public override string? MusicFile => _selectedMusicFile;
+    public override string? MusicFile => "res://Music/Classics/Gymnopédie No.1.ogg";
 
     /// <summary>
     /// Night theme has priority 10 during nighttime (higher than day theme).
@@ -108,9 +109,6 @@ public sealed class NightTheme : Theme
 
     public override void OnStart(SimContext ctx)
     {
-        // Randomly select a Gymnopédie piece
-        _selectedMusicFile = GymnopeidiePieces[ctx.Random.Next(GymnopeidiePieces.Length)];
-
         // Set all pawn energy to 0 when first starting night (once per day)
         if (_lastDayRan != ctx.Time.Day)
         {

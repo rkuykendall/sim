@@ -10,7 +10,6 @@
 [ext_resource type="PackedScene" uid="uid://buildtoolbar" path="res://scenes/BuildToolbar.tscn" id="7"]
 [ext_resource type="Script" path="res://src/Godot/CRTShaderController.cs" id="8"]
 [ext_resource type="Material" path="res://shaders/screen_effects_material.tres" id="9"]
-[ext_resource type="Script" path="res://addons/midi/MidiPlayer.gd" id="10"]
 [ext_resource type="Script" path="res://src/Godot/MusicManager.cs" id="11"]
 
 [node name="Main" type="Node2D"]
@@ -95,15 +94,10 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 0)
 
-[node name="MidiPlayer" type="Node" parent="."]
-script = ExtResource("10")
-file = ""
-playing = false
-volume_db = -20.0
-loop = false
-soundfont = "res://music/WST25FStein_00Sep22.sf2"
+[node name="AudioPlayer" type="AudioStreamPlayer" parent="."]
+volume_db = -10.0
 
 [node name="MusicManager" type="Node" parent="."]
 script = ExtResource("11")
-MidiPlayerPath = NodePath("../MidiPlayer")
+AudioPlayerPath = NodePath("../AudioPlayer")
 GameRootPath = NodePath("../GameRoot")

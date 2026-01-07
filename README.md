@@ -80,10 +80,9 @@ The simulation runs independently of rendering at 20 ticks/second. Godot receive
 - [KidPix 1.0 by Craig Hickman](https://en.wikipedia.org/wiki/Kid_Pix)
 - [Tileset Templates by Patrik](https://patrik-arts.itch.io/tileset-templates)
 - [Puny World by Shade](https://merchant-shade.itch.io/16x16-puny-world)
+- [Tinyworld by Fliegevogel](https://fliegevogel.itch.io/)
 - [Webtyler by Alexander Nadeau](https://wareya.github.io/webtyler/)
-- [Steinway Model-C Soundfont by Warren S. Trachtman](https://archive.org/details/keppys-steinway-piano-lite)
-- [godot-midi-player-g4 by きのもと結衣](https://archive.org/details/WST25FStein_00Sep22.sf2)
-- [Nocturne No. 1 in B-flat minor by F. F. Chopin](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=582)
+- [Cozy Tunes by Pizza Doggy](https://pizzadoggy.itch.io/cozy-tunes)
 
 ## Art guide
 
