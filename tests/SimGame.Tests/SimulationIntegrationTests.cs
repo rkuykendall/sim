@@ -21,18 +21,13 @@ public class SimulationIntegrationTests
         // The pawn has Hunger need at 0 (very hungry)
         var builder = new TestSimulationBuilder();
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.02f);
-        var goodMealBuffId = builder.DefineBuff(
-            "GoodMeal",
-            "Good Meal",
-            moodOffset: 15,
-            durationTicks: 2400
-        );
         var marketDefId = builder.DefineBuilding(
             key: "Market",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
-            grantsBuffId: goodMealBuffId,
+            grantsBuff: 15f,
+            buffDuration: 2400,
             useAreas: new List<(int, int)> { (-1, 0) }
         );
         builder.AddBuilding(marketDefId, 4, 0);
@@ -74,18 +69,13 @@ public class SimulationIntegrationTests
         // Arrange: Create same world but with full hunger
         var builder = new TestSimulationBuilder();
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        var goodMealBuffId = builder.DefineBuff(
-            "GoodMeal",
-            "Good Meal",
-            moodOffset: 15,
-            durationTicks: 2400
-        );
         var marketDefId = builder.DefineBuilding(
             key: "Market",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
-            grantsBuffId: goodMealBuffId,
+            grantsBuff: 15f,
+            buffDuration: 2400,
             useAreas: new List<(int, int)> { (-1, 0) }
         );
         builder.AddBuilding(marketDefId, 4, 0);
@@ -174,18 +164,13 @@ public class SimulationIntegrationTests
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(9, 0);
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.01f);
-        var goodMealBuffId = builder.DefineBuff(
-            "GoodMeal",
-            "Good Meal",
-            moodOffset: 15,
-            durationTicks: 2400
-        );
         var marketDefId = builder.DefineBuilding(
             key: "Market",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
-            grantsBuffId: goodMealBuffId,
+            grantsBuff: 15f,
+            buffDuration: 2400,
             useAreas: new List<(int, int)> { (-1, 0) }
         );
         builder.AddBuilding(marketDefId, 9, 0);

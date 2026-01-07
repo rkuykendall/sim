@@ -127,16 +127,38 @@ public partial class PawnInfoPanel : PanelContainer
 
         foreach (var inst in buffs.ActiveBuffs)
         {
-            if (!content.Buffs.TryGetValue(inst.BuffDefId, out var buffDef))
-                continue;
+            // Get buff name from source
+            string buffName = inst.Source switch
+            {
+                SimGame.Core.BuffSource.Building => content.Buildings.TryGetValue(
+                    inst.SourceId,
+                    out var bDef
+                )
+                    ? bDef.Name
+                    : "Building",
+                SimGame.Core.BuffSource.Work => "Productive",
+                SimGame.Core.BuffSource.NeedCritical => content.Needs.TryGetValue(
+                    inst.SourceId,
+                    out var nDef
+                )
+                    ? $"{nDef.Name} (Critical)"
+                    : "Critical Need",
+                SimGame.Core.BuffSource.NeedLow => content.Needs.TryGetValue(
+                    inst.SourceId,
+                    out var nDef2
+                )
+                    ? $"{nDef2.Name} (Low)"
+                    : "Low Need",
+                _ => "Unknown",
+            };
 
-            var label = new Label { Text = $"{buffDef.Name} ({buffDef.MoodOffset:+0;-0})" };
+            var label = new Label { Text = $"{buffName} ({inst.MoodOffset:+0;-0})" };
             label.AddThemeFontSizeOverride("font_size", 16);
 
             // Color based on mood impact
-            if (buffDef.MoodOffset > 0)
+            if (inst.MoodOffset > 0)
                 label.Modulate = Colors.Lime;
-            else if (buffDef.MoodOffset < 0)
+            else if (inst.MoodOffset < 0)
                 label.Modulate = Colors.Orange;
             else
                 label.Modulate = Colors.White;

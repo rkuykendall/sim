@@ -112,29 +112,33 @@ public sealed class NeedsSystem : ISystem
     private void UpdateNeedDebuffs(BuffComponent buffs, NeedDef needDef, float value)
     {
         // Remove existing debuffs for this need first
-        if (needDef.CriticalDebuffId.HasValue)
-            buffs.ActiveBuffs.RemoveAll(b => b.BuffDefId == needDef.CriticalDebuffId.Value);
-        if (needDef.LowDebuffId.HasValue)
-            buffs.ActiveBuffs.RemoveAll(b => b.BuffDefId == needDef.LowDebuffId.Value);
+        buffs.ActiveBuffs.RemoveAll(b =>
+            (b.Source == BuffSource.NeedCritical || b.Source == BuffSource.NeedLow)
+            && b.SourceId == needDef.Id
+        );
 
         // Apply appropriate debuff based on current value
-        if (value < needDef.CriticalThreshold && needDef.CriticalDebuffId.HasValue)
+        if (value < needDef.CriticalThreshold && needDef.CriticalDebuff != 0)
         {
             buffs.ActiveBuffs.Add(
                 new BuffInstance
                 {
-                    BuffDefId = needDef.CriticalDebuffId.Value,
+                    Source = BuffSource.NeedCritical,
+                    SourceId = needDef.Id,
+                    MoodOffset = needDef.CriticalDebuff,
                     StartTick = 0,
                     EndTick = -1, // Permanent until need recovers
                 }
             );
         }
-        else if (value < needDef.LowThreshold && needDef.LowDebuffId.HasValue)
+        else if (value < needDef.LowThreshold && needDef.LowDebuff != 0)
         {
             buffs.ActiveBuffs.Add(
                 new BuffInstance
                 {
-                    BuffDefId = needDef.LowDebuffId.Value,
+                    Source = BuffSource.NeedLow,
+                    SourceId = needDef.Id,
+                    MoodOffset = needDef.LowDebuff,
                     StartTick = 0,
                     EndTick = -1, // Permanent until need recovers
                 }
@@ -174,8 +178,7 @@ public sealed class MoodSystem : ISystem
 
             foreach (var inst in buffComp.ActiveBuffs)
             {
-                if (ctx.Content.Buffs.TryGetValue(inst.BuffDefId, out var buffDef))
-                    mood += buffDef.MoodOffset;
+                mood += inst.MoodOffset;
             }
 
             moodComp.Mood = Math.Clamp(mood, -100f, 100f);
@@ -405,23 +408,23 @@ public sealed class ActionSystem : ISystem
             {
                 var buildingDef2 = ctx.Content.Buildings[buildingComp.BuildingDefId];
                 if (
-                    buildingDef2.GrantsBuffId.HasValue
+                    buildingDef2.GrantsBuff != 0
                     && ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs)
                 )
                 {
-                    var buffDef = ctx.Content.Buffs[buildingDef2.GrantsBuffId.Value];
-
                     // Remove existing instance of this buff (refresh it)
                     buffs.ActiveBuffs.RemoveAll(b =>
-                        b.BuffDefId == buildingDef2.GrantsBuffId.Value
+                        b.Source == BuffSource.Building && b.SourceId == buildingDef2.Id
                     );
 
                     buffs.ActiveBuffs.Add(
                         new BuffInstance
                         {
-                            BuffDefId = buildingDef2.GrantsBuffId.Value,
+                            Source = BuffSource.Building,
+                            SourceId = buildingDef2.Id,
+                            MoodOffset = buildingDef2.GrantsBuff,
                             StartTick = ctx.Time.Tick,
-                            EndTick = ctx.Time.Tick + buffDef.DurationTicks,
+                            EndTick = ctx.Time.Tick + buildingDef2.BuffDuration,
                         }
                     );
                 }
@@ -582,29 +585,26 @@ public sealed class ActionSystem : ISystem
                 }
             }
 
-            // Grant "Productive" buff
-            if (buildingComp2 != null)
+            // Grant "Productive" buff (hardcoded work satisfaction)
+            if (buildingComp2 != null && ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs))
             {
-                var productiveBuffId = ctx.Content.GetBuffId("Productive");
-                if (
-                    productiveBuffId.HasValue
-                    && ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs)
-                )
-                {
-                    var buffDef = ctx.Content.Buffs[productiveBuffId.Value];
+                var buildingDef3 = ctx.Content.Buildings[buildingComp2.BuildingDefId];
 
-                    // Remove existing instance of this buff (refresh it)
-                    buffs.ActiveBuffs.RemoveAll(b => b.BuffDefId == productiveBuffId.Value);
+                // Remove existing work buff for this building (refresh it)
+                buffs.ActiveBuffs.RemoveAll(b =>
+                    b.Source == BuffSource.Work && b.SourceId == buildingDef3.Id
+                );
 
-                    buffs.ActiveBuffs.Add(
-                        new BuffInstance
-                        {
-                            BuffDefId = productiveBuffId.Value,
-                            StartTick = ctx.Time.Tick,
-                            EndTick = ctx.Time.Tick + buffDef.DurationTicks,
-                        }
-                    );
-                }
+                buffs.ActiveBuffs.Add(
+                    new BuffInstance
+                    {
+                        Source = BuffSource.Work,
+                        SourceId = buildingDef3.Id,
+                        MoodOffset = 15f, // Productive feeling from working
+                        StartTick = ctx.Time.Tick,
+                        EndTick = ctx.Time.Tick + 2400, // Duration: 2400 ticks
+                    }
+                );
 
                 // Increment attachment to this work building (cap at 10)
                 if (ctx.Entities.Attachments.TryGetValue(targetId, out var attachmentComp))
@@ -815,12 +815,15 @@ public sealed class AISystem : ISystem
     {
         var urgentNeeds = new List<(int needId, float urgency)>();
 
-        // Get active debuffs to check which needs are causing problems
-        var activeDebuffIds = new HashSet<int>();
+        // Get active need debuffs to check which needs are causing problems
+        var activeNeedDebuffs = new HashSet<(BuffSource source, int needId)>();
         if (ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs))
         {
             foreach (var buff in buffs.ActiveBuffs)
-                activeDebuffIds.Add(buff.BuffDefId);
+            {
+                if (buff.Source == BuffSource.NeedCritical || buff.Source == BuffSource.NeedLow)
+                    activeNeedDebuffs.Add((buff.Source, buff.SourceId));
+            }
         }
 
         foreach (var (needId, value) in needs.Needs)
@@ -828,7 +831,7 @@ public sealed class AISystem : ISystem
             if (!ctx.Content.Needs.TryGetValue(needId, out var needDef))
                 continue;
 
-            float? urgency = CalculateNeedUrgency(needDef, value, activeDebuffIds);
+            float? urgency = CalculateNeedUrgency(needDef, value, activeNeedDebuffs);
             if (urgency.HasValue)
                 urgentNeeds.Add((needId, urgency.Value));
         }
@@ -842,16 +845,15 @@ public sealed class AISystem : ISystem
     /// Calculate urgency for a single need. Returns null if the need doesn't require attention.
     /// Lower values = more urgent.
     /// </summary>
-    private float? CalculateNeedUrgency(NeedDef needDef, float value, HashSet<int> activeDebuffIds)
+    private float? CalculateNeedUrgency(
+        NeedDef needDef,
+        float value,
+        HashSet<(BuffSource source, int needId)> activeNeedDebuffs
+    )
     {
-        bool hasDebuffFromNeed =
-            (
-                needDef.CriticalDebuffId.HasValue
-                && activeDebuffIds.Contains(needDef.CriticalDebuffId.Value)
-            )
-            || (
-                needDef.LowDebuffId.HasValue && activeDebuffIds.Contains(needDef.LowDebuffId.Value)
-            );
+        bool hasCriticalDebuff = activeNeedDebuffs.Contains((BuffSource.NeedCritical, needDef.Id));
+        bool hasLowDebuff = activeNeedDebuffs.Contains((BuffSource.NeedLow, needDef.Id));
+        bool hasDebuffFromNeed = hasCriticalDebuff || hasLowDebuff;
 
         // Skip needs that are high AND not causing debuffs
         if (value >= 90f && !hasDebuffFromNeed)
@@ -861,10 +863,7 @@ public sealed class AISystem : ISystem
         if (hasDebuffFromNeed)
         {
             // Having a debuff makes this very urgent
-            if (
-                needDef.CriticalDebuffId.HasValue
-                && activeDebuffIds.Contains(needDef.CriticalDebuffId.Value)
-            )
+            if (hasCriticalDebuff)
                 urgency -= 100; // Critical debuff - highest priority
             else
                 urgency -= 50; // Low debuff - high priority
@@ -1328,6 +1327,31 @@ public sealed class AISystem : ISystem
     }
 
     /// <summary>
+    /// Get the icon ID for a buff based on its source.
+    /// </summary>
+    private int? GetBuffIconId(SimContext ctx, BuffInstance buff)
+    {
+        switch (buff.Source)
+        {
+            case BuffSource.Building:
+            case BuffSource.Work:
+                // Show the building icon
+                return buff.SourceId;
+
+            case BuffSource.NeedCritical:
+            case BuffSource.NeedLow:
+                // Show a building that satisfies this need
+                var satisfyingBuilding = ctx.Content.Buildings.Values.FirstOrDefault(b =>
+                    b.SatisfiesNeedId.HasValue && b.SatisfiesNeedId.Value == buff.SourceId
+                );
+                return satisfyingBuilding?.Id;
+
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>
     /// Decides what expression a pawn should display during idle/wander actions
     /// based on their current buffs and needs.
     /// Returns (ExpressionType, IconDefId) or (null, null) if no expression.
@@ -1339,32 +1363,30 @@ public sealed class AISystem : ISystem
         {
             // Check for strongest positive buff
             var positiveBuff = buffs
-                .ActiveBuffs.Where(b =>
-                    ctx.Content.Buffs.TryGetValue(b.BuffDefId, out var def) && def.MoodOffset > 0
-                )
-                .OrderByDescending(b => ctx.Content.Buffs[b.BuffDefId].MoodOffset)
+                .ActiveBuffs.Where(b => b.MoodOffset > 0)
+                .OrderByDescending(b => b.MoodOffset)
                 .FirstOrDefault();
 
             if (positiveBuff != null)
             {
                 // Happy expression with buff-related icon
-                var buffDef = ctx.Content.Buffs[positiveBuff.BuffDefId];
-                return (ExpressionType.Happy, buffDef.Id);
+                int? iconId = GetBuffIconId(ctx, positiveBuff);
+                if (iconId.HasValue)
+                    return (ExpressionType.Happy, iconId.Value);
             }
 
             // Check for strongest negative buff
             var negativeBuff = buffs
-                .ActiveBuffs.Where(b =>
-                    ctx.Content.Buffs.TryGetValue(b.BuffDefId, out var def) && def.MoodOffset < 0
-                )
-                .OrderBy(b => ctx.Content.Buffs[b.BuffDefId].MoodOffset)
+                .ActiveBuffs.Where(b => b.MoodOffset < 0)
+                .OrderBy(b => b.MoodOffset)
                 .FirstOrDefault();
 
             if (negativeBuff != null)
             {
                 // Complaint expression with buff-related icon
-                var buffDef = ctx.Content.Buffs[negativeBuff.BuffDefId];
-                return (ExpressionType.Complaint, buffDef.Id);
+                int? iconId = GetBuffIconId(ctx, negativeBuff);
+                if (iconId.HasValue)
+                    return (ExpressionType.Complaint, iconId.Value);
             }
         }
 

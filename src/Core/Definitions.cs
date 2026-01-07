@@ -3,19 +3,20 @@ using System.Collections.Generic;
 
 namespace SimGame.Core;
 
-// Buff definition
-public sealed class BuffDef : IContentDef
+// Buff source types
+public enum BuffSource
 {
-    public int Id { get; set; }
-    public string Name { get; init; } = "";
-    public float MoodOffset { get; init; }
-    public int DurationTicks { get; init; } // 0 = permanent (recalculated each tick based on conditions)
-    public bool IsFromNeed { get; init; } // True if this buff is auto-applied based on need levels
+    NeedCritical, // Applied when need below critical threshold
+    NeedLow, // Applied when need below low threshold
+    Building, // Applied by building use
+    Work, // Applied by working at a building
 }
 
 public sealed class BuffInstance
 {
-    public int BuffDefId;
+    public BuffSource Source;
+    public int SourceId; // NeedDef.Id or BuildingDef.Id depending on Source
+    public float MoodOffset;
     public int StartTick;
     public int EndTick; // -1 = permanent until removed
 }
@@ -28,8 +29,8 @@ public sealed class NeedDef : IContentDef
     public float DecayPerTick { get; init; } = 0.05f; // 10x faster default
     public float CriticalThreshold { get; init; } = 20f;
     public float LowThreshold { get; init; } = 40f;
-    public int? CriticalDebuffId { get; init; } // Buff applied when below critical (set during content loading)
-    public int? LowDebuffId { get; init; } // Buff applied when below low threshold (set during content loading)
+    public float CriticalDebuff { get; init; } // Mood penalty when below critical threshold (e.g., -25)
+    public float LowDebuff { get; init; } // Mood penalty when below low threshold (e.g., -8)
 }
 
 // Building definition
@@ -42,7 +43,8 @@ public sealed class BuildingDef : IContentDef
     public int? SatisfiesNeedId { get; init; } // Set during content loading
     public float NeedSatisfactionAmount { get; init; } = 100f;
     public int InteractionDurationTicks { get; init; } = 1000;
-    public int? GrantsBuffId { get; init; } // Buff to apply when interaction completes (set during content loading)
+    public float GrantsBuff { get; init; } // Mood bonus when interaction completes (e.g., 15)
+    public int BuffDuration { get; init; } // Ticks the buff lasts (e.g., 2400)
     public IReadOnlyList<(int dx, int dy)> UseAreas { get; init; } = Array.Empty<(int, int)>(); // Relative tile offsets where pawn can use this building
     public string SpriteKey { get; init; } = ""; // Path to sprite texture
 

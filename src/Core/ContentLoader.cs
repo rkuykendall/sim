@@ -32,14 +32,13 @@ public static class ContentLoader
         // Load color palettes first (no dependencies)
         LoadColorPalettes(registry, contentPath);
 
-        // Load in order: buffs first (needs reference them), then needs, then terrains, then buildings
-        LoadBuffs(script, registry, Path.Combine(contentPath, "core", "buffs.lua"));
+        // Load content definitions
         LoadNeeds(script, registry, Path.Combine(contentPath, "core", "needs.lua"));
         LoadTerrains(script, registry, Path.Combine(contentPath, "core", "terrains.lua"));
         LoadBuildings(script, registry, Path.Combine(contentPath, "core", "buildings.lua"));
 
         Log?.Invoke(
-            $"ContentLoader: Loaded {registry.ColorPalettes.Count} color palettes, {registry.Buffs.Count} buffs, {registry.Needs.Count} needs, {registry.Terrains.Count} terrains, {registry.Buildings.Count} buildings"
+            $"ContentLoader: Loaded {registry.ColorPalettes.Count} color palettes, {registry.Needs.Count} needs, {registry.Terrains.Count} terrains, {registry.Buildings.Count} buildings"
         );
 
         return registry;
@@ -79,32 +78,6 @@ public static class ContentLoader
             );
     }
 
-    private static void LoadBuffs(Script script, ContentRegistry registry, string path)
-    {
-        var table = LoadLuaTable(script, path, "Buffs");
-        if (table == null)
-            return;
-
-        foreach (var pair in table.Pairs)
-        {
-            var key = pair.Key.String;
-            var data = pair.Value.Table;
-
-            registry.RegisterBuff(
-                key,
-                new BuffDef
-                {
-                    Name = data.Get("name").String,
-                    MoodOffset = (float)data.Get("moodOffset").Number,
-                    DurationTicks = (int)(
-                        data.Get("durationTicks").IsNil() ? 0 : data.Get("durationTicks").Number
-                    ),
-                    IsFromNeed = !data.Get("isFromNeed").IsNil() && data.Get("isFromNeed").Boolean,
-                }
-            );
-        }
-    }
-
     private static void LoadNeeds(Script script, ContentRegistry registry, string path)
     {
         var table = LoadLuaTable(script, path, "Needs");
@@ -116,6 +89,12 @@ public static class ContentLoader
             var key = pair.Key.String;
             var data = pair.Value.Table;
 
+            var criticalDebuffData = data.Get("criticalDebuff");
+            var criticalDebuff = criticalDebuffData.IsNil() ? 0f : (float)criticalDebuffData.Number;
+
+            var lowDebuffData = data.Get("lowDebuff");
+            var lowDebuff = lowDebuffData.IsNil() ? 0f : (float)lowDebuffData.Number;
+
             registry.RegisterNeed(
                 key,
                 new NeedDef
@@ -124,18 +103,8 @@ public static class ContentLoader
                     DecayPerTick = (float)data.Get("decayPerTick").Number,
                     CriticalThreshold = (float)data.Get("criticalThreshold").Number,
                     LowThreshold = (float)data.Get("lowThreshold").Number,
-                    CriticalDebuffId = ResolveReference(
-                        data.Get("criticalDebuff"),
-                        registry.GetBuffId,
-                        key,
-                        "criticalDebuff"
-                    ),
-                    LowDebuffId = ResolveReference(
-                        data.Get("lowDebuff"),
-                        registry.GetBuffId,
-                        key,
-                        "lowDebuff"
-                    ),
+                    CriticalDebuff = criticalDebuff,
+                    LowDebuff = lowDebuff,
                 }
             );
         }
@@ -256,6 +225,12 @@ public static class ContentLoader
                 ? 1000
                 : (int)interactionDurationData.Number;
 
+            var grantsBuffData = data.Get("grantsBuff");
+            var grantsBuff = grantsBuffData.IsNil() ? 0f : (float)grantsBuffData.Number;
+
+            var buffDurationData = data.Get("buffDuration");
+            var buffDuration = buffDurationData.IsNil() ? 0 : (int)buffDurationData.Number;
+
             var building = new BuildingDef
             {
                 Name = key,
@@ -268,12 +243,8 @@ public static class ContentLoader
                 ),
                 NeedSatisfactionAmount = satisfactionAmount,
                 InteractionDurationTicks = interactionDuration,
-                GrantsBuffId = ResolveReference(
-                    data.Get("grantsBuff"),
-                    registry.GetBuffId,
-                    key,
-                    "grantsBuff"
-                ),
+                GrantsBuff = grantsBuff,
+                BuffDuration = buffDuration,
                 UseAreas = useAreas,
                 SpriteKey = spriteKey,
                 ResourceType = resourceType,

@@ -3,20 +3,16 @@ using System.Collections.Generic;
 namespace SimGame.Core;
 
 /// <summary>
-/// Holds all loaded content definitions (buffs, needs, buildings, terrains).
+/// Holds all loaded content definitions (needs, buildings, terrains).
 /// This is an instance-based replacement for the static ContentDatabase,
 /// allowing multiple simulations with different content and better test isolation.
 /// </summary>
 public sealed class ContentRegistry
 {
-    private readonly ContentStore<BuffDef> _buffs = new();
     private readonly ContentStore<NeedDef> _needs = new();
     private readonly ContentStore<BuildingDef> _buildings = new();
     private readonly ContentStore<TerrainDef> _terrains = new();
     private readonly ContentStore<ColorPaletteDef> _colorPalettes = new();
-
-    /// <summary>All registered buff definitions by ID.</summary>
-    public IReadOnlyDictionary<int, BuffDef> Buffs => _buffs.ById;
 
     /// <summary>All registered need definitions by ID.</summary>
     public IReadOnlyDictionary<int, NeedDef> Needs => _needs.ById;
@@ -29,9 +25,6 @@ public sealed class ContentRegistry
 
     /// <summary>All registered color palette definitions by ID.</summary>
     public IReadOnlyDictionary<int, ColorPaletteDef> ColorPalettes => _colorPalettes.ById;
-
-    /// <summary>Register a buff definition. ID is auto-assigned if buff.Id is 0.</summary>
-    public int RegisterBuff(string key, BuffDef buff) => _buffs.Register(key, buff);
 
     /// <summary>Register a need definition. ID is auto-assigned if need.Id is 0.</summary>
     public int RegisterNeed(string key, NeedDef need) => _needs.Register(key, need);
@@ -46,9 +39,6 @@ public sealed class ContentRegistry
     /// <summary>Register a color palette definition. ID is auto-assigned if palette.Id is 0.</summary>
     public int RegisterColorPalette(string key, ColorPaletteDef palette) =>
         _colorPalettes.Register(key, palette);
-
-    /// <summary>Get a buff ID by its key name.</summary>
-    public int? GetBuffId(string name) => _buffs.GetId(name);
 
     /// <summary>Get a need ID by its key name.</summary>
     public int? GetNeedId(string name) => _needs.GetId(name);

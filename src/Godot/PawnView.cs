@@ -325,23 +325,10 @@ public partial class PawnView : Node2D
         // Get icon sprite key from content def
         string? iconKey = null;
 
-        // Try to get sprite key from BuildingDef
+        // Icon is always a building ID (from buff source or need building)
         if (content.Buildings.TryGetValue(iconDefId.Value, out var buildingDef))
         {
             iconKey = buildingDef.SpriteKey;
-        }
-        // Try BuffDef (buffs don't currently have sprite keys, so we'll use placeholder icons)
-        else if (content.Buffs.TryGetValue(iconDefId.Value, out var buffDef))
-        {
-            // Map buff names to icon sprite keys
-            iconKey = buffDef.Name.ToLower() switch
-            {
-                "well fed" => "heart",
-                "rested" => "zzz",
-                "starving" => "hungry",
-                "exhausted" => "exclamation",
-                _ => "question",
-            };
         }
 
         if (iconKey == null)

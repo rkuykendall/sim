@@ -28,12 +28,11 @@ public class PawnLifecycleTests
         // Use fast decay so the test doesn't take forever
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(9, 9);
-        var hungryBuffId = builder.DefineBuff("Hungry", "Hungry", -5);
         var hungerNeedId = builder.DefineNeed(
             key: "Hunger",
             decayPerTick: 0.5f,
             lowThreshold: 35f,
-            lowDebuffId: hungryBuffId
+            lowDebuff: -5f
         );
         var marketDefId = builder.DefineBuilding(
             key: "Market",
@@ -145,12 +144,11 @@ public class PawnLifecycleTests
         // Start below debuff threshold (35) - should immediately seek food
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 0);
-        var hungryBuffId = builder.DefineBuff("Hungry", "Hungry", -5);
         var hungerNeedId = builder.DefineNeed(
             key: "Hunger",
             decayPerTick: 0.01f,
             lowThreshold: 35f,
-            lowDebuffId: hungryBuffId
+            lowDebuff: -5f
         );
         var marketDefId = builder.DefineBuilding(
             key: "Market",
@@ -191,12 +189,11 @@ public class PawnLifecycleTests
         // Start at 95 (well above debuff threshold, and high enough not to bother) - should wander
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 0);
-        var hungryBuffId = builder.DefineBuff("Hungry", "Hungry", -5);
         var hungerNeedId = builder.DefineNeed(
             key: "Hunger",
             decayPerTick: 0.001f,
             lowThreshold: 35f,
-            lowDebuffId: hungryBuffId
+            lowDebuff: -5f
         );
         var marketDefId = builder.DefineBuilding(
             key: "Market",
@@ -233,12 +230,11 @@ public class PawnLifecycleTests
     {
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(9, 9);
-        var hungryBuffId = builder.DefineBuff("Hungry", "Hungry", -5);
         var hungerNeedId = builder.DefineNeed(
             "Hunger",
             decayPerTick: 0.3f,
             lowThreshold: 35f,
-            lowDebuffId: hungryBuffId
+            lowDebuff: -5f
         );
         var marketDefId = builder.DefineBuilding(
             key: "Market",

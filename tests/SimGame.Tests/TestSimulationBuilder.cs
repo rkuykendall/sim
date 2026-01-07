@@ -85,27 +85,6 @@ public sealed class TestSimulationBuilder
     }
 
     /// <summary>
-    /// Define a buff that can be granted by building or applied by needs.
-    /// ID is auto-generated.
-    /// </summary>
-    public int DefineBuff(
-        string key = "",
-        string name = "",
-        float moodOffset = 0,
-        int durationTicks = 1000
-    )
-    {
-        var buff = new BuffDef
-        {
-            Id = 0, // Auto-generated
-            Name = name,
-            MoodOffset = moodOffset,
-            DurationTicks = durationTicks,
-        };
-        return _content.RegisterBuff(key, buff);
-    }
-
-    /// <summary>
     /// Define a need type that can be used by pawns and buildings.
     /// ID is auto-generated. Accepts debuff IDs directly.
     /// </summary>
@@ -114,8 +93,8 @@ public sealed class TestSimulationBuilder
         float decayPerTick = 0.02f,
         float criticalThreshold = 15f,
         float lowThreshold = 35f,
-        int? criticalDebuffId = null,
-        int? lowDebuffId = null
+        float criticalDebuff = 0f,
+        float lowDebuff = 0f
     )
     {
         var need = new NeedDef
@@ -125,15 +104,15 @@ public sealed class TestSimulationBuilder
             DecayPerTick = decayPerTick,
             CriticalThreshold = criticalThreshold,
             LowThreshold = lowThreshold,
-            CriticalDebuffId = criticalDebuffId,
-            LowDebuffId = lowDebuffId,
+            CriticalDebuff = criticalDebuff,
+            LowDebuff = lowDebuff,
         };
         return _content.RegisterNeed(key, need);
     }
 
     /// <summary>
     /// Define a building type that can be placed in the world.
-    /// ID is auto-generated. Accepts need and buff IDs directly.
+    /// ID is auto-generated.
     /// All buildings are non-walkable.
     /// </summary>
     public int DefineBuilding(
@@ -141,7 +120,8 @@ public sealed class TestSimulationBuilder
         int? satisfiesNeedId = null,
         float satisfactionAmount = 50f,
         int interactionDuration = 20,
-        int? grantsBuffId = null,
+        float grantsBuff = 0f,
+        int buffDuration = 0,
         List<(int, int)>? useAreas = null,
         int tileSize = 1
     )
@@ -155,7 +135,8 @@ public sealed class TestSimulationBuilder
             InteractionDurationTicks = interactionDuration,
             UseAreas = useAreas ?? new List<(int dx, int dy)> { (0, 1) },
             SatisfiesNeedId = satisfiesNeedId,
-            GrantsBuffId = grantsBuffId,
+            GrantsBuff = grantsBuff,
+            BuffDuration = buffDuration,
         };
         return _content.RegisterBuilding(key, obj);
     }

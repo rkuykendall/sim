@@ -19,11 +19,11 @@ public class BuildingPlacementTests
         // Arrange: Create a simulation with a 2x2 Home building
         var builder = new TestSimulationBuilder();
         var energyNeedId = builder.DefineNeed("Energy", decayPerTick: 0.01f);
-        var wellRestedBuffId = builder.DefineBuff("WellRested", "Well Rested", moodOffset: 10);
         var homeDefId = builder.DefineBuilding(
             key: "Home",
             satisfiesNeedId: energyNeedId,
-            grantsBuffId: wellRestedBuffId,
+            grantsBuff: 10f,
+            buffDuration: 2400,
             tileSize: 2
         );
         var sim = builder.Build();
@@ -65,11 +65,11 @@ public class BuildingPlacementTests
         // Arrange: Create a simulation with a 2x2 Market building
         var builder = new TestSimulationBuilder();
         var hungerNeedId = builder.DefineNeed("Hunger", decayPerTick: 0.01f);
-        var goodMealBuffId = builder.DefineBuff("GoodMeal", "Good Meal", moodOffset: 15);
         var marketDefId = builder.DefineBuilding(
             key: "Market",
             satisfiesNeedId: hungerNeedId,
-            grantsBuffId: goodMealBuffId,
+            grantsBuff: 15f,
+            buffDuration: 2400,
             tileSize: 2
         );
         var sim = builder.Build();
@@ -102,11 +102,11 @@ public class BuildingPlacementTests
         // Arrange
         var builder = new TestSimulationBuilder();
         var hygieneNeedId = builder.DefineNeed("Hygiene", decayPerTick: 0.01f);
-        var freshBuffId = builder.DefineBuff("Fresh", "Feeling Fresh", moodOffset: 10);
         var wellDefId = builder.DefineBuilding(
             key: "Well",
             satisfiesNeedId: hygieneNeedId,
-            grantsBuffId: freshBuffId,
+            grantsBuff: 10f,
+            buffDuration: 2400,
             tileSize: 1
         );
         var sim = builder.Build();
