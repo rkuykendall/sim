@@ -670,7 +670,7 @@ public sealed class ActionSystem : ISystem
     }
 
     /// <summary>
-    /// Find the closest valid use area for a building that is walkable and not occupied.
+    /// Find the closest valid use area for a building that is walkable and reachable.
     /// Returns null if no valid use area is available.
     /// </summary>
     private TileCoord? FindValidUseArea(
@@ -698,11 +698,17 @@ public sealed class ActionSystem : ISystem
             if (!world.IsInBounds(useAreaCoord))
                 continue;
 
-            // Check if tile is walkable
+            // Check if tile is walkable and reachable
             if (world.GetTile(useAreaCoord).Walkable)
             {
-                int dist = Math.Abs(useAreaCoord.X - from.X) + Math.Abs(useAreaCoord.Y - from.Y);
-                candidates.Add((useAreaCoord, dist));
+                // Verify that pathfinding succeeds - tile must be reachable
+                var path = Pathfinder.FindPath(world, from, useAreaCoord);
+                if (path != null && path.Count > 0)
+                {
+                    int dist =
+                        Math.Abs(useAreaCoord.X - from.X) + Math.Abs(useAreaCoord.Y - from.Y);
+                    candidates.Add((useAreaCoord, dist));
+                }
             }
         }
 
