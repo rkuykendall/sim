@@ -26,18 +26,18 @@ public class PawnMovementTests
     public void TwoPawns_WalkingTowardEachOther_DoNotGetStuck()
     {
         // Arrange: Create a 1x10 corridor with two pawns at opposite ends
-        // Both have low hunger and there's a fridge in the middle
+        // Both have low hunger and there's a market in the middle
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(9, 0); // 10x1 corridor
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        var fridgeDefId = builder.DefineBuilding(
-            key: "Fridge",
+        var marketDefId = builder.DefineBuilding(
+            key: "Market",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (-1, 0), (1, 0) }
         ); // Both sides work in corridor
-        builder.AddBuilding(fridgeDefId, 5, 0); // Fridge in middle
+        builder.AddBuilding(marketDefId, 5, 0); // Market in middle
         builder.AddPawn("LeftPawn", 0, 0, new Dictionary<int, float> { { hungerId, 10f } });
         builder.AddPawn("RightPawn", 9, 0, new Dictionary<int, float> { { hungerId, 10f } });
         var sim = builder.Build();
@@ -118,20 +118,20 @@ public class PawnMovementTests
     [Fact]
     public void TwoPawns_TryingToSwapPositions_DoNotDeadlock()
     {
-        // Arrange: 2x1 world with pawns adjacent, fridges on opposite ends
-        // Each pawn wants to get to the fridge on the other side
+        // Arrange: 2x1 world with pawns adjacent, markets on opposite ends
+        // Each pawn wants to get to the market on the other side
         var builder = new TestSimulationBuilder();
-        builder.WithWorldBounds(3, 0); // 4x1: [Fridge][Pawn1][Pawn2][Fridge]
+        builder.WithWorldBounds(3, 0); // 4x1: [Market][Pawn1][Pawn2][Market]
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        var fridgeDefId = builder.DefineBuilding(
-            key: "Fridge",
+        var marketDefId = builder.DefineBuilding(
+            key: "Market",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (1, 0), (-1, 0) }
         ); // Use from either side
-        builder.AddBuilding(fridgeDefId, 0, 0); // Fridge at left
-        builder.AddBuilding(fridgeDefId, 3, 0); // Fridge at right (same type, different instance)
+        builder.AddBuilding(marketDefId, 0, 0); // Market at left
+        builder.AddBuilding(marketDefId, 3, 0); // Market at right (same type, different instance)
         builder.AddPawn("Pawn1", 1, 0, new Dictionary<int, float> { { hungerId, 10f } });
         builder.AddPawn("Pawn2", 2, 0, new Dictionary<int, float> { { hungerId, 10f } });
         var sim = builder.Build();
@@ -141,9 +141,9 @@ public class PawnMovementTests
         Assert.NotNull(pawn1);
         Assert.NotNull(pawn2);
 
-        // Track if either pawn ever uses a fridge
-        bool pawn1UsedFridge = false;
-        bool pawn2UsedFridge = false;
+        // Track if either pawn ever uses a market
+        bool pawn1UsedMarket = false;
+        bool pawn2UsedMarket = false;
         float pawn1MaxHunger = 10f;
         float pawn2MaxHunger = 10f;
 
@@ -158,12 +158,12 @@ public class PawnMovementTests
             if (hunger1 > pawn1MaxHunger)
             {
                 pawn1MaxHunger = hunger1;
-                pawn1UsedFridge = true;
+                pawn1UsedMarket = true;
             }
             if (hunger2 > pawn2MaxHunger)
             {
                 pawn2MaxHunger = hunger2;
-                pawn2UsedFridge = true;
+                pawn2UsedMarket = true;
             }
 
             if (tick % 50 == 0)
@@ -177,13 +177,13 @@ public class PawnMovementTests
         }
 
         _output.WriteLine(
-            $"Final: Pawn1 used fridge: {pawn1UsedFridge}, Pawn2 used fridge: {pawn2UsedFridge}"
+            $"Final: Pawn1 used market: {pawn1UsedMarket}, Pawn2 used market: {pawn2UsedMarket}"
         );
 
-        // Assert: At least one pawn should have been able to use a fridge
+        // Assert: At least one pawn should have been able to use a market
         Assert.True(
-            pawn1UsedFridge || pawn2UsedFridge,
-            "Neither pawn was able to reach and use a fridge - they appear to be deadlocked"
+            pawn1UsedMarket || pawn2UsedMarket,
+            "Neither pawn was able to reach and use a market - they appear to be deadlocked"
         );
     }
 
@@ -197,13 +197,13 @@ public class PawnMovementTests
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 2); // 5x3 area
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        var fridgeDefId = builder.DefineBuilding(
-            key: "Fridge",
+        var marketDefId = builder.DefineBuilding(
+            key: "Market",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
-        builder.AddBuilding(fridgeDefId, 2, 1); // Fridge in center
+        builder.AddBuilding(marketDefId, 2, 1); // Market in center
         builder.AddPawn("TopPawn", 0, 0, new Dictionary<int, float> { { hungerId, 5f } });
         builder.AddPawn("BottomPawn", 4, 2, new Dictionary<int, float> { { hungerId, 5f } });
         var sim = builder.Build();
@@ -245,31 +245,31 @@ public class PawnMovementTests
 
         _output.WriteLine($"Final: Top hunger={finalHunger1:F1}, Bottom hunger={finalHunger2:F1}");
 
-        // At least one should have gotten to the fridge
+        // At least one should have gotten to the market
         Assert.True(
             finalHunger1 > 20 || finalHunger2 > 20,
-            $"Neither pawn reached the fridge. Top hunger: {finalHunger1}, Bottom hunger: {finalHunger2}"
+            $"Neither pawn reached the market. Top hunger: {finalHunger1}, Bottom hunger: {finalHunger2}"
         );
     }
 
     /// <summary>
     /// Scenario: Two pawns with different needs should cross paths.
-    /// One goes left to a fridge, one goes right to a bed.
+    /// One goes left to a market, one goes right to a bed.
     /// Tests if they can navigate around each other when they meet in the middle.
     /// </summary>
     [Fact]
     public void TwoPawns_CrossingPaths_ShouldNotGetStuck()
     {
         // Arrange: 7x3 world
-        // [Fridge][ ][ ][Pawn1][Pawn2][ ][Bed]
+        // [Market][ ][ ][Pawn1][Pawn2][ ][Bed]
         //    [ ][ ][ ][ ][ ][ ][ ]
         //    [ ][ ][ ][ ][ ][ ][ ]
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(6, 2); // 7x3 area
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         var energyId = builder.DefineNeed(key: "Energy", decayPerTick: 0.001f);
-        var fridgeDefId = builder.DefineBuilding(
-            key: "Fridge",
+        var marketDefId = builder.DefineBuilding(
+            key: "Market",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20
@@ -280,16 +280,16 @@ public class PawnMovementTests
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
-        builder.AddBuilding(fridgeDefId, 0, 0); // Fridge at left
+        builder.AddBuilding(marketDefId, 0, 0); // Market at left
         builder.AddBuilding(bedDefId, 6, 0); // Bed at right
-        // Pawn1 is hungry (will go left to fridge)
+        // Pawn1 is hungry (will go left to market)
         builder.AddPawn(
             "HungryPawn",
             3,
             0,
             new Dictionary<int, float>
             {
-                { hungerId, 5f }, // Very hungry - will seek fridge
+                { hungerId, 5f }, // Very hungry - will seek market
                 { energyId, 100f }, // Full energy
             }
         );
@@ -381,7 +381,7 @@ public class PawnMovementTests
 
         // Assert: Check both success conditions
         // 1. Pawns should have satisfied their needs
-        Assert.True(hungryGotFed, "HungryPawn never reached the fridge");
+        Assert.True(hungryGotFed, "HungryPawn never reached the market");
         Assert.True(tiredGotRested, "TiredPawn never reached the bed");
 
         // 2. Pawns should not be permanently stuck in the same spot
@@ -398,20 +398,20 @@ public class PawnMovementTests
     [Fact]
     public void TwoPawns_DirectlyBlocking_EventuallyResolve()
     {
-        // Arrange: Minimal 3x1 world: [Fridge][Pawn1][Pawn2]
-        // Pawn2 blocks Pawn1 from reaching fridge
+        // Arrange: Minimal 3x1 world: [Market][Pawn1][Pawn2]
+        // Pawn2 blocks Pawn1 from reaching market
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(2, 0); // 3x1 corridor
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        var fridgeDefId = builder.DefineBuilding(
-            key: "Fridge",
+        var marketDefId = builder.DefineBuilding(
+            key: "Market",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
-        builder.AddBuilding(fridgeDefId, 0, 0);
-        builder.AddPawn("BlockedPawn", 1, 0, new Dictionary<int, float> { { hungerId, 5f } }); // Wants fridge
-        builder.AddPawn("BlockerPawn", 2, 0, new Dictionary<int, float> { { hungerId, 100f } }); // Doesn't need fridge
+        builder.AddBuilding(marketDefId, 0, 0);
+        builder.AddPawn("BlockedPawn", 1, 0, new Dictionary<int, float> { { hungerId, 5f } }); // Wants market
+        builder.AddPawn("BlockerPawn", 2, 0, new Dictionary<int, float> { { hungerId, 100f } }); // Doesn't need market
         var sim = builder.Build();
 
         var blockedPawn = sim.GetPawnByName("BlockedPawn");
@@ -440,7 +440,7 @@ public class PawnMovementTests
             }
         }
 
-        // In this constrained scenario, the blocked pawn cannot reach the fridge
+        // In this constrained scenario, the blocked pawn cannot reach the market
         // This is actually expected behavior - there's no path
         // The test documents this limitation
         _output.WriteLine($"BlockedPawn got fed: {blockedGotFed}");
@@ -562,40 +562,40 @@ public class PawnMovementTests
         var builder = new TestSimulationBuilder();
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
         var wallId = builder.DefineTerrain(key: "Wall", walkable: false);
-        var fridgeDefId = builder.DefineBuilding(
-            key: "Fridge",
+        var marketDefId = builder.DefineBuilding(
+            key: "Market",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 5
         );
 
         builder.AddPawn("HungryPawn", 0, 2, new Dictionary<int, float> { { hungerId, 5f } });
-        builder.AddBuilding(fridgeDefId, 4, 2);
+        builder.AddBuilding(marketDefId, 4, 2);
         var sim = builder.Build();
 
-        // Paint an impassable vertical wall between the pawn and the fridge (x = 1)
+        // Paint an impassable vertical wall between the pawn and the market (x = 1)
         for (int y = 0; y <= 4; y++)
             sim.PaintTerrain(new TileCoord(1, y), wallId);
 
         var pawnId = sim.GetPawnByName("HungryPawn");
         Assert.NotNull(pawnId);
-        var fridgeId = sim.Entities.AllBuildings().First();
+        var marketId = sim.Entities.AllBuildings().First();
 
-        int goingToFridgeTicks = 0;
+        int goingToMarketTicks = 0;
         for (int tick = 0; tick < 60; tick++)
         {
             sim.Tick();
             var actions = sim.Entities.Actions[pawnId.Value];
-            bool targetingFridge =
-                (actions.CurrentAction?.TargetEntity == fridgeId)
-                || actions.ActionQueue.Any(a => a.TargetEntity == fridgeId);
-            if (targetingFridge)
-                goingToFridgeTicks++;
+            bool targetingMarket =
+                (actions.CurrentAction?.TargetEntity == marketId)
+                || actions.ActionQueue.Any(a => a.TargetEntity == marketId);
+            if (targetingMarket)
+                goingToMarketTicks++;
         }
 
         Assert.True(
-            goingToFridgeTicks < 5,
-            $"Pawn kept trying to reach unreachable fridge for {goingToFridgeTicks} ticks"
+            goingToMarketTicks < 5,
+            $"Pawn kept trying to reach unreachable market for {goingToMarketTicks} ticks"
         );
     }
 }

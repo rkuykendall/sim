@@ -11,13 +11,13 @@ namespace SimGame.Tests;
 public class SimulationIntegrationTests
 {
     /// <summary>
-    /// Scenario: A pawn starts with low hunger next to a fridge.
+    /// Scenario: A pawn starts with low hunger next to a market.
     /// After running the simulation, the pawn should have eaten and have higher hunger.
     /// </summary>
     [Fact]
-    public void Pawn_WithLowHunger_UsesFridge_AndGetsFed()
+    public void Pawn_WithLowHunger_UsesMarket_AndGetsFed()
     {
-        // Arrange: Create a 5x1 world with a pawn at (0,0) and a fridge at (4,0)
+        // Arrange: Create a 5x1 world with a pawn at (0,0) and a market at (4,0)
         // The pawn has Hunger need at 0 (very hungry)
         var builder = new TestSimulationBuilder();
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.02f);
@@ -27,15 +27,15 @@ public class SimulationIntegrationTests
             moodOffset: 15,
             durationTicks: 2400
         );
-        var fridgeDefId = builder.DefineBuilding(
-            key: "Fridge",
+        var marketDefId = builder.DefineBuilding(
+            key: "Market",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             grantsBuffId: goodMealBuffId,
             useAreas: new List<(int, int)> { (-1, 0) }
         );
-        builder.AddBuilding(fridgeDefId, 4, 0);
+        builder.AddBuilding(marketDefId, 4, 0);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerId, 0f } });
         var sim = builder.Build();
 
@@ -46,8 +46,8 @@ public class SimulationIntegrationTests
         Assert.Equal(0f, initialHunger);
 
         // Act: Run simulation for enough ticks for the pawn to:
-        // 1. Walk from (0,0) to adjacent to fridge at (3,0) - ~30 ticks at 10 ticks/tile
-        // 2. Use the fridge - 20 ticks
+        // 1. Walk from (0,0) to adjacent to market at (3,0) - ~30 ticks at 10 ticks/tile
+        // 2. Use the market - 20 ticks
         // Plus some buffer for AI decision making
         sim.RunTicks(100);
 
@@ -66,10 +66,10 @@ public class SimulationIntegrationTests
     }
 
     /// <summary>
-    /// Scenario: A pawn with already full hunger should not seek out the fridge.
+    /// Scenario: A pawn with already full hunger should not seek out the market.
     /// </summary>
     [Fact]
-    public void Pawn_WithFullHunger_DoesNotSeekFridge()
+    public void Pawn_WithFullHunger_DoesNotSeekMarket()
     {
         // Arrange: Create same world but with full hunger
         var builder = new TestSimulationBuilder();
@@ -80,15 +80,15 @@ public class SimulationIntegrationTests
             moodOffset: 15,
             durationTicks: 2400
         );
-        var fridgeDefId = builder.DefineBuilding(
-            key: "Fridge",
+        var marketDefId = builder.DefineBuilding(
+            key: "Market",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             grantsBuffId: goodMealBuffId,
             useAreas: new List<(int, int)> { (-1, 0) }
         );
-        builder.AddBuilding(fridgeDefId, 4, 0);
+        builder.AddBuilding(marketDefId, 4, 0);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerId, 100f } });
         var sim = builder.Build();
 
@@ -98,11 +98,11 @@ public class SimulationIntegrationTests
         // Act: Run simulation briefly
         sim.RunTicks(50);
 
-        // Assert: Pawn should still be near starting position (not at fridge)
+        // Assert: Pawn should still be near starting position (not at market)
         var pos = sim.GetPosition(pawnId.Value);
         Assert.NotNull(pos);
 
-        // Pawn might wander a bit but shouldn't be at the fridge (4,0) or adjacent (3,0)
+        // Pawn might wander a bit but shouldn't be at the market (4,0) or adjacent (3,0)
         // They would only go there if they needed food
         float hunger = sim.GetNeedValue(pawnId.Value, "Hunger");
         Assert.True(hunger > 95f, $"Expected hunger to remain high (~100), but it was {hunger}");
@@ -170,7 +170,7 @@ public class SimulationIntegrationTests
     [Fact]
     public void Pawn_NavigatesToBuilding_AndUsesIt()
     {
-        // Arrange: Larger world with pawn far from fridge
+        // Arrange: Larger world with pawn far from market
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(9, 0);
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.01f);
@@ -180,15 +180,15 @@ public class SimulationIntegrationTests
             moodOffset: 15,
             durationTicks: 2400
         );
-        var fridgeDefId = builder.DefineBuilding(
-            key: "Fridge",
+        var marketDefId = builder.DefineBuilding(
+            key: "Market",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             grantsBuffId: goodMealBuffId,
             useAreas: new List<(int, int)> { (-1, 0) }
         );
-        builder.AddBuilding(fridgeDefId, 9, 0);
+        builder.AddBuilding(marketDefId, 9, 0);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerId, 10f } });
         var sim = builder.Build();
 
@@ -199,7 +199,7 @@ public class SimulationIntegrationTests
         // 9 tiles * 10 ticks/tile + 20 ticks interaction + buffer
         sim.RunTicks(200);
 
-        // Assert: Pawn should have used the fridge
+        // Assert: Pawn should have used the market
         float finalHunger = sim.GetNeedValue(pawnId.Value, "Hunger");
         Assert.True(
             finalHunger > 40f,
@@ -216,8 +216,8 @@ public class SimulationIntegrationTests
         // Arrange: Create a world with a building
         var builder = new TestSimulationBuilder();
         var hungerId = builder.DefineNeed(key: "Hunger");
-        var fridgeDefId = builder.DefineBuilding(key: "Fridge", satisfiesNeedId: hungerId);
-        builder.AddBuilding(fridgeDefId, 2, 2);
+        var marketDefId = builder.DefineBuilding(key: "Market", satisfiesNeedId: hungerId);
+        builder.AddBuilding(marketDefId, 2, 2);
         var sim = builder.Build();
 
         var buildingId = sim.Entities.AllBuildings().First();

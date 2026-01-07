@@ -720,23 +720,23 @@ public sealed class Simulation
     /// </summary>
     public int GetMaxPawns()
     {
-        var bedId = Content.GetBuildingId("Home");
-        if (!bedId.HasValue)
-            return 0;
+        var homeId = Content.GetBuildingId("Home");
+        if (!homeId.HasValue)
+            return 1;
 
-        int bedCount = 0;
+        int homeCount = 0;
         foreach (var objId in Entities.AllBuildings())
         {
             if (Entities.Buildings.TryGetValue(objId, out var buildingComp))
             {
-                if (buildingComp.BuildingDefId == bedId.Value)
+                if (buildingComp.BuildingDefId == homeId.Value)
                 {
-                    bedCount++;
+                    homeCount++;
                 }
             }
         }
 
-        return bedCount;
+        return Math.Max(1, homeCount);
     }
 
     /// <summary>

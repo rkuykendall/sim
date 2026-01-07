@@ -22,27 +22,27 @@ public class UseAreasTests
     /// If UseAreas is {(0, 1)} (south of building), pawn should not use it from (0, -1) (north).
     ///
     /// Layout (5x3 world):
-    ///   Y=0: [ ][ ][F][ ][ ]   F = Fridge at (2,0)
-    ///   Y=1: [ ][ ][U][ ][ ]   U = Valid use area (2,1) - south of fridge
+    ///   Y=0: [ ][ ][F][ ][ ]   F = Market at (2,0)
+    ///   Y=1: [ ][ ][U][ ][ ]   U = Valid use area (2,1) - south of market
     ///   Y=2: [P][ ][ ][ ][ ]   P = Pawn starting at (0,2)
     ///
-    /// The pawn should walk to (2,1) to use the fridge, NOT to (2,-1) or adjacent cardinal tiles.
+    /// The pawn should walk to (2,1) to use the market, NOT to (2,-1) or adjacent cardinal tiles.
     /// </summary>
     [Fact]
     public void Pawn_UsesBuilding_OnlyFromDefinedUseAreas()
     {
-        // Arrange: Fridge at (2,0) with UseArea only at (0,1) meaning pawn must stand at (2,1)
+        // Arrange: Market at (2,0) with UseArea only at (0,1) meaning pawn must stand at (2,1)
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 2);
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        var fridgeDefId = builder.DefineBuilding(
-            key: "Fridge",
+        var marketDefId = builder.DefineBuilding(
+            key: "Market",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (0, 1) }
         );
-        builder.AddBuilding(fridgeDefId, 2, 0);
+        builder.AddBuilding(marketDefId, 2, 0);
         builder.AddPawn("TestPawn", 0, 2, new Dictionary<int, float> { { hungerId, 10f } });
         var sim = builder.Build();
 
@@ -50,26 +50,26 @@ public class UseAreasTests
         Assert.NotNull(pawnId);
 
         _output.WriteLine("=== UseAreas Test ===");
-        _output.WriteLine("Fridge at (2,0), UseArea at (0,1) relative = absolute (2,1)");
-        _output.WriteLine("Pawn starts at (0,2), should walk to (2,1) to use fridge");
+        _output.WriteLine("Market at (2,0), UseArea at (0,1) relative = absolute (2,1)");
+        _output.WriteLine("Pawn starts at (0,2), should walk to (2,1) to use market");
 
-        TileCoord? positionWhenUsingFridge = null;
+        TileCoord? positionWhenUsingMarket = null;
 
-        // Act: Run simulation until pawn uses the fridge
+        // Act: Run simulation until pawn uses the market
         for (int tick = 0; tick < 200; tick++)
         {
             sim.Tick();
 
             var pos = sim.GetPosition(pawnId.Value);
 
-            // Check if pawn is using the fridge
+            // Check if pawn is using the market
             if (
                 sim.Entities.Actions.TryGetValue(pawnId.Value, out var actionComp)
                 && actionComp.CurrentAction?.Type == ActionType.UseBuilding
             )
             {
-                positionWhenUsingFridge = pos;
-                _output.WriteLine($"Tick {tick}: Pawn using fridge at position {pos}");
+                positionWhenUsingMarket = pos;
+                _output.WriteLine($"Tick {tick}: Pawn using market at position {pos}");
                 break;
             }
 
@@ -85,9 +85,9 @@ public class UseAreasTests
             }
         }
 
-        // Assert: Pawn should have used fridge from the valid UseArea position (2,1)
-        Assert.NotNull(positionWhenUsingFridge);
-        Assert.Equal(new TileCoord(2, 1), positionWhenUsingFridge.Value);
+        // Assert: Pawn should have used market from the valid UseArea position (2,1)
+        Assert.NotNull(positionWhenUsingMarket);
+        Assert.Equal(new TileCoord(2, 1), positionWhenUsingMarket.Value);
     }
 
     /// <summary>
@@ -177,19 +177,19 @@ public class UseAreasTests
     [Fact]
     public void Pawn_CannotUseBuilding_WhenAllUseAreasBlocked()
     {
-        // Arrange: Fridge with single use area that's blocked by another building
+        // Arrange: Market with single use area that's blocked by another building
         var builder = new TestSimulationBuilder();
         builder.WithWorldBounds(4, 2);
         var hungerId = builder.DefineNeed(key: "Hunger", decayPerTick: 0.001f);
-        var fridgeDefId = builder.DefineBuilding(
-            key: "Fridge",
+        var marketDefId = builder.DefineBuilding(
+            key: "Market",
             satisfiesNeedId: hungerId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (0, 1) }
         );
         var blockerDefId = builder.DefineBuilding(key: "Blocker");
-        builder.AddBuilding(fridgeDefId, 2, 0);
+        builder.AddBuilding(marketDefId, 2, 0);
         builder.AddBuilding(blockerDefId, 2, 1);
         builder.AddPawn("TestPawn", 0, 2, new Dictionary<int, float> { { hungerId, 10f } });
         var sim = builder.Build();
@@ -198,11 +198,11 @@ public class UseAreasTests
         Assert.NotNull(pawnId);
 
         _output.WriteLine("=== Blocked UseArea Test ===");
-        _output.WriteLine("Fridge at (2,0), UseArea at (2,1) is BLOCKED by another building");
+        _output.WriteLine("Market at (2,0), UseArea at (2,1) is BLOCKED by another building");
 
         float initialHunger = sim.GetNeedValue(pawnId.Value, "Hunger");
 
-        // Act: Run simulation - pawn should NOT be able to use fridge
+        // Act: Run simulation - pawn should NOT be able to use market
         for (int tick = 0; tick < 100; tick++)
         {
             sim.Tick();
@@ -219,7 +219,7 @@ public class UseAreasTests
         );
 
         _output.WriteLine(
-            $"Hunger went from {initialHunger} to {finalHunger} - pawn correctly couldn't use blocked fridge"
+            $"Hunger went from {initialHunger} to {finalHunger} - pawn correctly couldn't use blocked market"
         );
     }
 }

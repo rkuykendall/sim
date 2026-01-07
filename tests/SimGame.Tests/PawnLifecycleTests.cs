@@ -18,7 +18,7 @@ public class PawnLifecycleTests
     }
 
     /// <summary>
-    /// Scenario: A pawn uses a fridge, gets satisfied, wanders, then returns to the fridge
+    /// Scenario: A pawn uses a market, gets satisfied, wanders, then returns to the market
     /// when hunger drops and causes a debuff again.
     /// </summary>
     [Fact]
@@ -35,13 +35,13 @@ public class PawnLifecycleTests
             lowThreshold: 35f,
             lowDebuffId: hungryBuffId
         );
-        var fridgeDefId = builder.DefineBuilding(
-            key: "Fridge",
+        var marketDefId = builder.DefineBuilding(
+            key: "Market",
             satisfiesNeedId: hungerNeedId,
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
-        builder.AddBuilding(fridgeDefId, 5, 5);
+        builder.AddBuilding(marketDefId, 5, 5);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerNeedId, 10f } });
         var sim = builder.Build();
 
@@ -49,14 +49,14 @@ public class PawnLifecycleTests
         Assert.NotNull(pawnId);
 
         // Track the pawn's journey
-        int timesUsedFridge = 0;
+        int timesUsedMarket = 0;
         float lastHunger = 10f;
         bool wasWandering = false;
-        bool wentBackToFridge = false;
+        bool wentBackToMarket = false;
 
         _output.WriteLine("=== Pawn Lifecycle Test ===");
         _output.WriteLine(
-            $"Pawn should wander when hunger >= 90 (no debuffs), seek fridge when hunger < 35 (debuff)"
+            $"Pawn should wander when hunger >= 90 (no debuffs), seek market when hunger < 35 (debuff)"
         );
 
         for (int tick = 0; tick < 500; tick++)
@@ -77,17 +77,17 @@ public class PawnLifecycleTests
                     ?? actionComp.CurrentAction.Type.ToString();
             }
 
-            // Detect when pawn uses fridge (hunger jumps up significantly)
+            // Detect when pawn uses market (hunger jumps up significantly)
             if (hunger > lastHunger + 10)
             {
-                timesUsedFridge++;
+                timesUsedMarket++;
                 _output.WriteLine(
-                    $"Tick {tick}: USED FRIDGE! Hunger jumped from {lastHunger:F1} to {hunger:F1}"
+                    $"Tick {tick}: USED MARKET! Hunger jumped from {lastHunger:F1} to {hunger:F1}"
                 );
 
-                if (wasWandering && timesUsedFridge >= 2)
+                if (wasWandering && timesUsedMarket >= 2)
                 {
-                    wentBackToFridge = true;
+                    wentBackToMarket = true;
                 }
             }
 
@@ -112,28 +112,28 @@ public class PawnLifecycleTests
             lastHunger = hunger;
 
             // Early exit if we've proven the lifecycle works
-            if (wentBackToFridge)
+            if (wentBackToMarket)
             {
                 _output.WriteLine(
-                    $"Tick {tick}: SUCCESS - Pawn went back to fridge after wandering!"
+                    $"Tick {tick}: SUCCESS - Pawn went back to market after wandering!"
                 );
                 break;
             }
         }
 
         _output.WriteLine($"\n=== Results ===");
-        _output.WriteLine($"Times used fridge: {timesUsedFridge}");
+        _output.WriteLine($"Times used market: {timesUsedMarket}");
         _output.WriteLine($"Was wandering at some point: {wasWandering}");
-        _output.WriteLine($"Went back to fridge after wandering: {wentBackToFridge}");
+        _output.WriteLine($"Went back to market after wandering: {wentBackToMarket}");
 
         // Assertions
-        Assert.True(timesUsedFridge >= 1, "Pawn should have used the fridge at least once");
+        Assert.True(timesUsedMarket >= 1, "Pawn should have used the market at least once");
         Assert.True(wasWandering, "Pawn should have wandered when hunger was high");
         Assert.True(
-            timesUsedFridge >= 2,
-            $"Pawn should have used the fridge at least twice (used {timesUsedFridge} times)"
+            timesUsedMarket >= 2,
+            $"Pawn should have used the market at least twice (used {timesUsedMarket} times)"
         );
-        Assert.True(wentBackToFridge, "Pawn should have gone back to the fridge after wandering");
+        Assert.True(wentBackToMarket, "Pawn should have gone back to the market after wandering");
     }
 
     /// <summary>
@@ -152,21 +152,21 @@ public class PawnLifecycleTests
             lowThreshold: 35f,
             lowDebuffId: hungryBuffId
         );
-        var fridgeDefId = builder.DefineBuilding(
-            key: "Fridge",
+        var marketDefId = builder.DefineBuilding(
+            key: "Market",
             satisfiesNeedId: hungerNeedId,
             satisfactionAmount: 50f,
             interactionDuration: 20,
             useAreas: new List<(int, int)> { (-1, 0) }
         );
-        builder.AddBuilding(fridgeDefId, 4, 0);
+        builder.AddBuilding(marketDefId, 4, 0);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerNeedId, 30f } });
         var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
         Assert.NotNull(pawnId);
 
-        // Run a few ticks and check if pawn is going to fridge
+        // Run a few ticks and check if pawn is going to market
         sim.RunTicks(5);
 
         var actionComp = sim.Entities.Actions[pawnId.Value];
@@ -179,7 +179,7 @@ public class PawnLifecycleTests
             $"At hunger=30 (below debuff threshold 35), action after 5 ticks: {actionName}"
         );
 
-        Assert.Contains("Fridge", actionName, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Market", actionName, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -198,20 +198,20 @@ public class PawnLifecycleTests
             lowThreshold: 35f,
             lowDebuffId: hungryBuffId
         );
-        var fridgeDefId = builder.DefineBuilding(
-            key: "Fridge",
+        var marketDefId = builder.DefineBuilding(
+            key: "Market",
             satisfiesNeedId: hungerNeedId,
             satisfactionAmount: 50f,
             interactionDuration: 20
         );
-        builder.AddBuilding(fridgeDefId, 4, 0);
+        builder.AddBuilding(marketDefId, 4, 0);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerNeedId, 95f } });
         var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
         Assert.NotNull(pawnId);
 
-        // Run a few ticks and check if pawn is wandering (not going to fridge)
+        // Run a few ticks and check if pawn is wandering (not going to market)
         sim.RunTicks(5);
 
         var actionComp = sim.Entities.Actions[pawnId.Value];
@@ -222,7 +222,7 @@ public class PawnLifecycleTests
 
         _output.WriteLine($"At hunger=95 (no debuff), action after 5 ticks: {actionName}");
 
-        Assert.DoesNotContain("Fridge", actionName, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Market", actionName, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -240,20 +240,20 @@ public class PawnLifecycleTests
             lowThreshold: 35f,
             lowDebuffId: hungryBuffId
         );
-        var fridgeDefId = builder.DefineBuilding(
-            key: "Fridge",
+        var marketDefId = builder.DefineBuilding(
+            key: "Market",
             satisfiesNeedId: hungerNeedId,
             satisfactionAmount: 60f,
             interactionDuration: 20
         );
-        builder.AddBuilding(fridgeDefId, 5, 5);
+        builder.AddBuilding(marketDefId, 5, 5);
         builder.AddPawn("TestPawn", 0, 0, new Dictionary<int, float> { { hungerNeedId, 50f } });
         var sim = builder.Build();
 
         var pawnId = sim.GetFirstPawn();
         Assert.NotNull(pawnId);
 
-        int timesUsedFridge = 0;
+        int timesUsedMarket = 0;
         float minHunger = 50f;
         float lastHunger = 50f;
 
@@ -266,7 +266,7 @@ public class PawnLifecycleTests
 
             if (hunger > lastHunger + 10)
             {
-                timesUsedFridge++;
+                timesUsedMarket++;
             }
 
             if (hunger < minHunger)
@@ -279,7 +279,7 @@ public class PawnLifecycleTests
             if (tick % 200 == 0)
             {
                 _output.WriteLine(
-                    $"Tick {tick}: hunger={hunger:F1}, times fed={timesUsedFridge}, min hunger so far={minHunger:F1}"
+                    $"Tick {tick}: hunger={hunger:F1}, times fed={timesUsedMarket}, min hunger so far={minHunger:F1}"
                 );
             }
         }
@@ -289,12 +289,12 @@ public class PawnLifecycleTests
         _output.WriteLine($"\n=== Final Results ===");
         _output.WriteLine($"Final hunger: {finalHunger:F1}");
         _output.WriteLine($"Minimum hunger reached: {minHunger:F1}");
-        _output.WriteLine($"Times used fridge: {timesUsedFridge}");
+        _output.WriteLine($"Times used market: {timesUsedMarket}");
 
         // Pawn should have eaten multiple times
         Assert.True(
-            timesUsedFridge >= 3,
-            $"Pawn should have eaten at least 3 times over 1000 ticks (ate {timesUsedFridge} times)"
+            timesUsedMarket >= 3,
+            $"Pawn should have eaten at least 3 times over 1000 ticks (ate {timesUsedMarket} times)"
         );
 
         // Pawn should never have starved (hunger should never hit 0)
