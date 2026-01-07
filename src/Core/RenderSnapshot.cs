@@ -14,7 +14,7 @@ public sealed class RenderPawn
     public string? CurrentAction { get; init; }
     public AnimationType Animation { get; init; } = AnimationType.Idle;
     public ExpressionType? Expression { get; init; }
-    public int? ExpressionIconDefId { get; init; }
+    public int? ExpressionIconDefId { get; init; } // Need def ID for expression icon
 
     // Debug: pathfinding info
     public (int X, int Y)? TargetTile { get; init; }

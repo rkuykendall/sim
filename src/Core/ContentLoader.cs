@@ -95,6 +95,9 @@ public static class ContentLoader
             var lowDebuffData = data.Get("lowDebuff");
             var lowDebuff = lowDebuffData.IsNil() ? 0f : (float)lowDebuffData.Number;
 
+            var spriteKeyData = data.Get("spriteKey");
+            var spriteKey = spriteKeyData.IsNil() ? "" : spriteKeyData.String;
+
             registry.RegisterNeed(
                 key,
                 new NeedDef
@@ -105,6 +108,7 @@ public static class ContentLoader
                     LowThreshold = (float)data.Get("lowThreshold").Number,
                     CriticalDebuff = criticalDebuff,
                     LowDebuff = lowDebuff,
+                    SpriteKey = spriteKey,
                 }
             );
         }

@@ -462,7 +462,7 @@ public sealed class ActionSystem : ISystem
                         DurationTicks = 10, // Brief moment
                         DisplayName = hasResources ? "Satisfied" : "Out of Resources",
                         Expression = hasResources ? ExpressionType.Happy : ExpressionType.Complaint,
-                        ExpressionIconDefId = buildingDef3.Id,
+                        ExpressionIconDefId = action.SatisfiesNeedId.Value, // Show the need icon
                     }
                 );
             }
@@ -630,7 +630,6 @@ public sealed class ActionSystem : ISystem
             // Add a brief happy idle action showing satisfaction
             if (buildingComp2 != null && action.SatisfiesNeedId.HasValue)
             {
-                var buildingDef3 = ctx.Content.Buildings[buildingComp2.BuildingDefId];
                 actionComp.ActionQueue.Enqueue(
                     new ActionDef
                     {
@@ -639,7 +638,7 @@ public sealed class ActionSystem : ISystem
                         DurationTicks = 10, // Brief moment
                         DisplayName = "Feeling Productive",
                         Expression = ExpressionType.Happy,
-                        ExpressionIconDefId = buildingDef3.Id,
+                        ExpressionIconDefId = action.SatisfiesNeedId.Value, // Show the need icon
                     }
                 );
             }
@@ -1335,16 +1334,17 @@ public sealed class AISystem : ISystem
         {
             case BuffSource.Building:
             case BuffSource.Work:
-                // Show the building icon
-                return buff.SourceId;
+                // Show the need icon that this building satisfies
+                if (ctx.Content.Buildings.TryGetValue(buff.SourceId, out var buildingDef))
+                {
+                    return buildingDef.SatisfiesNeedId; // Return need ID
+                }
+                return null;
 
             case BuffSource.NeedCritical:
             case BuffSource.NeedLow:
-                // Show a building that satisfies this need
-                var satisfyingBuilding = ctx.Content.Buildings.Values.FirstOrDefault(b =>
-                    b.SatisfiesNeedId.HasValue && b.SatisfiesNeedId.Value == buff.SourceId
-                );
-                return satisfyingBuilding?.Id;
+                // Show the need icon directly
+                return buff.SourceId; // Already a need ID
 
             default:
                 return null;
@@ -1411,15 +1411,8 @@ public sealed class AISystem : ISystem
 
             if (lowestNeedId.HasValue)
             {
-                // Find an building that satisfies this need
-                var satisfyingBuilding = ctx.Content.Buildings.Values.FirstOrDefault(o =>
-                    o.SatisfiesNeedId.HasValue && o.SatisfiesNeedId.Value == lowestNeedId.Value
-                );
-
-                if (satisfyingBuilding != null)
-                {
-                    return (ExpressionType.Thought, satisfyingBuilding.Id);
-                }
+                // Show thought bubble with the need icon
+                return (ExpressionType.Thought, lowestNeedId.Value);
             }
         }
 

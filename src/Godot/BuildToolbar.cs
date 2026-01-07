@@ -229,7 +229,7 @@ public partial class BuildToolbar : HBoxContainer
         switch (BuildToolState.Mode)
         {
             case BuildToolMode.PlaceBuilding:
-                foreach (var (id, def) in _content.Buildings.OrderBy(kv => kv.Value.Name))
+                foreach (var (id, def) in _content.Buildings.OrderBy(kv => kv.Key))
                 {
                     optionsList.Add((id, def.SpriteKey, def.Name, true, false));
                 }

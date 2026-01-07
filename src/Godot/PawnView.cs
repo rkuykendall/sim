@@ -322,16 +322,16 @@ public partial class PawnView : Node2D
             _ => "thought_bubble", // Fallback for unused types (Speech, Question)
         };
 
-        // Get icon sprite key from content def
+        // Get icon sprite key from need def
         string? iconKey = null;
 
-        // Icon is always a building ID (from buff source or need building)
-        if (content.Buildings.TryGetValue(iconDefId.Value, out var buildingDef))
+        // Icon is always a need ID
+        if (content.Needs.TryGetValue(iconDefId.Value, out var needDef))
         {
-            iconKey = buildingDef.SpriteKey;
+            iconKey = needDef.SpriteKey;
         }
 
-        if (iconKey == null)
+        if (iconKey == null || string.IsNullOrEmpty(iconKey))
         {
             _expressionBubble!.Visible = false;
             return;

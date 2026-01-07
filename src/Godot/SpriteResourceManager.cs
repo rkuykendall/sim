@@ -49,11 +49,11 @@ public static class SpriteResourceManager
         ["complaint_bubble"] = "res://sprites/ui/bubbles/complaint_bubble.png",
 
         // Expression icons (16x16)
-        ["heart"] = "res://sprites/ui/icons/heart.png",
-        ["exclamation"] = "res://sprites/ui/icons/exclamation.png",
-        ["question"] = "res://sprites/ui/icons/question.png",
-        ["zzz"] = "res://sprites/ui/icons/zzz.png",
-        ["hungry"] = "res://sprites/ui/icons/hungry.png",
+        ["hunger"] = "res://sprites/ui/icons/hunger.png",
+        ["energy"] = "res://sprites/ui/icons/energy.png",
+        ["social"] = "res://sprites/ui/icons/social.png",
+        ["hygine"] = "res://sprites/ui/icons/hygiene.png",
+        ["purpose"] = "res://sprites/ui/icons/purpose.png",
     };
 
     /// <summary>

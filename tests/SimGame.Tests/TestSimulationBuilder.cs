@@ -94,7 +94,8 @@ public sealed class TestSimulationBuilder
         float criticalThreshold = 15f,
         float lowThreshold = 35f,
         float criticalDebuff = 0f,
-        float lowDebuff = 0f
+        float lowDebuff = 0f,
+        string spriteKey = "question"
     )
     {
         var need = new NeedDef
@@ -106,6 +107,7 @@ public sealed class TestSimulationBuilder
             LowThreshold = lowThreshold,
             CriticalDebuff = criticalDebuff,
             LowDebuff = lowDebuff,
+            SpriteKey = spriteKey,
         };
         return _content.RegisterNeed(key, need);
     }

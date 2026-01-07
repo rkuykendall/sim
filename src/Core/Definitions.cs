@@ -31,6 +31,7 @@ public sealed class NeedDef : IContentDef
     public float LowThreshold { get; init; } = 40f;
     public float CriticalDebuff { get; init; } // Mood penalty when below critical threshold (e.g., -25)
     public float LowDebuff { get; init; } // Mood penalty when below low threshold (e.g., -8)
+    public string SpriteKey { get; init; } = ""; // Icon sprite for expression bubbles (16x16)
 }
 
 // Building definition
@@ -107,5 +108,5 @@ public sealed class ActionDef
 
     // Expression bubble data (shown while performing this action)
     public ExpressionType? Expression { get; init; }
-    public int? ExpressionIconDefId { get; init; } // Building/Terrain/Buff def ID for icon
+    public int? ExpressionIconDefId { get; init; } // Need def ID for icon (shows need sprite)
 }
