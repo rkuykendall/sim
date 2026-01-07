@@ -134,6 +134,7 @@ public sealed class TestSimulationBuilder
     /// <summary>
     /// Define a building type that can be placed in the world.
     /// ID is auto-generated. Accepts need and buff IDs directly.
+    /// All buildings are non-walkable.
     /// </summary>
     public int DefineBuilding(
         string key = "",
@@ -142,14 +143,14 @@ public sealed class TestSimulationBuilder
         int interactionDuration = 20,
         int? grantsBuffId = null,
         List<(int, int)>? useAreas = null,
-        bool walkable = false
+        int tileSize = 1
     )
     {
         var obj = new BuildingDef
         {
             Id = 0, // Auto-generated
             Name = key,
-            Walkable = walkable,
+            TileSize = tileSize,
             NeedSatisfactionAmount = satisfactionAmount,
             InteractionDurationTicks = interactionDuration,
             UseAreas = useAreas ?? new List<(int dx, int dy)> { (0, 1) },

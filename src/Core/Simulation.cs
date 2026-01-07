@@ -183,6 +183,7 @@ public sealed class Simulation
         }
 
         // Validate ALL occupied tiles are walkable (not blocked)
+        // Since all buildings are non-walkable and block tiles, this check prevents building overlap
         foreach (var tile in occupiedTiles)
         {
             if (!World.GetTile(tile).Walkable)
@@ -213,13 +214,10 @@ public sealed class Simulation
         // Create attachment component for all buildings (tracks which pawns use them)
         Entities.Attachments[id] = new AttachmentComponent();
 
-        // Mark ALL occupied tiles as blocked if building is not walkable
-        if (!buildingDef.Walkable)
+        // Mark ALL occupied tiles as blocked (all buildings are non-walkable)
+        foreach (var tile in occupiedTiles)
         {
-            foreach (var tile in occupiedTiles)
-            {
-                World.GetTile(tile).BuildingBlocksMovement = true;
-            }
+            World.GetTile(tile).BuildingBlocksMovement = true;
         }
 
         return id;
@@ -236,16 +234,13 @@ public sealed class Simulation
         )
         {
             var buildingDef = Content.Buildings[buildingComp.BuildingDefId];
-            if (!buildingDef.Walkable)
+            // Unblock ALL occupied tiles (all buildings are non-walkable)
+            var occupiedTiles = BuildingUtilities.GetOccupiedTiles(pos.Coord, buildingDef);
+            foreach (var tile in occupiedTiles)
             {
-                // Unblock ALL occupied tiles
-                var occupiedTiles = BuildingUtilities.GetOccupiedTiles(pos.Coord, buildingDef);
-                foreach (var tile in occupiedTiles)
+                if (World.IsInBounds(tile))
                 {
-                    if (World.IsInBounds(tile))
-                    {
-                        World.GetTile(tile).BuildingBlocksMovement = false;
-                    }
+                    World.GetTile(tile).BuildingBlocksMovement = false;
                 }
             }
         }

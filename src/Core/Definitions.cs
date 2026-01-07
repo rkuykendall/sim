@@ -37,7 +37,6 @@ public sealed class BuildingDef : IContentDef
 {
     public int Id { get; set; }
     public string Name { get; init; } = "";
-    public bool Walkable { get; init; } = false;
     public bool Interactable { get; init; } = true;
     public int TileSize { get; init; } = 1; // 1 = 1x1, 2 = 2x2, 3 = 3x3 (square buildings only)
     public int? SatisfiesNeedId { get; init; } // Set during content loading

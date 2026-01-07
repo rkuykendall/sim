@@ -212,10 +212,6 @@ public static class ContentLoader
             var key = pair.Key.String;
             var data = pair.Value.Table;
 
-            // Load walkable property (defaults to false if not specified)
-            var walkableData = data.Get("walkable");
-            var walkable = !walkableData.IsNil() && walkableData.Boolean;
-
             // Load tileSize property (defaults to 1 if not specified)
             var tileSizeData = data.Get("tileSize");
             var tileSize = tileSizeData.IsNil() ? 1 : (int)tileSizeData.Number;
@@ -228,25 +224,8 @@ public static class ContentLoader
                 );
             }
 
-            // Derive use areas from walkable property and tile size
-            var useAreas = new List<(int dx, int dy)>();
-
-            if (walkable)
-            {
-                // For walkable buildings, use areas are all occupied tiles
-                for (int dx = 0; dx < tileSize; dx++)
-                {
-                    for (int dy = 0; dy < tileSize; dy++)
-                    {
-                        useAreas.Add((dx, dy));
-                    }
-                }
-            }
-            else
-            {
-                // For non-walkable buildings, use areas are all adjacent tiles
-                useAreas = BuildingUtilities.GenerateUseAreasForSize(tileSize);
-            }
+            // All buildings are non-walkable, so use areas are all adjacent tiles
+            var useAreas = BuildingUtilities.GenerateUseAreasForSize(tileSize);
 
             // Load sprite key (defaults to empty string if not specified)
             var spriteKeyData = data.Get("spriteKey");
@@ -280,7 +259,6 @@ public static class ContentLoader
             var building = new BuildingDef
             {
                 Name = key,
-                Walkable = walkable,
                 TileSize = tileSize,
                 SatisfiesNeedId = ResolveReference(
                     data.Get("satisfiesNeed"),

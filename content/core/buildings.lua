@@ -1,12 +1,11 @@
 -- Building definitions
 -- Buildings are interactable structures that satisfy needs
--- useAreas: automatically derived from walkable property and tileSize
+-- All buildings are non-walkable and use areas are automatically generated around them
 
 Buildings = {
     Home = {
         satisfiesNeed = "Energy",
         grantsBuff = "WellRested",
-        walkable = true,  -- pawns stand in home to sleep
         spriteKey = "home",
         tileSize = 2
     },
@@ -18,8 +17,7 @@ Buildings = {
         maxResourceAmount = 100,
         depletionMult = 1.0,
         canBeWorkedAt = true,
-        tileSize = 2,
-        walkable = false
+        tileSize = 2
     },
     Market = {
         satisfiesNeed = "Hunger",
@@ -29,8 +27,7 @@ Buildings = {
         maxResourceAmount = 100,
         depletionMult = 1.0,
         canBeWorkedAt = true,
-        tileSize = 2,
-        walkable = false
+        tileSize = 2
     },
     Well = {
         satisfiesNeed = "Hygiene",
@@ -39,13 +36,11 @@ Buildings = {
         resourceType = "water",
         maxResourceAmount = 999,
         depletionMult = 0.0,  -- Infinite water
-        walkable = false,
         tileSize = 1
     },
     Tavern = {
         satisfiesNeed = "Social",
         grantsBuff = "Socialized",
-        walkable = false,
         spriteKey = "tavern",
         tileSize = 2
     }
