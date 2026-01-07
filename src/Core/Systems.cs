@@ -242,17 +242,9 @@ public sealed class ActionSystem : ISystem
         var pos = ctx.Entities.Positions[pawnId];
         var target = action.TargetCoord.Value;
 
-        // Get tiles occupied by other pawns for pathfinding
-        var occupiedTiles = ctx.Entities.GetOccupiedTiles(pawnId);
-
         if (actionComp.CurrentPath == null)
         {
-            actionComp.CurrentPath = Pathfinder.FindPath(
-                ctx.World,
-                pos.Coord,
-                target,
-                occupiedTiles
-            );
+            actionComp.CurrentPath = Pathfinder.FindPath(ctx.World, pos.Coord, target);
             actionComp.PathIndex = 0;
 
             if (actionComp.CurrentPath == null || actionComp.CurrentPath.Count == 0)
@@ -273,80 +265,6 @@ public sealed class ActionSystem : ISystem
 
         if (expectedPathIndex > actionComp.PathIndex)
         {
-            var nextTile = actionComp.CurrentPath[expectedPathIndex];
-
-            // Check if the next tile is occupied by another pawn
-            var blockingPawnId = ctx.Entities.GetPawnAtTile(nextTile, pawnId);
-            if (blockingPawnId != null)
-            {
-                // Track how long we've been blocked
-                if (actionComp.BlockedSinceTick < 0)
-                    actionComp.BlockedSinceTick = ctx.Time.Tick;
-                int blockedDuration = ctx.Time.Tick - actionComp.BlockedSinceTick;
-
-                // Give up if blocked too long
-                if (blockedDuration >= MaxBlockedTicks)
-                {
-                    actionComp.CurrentAction = null;
-                    actionComp.CurrentPath = null;
-                    actionComp.BlockedSinceTick = -1;
-                    actionComp.WaitUntilTick = -1;
-                    actionComp.ActionQueue.Clear();
-                    return;
-                }
-
-                // Priority-based yielding: Wandering pawns yield to goal-driven pawns
-                bool iAmWandering = action.DisplayName == "Wandering";
-                bool blockerIsWandering = false;
-                if (ctx.Entities.Actions.TryGetValue(blockingPawnId.Value, out var blockerAction))
-                {
-                    blockerIsWandering = blockerAction.CurrentAction?.DisplayName == "Wandering";
-                }
-
-                // If I'm wandering and blocker has a goal, I should yield (cancel my action)
-                if (iAmWandering && !blockerIsWandering)
-                {
-                    actionComp.CurrentAction = null;
-                    actionComp.CurrentPath = null;
-                    actionComp.BlockedSinceTick = -1;
-                    actionComp.WaitUntilTick = -1;
-                    actionComp.ActionQueue.Clear(); // Also clear queued actions (e.g., the Idle after wandering)
-                    return;
-                }
-
-                // Randomized wait before repathing to break the "sidewalk dance"
-                if (actionComp.WaitUntilTick < 0)
-                {
-                    // Wait a random amount of time (5-20 ticks) before trying to repath
-                    actionComp.WaitUntilTick = ctx.Time.Tick + ctx.Random.Next(5, 21);
-                    return;
-                }
-
-                if (ctx.Time.Tick < actionComp.WaitUntilTick)
-                {
-                    // Still waiting
-                    return;
-                }
-
-                // Done waiting - try to find a new path around the obstacle
-                actionComp.WaitUntilTick = -1; // Reset wait timer
-                var newPath = Pathfinder.FindPath(ctx.World, pos.Coord, target, occupiedTiles);
-
-                if (newPath != null && newPath.Count > 0)
-                {
-                    // Found alternate path - use it
-                    actionComp.CurrentPath = newPath;
-                    actionComp.PathIndex = 0;
-                    actionComp.ActionStartTick = ctx.Time.Tick;
-                    actionComp.BlockedSinceTick = -1;
-                }
-                // If no path found, will wait again with new random time next tick
-                return;
-            }
-
-            // Not blocked anymore
-            actionComp.BlockedSinceTick = -1;
-            actionComp.WaitUntilTick = -1;
             actionComp.PathIndex = expectedPathIndex;
             pos.Coord = actionComp.CurrentPath[actionComp.PathIndex];
         }
@@ -780,11 +698,8 @@ public sealed class ActionSystem : ISystem
             if (!world.IsInBounds(useAreaCoord))
                 continue;
 
-            // Check if tile is walkable and not occupied by another pawn
-            if (
-                world.GetTile(useAreaCoord).Walkable
-                && !entities.IsTileOccupiedByPawn(useAreaCoord, excludePawn)
-            )
+            // Check if tile is walkable
+            if (world.GetTile(useAreaCoord).Walkable)
             {
                 int dist = Math.Abs(useAreaCoord.X - from.X) + Math.Abs(useAreaCoord.Y - from.Y);
                 candidates.Add((useAreaCoord, dist));
@@ -1109,11 +1024,10 @@ public sealed class AISystem : ISystem
             }
         }
 
-        // Step 2: Filter to valid candidates (walkable, unoccupied, not current position)
+        // Step 2: Filter to valid candidates (walkable, not current position)
         var candidates = potentialTargets
             .Where(target => !target.Equals(pos.Coord))
             .Where(target => ctx.World.IsWalkable(target))
-            .Where(target => !ctx.Entities.IsTileOccupiedByPawn(target, pawnId))
             .Select(target => (coord: target, diversity: diversityMap[target.X, target.Y]))
             .ToList();
 
@@ -1368,10 +1282,7 @@ public sealed class AISystem : ISystem
 
                 var candidate = new TileCoord(buildingPos.X + dx, buildingPos.Y + dy);
 
-                if (
-                    ctx.World.IsWalkable(candidate)
-                    && !ctx.Entities.IsTileOccupiedByPawn(candidate, pawnId)
-                )
+                if (ctx.World.IsWalkable(candidate))
                 {
                     return candidate;
                 }
@@ -1396,17 +1307,13 @@ public sealed class AISystem : ISystem
                 ? objDef.UseAreas
                 : new List<(int dx, int dy)> { (0, 1), (0, -1), (1, 0), (-1, 0) };
 
-        var occupiedTiles = ctx.Entities.GetOccupiedTiles(pawnId);
-
         foreach (var (dx, dy) in useAreas)
         {
             var target = new TileCoord(objPos.Coord.X + dx, objPos.Coord.Y + dy);
             if (!ctx.World.IsWalkable(target))
                 continue;
-            if (ctx.Entities.IsTileOccupiedByPawn(target, pawnId))
-                continue;
 
-            var path = Pathfinder.FindPath(ctx.World, pawnPos.Coord, target, occupiedTiles);
+            var path = Pathfinder.FindPath(ctx.World, pawnPos.Coord, target);
             if (path != null && path.Count > 0)
                 return true;
         }

@@ -40,8 +40,6 @@ public sealed class ActionComponent
     public Queue<ActionDef> ActionQueue { get; set; } = new();
     public List<TileCoord>? CurrentPath { get; set; }
     public int PathIndex { get; set; }
-    public int BlockedSinceTick { get; set; } = -1; // Tick when pawn first got blocked, -1 = not blocked
-    public int WaitUntilTick { get; set; } = -1; // Wait before repathing (randomized to break dance)
 }
 
 // World building (furniture, etc.)

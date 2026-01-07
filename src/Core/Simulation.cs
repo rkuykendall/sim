@@ -811,13 +811,12 @@ public sealed class Simulation
     }
 
     /// <summary>
-    /// Finds a random walkable edge tile that is not occupied by a pawn.
+    /// Finds a random walkable edge tile.
     /// Edge tiles are on the borders of the world (x=0, x=Width-1, y=0, or y=Height-1).
     /// </summary>
-    /// <returns>A random unoccupied walkable edge tile coordinate, or null if none available.</returns>
+    /// <returns>A random walkable edge tile coordinate, or null if none available.</returns>
     private TileCoord? GetRandomWalkableTile()
     {
-        var occupiedTiles = Entities.GetOccupiedTiles();
         var walkableTiles = new List<TileCoord>();
 
         for (int x = 0; x < World.Width; x++)
@@ -829,7 +828,7 @@ public sealed class Simulation
                     continue;
 
                 var coord = new TileCoord(x, y);
-                if (World.IsWalkable(coord) && !occupiedTiles.Contains(coord))
+                if (World.IsWalkable(coord))
                 {
                     walkableTiles.Add(coord);
                 }

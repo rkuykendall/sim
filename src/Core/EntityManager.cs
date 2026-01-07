@@ -84,61 +84,6 @@ public sealed class EntityManager
     public IEnumerable<EntityId> AllBuildings() => Buildings.Keys;
 
     /// <summary>
-    /// Check if a tile is occupied by any pawn other than the excluded one.
-    /// </summary>
-    public bool IsTileOccupiedByPawn(TileCoord coord, EntityId? excludePawn = null)
-    {
-        foreach (var pawnId in Pawns.Keys)
-        {
-            if (excludePawn.HasValue && pawnId == excludePawn.Value)
-                continue;
-
-            if (Positions.TryGetValue(pawnId, out var pos) && pos.Coord == coord)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /// <summary>
-    /// Get all tiles occupied by pawns, optionally excluding one pawn.
-    /// </summary>
-    public HashSet<TileCoord> GetOccupiedTiles(EntityId? excludePawn = null)
-    {
-        var occupied = new HashSet<TileCoord>();
-        foreach (var pawnId in Pawns.Keys)
-        {
-            if (excludePawn.HasValue && pawnId == excludePawn.Value)
-                continue;
-
-            if (Positions.TryGetValue(pawnId, out var pos))
-            {
-                occupied.Add(pos.Coord);
-            }
-        }
-        return occupied;
-    }
-
-    /// <summary>
-    /// Get the pawn at a specific tile, or null if none (optionally excluding one pawn).
-    /// </summary>
-    public EntityId? GetPawnAtTile(TileCoord coord, EntityId? excludePawn = null)
-    {
-        foreach (var pawnId in Pawns.Keys)
-        {
-            if (excludePawn.HasValue && pawnId == excludePawn.Value)
-                continue;
-
-            if (Positions.TryGetValue(pawnId, out var pos) && pos.Coord == coord)
-            {
-                return pawnId;
-            }
-        }
-        return null;
-    }
-
-    /// <summary>
     /// Remove all components for an entity. Internal use only.
     /// Use Simulation.DestroyEntity() for proper cleanup including world state.
     /// </summary>

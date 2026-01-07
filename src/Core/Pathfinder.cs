@@ -7,12 +7,7 @@ public static class Pathfinder
 {
     private static readonly (int dx, int dy)[] Directions = { (0, 1), (0, -1), (1, 0), (-1, 0) };
 
-    public static List<TileCoord>? FindPath(
-        World world,
-        TileCoord start,
-        TileCoord goal,
-        HashSet<TileCoord>? avoidTiles = null
-    )
+    public static List<TileCoord>? FindPath(World world, TileCoord start, TileCoord goal)
     {
         var openSet = new PriorityQueue<TileCoord, float>();
         var cameFrom = new Dictionary<TileCoord, TileCoord>();
@@ -38,10 +33,6 @@ public static class Pathfinder
                 var tile = world.GetTile(neighbor);
 
                 if (!tile.Walkable)
-                    continue;
-
-                // Avoid tiles with pawns
-                if (avoidTiles != null && avoidTiles.Contains(neighbor))
                     continue;
 
                 float tentativeG = gScore[current] + 1;
