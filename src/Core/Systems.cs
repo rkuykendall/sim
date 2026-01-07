@@ -1546,14 +1546,26 @@ public sealed class ThemeSystem : ISystem
             // Only queue if different from current theme
             if (nextTheme != null && nextTheme.GetType() != _currentTheme?.GetType())
             {
+                Console.WriteLine(
+                    $"[ThemeSystem] Queuing new theme: {nextTheme.Name} (different from current: {_currentTheme?.Name})"
+                );
                 _queuedTheme = nextTheme;
 
                 // If current theme has no music, transition immediately
                 // (No need to wait for a non-existent song to finish)
                 if (_currentTheme?.MusicFile == null)
                 {
+                    Console.WriteLine(
+                        "[ThemeSystem] Current theme has no music, transitioning immediately"
+                    );
                     TransitionToNextTheme(ctx);
                     return; // Exit early since we just transitioned
+                }
+                else
+                {
+                    Console.WriteLine(
+                        $"[ThemeSystem] Queued theme will play after current music finishes: {_currentTheme.MusicFile}"
+                    );
                 }
             }
         }
@@ -1574,6 +1586,9 @@ public sealed class ThemeSystem : ISystem
     /// </summary>
     public void OnMusicFinished()
     {
+        Console.WriteLine(
+            $"[ThemeSystem] OnMusicFinished called. Current theme: {_currentTheme?.Name ?? "null"}, Queued theme: {_queuedTheme?.Name ?? "null"}"
+        );
         var ctx = new SimContext(_sim);
         TransitionToNextTheme(ctx);
     }
@@ -1618,27 +1633,39 @@ public sealed class ThemeSystem : ISystem
 
     private void StartTheme(SimContext ctx, Theme theme)
     {
+        Console.WriteLine(
+            $"[ThemeSystem] StartTheme: {theme.Name}, Music: {theme.MusicFile ?? "null"}"
+        );
+
         if (_currentTheme != null)
         {
+            Console.WriteLine($"[ThemeSystem] Ending previous theme: {_currentTheme.Name}");
             _currentTheme.OnEnd(ctx);
         }
 
         _currentTheme = theme;
         _currentThemeStartTick = ctx.Time.Tick;
         theme.OnStart(ctx);
+
+        Console.WriteLine($"[ThemeSystem] Theme started successfully at tick {ctx.Time.Tick}");
     }
 
     private void TransitionToNextTheme(SimContext ctx)
     {
+        Console.WriteLine($"[ThemeSystem] TransitionToNextTheme called");
+
         if (_queuedTheme != null)
         {
+            Console.WriteLine($"[ThemeSystem] Starting queued theme: {_queuedTheme.Name}");
             StartTheme(ctx, _queuedTheme);
             _queuedTheme = null;
         }
         else
         {
+            Console.WriteLine("[ThemeSystem] No queued theme, selecting by priority");
             // Select highest priority theme
             var nextTheme = SelectThemeByPriority(ctx);
+            Console.WriteLine($"[ThemeSystem] Selected theme by priority: {nextTheme.Name}");
             StartTheme(ctx, nextTheme);
         }
     }

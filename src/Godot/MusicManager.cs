@@ -72,22 +72,25 @@ public partial class MusicManager : Node
         if (themeState.CurrentThemeName != _lastThemeName)
         {
             _lastThemeName = themeState.CurrentThemeName;
-
             GD.Print($"[MusicManager] Theme changed to: {themeState.CurrentThemeName ?? "null"}");
+        }
 
-            // Handle music file change
-            if (themeState.CurrentMusicFile != _currentPlayingFile)
+        // Handle music file change (check this separately, not just on theme change!)
+        if (themeState.CurrentMusicFile != _currentPlayingFile)
+        {
+            if (themeState.CurrentMusicFile == null)
             {
-                if (themeState.CurrentMusicFile == null)
-                {
-                    // Stop music (silent theme)
-                    StopMusic();
-                }
-                else
-                {
-                    // Play new music file
-                    PlayMusicFile(themeState.CurrentMusicFile);
-                }
+                GD.Print("[MusicManager] Stopping music (no music file in theme)");
+                // Stop music (silent theme)
+                StopMusic();
+            }
+            else
+            {
+                GD.Print(
+                    $"[MusicManager] Music file changed from '{_currentPlayingFile ?? "null"}' to '{themeState.CurrentMusicFile}'"
+                );
+                // Play new music file
+                PlayMusicFile(themeState.CurrentMusicFile);
             }
         }
     }
@@ -118,6 +121,15 @@ public partial class MusicManager : Node
         // Start playback
         _audioPlayer.Play();
 
+        // Log stream info for debugging
+        if (audioStream is AudioStreamOggVorbis oggStream)
+        {
+            GD.Print(
+                $"[MusicManager] Loaded OGG stream, loop: {oggStream.Loop}, length: {oggStream.GetLength()}s"
+            );
+        }
+        GD.Print($"[MusicManager] AudioPlayer playing: {_audioPlayer.Playing}");
+
         _currentPlayingFile = filePath;
     }
 
@@ -136,8 +148,20 @@ public partial class MusicManager : Node
     /// </summary>
     private void OnMusicFinished()
     {
+        GD.Print(
+            $"[MusicManager] OnMusicFinished called - Current file: {_currentPlayingFile ?? "null"}"
+        );
+
         // Notify Core that music finished
-        _gameRoot?.OnMusicFinished();
+        if (_gameRoot != null)
+        {
+            GD.Print("[MusicManager] Notifying GameRoot that music finished");
+            _gameRoot.OnMusicFinished();
+        }
+        else
+        {
+            GD.PrintErr("[MusicManager] ERROR: GameRoot is null, cannot notify of music finish!");
+        }
 
         _currentPlayingFile = null;
     }

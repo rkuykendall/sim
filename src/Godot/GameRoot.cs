@@ -1553,6 +1553,16 @@ public partial class GameRoot : Node2D
     /// </summary>
     public void OnMusicFinished()
     {
-        _sim.ThemeSystem?.OnMusicFinished();
+        GD.Print("[GameRoot] OnMusicFinished called");
+
+        if (_sim.ThemeSystem != null)
+        {
+            GD.Print("[GameRoot] Notifying ThemeSystem that music finished");
+            _sim.ThemeSystem.OnMusicFinished();
+        }
+        else
+        {
+            GD.PrintErr("[GameRoot] ERROR: ThemeSystem is null!");
+        }
     }
 }
