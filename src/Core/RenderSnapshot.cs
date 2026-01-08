@@ -12,6 +12,7 @@ public sealed class RenderPawn
     public float Mood { get; init; }
     public string Name { get; init; } = "";
     public string? CurrentAction { get; init; }
+    public ActionType CurrentActionType { get; init; } = ActionType.Idle;
     public AnimationType Animation { get; init; } = AnimationType.Idle;
     public ExpressionType? Expression { get; init; }
     public int? ExpressionIconDefId { get; init; } // Need def ID for expression icon
@@ -171,6 +172,7 @@ public static class RenderSnapshotBuilder
                     Mood = mood?.Mood ?? 0,
                     Name = pawn?.Name ?? $"Pawn {pawnId.Value}",
                     CurrentAction = actionName,
+                    CurrentActionType = action?.CurrentAction?.Type ?? ActionType.Idle,
                     Animation = action?.CurrentAction?.Animation ?? AnimationType.Idle,
                     Expression = action?.CurrentAction?.Expression,
                     ExpressionIconDefId = action?.CurrentAction?.ExpressionIconDefId,

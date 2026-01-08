@@ -1377,6 +1377,12 @@ public partial class GameRoot : Node2D
                 pv.SetMood(pawn.Mood);
                 pv.SetSelected(pawn.Id.Value == _selectedPawnId);
                 pv.SetExpression(pawn.Expression, pawn.ExpressionIconDefId, _sim.Content);
+
+                // Hide pawn when using or working at a building (classic RTS style)
+                bool isInsideBuilding =
+                    pawn.CurrentActionType == SimGame.Core.ActionType.UseBuilding
+                    || pawn.CurrentActionType == SimGame.Core.ActionType.Work;
+                pv.Visible = !isInsideBuilding;
             }
         }
 

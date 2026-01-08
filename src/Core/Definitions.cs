@@ -62,7 +62,6 @@ public enum ActionType
     Idle,
     MoveTo,
     UseBuilding,
-    Socialize,
     Work,
 }
 
