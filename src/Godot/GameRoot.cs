@@ -956,24 +956,6 @@ public partial class GameRoot : Node2D
 
         if (_lastSnapshot != null)
         {
-            foreach (var obj in _lastSnapshot.Buildings)
-            {
-                if (_sim.Content.Buildings.TryGetValue(obj.BuildingDefId, out var buildingDef5))
-                {
-                    foreach (var (dx, dy) in buildingDef5.UseAreas)
-                    {
-                        var useAreaRect = new Rect2(
-                            (obj.X + dx) * RenderingConstants.RenderedTileSize,
-                            (obj.Y + dy) * RenderingConstants.RenderedTileSize,
-                            RenderingConstants.RenderedTileSize,
-                            RenderingConstants.RenderedTileSize
-                        );
-                        DrawRect(useAreaRect, new Color(0, 1, 0, 0.2f), true);
-                        DrawRect(useAreaRect, Colors.Yellow, false, 1f);
-                    }
-                }
-            }
-
             foreach (var pawn in _lastSnapshot.Pawns)
             {
                 var pawnCenter = new Vector2(

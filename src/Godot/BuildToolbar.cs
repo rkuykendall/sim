@@ -508,7 +508,7 @@ public partial class BuildToolbar : HBoxContainer
             )
             {
                 // Check if this button's ID matches the selected building
-                var buildings = _content?.Buildings.OrderBy(kv => kv.Value.Name).ToList();
+                var buildings = _content?.Buildings.OrderBy(kv => kv.Key).ToList();
                 if (buildings != null)
                 {
                     var index = _optionButtons.IndexOf(button);

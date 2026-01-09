@@ -1,65 +1,65 @@
 -- Terrain definitions
 -- Terrains define the properties of tile types
--- passability: "Low" (water/pits), "Ground" (walkable), "High" (walls/blocks)
+-- walkabilityCost: Movement cost for pathfinding (1.0 = normal, < 1.0 = faster, > 1.0 = slower, math.huge = impassable)
 -- blocksLight: true if terrain should cast shadows and block sunlight
 Terrains = {
     Flat = {
-        passability = "Ground",
+        walkabilityCost = 1.0,
         spriteKey = "flat",
         paintsToBase = true,
     },
     WoodFloor = {
-        passability = "Ground",
+        walkabilityCost = 0.8,
         spriteKey = "wood_floor",
     },
     Grass = {
-        passability = "Ground",
+        walkabilityCost = 1.0,
         spriteKey = "grass",
         variantCount = 4,
     },
     Trees = {
-        passability = "High",
+        walkabilityCost = 5.0,
         spriteKey = "trees",
         isAutotiling = true,
     },
     Rock = {
-        passability = "High",
+        walkabilityCost = 5.0,
         spriteKey = "rock",
         variantCount = 12,
     },
     Plant = {
-        passability = "Ground",
+        walkabilityCost = 2.0,
         spriteKey = "plant",
         variantCount = 10,
     },
     Dirt = {
-        passability = "Ground",
+        walkabilityCost = 0.8,
         spriteKey = "dirt",
         variantCount = 4,
     },
     Stone = {
-        passability = "Ground",
+        walkabilityCost = 0.05,
         spriteKey = "stone",
         isAutotiling = true,
     },
     Path = {
-        passability = "Ground",
+        walkabilityCost = 0.05,
         spriteKey = "path",
         isAutotiling = true,
     },
     Water = {
-        passability = "Low",
+        walkabilityCost = math.huge,
         spriteKey = "water",
         isAutotiling = true,
     },
     Block = {
-        passability = "High",
+        walkabilityCost = math.huge,
         blocksLight = true,
         spriteKey = "block",
         isAutotiling = true,
     },
     Wall = {
-        passability = "High",
+        walkabilityCost = math.huge,
         blocksLight = true,
         spriteKey = "wall",
         isAutotiling = true,

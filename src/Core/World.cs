@@ -2,21 +2,6 @@ using System;
 
 namespace SimGame.Core;
 
-/// <summary>
-/// Defines the height/walkability level of terrain.
-/// </summary>
-public enum TerrainPassability
-{
-    /// <summary>Low/sunken terrain - not walkable (e.g., water, pits)</summary>
-    Low = 0,
-
-    /// <summary>Normal ground - walkable (e.g., grass, dirt, floors)</summary>
-    Ground = 1,
-
-    /// <summary>High/solid terrain - not walkable (e.g., walls, boulders)</summary>
-    High = 2,
-}
-
 public readonly struct TileCoord : IEquatable<TileCoord>
 {
     public readonly int X;
@@ -88,8 +73,8 @@ public sealed class Tile
     /// <summary>Variant index for overlay terrain (0-based, randomized on paint).</summary>
     public int OverlayVariantIndex { get; set; } = 0;
 
-    /// <summary>Height/walkability level of the terrain (from base terrain definition).</summary>
-    public TerrainPassability Passability { get; set; } = TerrainPassability.Ground;
+    /// <summary>Movement cost for pathfinding (1.0 = normal, less = faster, more = slower, infinity = impassable).</summary>
+    public float WalkabilityCost { get; set; } = 1.0f;
 
     /// <summary>Whether this tile blocks light (from terrain or placed buildings).</summary>
     public bool BlocksLight { get; set; } = false;
@@ -97,8 +82,8 @@ public sealed class Tile
     /// <summary>Whether a placed building blocks movement on this tile.</summary>
     public bool BuildingBlocksMovement { get; set; } = false;
 
-    /// <summary>Whether pawns can walk through this tile. Computed from Passability and BuildingBlocksMovement.</summary>
-    public bool Walkable => Passability == TerrainPassability.Ground && !BuildingBlocksMovement;
+    /// <summary>Whether pawns can walk through this tile. Computed from WalkabilityCost and BuildingBlocksMovement.</summary>
+    public bool Walkable => !float.IsPositiveInfinity(WalkabilityCost) && !BuildingBlocksMovement;
 }
 
 /// <summary>

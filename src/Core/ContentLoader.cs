@@ -125,20 +125,6 @@ public static class ContentLoader
             var key = pair.Key.String;
             var data = pair.Value.Table;
 
-            // Load passability (defaults to Ground if not specified)
-            var passabilityData = data.Get("passability");
-            var passability = TerrainPassability.Ground;
-            if (!passabilityData.IsNil())
-            {
-                var passabilityStr = passabilityData.String;
-                if (!Enum.TryParse<TerrainPassability>(passabilityStr, true, out passability))
-                {
-                    throw new InvalidOperationException(
-                        $"Terrain '{key}' has invalid passability value '{passabilityStr}'. Must be 'Low', 'Ground', or 'High'."
-                    );
-                }
-            }
-
             // Load blocksLight property (defaults to false if not specified)
             var blocksLightData = data.Get("blocksLight");
             var blocksLight = !blocksLightData.IsNil() && blocksLightData.Boolean;
@@ -159,11 +145,17 @@ public static class ContentLoader
             var variantCountData = data.Get("variantCount");
             var variantCount = variantCountData.IsNil() ? 1 : (int)variantCountData.Number;
 
+            // Load walkabilityCost property (defaults to 1.0 if not specified)
+            var walkabilityCostData = data.Get("walkabilityCost");
+            var walkabilityCost = walkabilityCostData.IsNil()
+                ? 1.0f
+                : (float)walkabilityCostData.Number;
+
             registry.RegisterTerrain(
                 key,
                 new TerrainDef
                 {
-                    Passability = passability,
+                    WalkabilityCost = walkabilityCost,
                     BlocksLight = blocksLight,
                     SpriteKey = spriteKey,
                     IsAutotiling = isAutotiling,

@@ -6,7 +6,7 @@ namespace SimGame.Core;
 public sealed class TerrainDef : IContentDef
 {
     public int Id { get; set; }
-    public TerrainPassability Passability { get; init; } = TerrainPassability.Ground;
+    public float WalkabilityCost { get; init; } = 1.0f;
     public bool BlocksLight { get; init; } = false;
     public string SpriteKey { get; init; } = "";
     public bool IsAutotiling { get; init; } = false; // Indicates terrain uses autotiling

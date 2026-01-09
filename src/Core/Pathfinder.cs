@@ -7,6 +7,10 @@ public static class Pathfinder
 {
     private static readonly (int dx, int dy)[] Directions = { (0, 1), (0, -1), (1, 0), (-1, 0) };
 
+    // Multiplier for terrain costs - higher values make pawns more aggressive in seeking low-cost paths
+    // 1.0 = balanced, 2.0-5.0 = aggressive path optimization
+    private const float CostMultiplier = 3.0f;
+
     public static List<TileCoord>? FindPath(World world, TileCoord start, TileCoord goal)
     {
         var openSet = new PriorityQueue<TileCoord, float>();
@@ -35,7 +39,8 @@ public static class Pathfinder
                 if (!tile.Walkable)
                     continue;
 
-                float tentativeG = gScore[current] + 1;
+                float moveCost = tile.WalkabilityCost * CostMultiplier;
+                float tentativeG = gScore[current] + moveCost;
 
                 if (!gScore.ContainsKey(neighbor) || tentativeG < gScore[neighbor])
                 {

@@ -147,7 +147,7 @@ public sealed class Simulation
 
                 if (Content.Terrains.TryGetValue(flatTerrainId, out var terrainDef))
                 {
-                    tile.Passability = terrainDef.Passability;
+                    tile.WalkabilityCost = terrainDef.WalkabilityCost;
                     tile.BlocksLight = terrainDef.BlocksLight;
                 }
             }
@@ -293,7 +293,7 @@ public sealed class Simulation
                 tile.OverlayVariantIndex = 0;
         }
 
-        tile.Passability = terrainDef.Passability;
+        tile.WalkabilityCost = terrainDef.WalkabilityCost;
         tile.BlocksLight = terrainDef.BlocksLight;
 
         return GetTilesWithNeighbors(new[] { coord });
@@ -583,7 +583,7 @@ public sealed class Simulation
             tile.OverlayTerrainTypeId = null;
             if (Content.Terrains.TryGetValue(tile.BaseTerrainTypeId, out var baseTerrain))
             {
-                tile.Passability = baseTerrain.Passability;
+                tile.WalkabilityCost = baseTerrain.WalkabilityCost;
                 tile.BlocksLight = baseTerrain.BlocksLight;
             }
             return GetTilesWithNeighbors(new[] { coord });
@@ -593,7 +593,7 @@ public sealed class Simulation
         if (Content.Terrains.TryGetValue(flatTerrainId, out var flatTerrain))
         {
             tile.BaseTerrainTypeId = flatTerrainId;
-            tile.Passability = flatTerrain.Passability;
+            tile.WalkabilityCost = flatTerrain.WalkabilityCost;
             tile.BlocksLight = flatTerrain.BlocksLight;
             tile.ColorIndex = 0;
         }
