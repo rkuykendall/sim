@@ -227,6 +227,15 @@ public static class ContentLoader
             var buffDurationData = data.Get("buffDuration");
             var buffDuration = buffDurationData.IsNil() ? 0 : (int)buffDurationData.Number;
 
+            var baseCostData = data.Get("baseCost");
+            var baseCost = baseCostData.IsNil()
+                ? BuildingDef.DefaultBaseCost
+                : (int)baseCostData.Number;
+            var baseProductionData = data.Get("baseProduction");
+            var baseProduction = baseProductionData.IsNil()
+                ? BuildingDef.DefaultBaseProduction
+                : (float)baseProductionData.Number;
+
             var building = new BuildingDef
             {
                 Name = key,
@@ -247,6 +256,8 @@ public static class ContentLoader
                 MaxResourceAmount = maxResourceAmount,
                 DepletionMult = depletionMult,
                 CanBeWorkedAt = canBeWorkedAt,
+                BaseCost = baseCost,
+                BaseProduction = baseProduction,
             };
 
             registry.RegisterBuilding(key, building);

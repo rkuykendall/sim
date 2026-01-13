@@ -17,6 +17,9 @@ public sealed class RenderPawn
     public ExpressionType? Expression { get; init; }
     public int? ExpressionIconDefId { get; init; } // Need def ID for expression icon
 
+    // Economic info
+    public int Gold { get; init; }
+
     // Debug: pathfinding info
     public (int X, int Y)? TargetTile { get; init; }
     public IReadOnlyList<(int X, int Y)>? CurrentPath { get; init; }
@@ -36,6 +39,12 @@ public sealed class RenderBuilding
     public bool InUse { get; init; }
     public string? UsedByName { get; init; }
     public int ColorIndex { get; init; }
+
+    // Economic info
+    public int Gold { get; init; }
+    public int Cost { get; init; }
+    public int Payout { get; init; }
+    public int WorkBuyIn { get; init; }
 
     // Debug: Resource info
     public string? ResourceType { get; init; }
@@ -163,6 +172,13 @@ public static class RenderSnapshotBuilder
                 }
             }
 
+            // Get pawn gold
+            int pawnGold = 0;
+            if (sim.Entities.Gold.TryGetValue(pawnId, out var goldComp))
+            {
+                pawnGold = goldComp.Amount;
+            }
+
             pawns.Add(
                 new RenderPawn
                 {
@@ -176,6 +192,7 @@ public static class RenderSnapshotBuilder
                     Animation = action?.CurrentAction?.Animation ?? AnimationType.Idle,
                     Expression = action?.CurrentAction?.Expression,
                     ExpressionIconDefId = action?.CurrentAction?.ExpressionIconDefId,
+                    Gold = pawnGold,
                     TargetTile = targetTile,
                     CurrentPath = pathCoords,
                     PathIndex = pathIndex,
@@ -236,6 +253,13 @@ public static class RenderSnapshotBuilder
                 }
             }
 
+            // Get building gold
+            int buildingGold = 0;
+            if (sim.Entities.Gold.TryGetValue(objId, out var buildingGoldComp))
+            {
+                buildingGold = buildingGoldComp.Amount;
+            }
+
             buildings.Add(
                 new RenderBuilding
                 {
@@ -247,6 +271,10 @@ public static class RenderSnapshotBuilder
                     InUse = obj.InUse,
                     UsedByName = usedByName,
                     ColorIndex = obj.ColorIndex,
+                    Gold = buildingGold,
+                    Cost = buildingDef.GetCost(),
+                    Payout = buildingDef.GetPayout(),
+                    WorkBuyIn = buildingDef.GetWorkBuyIn(),
                     ResourceType = resourceType,
                     CurrentResource = currentResource,
                     MaxResource = maxResource,

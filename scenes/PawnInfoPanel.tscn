@@ -21,6 +21,7 @@ offset_bottom = 260
 script = ExtResource("1")
 NameLabelPath = NodePath("MarginContainer/VBoxContainer/NameLabel")
 MoodLabelPath = NodePath("MarginContainer/VBoxContainer/MoodLabel")
+GoldLabelPath = NodePath("MarginContainer/VBoxContainer/GoldLabel")
 ActionLabelPath = NodePath("MarginContainer/VBoxContainer/ActionLabel")
 NeedsContainerPath = NodePath("MarginContainer/VBoxContainer/NeedsContainer")
 BuffsContainerPath = NodePath("MarginContainer/VBoxContainer/BuffsContainer")
@@ -44,6 +45,10 @@ text = "Pawn Name"
 [node name="MoodLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 text = "Mood: 0"
+
+[node name="GoldLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Gold: 0"
 
 [node name="ActionLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2

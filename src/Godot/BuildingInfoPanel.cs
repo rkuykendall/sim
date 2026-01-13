@@ -86,6 +86,27 @@ public partial class BuildingInfoPanel : PanelContainer
             label.QueueFree();
         _debugLabels.Clear();
 
+        // Gold info
+        var goldLabel = new Label { Text = $"Gold: {building.Gold}" };
+        goldLabel.AddThemeFontSizeOverride("font_size", 14);
+        goldLabel.Modulate =
+            building.Gold >= 100 ? Colors.Gold
+            : building.Gold >= 50 ? Colors.Yellow
+            : building.Gold > 0 ? Colors.White
+            : Colors.Gray;
+        _debugContainer.AddChild(goldLabel);
+        _debugLabels.Add(goldLabel);
+
+        // Economic info - use cost
+        if (building.Cost > 0)
+        {
+            var useCostLabel = new Label { Text = $"Use: {building.Cost}g" };
+            useCostLabel.AddThemeFontSizeOverride("font_size", 14);
+            useCostLabel.Modulate = Colors.Cyan;
+            _debugContainer.AddChild(useCostLabel);
+            _debugLabels.Add(useCostLabel);
+        }
+
         // Resource info
         if (
             building.ResourceType != null
@@ -112,12 +133,16 @@ public partial class BuildingInfoPanel : PanelContainer
             _debugContainer.AddChild(resourceLabel);
             _debugLabels.Add(resourceLabel);
 
-            // Can be worked at flag
+            // Work economics
             if (building.CanBeWorkedAt == true)
             {
-                var workLabel = new Label { Text = "Can be worked at" };
+                string workText =
+                    building.WorkBuyIn > 0
+                        ? $"Work: {building.WorkBuyIn}g in / {building.Payout}g out"
+                        : $"Work: {building.Payout}g out";
+                var workLabel = new Label { Text = workText };
                 workLabel.AddThemeFontSizeOverride("font_size", 14);
-                workLabel.Modulate = Colors.Cyan;
+                workLabel.Modulate = Colors.Green;
                 _debugContainer.AddChild(workLabel);
                 _debugLabels.Add(workLabel);
             }

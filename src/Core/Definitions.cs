@@ -54,6 +54,50 @@ public sealed class BuildingDef : IContentDef
     public float MaxResourceAmount { get; init; } = 100f;
     public float DepletionMult { get; init; } = 1f; // 0 = infinite resources, 1 = normal depletion
     public bool CanBeWorkedAt { get; init; } = false; // Can pawns work here to replenish resources?
+
+    // Economic system
+    public const int DefaultBaseCost = 10;
+    public const float DefaultBaseProduction = 2f;
+    public const int WorkBuyInThreshold = 10; // Payouts at or below this require no buy-in
+    public const int WorkBuyInDivisor = 2; // Buy-in = payout / this (for payouts above threshold)
+
+    public int BaseCost { get; init; } = DefaultBaseCost; // Base cost to use this building (scales with level)
+    public float BaseProduction { get; init; } = DefaultBaseProduction; // Payout multiplier (payout = cost × baseProduction)
+
+    /// <summary>
+    /// Get the cost to use this building at the given level.
+    /// </summary>
+    public int GetCost(int level = 0)
+    {
+        return (int)(BaseCost * Math.Pow(1.15, level));
+    }
+
+    /// <summary>
+    /// Get the payout for working at this building at the given level.
+    /// </summary>
+    public int GetPayout(int level = 0)
+    {
+        return (int)(GetCost(level) * BaseProduction);
+    }
+
+    /// <summary>
+    /// Get the buy-in required to work at this building at the given level.
+    /// Low-paying jobs (payout <= threshold) have no buy-in.
+    /// Higher-paying jobs require capital (payout / divisor).
+    /// </summary>
+    public int GetWorkBuyIn(int level = 0)
+    {
+        int payout = GetPayout(level);
+        if (payout <= WorkBuyInThreshold)
+            return 0;
+        return payout / WorkBuyInDivisor;
+    }
+
+    /// <summary>
+    /// Returns true if this building is a "gold source" (creates money from nothing when worked).
+    /// Currently, buildings with BaseCost = 0 are treated as gold sources.
+    /// </summary>
+    public bool IsGoldSource => BaseCost == 0;
 }
 
 // Action definition

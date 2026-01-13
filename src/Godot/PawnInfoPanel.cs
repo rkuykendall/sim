@@ -11,6 +11,9 @@ public partial class PawnInfoPanel : PanelContainer
     public NodePath MoodLabelPath { get; set; } = null!;
 
     [Export]
+    public NodePath GoldLabelPath { get; set; } = null!;
+
+    [Export]
     public NodePath ActionLabelPath { get; set; } = null!;
 
     [Export]
@@ -24,6 +27,7 @@ public partial class PawnInfoPanel : PanelContainer
 
     private Label? _nameLabel;
     private Label? _moodLabel;
+    private Label? _goldLabel;
     private Label? _actionLabel;
     private VBoxContainer? _needsContainer;
     private VBoxContainer? _buffsContainer;
@@ -38,6 +42,7 @@ public partial class PawnInfoPanel : PanelContainer
     {
         _nameLabel = GetNodeOrNull<Label>(NameLabelPath);
         _moodLabel = GetNodeOrNull<Label>(MoodLabelPath);
+        _goldLabel = GetNodeOrNull<Label>(GoldLabelPath);
         _actionLabel = GetNodeOrNull<Label>(ActionLabelPath);
         _needsContainer = GetNodeOrNull<VBoxContainer>(NeedsContainerPath);
         _buffsContainer = GetNodeOrNull<VBoxContainer>(BuffsContainerPath);
@@ -68,6 +73,16 @@ public partial class PawnInfoPanel : PanelContainer
                 pawn.Mood > 20 ? Colors.Lime
                 : pawn.Mood < -20 ? Colors.Red
                 : Colors.White;
+        }
+
+        if (_goldLabel != null)
+        {
+            _goldLabel.Text = $"Gold: {pawn.Gold}";
+            _goldLabel.Modulate =
+                pawn.Gold >= 100 ? Colors.Gold
+                : pawn.Gold >= 50 ? Colors.Yellow
+                : pawn.Gold > 0 ? Colors.White
+                : Colors.Red;
         }
 
         if (_actionLabel != null)

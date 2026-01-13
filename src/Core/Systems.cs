@@ -386,6 +386,31 @@ public sealed class ActionSystem : ISystem
                 }
             }
 
+            // Economic transaction: pawn pays cost to building
+            if (hasResources && buildingComp != null)
+            {
+                var buildingDefForCost = ctx.Content.Buildings[buildingComp.BuildingDefId];
+                int cost = buildingDefForCost.GetCost();
+
+                // Check if pawn can afford it
+                if (ctx.Entities.Gold.TryGetValue(pawnId, out var pawnGold))
+                {
+                    if (pawnGold.Amount < cost)
+                    {
+                        // Can't afford - cancel the benefit
+                        hasResources = false;
+                    }
+                    else
+                    {
+                        pawnGold.Amount -= cost;
+                        if (ctx.Entities.Gold.TryGetValue(targetId, out var buildingGold))
+                        {
+                            buildingGold.Amount += cost;
+                        }
+                    }
+                }
+            }
+
             // Satisfy the need only if resources are available
             if (
                 hasResources
@@ -567,6 +592,33 @@ public sealed class ActionSystem : ISystem
                     resourceComp.MaxAmount,
                     resourceComp.CurrentAmount + 30f
                 );
+            }
+
+            // Economic transaction: pawn pays buy-in, receives payout from building stores
+            if (buildingComp2 != null)
+            {
+                var buildingDefForPay = ctx.Content.Buildings[buildingComp2.BuildingDefId];
+                int buyIn = buildingDefForPay.GetWorkBuyIn();
+                int payout = buildingDefForPay.GetPayout();
+
+                if (ctx.Entities.Gold.TryGetValue(pawnId, out var pawnGold))
+                {
+                    // Deduct buy-in from pawn
+                    pawnGold.Amount -= buyIn;
+
+                    if (buildingDefForPay.IsGoldSource)
+                    {
+                        // Gold source buildings create money from nothing
+                        pawnGold.Amount += payout;
+                    }
+                    else if (ctx.Entities.Gold.TryGetValue(targetId, out var buildingGold))
+                    {
+                        // Pay from building's gold stores (limited to what's available)
+                        int actualPayout = Math.Min(payout, buildingGold.Amount);
+                        buildingGold.Amount -= actualPayout;
+                        pawnGold.Amount += actualPayout;
+                    }
+                }
             }
 
             // Satisfy the Purpose need
@@ -1095,6 +1147,13 @@ public sealed class AISystem : ISystem
         if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
             return null;
 
+        // Get pawn's gold for affordability check
+        int pawnGold = 0;
+        if (ctx.Entities.Gold.TryGetValue(pawnId, out var goldComp))
+        {
+            pawnGold = goldComp.Amount;
+        }
+
         EntityId? best = null;
         float bestScore = float.MinValue;
 
@@ -1106,6 +1165,10 @@ public sealed class AISystem : ISystem
             if (objDef.SatisfiesNeedId != needId)
                 continue;
             if (objComp.InUse)
+                continue;
+
+            // Skip buildings the pawn can't afford
+            if (pawnGold < objDef.GetCost())
                 continue;
 
             // Skip buildings that have resources but are empty
@@ -1164,6 +1227,13 @@ public sealed class AISystem : ISystem
         if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
             return null;
 
+        // Get pawn's gold for affordability check
+        int pawnGold = 0;
+        if (ctx.Entities.Gold.TryGetValue(pawnId, out var goldComp))
+        {
+            pawnGold = goldComp.Amount;
+        }
+
         EntityId? best = null;
         float bestScore = float.MinValue;
 
@@ -1176,6 +1246,10 @@ public sealed class AISystem : ISystem
             if (!objDef.CanBeWorkedAt)
                 continue;
             if (objComp.InUse)
+                continue;
+
+            // Skip buildings the pawn can't afford the work buy-in for
+            if (pawnGold < objDef.GetWorkBuyIn())
                 continue;
 
             // Only work at buildings that have resources and need replenishment

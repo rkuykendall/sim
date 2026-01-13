@@ -125,7 +125,12 @@ public sealed class TestSimulationBuilder
         float grantsBuff = 0f,
         int buffDuration = 0,
         List<(int, int)>? useAreas = null,
-        int tileSize = 1
+        int tileSize = 1,
+        int baseCost = BuildingDef.DefaultBaseCost,
+        float baseProduction = BuildingDef.DefaultBaseProduction,
+        bool canBeWorkedAt = false,
+        string? resourceType = null,
+        float maxResourceAmount = 100f
     )
     {
         var obj = new BuildingDef
@@ -139,6 +144,11 @@ public sealed class TestSimulationBuilder
             SatisfiesNeedId = satisfiesNeedId,
             GrantsBuff = grantsBuff,
             BuffDuration = buffDuration,
+            BaseCost = baseCost,
+            BaseProduction = baseProduction,
+            CanBeWorkedAt = canBeWorkedAt,
+            ResourceType = resourceType,
+            MaxResourceAmount = maxResourceAmount,
         };
         return _content.RegisterBuilding(key, obj);
     }

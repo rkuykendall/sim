@@ -67,3 +67,9 @@ public sealed class AttachmentComponent
     // Higher values = pawn uses this building more often
     public Dictionary<EntityId, int> UserAttachments { get; set; } = new();
 }
+
+// Gold/currency storage (for pawns and buildings)
+public sealed class GoldComponent
+{
+    public int Amount { get; set; } = 0;
+}

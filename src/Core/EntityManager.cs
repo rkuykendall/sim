@@ -34,10 +34,12 @@ public sealed class EntityManager
     /// <param name="position">The position to place the pawn</param>
     /// <param name="name">The pawn's name (defaults to "Pawn")</param>
     /// <param name="needs">The pawn's needs (defaults to empty dictionary)</param>
+    /// <param name="startingGold">The pawn's starting gold (defaults to 100)</param>
     public EntityId CreatePawn(
         TileCoord position,
         string name = "Pawn",
-        Dictionary<int, float>? needs = null
+        Dictionary<int, float>? needs = null,
+        int startingGold = 100
     )
     {
         var id = Create();
@@ -51,6 +53,7 @@ public sealed class EntityManager
         };
         Buffs[id] = new BuffComponent();
         Actions[id] = new ActionComponent();
+        Gold[id] = new GoldComponent { Amount = startingGold };
         return id;
     }
 
@@ -66,6 +69,7 @@ public sealed class EntityManager
             BuildingDefId = buildingDefId,
             ColorIndex = colorIndex,
         };
+        Gold[id] = new GoldComponent { Amount = 0 };
         return id;
     }
 
@@ -78,6 +82,7 @@ public sealed class EntityManager
     public readonly Dictionary<EntityId, BuildingComponent> Buildings = new();
     public readonly Dictionary<EntityId, ResourceComponent> Resources = new();
     public readonly Dictionary<EntityId, AttachmentComponent> Attachments = new();
+    public readonly Dictionary<EntityId, GoldComponent> Gold = new();
 
     public IEnumerable<EntityId> AllPawns() => Pawns.Keys;
 
@@ -98,5 +103,6 @@ public sealed class EntityManager
         Buildings.Remove(id);
         Resources.Remove(id);
         Attachments.Remove(id);
+        Gold.Remove(id);
     }
 }
