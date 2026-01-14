@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Godot;
 using SimGame.Core;
@@ -124,7 +126,8 @@ public partial class GameRoot : Node2D
     {
         ZIndex = ZIndexConstants.UIOverlay;
 
-        var contentPath = ProjectSettings.GlobalizePath("res://content");
+        var contentPath = GetContentPath();
+        GD.Print($"[GameRoot] Content path: {contentPath}");
         var content = ContentLoader.LoadAll(contentPath);
 
         _sim = new Simulation(content);
@@ -1553,6 +1556,35 @@ public partial class GameRoot : Node2D
         else
         {
             GD.PrintErr("[GameRoot] ERROR: ThemeSystem is null!");
+        }
+    }
+
+    /// <summary>
+    /// Get the path to the content folder, handling both editor and exported builds.
+    /// </summary>
+    private static string GetContentPath()
+    {
+        // In editor, use res:// which points to project root
+        if (OS.HasFeature("editor"))
+        {
+            return ProjectSettings.GlobalizePath("res://content");
+        }
+
+        // In exported build, find content relative to executable
+        var exePath = OS.GetExecutablePath();
+        var exeDir = Path.GetDirectoryName(exePath) ?? "";
+
+        if (OS.HasFeature("macos"))
+        {
+            // macOS: executable is at SimGame.app/Contents/MacOS/SimGame
+            // content is at SimGame.app/Contents/Resources/content
+            var resourcesPath = Path.Combine(exeDir, "..", "Resources", "content");
+            return Path.GetFullPath(resourcesPath);
+        }
+        else
+        {
+            // Windows/Linux: content is next to executable
+            return Path.Combine(exeDir, "content");
         }
     }
 }

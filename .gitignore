@@ -18,3 +18,6 @@ REFERENCE/
 
 # Too large for git at this time
 music/
+
+# Build outputs
+builds/
