@@ -1363,7 +1363,9 @@ public partial class GameRoot : Node2D
                 // Hide pawn when using or working at a building (classic RTS style)
                 bool isInsideBuilding =
                     pawn.CurrentActionType == SimGame.Core.ActionType.UseBuilding
-                    || pawn.CurrentActionType == SimGame.Core.ActionType.Work;
+                    || pawn.CurrentActionType == SimGame.Core.ActionType.Work
+                    || pawn.CurrentActionType == SimGame.Core.ActionType.PickUp
+                    || pawn.CurrentActionType == SimGame.Core.ActionType.DropOff;
                 pv.Visible = !isInsideBuilding;
             }
         }

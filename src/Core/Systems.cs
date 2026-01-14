@@ -225,6 +225,12 @@ public sealed class ActionSystem : ISystem
                 case ActionType.Work:
                     ExecuteWork(ctx, pawnId, actionComp);
                     break;
+                case ActionType.PickUp:
+                    ExecutePickUp(ctx, pawnId, actionComp);
+                    break;
+                case ActionType.DropOff:
+                    ExecuteDropOff(ctx, pawnId, actionComp);
+                    break;
                 case ActionType.Idle:
                     if (ctx.Time.Tick - actionComp.ActionStartTick >= action.DurationTicks)
                         actionComp.CurrentAction = null;
@@ -699,6 +705,353 @@ public sealed class ActionSystem : ISystem
         }
     }
 
+    private void ExecutePickUp(SimContext ctx, EntityId pawnId, ActionComponent actionComp)
+    {
+        var action = actionComp.CurrentAction!;
+
+        // Get inventory
+        if (!ctx.Entities.Inventory.TryGetValue(pawnId, out var inventory))
+            return;
+
+        // Picking up from a building
+        if (action.TargetEntity.HasValue)
+        {
+            var sourceId = action.TargetEntity.Value;
+
+            if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
+                return;
+            if (!ctx.Entities.Positions.TryGetValue(sourceId, out var objPos))
+                return;
+            if (!ctx.Entities.Buildings.TryGetValue(sourceId, out var buildingComp))
+                return;
+
+            var buildingDef = ctx.Content.Buildings[buildingComp.BuildingDefId];
+
+            // Check if pawn is in a valid use area for this building
+            bool inUseArea = IsInUseArea(pawnPos.Coord, objPos.Coord, buildingDef);
+
+            if (!inUseArea)
+            {
+                // Need to move to a valid use area first
+                var useAreaTarget = FindValidUseArea(
+                    ctx.World,
+                    ctx.Entities,
+                    objPos.Coord,
+                    pawnPos.Coord,
+                    buildingDef,
+                    pawnId
+                );
+
+                if (useAreaTarget == null)
+                {
+                    actionComp.CurrentAction = null;
+                    actionComp.ActionQueue.Clear();
+                    return;
+                }
+
+                actionComp.ActionQueue = new Queue<ActionDef>(
+                    new[] { action }.Concat(actionComp.ActionQueue)
+                );
+                actionComp.CurrentAction = new ActionDef
+                {
+                    Type = ActionType.MoveTo,
+                    Animation = AnimationType.Walk,
+                    TargetCoord = useAreaTarget,
+                    DurationTicks = 0,
+                    DisplayName = $"Going to pick up {action.ResourceType}",
+                };
+                actionComp.ActionStartTick = ctx.Time.Tick;
+                return;
+            }
+
+            // Mark building in use while picking up
+            buildingComp.InUse = true;
+            buildingComp.UsedBy = pawnId;
+
+            int elapsed = ctx.Time.Tick - actionComp.ActionStartTick;
+            if (elapsed >= action.DurationTicks)
+            {
+                // Transfer resources from building to pawn inventory
+                if (ctx.Entities.Resources.TryGetValue(sourceId, out var sourceResource))
+                {
+                    float transferAmount = Math.Min(
+                        action.ResourceAmount > 0 ? action.ResourceAmount : 30f,
+                        sourceResource.CurrentAmount
+                    );
+
+                    if (transferAmount > 0)
+                    {
+                        sourceResource.CurrentAmount -= transferAmount;
+                        inventory.ResourceType = sourceResource.ResourceType;
+                        inventory.Amount = transferAmount;
+                    }
+                }
+
+                // Release building
+                buildingComp.InUse = false;
+                buildingComp.UsedBy = null;
+                actionComp.CurrentAction = null;
+            }
+        }
+        // Picking up from terrain (harvesting)
+        else if (action.TerrainTargetCoord.HasValue)
+        {
+            if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
+                return;
+
+            var targetCoord = action.TerrainTargetCoord.Value;
+
+            // Check if we need to move adjacent to the terrain tile
+            int dist =
+                Math.Abs(pawnPos.Coord.X - targetCoord.X)
+                + Math.Abs(pawnPos.Coord.Y - targetCoord.Y);
+
+            if (dist > 1)
+            {
+                // Find an adjacent walkable tile to harvest from
+                var adjacentTile = FindAdjacentWalkable(ctx.World, targetCoord, pawnPos.Coord);
+
+                if (adjacentTile == null)
+                {
+                    actionComp.CurrentAction = null;
+                    actionComp.ActionQueue.Clear();
+                    return;
+                }
+
+                actionComp.ActionQueue = new Queue<ActionDef>(
+                    new[] { action }.Concat(actionComp.ActionQueue)
+                );
+                actionComp.CurrentAction = new ActionDef
+                {
+                    Type = ActionType.MoveTo,
+                    Animation = AnimationType.Walk,
+                    TargetCoord = adjacentTile,
+                    DurationTicks = 0,
+                    DisplayName = $"Going to harvest",
+                };
+                actionComp.ActionStartTick = ctx.Time.Tick;
+                return;
+            }
+
+            int elapsed = ctx.Time.Tick - actionComp.ActionStartTick;
+            if (elapsed >= action.DurationTicks)
+            {
+                // Terrain harvesting is infinite - just give resources
+                inventory.ResourceType = action.ResourceType;
+                inventory.Amount = action.ResourceAmount > 0 ? action.ResourceAmount : 30f;
+                actionComp.CurrentAction = null;
+            }
+        }
+        else
+        {
+            // No valid target
+            actionComp.CurrentAction = null;
+        }
+    }
+
+    private void ExecuteDropOff(SimContext ctx, EntityId pawnId, ActionComponent actionComp)
+    {
+        var action = actionComp.CurrentAction!;
+
+        if (!action.TargetEntity.HasValue)
+        {
+            actionComp.CurrentAction = null;
+            return;
+        }
+
+        var targetId = action.TargetEntity.Value;
+
+        if (!ctx.Entities.Inventory.TryGetValue(pawnId, out var inventory))
+            return;
+        if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
+            return;
+        if (!ctx.Entities.Positions.TryGetValue(targetId, out var objPos))
+            return;
+        if (!ctx.Entities.Buildings.TryGetValue(targetId, out var buildingComp))
+            return;
+
+        var buildingDef = ctx.Content.Buildings[buildingComp.BuildingDefId];
+
+        // Check if pawn is in a valid use area for this building
+        bool inUseArea = IsInUseArea(pawnPos.Coord, objPos.Coord, buildingDef);
+
+        if (!inUseArea)
+        {
+            // Need to move to a valid use area first
+            var useAreaTarget = FindValidUseArea(
+                ctx.World,
+                ctx.Entities,
+                objPos.Coord,
+                pawnPos.Coord,
+                buildingDef,
+                pawnId
+            );
+
+            if (useAreaTarget == null)
+            {
+                actionComp.CurrentAction = null;
+                actionComp.ActionQueue.Clear();
+                return;
+            }
+
+            actionComp.ActionQueue = new Queue<ActionDef>(
+                new[] { action }.Concat(actionComp.ActionQueue)
+            );
+            actionComp.CurrentAction = new ActionDef
+            {
+                Type = ActionType.MoveTo,
+                Animation = AnimationType.Walk,
+                TargetCoord = useAreaTarget,
+                DurationTicks = 0,
+                DisplayName = $"Going to deliver {inventory.ResourceType}",
+            };
+            actionComp.ActionStartTick = ctx.Time.Tick;
+            return;
+        }
+
+        // Mark building in use while dropping off
+        buildingComp.InUse = true;
+        buildingComp.UsedBy = pawnId;
+
+        int elapsed = ctx.Time.Tick - actionComp.ActionStartTick;
+        if (elapsed >= action.DurationTicks)
+        {
+            // Transfer resources from inventory to building
+            if (
+                ctx.Entities.Resources.TryGetValue(targetId, out var destResource)
+                && inventory.ResourceType == destResource.ResourceType
+                && inventory.Amount > 0
+            )
+            {
+                float transferAmount = Math.Min(
+                    inventory.Amount,
+                    destResource.MaxAmount - destResource.CurrentAmount
+                );
+                destResource.CurrentAmount += transferAmount;
+                inventory.Amount -= transferAmount;
+                if (inventory.Amount <= 0)
+                {
+                    inventory.ResourceType = null;
+                    inventory.Amount = 0;
+                }
+            }
+
+            // Economic transaction: pawn pays buy-in, receives payout from building stores
+            int buyIn = buildingDef.GetWorkBuyIn();
+            int payout = buildingDef.GetPayout();
+
+            if (ctx.Entities.Gold.TryGetValue(pawnId, out var pawnGold))
+            {
+                pawnGold.Amount -= buyIn;
+
+                if (ctx.Entities.Gold.TryGetValue(targetId, out var buildingGold))
+                {
+                    int actualPayout = Math.Min(payout, buildingGold.Amount);
+                    buildingGold.Amount -= actualPayout;
+                    pawnGold.Amount += actualPayout;
+                }
+            }
+
+            // Satisfy the Purpose need if specified
+            if (
+                action.SatisfiesNeedId.HasValue
+                && ctx.Entities.Needs.TryGetValue(pawnId, out var needs)
+            )
+            {
+                if (needs.Needs.ContainsKey(action.SatisfiesNeedId.Value))
+                {
+                    needs.Needs[action.SatisfiesNeedId.Value] = Math.Clamp(
+                        needs.Needs[action.SatisfiesNeedId.Value] + action.NeedSatisfactionAmount,
+                        0f,
+                        100f
+                    );
+                }
+            }
+
+            // Grant "Productive" buff
+            if (ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs))
+            {
+                buffs.ActiveBuffs.RemoveAll(b =>
+                    b.Source == BuffSource.Work && b.SourceId == buildingDef.Id
+                );
+
+                buffs.ActiveBuffs.Add(
+                    new BuffInstance
+                    {
+                        Source = BuffSource.Work,
+                        SourceId = buildingDef.Id,
+                        MoodOffset = 15f,
+                        StartTick = ctx.Time.Tick,
+                        EndTick = ctx.Time.Tick + 2400,
+                    }
+                );
+            }
+
+            // Increment attachment
+            if (ctx.Entities.Attachments.TryGetValue(targetId, out var attachmentComp))
+            {
+                if (!attachmentComp.UserAttachments.ContainsKey(pawnId))
+                {
+                    attachmentComp.UserAttachments[pawnId] = 0;
+                }
+                attachmentComp.UserAttachments[pawnId] = Math.Min(
+                    10,
+                    attachmentComp.UserAttachments[pawnId] + 1
+                );
+            }
+
+            // Release building
+            buildingComp.InUse = false;
+            buildingComp.UsedBy = null;
+
+            // Add a brief happy idle action
+            if (action.SatisfiesNeedId.HasValue)
+            {
+                actionComp.ActionQueue.Enqueue(
+                    new ActionDef
+                    {
+                        Type = ActionType.Idle,
+                        Animation = AnimationType.Idle,
+                        DurationTicks = 10,
+                        DisplayName = "Feeling Productive",
+                        Expression = ExpressionType.Happy,
+                        ExpressionIconDefId = action.SatisfiesNeedId.Value,
+                    }
+                );
+            }
+
+            actionComp.CurrentAction = null;
+        }
+    }
+
+    /// <summary>
+    /// Find an adjacent walkable tile to a given coordinate.
+    /// </summary>
+    private TileCoord? FindAdjacentWalkable(World world, TileCoord target, TileCoord from)
+    {
+        var directions = new[] { (0, 1), (0, -1), (1, 0), (-1, 0) };
+        TileCoord? best = null;
+        int bestDist = int.MaxValue;
+
+        foreach (var (dx, dy) in directions)
+        {
+            var adj = new TileCoord(target.X + dx, target.Y + dy);
+            if (!world.IsInBounds(adj))
+                continue;
+            if (!world.IsWalkable(adj))
+                continue;
+
+            int dist = Math.Abs(adj.X - from.X) + Math.Abs(adj.Y - from.Y);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                best = adj;
+            }
+        }
+
+        return best;
+    }
+
     /// <summary>
     /// Check if a pawn position is within a valid use area for a building.
     /// </summary>
@@ -954,6 +1307,7 @@ public sealed class AISystem : ISystem
 
     /// <summary>
     /// Queue an action to work at a specific building (replenish resources).
+    /// Routes to different work types based on building configuration.
     /// </summary>
     private void QueueWorkAtBuilding(
         SimContext ctx,
@@ -962,20 +1316,274 @@ public sealed class AISystem : ISystem
         int purposeNeedId
     )
     {
-        var buildingComp2 = ctx.Entities.Buildings[targetBuilding];
-        var buildingDef2 = ctx.Content.Buildings[buildingComp2.BuildingDefId];
+        var buildingComp = ctx.Entities.Buildings[targetBuilding];
+        var buildingDef = ctx.Content.Buildings[buildingComp.BuildingDefId];
+
+        switch (buildingDef.WorkType)
+        {
+            case BuildingWorkType.Direct:
+                QueueDirectWork(ctx, actionComp, targetBuilding, buildingDef, purposeNeedId);
+                break;
+            case BuildingWorkType.HaulFromBuilding:
+                QueueHaulFromBuildingWork(
+                    ctx,
+                    actionComp,
+                    targetBuilding,
+                    buildingDef,
+                    purposeNeedId
+                );
+                break;
+            case BuildingWorkType.HaulFromTerrain:
+                QueueHaulFromTerrainWork(
+                    ctx,
+                    actionComp,
+                    targetBuilding,
+                    buildingDef,
+                    purposeNeedId
+                );
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Queue direct work at a building (original behavior - work creates resources).
+    /// </summary>
+    private void QueueDirectWork(
+        SimContext ctx,
+        ActionComponent actionComp,
+        EntityId targetBuilding,
+        BuildingDef buildingDef,
+        int purposeNeedId
+    )
+    {
         actionComp.ActionQueue.Enqueue(
             new ActionDef
             {
                 Type = ActionType.Work,
                 Animation = AnimationType.Pickaxe,
                 TargetEntity = targetBuilding,
-                DurationTicks = 2500, // Work takes 2.5 seconds
+                DurationTicks = 2500,
                 SatisfiesNeedId = purposeNeedId,
-                NeedSatisfactionAmount = 40f, // Working satisfies Purpose moderately
-                DisplayName = $"Going to work at {buildingDef2.Name}",
+                NeedSatisfactionAmount = 40f,
+                DisplayName = $"Going to work at {buildingDef.Name}",
             }
         );
+    }
+
+    /// <summary>
+    /// Queue hauling work from another building to the destination.
+    /// </summary>
+    private void QueueHaulFromBuildingWork(
+        SimContext ctx,
+        ActionComponent actionComp,
+        EntityId destinationId,
+        BuildingDef destDef,
+        int purposeNeedId
+    )
+    {
+        // Find source building with the required resource
+        var sourceBuilding = FindSourceBuilding(ctx, destDef.HaulSourceResourceType, destinationId);
+        if (sourceBuilding == null)
+        {
+            // No source available - fall back to wandering
+            return;
+        }
+
+        var sourceBuildingComp = ctx.Entities.Buildings[sourceBuilding.Value];
+        var sourceDef = ctx.Content.Buildings[sourceBuildingComp.BuildingDefId];
+
+        // Queue: PickUp from source -> DropOff at destination
+        actionComp.ActionQueue.Enqueue(
+            new ActionDef
+            {
+                Type = ActionType.PickUp,
+                Animation = AnimationType.Idle, // Pawn is hidden during pickup
+                TargetEntity = sourceBuilding,
+                DurationTicks = 100, // Quick loading time
+                ResourceType = destDef.HaulSourceResourceType,
+                ResourceAmount = 30f,
+                DisplayName = $"Loading {destDef.HaulSourceResourceType} from {sourceDef.Name}",
+            }
+        );
+
+        actionComp.ActionQueue.Enqueue(
+            new ActionDef
+            {
+                Type = ActionType.DropOff,
+                Animation = AnimationType.Idle, // Pawn is hidden during dropoff
+                TargetEntity = destinationId,
+                DurationTicks = 100, // Quick unloading time
+                ResourceType = destDef.HaulSourceResourceType,
+                ResourceAmount = 30f,
+                SatisfiesNeedId = purposeNeedId,
+                NeedSatisfactionAmount = 40f,
+                DisplayName = $"Delivering to {destDef.Name}",
+            }
+        );
+    }
+
+    /// <summary>
+    /// Queue hauling work from terrain to the destination building.
+    /// </summary>
+    private void QueueHaulFromTerrainWork(
+        SimContext ctx,
+        ActionComponent actionComp,
+        EntityId destinationId,
+        BuildingDef destDef,
+        int purposeNeedId
+    )
+    {
+        // Find nearest terrain tile of the correct type
+        var terrainTile = FindNearestTerrain(ctx, destinationId, destDef.HaulSourceTerrainKey);
+        if (terrainTile == null)
+        {
+            // No terrain available - fall back to wandering
+            return;
+        }
+
+        // Queue: PickUp from terrain -> DropOff at destination
+        actionComp.ActionQueue.Enqueue(
+            new ActionDef
+            {
+                Type = ActionType.PickUp,
+                Animation = AnimationType.Axe, // Chopping animation for trees
+                TerrainTargetCoord = terrainTile,
+                DurationTicks = 1500, // Longer harvest time
+                ResourceType = destDef.ResourceType, // Output resource type (e.g., "lumber")
+                ResourceAmount = 30f,
+                DisplayName = $"Harvesting {destDef.HaulSourceTerrainKey}",
+            }
+        );
+
+        actionComp.ActionQueue.Enqueue(
+            new ActionDef
+            {
+                Type = ActionType.DropOff,
+                Animation = AnimationType.Idle, // Pawn is hidden during dropoff
+                TargetEntity = destinationId,
+                DurationTicks = 100, // Quick unloading time
+                ResourceType = destDef.ResourceType,
+                ResourceAmount = 30f,
+                SatisfiesNeedId = purposeNeedId,
+                NeedSatisfactionAmount = 40f,
+                DisplayName = $"Delivering to {destDef.Name}",
+            }
+        );
+    }
+
+    /// <summary>
+    /// Find a source building with the required resource type.
+    /// </summary>
+    private EntityId? FindSourceBuilding(SimContext ctx, string? resourceType, EntityId excludeId)
+    {
+        if (resourceType == null)
+            return null;
+
+        EntityId? best = null;
+        float bestScore = float.MinValue;
+
+        foreach (var objId in ctx.Entities.AllBuildings())
+        {
+            if (objId == excludeId)
+                continue;
+
+            var objComp = ctx.Entities.Buildings[objId];
+            if (objComp.InUse)
+                continue;
+
+            // Must have matching resource type and resources available
+            if (!ctx.Entities.Resources.TryGetValue(objId, out var resourceComp))
+                continue;
+            if (resourceComp.ResourceType != resourceType)
+                continue;
+            if (resourceComp.CurrentAmount < 10) // Minimum threshold
+                continue;
+
+            // Score by resource amount (prefer fuller buildings)
+            float score = resourceComp.CurrentAmount;
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = objId;
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>
+    /// Find the nearest terrain tile of the specified type near a building.
+    /// </summary>
+    private TileCoord? FindNearestTerrain(
+        SimContext ctx,
+        EntityId nearBuildingId,
+        string? terrainKey
+    )
+    {
+        if (terrainKey == null)
+            return null;
+
+        // Get terrain def ID from key
+        var terrainDefId = ctx.Content.GetTerrainId(terrainKey);
+        if (!terrainDefId.HasValue)
+            return null;
+
+        if (!ctx.Entities.Positions.TryGetValue(nearBuildingId, out var buildingPos))
+            return null;
+
+        var center = buildingPos.Coord;
+        TileCoord? best = null;
+        int bestDist = int.MaxValue;
+
+        // Search in expanding radius
+        int searchRadius = 20;
+        for (int dx = -searchRadius; dx <= searchRadius; dx++)
+        {
+            for (int dy = -searchRadius; dy <= searchRadius; dy++)
+            {
+                var coord = new TileCoord(center.X + dx, center.Y + dy);
+                if (!ctx.World.IsInBounds(coord))
+                    continue;
+
+                var tile = ctx.World.GetTile(coord);
+
+                // Check base or overlay terrain
+                bool matches =
+                    tile.BaseTerrainTypeId == terrainDefId.Value
+                    || tile.OverlayTerrainTypeId == terrainDefId.Value;
+
+                if (!matches)
+                    continue;
+
+                // Must have an adjacent walkable tile
+                if (!HasAdjacentWalkable(ctx.World, coord))
+                    continue;
+
+                int dist = Math.Abs(dx) + Math.Abs(dy);
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    best = coord;
+                }
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>
+    /// Check if a tile has at least one adjacent walkable tile.
+    /// </summary>
+    private bool HasAdjacentWalkable(World world, TileCoord coord)
+    {
+        var directions = new[] { (0, 1), (0, -1), (1, 0), (-1, 0) };
+        foreach (var (dx, dy) in directions)
+        {
+            var adj = new TileCoord(coord.X + dx, coord.Y + dy);
+            if (world.IsInBounds(adj) && world.IsWalkable(adj))
+                return true;
+        }
+        return false;
     }
 
     /// <summary>
@@ -1165,6 +1773,10 @@ public sealed class AISystem : ISystem
             if (objDef.SatisfiesNeedId != needId)
                 continue;
             if (objComp.InUse)
+                continue;
+
+            // Skip buildings that don't sell to consumers
+            if (!objDef.CanSellToConsumers)
                 continue;
 
             // Skip buildings the pawn can't afford

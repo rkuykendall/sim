@@ -54,6 +54,7 @@ public sealed class EntityManager
         Buffs[id] = new BuffComponent();
         Actions[id] = new ActionComponent();
         Gold[id] = new GoldComponent { Amount = startingGold };
+        Inventory[id] = new InventoryComponent();
         return id;
     }
 
@@ -83,6 +84,7 @@ public sealed class EntityManager
     public readonly Dictionary<EntityId, ResourceComponent> Resources = new();
     public readonly Dictionary<EntityId, AttachmentComponent> Attachments = new();
     public readonly Dictionary<EntityId, GoldComponent> Gold = new();
+    public readonly Dictionary<EntityId, InventoryComponent> Inventory = new();
 
     public IEnumerable<EntityId> AllPawns() => Pawns.Keys;
 
@@ -104,5 +106,6 @@ public sealed class EntityManager
         Resources.Remove(id);
         Attachments.Remove(id);
         Gold.Remove(id);
+        Inventory.Remove(id);
     }
 }

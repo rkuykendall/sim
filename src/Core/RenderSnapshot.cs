@@ -20,6 +20,10 @@ public sealed class RenderPawn
     // Economic info
     public int Gold { get; init; }
 
+    // Inventory for hauling
+    public string? CarryingResourceType { get; init; }
+    public float CarryingAmount { get; init; }
+
     // Debug: pathfinding info
     public (int X, int Y)? TargetTile { get; init; }
     public IReadOnlyList<(int X, int Y)>? CurrentPath { get; init; }
@@ -179,6 +183,15 @@ public static class RenderSnapshotBuilder
                 pawnGold = goldComp.Amount;
             }
 
+            // Get pawn inventory (what they're carrying)
+            string? carryingType = null;
+            float carryingAmount = 0f;
+            if (sim.Entities.Inventory.TryGetValue(pawnId, out var inventory))
+            {
+                carryingType = inventory.ResourceType;
+                carryingAmount = inventory.Amount;
+            }
+
             pawns.Add(
                 new RenderPawn
                 {
@@ -193,6 +206,8 @@ public static class RenderSnapshotBuilder
                     Expression = action?.CurrentAction?.Expression,
                     ExpressionIconDefId = action?.CurrentAction?.ExpressionIconDefId,
                     Gold = pawnGold,
+                    CarryingResourceType = carryingType,
+                    CarryingAmount = carryingAmount,
                     TargetTile = targetTile,
                     CurrentPath = pathCoords,
                     PathIndex = pathIndex,

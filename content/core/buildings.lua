@@ -24,6 +24,8 @@ Buildings = {
         tileSize = 2,
         baseCost = 5,           -- Low cost, entry-level job (0 buy-in)
         baseProduction = 2.0,   -- Payout = 10g
+        workType = "direct",    -- Work creates food here
+        canSellToConsumers = false, -- Pawns buy food at Market, not Farm
     },
     Market = {
         satisfiesNeed = "Hunger",
@@ -37,6 +39,9 @@ Buildings = {
         tileSize = 2,
         baseCost = 10,          -- Medium cost, requires capital (10g buy-in)
         baseProduction = 2.0,   -- Payout = 20g
+        workType = "haulFromBuilding", -- Work = haul food from Farm
+        haulSourceResourceType = "food",
+        canSellToConsumers = true, -- Pawns buy food here
     },
     Well = {
         satisfiesNeed = "Hygiene",
@@ -58,6 +63,22 @@ Buildings = {
         tileSize = 2,
         baseCost = 8,           -- Medium-low cost social building
         baseProduction = 1.5,
+    },
+    LumberMill = {
+        satisfiesNeed = "Purpose",
+        grantsBuff = 10,        -- Productive
+        buffDuration = 2400,    -- 2 minutes
+        spriteKey = "lumber_mill",     -- TODO: add lumber mill sprite
+        resourceType = "lumber",
+        maxResourceAmount = 100,
+        depletionMult = 0.0,    -- Lumber doesn't deplete from mill use (it's sold elsewhere)
+        canBeWorkedAt = true,
+        tileSize = 2,
+        baseCost = 8,           -- Medium cost
+        baseProduction = 2.5,   -- Payout = 20g
+        workType = "haulFromTerrain", -- Work = chop trees, bring lumber
+        haulSourceTerrainKey = "Trees",
+        canSellToConsumers = false, -- Just a production building
     },
     -- Theatre = {
     --     satisfiesNeed = "Social",

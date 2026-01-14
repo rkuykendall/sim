@@ -73,3 +73,11 @@ public sealed class GoldComponent
 {
     public int Amount { get; set; } = 0;
 }
+
+// Inventory for pawns carrying resources during hauling
+public sealed class InventoryComponent
+{
+    public string? ResourceType { get; set; } = null; // null = empty hands
+    public float Amount { get; set; } = 0f;
+    public float MaxAmount { get; set; } = 50f; // Default carry capacity
+}

@@ -34,6 +34,7 @@ public static class SpriteResourceManager
         ["market"] = "res://sprites/buildings/market.png",
         ["well"] = "res://sprites/buildings/well.png",
         ["tavern"] = "res://sprites/buildings/tavern.png",
+        ["lumber_mill"] = "res://sprites/buildings/lumber_mill.png",
 
         // Character sprites
         ["character_walk"] = "res://sprites/characters/character_walk.png",

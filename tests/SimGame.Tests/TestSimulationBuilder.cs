@@ -130,7 +130,11 @@ public sealed class TestSimulationBuilder
         float baseProduction = BuildingDef.DefaultBaseProduction,
         bool canBeWorkedAt = false,
         string? resourceType = null,
-        float maxResourceAmount = 100f
+        float maxResourceAmount = 100f,
+        BuildingWorkType workType = BuildingWorkType.Direct,
+        string? haulSourceResourceType = null,
+        string? haulSourceTerrainKey = null,
+        bool canSellToConsumers = true
     )
     {
         var obj = new BuildingDef
@@ -149,6 +153,10 @@ public sealed class TestSimulationBuilder
             CanBeWorkedAt = canBeWorkedAt,
             ResourceType = resourceType,
             MaxResourceAmount = maxResourceAmount,
+            WorkType = workType,
+            HaulSourceResourceType = haulSourceResourceType,
+            HaulSourceTerrainKey = haulSourceTerrainKey,
+            CanSellToConsumers = canSellToConsumers,
         };
         return _content.RegisterBuilding(key, obj);
     }

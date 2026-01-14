@@ -12,6 +12,14 @@ public enum BuffSource
     Work, // Applied by working at a building
 }
 
+// Building work types for the hauling system
+public enum BuildingWorkType
+{
+    Direct, // Work creates resources at this building (default behavior)
+    HaulFromBuilding, // Work = haul resources from another building
+    HaulFromTerrain, // Work = harvest resources from terrain tiles
+}
+
 public sealed class BuffInstance
 {
     public BuffSource Source;
@@ -54,6 +62,12 @@ public sealed class BuildingDef : IContentDef
     public float MaxResourceAmount { get; init; } = 100f;
     public float DepletionMult { get; init; } = 1f; // 0 = infinite resources, 1 = normal depletion
     public bool CanBeWorkedAt { get; init; } = false; // Can pawns work here to replenish resources?
+
+    // Hauling system
+    public BuildingWorkType WorkType { get; init; } = BuildingWorkType.Direct;
+    public string? HaulSourceResourceType { get; init; } // Resource type to haul (for HaulFromBuilding)
+    public string? HaulSourceTerrainKey { get; init; } // Terrain type to harvest from (for HaulFromTerrain, e.g., "Trees")
+    public bool CanSellToConsumers { get; init; } = true; // Whether consumers can buy resources here
 
     // Economic system
     public const int DefaultBaseCost = 10;
@@ -107,6 +121,8 @@ public enum ActionType
     MoveTo,
     UseBuilding,
     Work,
+    PickUp, // Pick up resources from building or terrain
+    DropOff, // Drop off resources at destination building
 }
 
 /// <summary>
@@ -152,4 +168,9 @@ public sealed class ActionDef
     // Expression bubble data (shown while performing this action)
     public ExpressionType? Expression { get; init; }
     public int? ExpressionIconDefId { get; init; } // Need def ID for icon (shows need sprite)
+
+    // Hauling context
+    public TileCoord? TerrainTargetCoord { get; init; } // For terrain harvesting (pickup from tile)
+    public string? ResourceType { get; init; } // Resource being hauled
+    public float ResourceAmount { get; init; } // Amount to transfer
 }

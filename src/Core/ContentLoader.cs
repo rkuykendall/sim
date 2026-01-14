@@ -236,6 +236,33 @@ public static class ContentLoader
                 ? BuildingDef.DefaultBaseProduction
                 : (float)baseProductionData.Number;
 
+            // Hauling system properties
+            var workTypeData = data.Get("workType");
+            var workType = workTypeData.IsNil()
+                ? BuildingWorkType.Direct
+                : workTypeData.String switch
+                {
+                    "direct" => BuildingWorkType.Direct,
+                    "haulFromBuilding" => BuildingWorkType.HaulFromBuilding,
+                    "haulFromTerrain" => BuildingWorkType.HaulFromTerrain,
+                    _ => BuildingWorkType.Direct,
+                };
+
+            var haulSourceResourceTypeData = data.Get("haulSourceResourceType");
+            var haulSourceResourceType = haulSourceResourceTypeData.IsNil()
+                ? null
+                : haulSourceResourceTypeData.String;
+
+            var haulSourceTerrainKeyData = data.Get("haulSourceTerrainKey");
+            var haulSourceTerrainKey = haulSourceTerrainKeyData.IsNil()
+                ? null
+                : haulSourceTerrainKeyData.String;
+
+            var canSellToConsumersData = data.Get("canSellToConsumers");
+            var canSellToConsumers = canSellToConsumersData.IsNil()
+                ? true
+                : canSellToConsumersData.Boolean;
+
             var building = new BuildingDef
             {
                 Name = key,
@@ -258,6 +285,10 @@ public static class ContentLoader
                 CanBeWorkedAt = canBeWorkedAt,
                 BaseCost = baseCost,
                 BaseProduction = baseProduction,
+                WorkType = workType,
+                HaulSourceResourceType = haulSourceResourceType,
+                HaulSourceTerrainKey = haulSourceTerrainKey,
+                CanSellToConsumers = canSellToConsumers,
             };
 
             registry.RegisterBuilding(key, building);
