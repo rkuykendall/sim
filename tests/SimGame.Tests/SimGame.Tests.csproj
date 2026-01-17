@@ -38,5 +38,7 @@
     <Compile Include="../../src/Core/TerrainDef.cs" Link="Core/TerrainDef.cs" />
     <Compile Include="../../src/Core/Theme.cs" Link="Core/Theme.cs" />
     <Compile Include="../../src/Core/World.cs" Link="Core/World.cs" />
+    <Compile Include="../../src/Core/SaveData.cs" Link="Core/SaveData.cs" />
+    <Compile Include="../../src/Core/SaveService.cs" Link="Core/SaveService.cs" />
   </ItemGroup>
 </Project>

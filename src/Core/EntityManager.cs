@@ -26,7 +26,14 @@ public sealed class EntityManager
 {
     private int _nextId = 1;
 
+    public int NextId => _nextId;
+
     public EntityId Create() => new EntityId(_nextId++);
+
+    /// <summary>
+    /// Set the next entity ID. Used when restoring from save data.
+    /// </summary>
+    internal void SetNextId(int id) => _nextId = id;
 
     /// <summary>
     /// Factory method to create a pawn with all required components.

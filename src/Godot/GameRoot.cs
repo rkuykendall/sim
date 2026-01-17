@@ -26,6 +26,18 @@ public partial class GameRoot : Node2D
         Fast64x = 64,
     }
 
+    // App state
+    private enum AppScreen
+    {
+        Home,
+        Game,
+    }
+
+    private AppScreen _currentScreen = AppScreen.Home;
+    private string? _currentSaveSlot = null;
+    private UserSettings _userSettings = null!;
+    private ContentRegistry _content = null!;
+
     private const float PawnHitboxSize = 24f;
     private const float BuildingHitboxSize = 28f;
 
@@ -101,7 +113,11 @@ public partial class GameRoot : Node2D
     [Export]
     public NodePath MusicManagerPath { get; set; } = "";
 
+    [Export]
+    public NodePath HomeScreenPath { get; set; } = "";
+
     private Node2D _pawnsRoot = null!;
+    private HomeScreen? _homeScreen;
     private Node2D _buildingsRoot = null!;
     private Node2D _tilesRoot = null!;
     private Dictionary<int, ModulatableTileMapLayer> _autoTileLayers = new();
@@ -126,13 +142,17 @@ public partial class GameRoot : Node2D
     {
         ZIndex = ZIndexConstants.UIOverlay;
 
+        // Load user settings and apply fullscreen
+        _userSettings = UserSettings.Load();
+        ApplyFullscreenSetting();
+
+        // Load content once
         var contentPath = GetContentPath();
         GD.Print($"[GameRoot] Content path: {contentPath}");
-        var content = ContentLoader.LoadAll(contentPath);
-
-        _sim = new Simulation(content);
+        _content = ContentLoader.LoadAll(contentPath);
         _tickDelta = 1f / Simulation.TickRate;
 
+        // Load sprite resources
         _characterSprite = SpriteResourceManager.GetTexture("character_walk");
         _idleSprite = SpriteResourceManager.GetTexture("character_idle");
         _axeSprite = SpriteResourceManager.GetTexture("character_axe");
@@ -140,27 +160,10 @@ public partial class GameRoot : Node2D
         _lookDownSprite = SpriteResourceManager.GetTexture("character_look_down");
         _lookUpSprite = SpriteResourceManager.GetTexture("character_look_up");
 
+        // Get node references
         _pawnsRoot = GetNode<Node2D>(PawnsRootPath);
         _buildingsRoot = GetNode<Node2D>(BuildingsRootPath);
         _tilesRoot = GetNode<Node2D>(TilesRootPath);
-
-        InitializeAutoTileLayers();
-
-        var initialSnapshot = _sim.CreateRenderSnapshot();
-        _currentPalette = GameColorPalette.ToGodotColors(initialSnapshot.ColorPalette);
-        // Don't set _currentPaletteId yet - let _Process() call UpdatePalette on first frame when the ColorPickerModal is actually ready
-
-        InitializeTileNodes();
-
-        var allTiles = new List<TileCoord>();
-        for (int x = 0; x < _sim.World.Width; x++)
-        {
-            for (int y = 0; y < _sim.World.Height; y++)
-            {
-                allTiles.Add(new TileCoord(x, y));
-            }
-        }
-        SyncTiles(allTiles.ToArray());
 
         if (!string.IsNullOrEmpty(InfoPanelPath))
             _infoPanel = GetNodeOrNull<PawnInfoPanel>(InfoPanelPath);
@@ -182,9 +185,9 @@ public partial class GameRoot : Node2D
                 _shadowRect.Material = _shadowShaderMaterial;
 
                 var gradient = new Gradient();
-                gradient.AddPoint(0.0f, Colors.White); // Alpha 0.0 position = white (full shadow)
-                gradient.AddPoint(0.9f, Colors.White); // Alpha 0.9 position = white (full shadow)
-                gradient.AddPoint(1.0f, Colors.Black); // Alpha 1.0 position = black (no shadow)
+                gradient.AddPoint(0.0f, Colors.White);
+                gradient.AddPoint(0.9f, Colors.White);
+                gradient.AddPoint(1.0f, Colors.Black);
 
                 var gradientTexture = new GradientTexture2D
                 {
@@ -197,34 +200,225 @@ public partial class GameRoot : Node2D
             }
         }
         if (!string.IsNullOrEmpty(CameraPath))
-        {
             _camera = GetNodeOrNull<Camera2D>(CameraPath);
-            if (_camera != null)
-            {
-                var worldCenterX = (_sim.World.Width * RenderingConstants.RenderedTileSize) / 2f;
-                var worldCenterY = (_sim.World.Height * RenderingConstants.RenderedTileSize) / 2f;
-                _camera.Position = new Vector2(worldCenterX, worldCenterY);
-            }
-        }
         if (!string.IsNullOrEmpty(UILayerPath))
             _uiLayer = GetNodeOrNull<CanvasLayer>(UILayerPath);
-
         if (!string.IsNullOrEmpty(ToolbarPath))
         {
             _toolbar = GetNodeOrNull<BuildToolbar>(ToolbarPath);
-            _toolbar?.Initialize(_sim.Content, DebugMode);
-            // Don't call UpdatePalette here - modal isn't ready yet, _Process() will call it on first frame
+            if (_toolbar != null)
+            {
+                _toolbar.HomeButtonPressed += OnHomeButtonPressed;
+            }
         }
-
         if (!string.IsNullOrEmpty(MusicManagerPath))
             _musicManager = GetNodeOrNull<MusicManager>(MusicManagerPath);
+
+        // Initialize home screen
+        if (!string.IsNullOrEmpty(HomeScreenPath))
+        {
+            _homeScreen = GetNodeOrNull<HomeScreen>(HomeScreenPath);
+            if (_homeScreen != null)
+            {
+                _homeScreen.NewGameRequested += OnNewGameRequested;
+                _homeScreen.LoadGameRequested += OnLoadGameRequested;
+            }
+        }
+
+        // Start on home screen
+        ShowHomeScreen();
+    }
+
+    private void ApplyFullscreenSetting()
+    {
+        if (_userSettings.Fullscreen)
+        {
+            DisplayServer.WindowSetMode(DisplayServer.WindowMode.Fullscreen);
+        }
+        else
+        {
+            DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
+        }
+    }
+
+    private void ShowHomeScreen()
+    {
+        _currentScreen = AppScreen.Home;
+
+        // Hide game UI elements
+        _toolbar?.Hide();
+        _infoPanel?.Hide();
+        _BuildingInfoPanel?.Hide();
+        _timeDisplay?.Hide();
+        _pawnsRoot?.Hide();
+        _buildingsRoot?.Hide();
+        _tilesRoot?.Hide();
+
+        // Show home screen
+        _homeScreen?.Show();
+        _homeScreen?.RefreshSavesList();
+    }
+
+    private void ShowGame()
+    {
+        _currentScreen = AppScreen.Game;
+
+        // Hide home screen
+        _homeScreen?.Hide();
+
+        // Show game UI elements
+        _toolbar?.Show();
+        _pawnsRoot?.Show();
+        _buildingsRoot?.Show();
+        _tilesRoot?.Show();
 
         // Initialize speed display
         UpdateSpeedDisplay();
     }
 
+    private void OnNewGameRequested()
+    {
+        // Generate save name
+        _currentSaveSlot = SaveFileManager.GenerateSaveName();
+
+        // Create new simulation
+        _sim = new Simulation(_content);
+
+        // Initialize the game world
+        InitializeGameWorld();
+
+        // Show game
+        ShowGame();
+
+        GD.Print($"Started new game: {_currentSaveSlot}");
+    }
+
+    private void OnLoadGameRequested(string slotName)
+    {
+        var saveData = SaveFileManager.LoadSave(slotName);
+        if (saveData == null)
+        {
+            GD.PrintErr($"Failed to load save: {slotName}");
+            return;
+        }
+
+        _currentSaveSlot = slotName;
+
+        // Restore simulation from save data
+        _sim = Simulation.FromSaveData(saveData, _content);
+
+        // Initialize the game world
+        InitializeGameWorld();
+
+        // Show game
+        ShowGame();
+
+        GD.Print($"Loaded game: {slotName}");
+    }
+
+    private void InitializeGameWorld()
+    {
+        // Clear existing nodes
+        ClearAllNodes();
+
+        // Initialize autotile layers
+        InitializeAutoTileLayers();
+
+        // Update palette from simulation
+        var initialSnapshot = _sim.CreateRenderSnapshot();
+        _currentPalette = GameColorPalette.ToGodotColors(initialSnapshot.ColorPalette);
+        _currentPaletteId = -1; // Force palette update
+
+        // Initialize tile nodes
+        InitializeTileNodes();
+
+        // Sync all tiles
+        var allTiles = new List<TileCoord>();
+        for (int x = 0; x < _sim.World.Width; x++)
+        {
+            for (int y = 0; y < _sim.World.Height; y++)
+            {
+                allTiles.Add(new TileCoord(x, y));
+            }
+        }
+        SyncTiles(allTiles.ToArray());
+
+        // Initialize toolbar with content
+        _toolbar?.Initialize(_sim.Content, DebugMode);
+
+        // Center camera
+        if (_camera != null)
+        {
+            var worldCenterX = (_sim.World.Width * RenderingConstants.RenderedTileSize) / 2f;
+            var worldCenterY = (_sim.World.Height * RenderingConstants.RenderedTileSize) / 2f;
+            _camera.Position = new Vector2(worldCenterX, worldCenterY);
+        }
+
+        // Reset selection state
+        _selectedPawnId = null;
+        _selectedBuildingId = null;
+        _accumulator = 0f;
+    }
+
+    private void ClearAllNodes()
+    {
+        // Clear pawn nodes
+        foreach (var node in _pawnNodes.Values)
+        {
+            node.QueueFree();
+        }
+        _pawnNodes.Clear();
+
+        // Clear building nodes
+        foreach (var node in _buildingNodes.Values)
+        {
+            node.QueueFree();
+        }
+        _buildingNodes.Clear();
+
+        // Clear tile sprites
+        foreach (var (baseSprite, overlaySprite) in _tileSprites.Values)
+        {
+            baseSprite.QueueFree();
+            overlaySprite.QueueFree();
+        }
+        _tileSprites.Clear();
+
+        // Clear autotile layers
+        foreach (var layer in _autoTileLayers.Values)
+        {
+            layer.QueueFree();
+        }
+        _autoTileLayers.Clear();
+    }
+
+    private void ReturnToHome()
+    {
+        // Auto-save current game
+        if (_sim != null && _currentSaveSlot != null)
+        {
+            var saveData = SaveService.ToSaveData(_sim, _currentSaveSlot);
+            SaveFileManager.WriteSave(_currentSaveSlot, saveData);
+            GD.Print($"Auto-saved game: {_currentSaveSlot}");
+        }
+
+        ShowHomeScreen();
+    }
+
+    /// <summary>
+    /// Public method that can be called by the toolbar's Home button.
+    /// </summary>
+    public void OnHomeButtonPressed()
+    {
+        ReturnToHome();
+    }
+
     public override void _Process(double delta)
     {
+        // Only process game logic when in game mode
+        if (_currentScreen != AppScreen.Game || _sim == null)
+            return;
+
         // Apply speed multiplier to delta (0 when paused)
         float effectiveDelta =
             _simulationSpeed == SimulationSpeed.Paused ? 0f : (float)delta * (int)_simulationSpeed;
@@ -278,6 +472,27 @@ public partial class GameRoot : Node2D
     {
         if (@event is InputEventKey key && key.Pressed)
         {
+            // F11: Toggle fullscreen (works in any screen)
+            if (key.Keycode == Key.F11)
+            {
+                _userSettings.Fullscreen = !_userSettings.Fullscreen;
+                _userSettings.Save();
+                ApplyFullscreenSetting();
+                GD.Print($"Fullscreen: {_userSettings.Fullscreen}");
+                return;
+            }
+
+            // Escape: Return to home screen (only in game mode)
+            if (key.Keycode == Key.Escape && _currentScreen == AppScreen.Game)
+            {
+                ReturnToHome();
+                return;
+            }
+
+            // Game-only keyboard controls
+            if (_currentScreen != AppScreen.Game)
+                return;
+
             if (key.Keycode == Key.F3)
             {
                 _debugMode = !_debugMode;
@@ -287,7 +502,7 @@ public partial class GameRoot : Node2D
                 return;
             }
 
-            // Speed control keys 0-3
+            // Speed control keys 0-4
             if (key.Keycode == Key.Key0)
             {
                 _simulationSpeed = SimulationSpeed.Paused;
@@ -324,6 +539,10 @@ public partial class GameRoot : Node2D
                 return;
             }
         }
+
+        // Only process mouse input when in game mode
+        if (_currentScreen != AppScreen.Game)
+            return;
 
         if (@event is InputEventMouseButton mb)
         {

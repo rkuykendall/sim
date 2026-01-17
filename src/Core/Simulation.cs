@@ -906,4 +906,156 @@ public sealed class Simulation
         }
         return $"Entity #{id.Value}";
     }
+
+    /// <summary>
+    /// Create a simulation from saved data.
+    /// </summary>
+    public static Simulation FromSaveData(SaveData data, ContentRegistry content)
+    {
+        // Create minimal simulation config - we'll restore state manually
+        var config = new SimulationConfig
+        {
+            Seed = data.Seed,
+            WorldBounds = (0, data.World.Width - 1, 0, data.World.Height - 1),
+            DisableThemes = false,
+        };
+
+        // Create simulation with empty config to avoid bootstrap
+        var sim = new Simulation(content, config);
+
+        // Clear any auto-generated entities
+        foreach (var id in sim.Entities.AllPawns().ToList())
+            sim.Entities.Destroy(id);
+        foreach (var id in sim.Entities.AllBuildings().ToList())
+            sim.DestroyEntity(id);
+
+        // Restore world tiles
+        foreach (var tileSave in data.World.Tiles)
+        {
+            var tile = sim.World.GetTile(tileSave.X, tileSave.Y);
+            tile.BaseTerrainTypeId = tileSave.BaseTerrainTypeId;
+            tile.BaseVariantIndex = tileSave.BaseVariantIndex;
+            tile.OverlayTerrainTypeId = tileSave.OverlayTerrainTypeId;
+            tile.OverlayVariantIndex = tileSave.OverlayVariantIndex;
+            tile.ColorIndex = tileSave.ColorIndex;
+            tile.OverlayColorIndex = tileSave.OverlayColorIndex;
+            tile.WalkabilityCost = tileSave.WalkabilityCost;
+            tile.BlocksLight = tileSave.BlocksLight;
+            tile.BuildingBlocksMovement = tileSave.BuildingBlocksMovement;
+        }
+
+        // Restore entities - buildings first (pawns may reference them)
+        foreach (var entitySave in data.Entities.Where(e => e.Type == "Building"))
+        {
+            RestoreBuilding(sim, entitySave);
+        }
+
+        foreach (var entitySave in data.Entities.Where(e => e.Type == "Pawn"))
+        {
+            RestorePawn(sim, entitySave);
+        }
+
+        // Set next entity ID to avoid collisions
+        sim.Entities.SetNextId(data.NextEntityId);
+
+        // Restore time
+        sim.Time.SetTick(data.CurrentTick);
+
+        return sim;
+    }
+
+    private static void RestoreBuilding(Simulation sim, EntitySaveData save)
+    {
+        var id = new EntityId(save.Id);
+        var coord = new TileCoord(save.X, save.Y);
+
+        sim.Entities.Positions[id] = new PositionComponent { Coord = coord };
+        sim.Entities.Buildings[id] = new BuildingComponent
+        {
+            BuildingDefId = save.BuildingDefId ?? 0,
+            ColorIndex = save.BuildingColorIndex ?? 0,
+            InUse = save.InUse ?? false,
+            UsedBy = save.UsedBy.HasValue ? new EntityId(save.UsedBy.Value) : null,
+        };
+        sim.Entities.Gold[id] = new GoldComponent { Amount = save.BuildingGold ?? 0 };
+
+        if (save.Resource != null)
+        {
+            sim.Entities.Resources[id] = new ResourceComponent
+            {
+                ResourceType = save.Resource.ResourceType,
+                CurrentAmount = save.Resource.CurrentAmount,
+                MaxAmount = save.Resource.MaxAmount,
+                DepletionMult = save.Resource.DepletionMult,
+            };
+        }
+
+        if (save.Attachments != null)
+        {
+            sim.Entities.Attachments[id] = new AttachmentComponent
+            {
+                UserAttachments = save.Attachments.ToDictionary(
+                    kv => new EntityId(kv.Key),
+                    kv => kv.Value
+                ),
+            };
+        }
+        else
+        {
+            sim.Entities.Attachments[id] = new AttachmentComponent();
+        }
+    }
+
+    private static void RestorePawn(Simulation sim, EntitySaveData save)
+    {
+        var id = new EntityId(save.Id);
+        var coord = new TileCoord(save.X, save.Y);
+
+        sim.Entities.Positions[id] = new PositionComponent { Coord = coord };
+        sim.Entities.Pawns[id] = new PawnComponent { Name = save.Name ?? "Pawn" };
+        sim.Entities.Needs[id] = new NeedsComponent
+        {
+            Needs = save.Needs != null ? new Dictionary<int, float>(save.Needs) : new(),
+        };
+        sim.Entities.Moods[id] = new MoodComponent { Mood = save.Mood ?? 0 };
+        sim.Entities.Gold[id] = new GoldComponent { Amount = save.Gold ?? 0 };
+
+        // Restore buffs
+        var buffComponent = new BuffComponent();
+        if (save.Buffs != null)
+        {
+            foreach (var buffSave in save.Buffs)
+            {
+                buffComponent.ActiveBuffs.Add(
+                    new BuffInstance
+                    {
+                        Source = (BuffSource)buffSave.Source,
+                        SourceId = buffSave.SourceId,
+                        MoodOffset = buffSave.MoodOffset,
+                        StartTick = buffSave.StartTick,
+                        EndTick = buffSave.EndTick,
+                    }
+                );
+            }
+        }
+        sim.Entities.Buffs[id] = buffComponent;
+
+        // Clear action state - pawns will re-decide what to do
+        sim.Entities.Actions[id] = new ActionComponent();
+
+        // Restore inventory
+        if (save.Inventory != null)
+        {
+            sim.Entities.Inventory[id] = new InventoryComponent
+            {
+                ResourceType = save.Inventory.ResourceType,
+                Amount = save.Inventory.Amount,
+                MaxAmount = save.Inventory.MaxAmount,
+            };
+        }
+        else
+        {
+            sim.Entities.Inventory[id] = new InventoryComponent();
+        }
+    }
 }

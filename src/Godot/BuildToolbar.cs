@@ -8,6 +8,9 @@ namespace SimGame.Godot;
 
 public partial class BuildToolbar : HBoxContainer
 {
+    [Signal]
+    public delegate void HomeButtonPressedEventHandler();
+
     public void SetDebugMode(bool debugMode)
     {
         if (_debugMode != debugMode)
@@ -32,7 +35,7 @@ public partial class BuildToolbar : HBoxContainer
 
     private readonly List<Button> _colorButtons = new();
     private readonly List<Button> _toolButtons = new();
-    private readonly List<BuildToolMode> _toolButtonModes = new();
+    private readonly List<BuildToolMode?> _toolButtonModes = new();
     private readonly List<SpriteIconButton> _optionButtons = new();
 
     public override void _Ready()
@@ -102,9 +105,10 @@ public partial class BuildToolbar : HBoxContainer
 
         // Calculate max rows needed
         int colorRows = _currentPalette.Length;
-        // Determine which tools to show
-        var toolDefs = new List<(Func<Button> create, BuildToolMode mode)>
+        // Determine which tools to show (plus Home button at the start)
+        var toolDefs = new List<(Func<Button> create, BuildToolMode? mode)>
         {
+            (() => CreateHomeButton(), null), // Home button has no tool mode
             (() => CreatePaintToolButton(), BuildToolMode.PlaceTerrain),
             (() => CreateFillSquareToolButton(), BuildToolMode.FillSquare),
             (() => CreateOutlineSquareToolButton(), BuildToolMode.OutlineSquare),
@@ -170,6 +174,32 @@ public partial class BuildToolbar : HBoxContainer
         {
             UpdateColorButton(i);
         }
+    }
+
+    private Button CreateHomeButton()
+    {
+        var homeBtn = new SpriteIconButton
+        {
+            CustomMinimumSize = new Vector2(96, 96),
+            TooltipText = "Home (Save & Exit)",
+        };
+        var texture = GD.Load<Texture2D>("res://sprites/home.png");
+        if (texture != null)
+        {
+            homeBtn.SetSprite(texture, Colors.White);
+        }
+        else
+        {
+            // Fallback if home.png doesn't exist yet - use a simple text button
+            homeBtn.Text = "Home";
+        }
+        homeBtn.Pressed += OnHomeButtonPressed;
+        return homeBtn;
+    }
+
+    private void OnHomeButtonPressed()
+    {
+        EmitSignal(SignalName.HomeButtonPressed);
     }
 
     private Button CreatePaintToolButton()
@@ -463,7 +493,8 @@ public partial class BuildToolbar : HBoxContainer
         {
             var button = _toolButtons[i];
             var mode = _toolButtonModes[i];
-            var isActive = mode == BuildToolState.Mode;
+            // Home button (null mode) is never highlighted as active
+            var isActive = mode.HasValue && mode.Value == BuildToolState.Mode;
 
             // Always update the paint tool button (PreviewSquare)
             if (button is PreviewSquare paintPreview)

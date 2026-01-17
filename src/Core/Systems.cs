@@ -53,6 +53,11 @@ public sealed class TimeService
     public string TimeString => $"Day {Day}, {Hour:D2}:{Minute:D2}";
 
     public void AdvanceTick() => Tick++;
+
+    /// <summary>
+    /// Set the current tick. Used when restoring from save data.
+    /// </summary>
+    internal void SetTick(int tick) => Tick = tick;
 }
 
 public readonly struct SimContext
