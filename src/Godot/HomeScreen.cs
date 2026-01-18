@@ -24,6 +24,7 @@ public partial class HomeScreen : Control
 
     private HFlowContainer? _gridContainer;
     private ContentRegistry? _content;
+    private SoundManager? _soundManager;
 
     public override void _Ready()
     {
@@ -39,9 +40,10 @@ public partial class HomeScreen : Control
     /// <summary>
     /// Initialize with content registry for palette access.
     /// </summary>
-    public void Initialize(ContentRegistry content)
+    public void Initialize(ContentRegistry content, SoundManager? soundManager)
     {
         _content = content;
+        _soundManager = soundManager;
 
         // If _Ready already ran, refresh now; otherwise _Ready will do it
         if (_gridContainer != null)
@@ -112,6 +114,7 @@ public partial class HomeScreen : Control
             {
                 if (mouseButton.ButtonIndex == MouseButton.Left && mouseButton.Pressed)
                 {
+                    _soundManager?.PlaySelect();
                     EmitSignal(SignalName.NewGameRequested);
                 }
             }
@@ -178,6 +181,7 @@ public partial class HomeScreen : Control
             {
                 if (mouseButton.ButtonIndex == MouseButton.Left && mouseButton.Pressed)
                 {
+                    _soundManager?.PlaySelect();
                     EmitSignal(SignalName.LoadGameRequested, slotName);
                 }
             }

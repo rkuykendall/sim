@@ -114,6 +114,9 @@ public partial class GameRoot : Node2D
     public NodePath MusicManagerPath { get; set; } = "";
 
     [Export]
+    public NodePath SoundManagerPath { get; set; } = "";
+
+    [Export]
     public NodePath HomeScreenPath { get; set; } = "";
 
     private Node2D _pawnsRoot = null!;
@@ -135,6 +138,7 @@ public partial class GameRoot : Node2D
     private CanvasLayer? _uiLayer;
     private BuildToolbar? _toolbar;
     private MusicManager? _musicManager;
+    private SoundManager? _soundManager;
 
     private bool DebugMode => _debugMode;
 
@@ -213,6 +217,8 @@ public partial class GameRoot : Node2D
         }
         if (!string.IsNullOrEmpty(MusicManagerPath))
             _musicManager = GetNodeOrNull<MusicManager>(MusicManagerPath);
+        if (!string.IsNullOrEmpty(SoundManagerPath))
+            _soundManager = GetNodeOrNull<SoundManager>(SoundManagerPath);
 
         // Initialize home screen
         if (!string.IsNullOrEmpty(HomeScreenPath))
@@ -222,7 +228,7 @@ public partial class GameRoot : Node2D
             {
                 _homeScreen.NewGameRequested += OnNewGameRequested;
                 _homeScreen.LoadGameRequested += OnLoadGameRequested;
-                _homeScreen.Initialize(_content);
+                _homeScreen.Initialize(_content, _soundManager);
             }
         }
 
@@ -345,7 +351,7 @@ public partial class GameRoot : Node2D
         SyncTiles(allTiles.ToArray());
 
         // Initialize toolbar with content
-        _toolbar?.Initialize(_sim.Content, DebugMode);
+        _toolbar?.Initialize(_sim.Content, _soundManager, DebugMode);
 
         // Center camera
         if (_camera != null)
@@ -566,10 +572,12 @@ public partial class GameRoot : Node2D
                                 BuildToolState.SelectedTerrainDefId.Value,
                                 BuildToolState.SelectedColorIndex
                             );
+                            _soundManager?.PlayPaint();
                         }
                         else
                         {
                             tilesToUpdate = _sim.DeleteAtTile(tileCoord);
+                            _soundManager?.PlayDelete();
                         }
                         SyncTiles(tilesToUpdate);
                         return;
@@ -594,10 +602,12 @@ public partial class GameRoot : Node2D
                                 BuildToolState.SelectedTerrainDefId.Value,
                                 BuildToolState.SelectedColorIndex
                             );
+                            _soundManager?.PlayPaint();
                         }
                         else
                         {
                             tilesToUpdate = _sim.FloodDelete(tileCoord);
+                            _soundManager?.PlayDelete();
                         }
                         SyncTiles(tilesToUpdate);
                         return;
@@ -614,6 +624,7 @@ public partial class GameRoot : Node2D
                                 tileCoord,
                                 BuildToolState.SelectedColorIndex
                             );
+                            _soundManager?.PlayBuild();
                         }
                         catch (System.InvalidOperationException)
                         {
@@ -767,10 +778,12 @@ public partial class GameRoot : Node2D
                         BuildToolState.SelectedTerrainDefId.Value,
                         BuildToolState.SelectedColorIndex
                     );
+                    _soundManager?.PlayPaintTick();
                 }
                 else
                 {
                     tilesToUpdate = _sim.DeleteAtTile(tileCoord);
+                    _soundManager?.PlayPaintTick();
                 }
                 SyncTiles(tilesToUpdate);
                 return;

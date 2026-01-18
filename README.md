@@ -101,6 +101,7 @@ The simulation runs independently of rendering at 20 ticks/second. Godot receive
 - [Tinyworld by Fliegevogel](https://fliegevogel.itch.io/)
 - [Webtyler by Alexander Nadeau](https://wareya.github.io/webtyler/)
 - [Cozy Tunes by Pizza Doggy](https://pizzadoggy.itch.io/cozy-tunes)
+- [Universal UI Soundpack by Nathan Gibson](https://nathangibson.myportfolio.com) (CC BY 4.0)
 
 ## Art guide
 

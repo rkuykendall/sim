@@ -31,6 +31,7 @@ public partial class BuildToolbar : HBoxContainer
     private GridContainer? _toolsGrid;
     private FlowContainer? _optionsContainer;
     private ContentRegistry? _content;
+    private SoundManager? _soundManager;
     private Color[] _currentPalette = Enumerable.Repeat(Colors.White, 12).ToArray();
 
     private readonly List<Button> _colorButtons = new();
@@ -49,9 +50,14 @@ public partial class BuildToolbar : HBoxContainer
 
     private bool _debugMode = false;
 
-    public void Initialize(ContentRegistry content, bool debugMode = false)
+    public void Initialize(
+        ContentRegistry content,
+        SoundManager? soundManager,
+        bool debugMode = false
+    )
     {
         _content = content;
+        _soundManager = soundManager;
         _debugMode = debugMode;
 
         if (_toolsGrid == null && !string.IsNullOrEmpty(LeftPanelPath))
@@ -199,6 +205,7 @@ public partial class BuildToolbar : HBoxContainer
 
     private void OnHomeButtonPressed()
     {
+        _soundManager?.PlayClick();
         EmitSignal(SignalName.HomeButtonPressed);
     }
 
@@ -446,12 +453,14 @@ public partial class BuildToolbar : HBoxContainer
 
     private void OnColorSelected(int colorIndex)
     {
+        _soundManager?.PlayClick();
         BuildToolState.SelectedColorIndex = colorIndex;
         UpdateAllButtons();
     }
 
     private void OnToolSelected(BuildToolMode mode)
     {
+        _soundManager?.PlayClick();
         BuildToolState.Mode = mode;
 
         // Rebuild options
@@ -461,6 +470,7 @@ public partial class BuildToolbar : HBoxContainer
 
     private void OnBuildingOptionSelected(int buildingDefId)
     {
+        _soundManager?.PlaySelect();
         BuildToolState.Mode = BuildToolMode.PlaceBuilding;
         BuildToolState.SelectedBuildingDefId = buildingDefId;
         UpdateAllButtons();
@@ -468,6 +478,7 @@ public partial class BuildToolbar : HBoxContainer
 
     private void OnTerrainOptionSelected(int terrainDefId)
     {
+        _soundManager?.PlaySelect();
         // Keep the current terrain tool (paint/fill/outline/flood) and only change the selected texture
         BuildToolState.SelectedTerrainDefId = terrainDefId;
         UpdateAllButtons();
@@ -475,6 +486,7 @@ public partial class BuildToolbar : HBoxContainer
 
     private void OnDeleteOptionSelected()
     {
+        _soundManager?.PlaySelect();
         // Set terrain to null to enter deletion mode
         BuildToolState.SelectedTerrainDefId = null;
         UpdateAllButtons();

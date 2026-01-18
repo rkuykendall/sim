@@ -18,6 +18,7 @@ REFERENCE/
 
 # Too large for git at this time
 music/
+sfx/
 
 # Build outputs
 builds/

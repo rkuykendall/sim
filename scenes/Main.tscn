@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://main"]
+[gd_scene load_steps=15 format=3 uid="uid://main"]
 
 [ext_resource type="Script" path="res://src/Godot/GameRoot.cs" id="1"]
 [ext_resource type="Script" path="res://src/Godot/CameraController.cs" id="1_camera"]
@@ -12,6 +12,7 @@
 [ext_resource type="Material" path="res://shaders/screen_effects_material.tres" id="9"]
 [ext_resource type="Script" path="res://src/Godot/MusicManager.cs" id="11"]
 [ext_resource type="PackedScene" uid="uid://homescreen" path="res://scenes/HomeScreen.tscn" id="12"]
+[ext_resource type="Script" path="res://src/Godot/SoundManager.cs" id="13"]
 
 [node name="Main" type="Node2D"]
 y_sort_enabled = true
@@ -53,6 +54,7 @@ CameraPath = NodePath("../Camera2D")
 UILayerPath = NodePath("../UI")
 ToolbarPath = NodePath("../UI/BuildToolbar")
 MusicManagerPath = NodePath("../MusicManager")
+SoundManagerPath = NodePath("../SoundManager")
 HomeScreenPath = NodePath("../UI/HomeScreen")
 
 [node name="UI" type="CanvasLayer" parent="."]
@@ -105,3 +107,6 @@ volume_db = -10.0
 script = ExtResource("11")
 AudioPlayerPath = NodePath("../AudioPlayer")
 GameRootPath = NodePath("../GameRoot")
+
+[node name="SoundManager" type="Node" parent="."]
+script = ExtResource("13")
