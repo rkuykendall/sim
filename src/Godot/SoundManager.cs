@@ -13,6 +13,7 @@ public partial class SoundManager : Node
     // Multiple players for overlapping sounds
     private AudioStreamPlayer _uiPlayer = null!;
     private AudioStreamPlayer _actionPlayer = null!;
+    private AudioStreamPlayer _softActionPlayer = null!;
 
     // Preloaded sounds
     private AudioStream? _clickSound;
@@ -40,6 +41,11 @@ public partial class SoundManager : Node
         _actionPlayer.VolumeDb = ActionVolume;
         _actionPlayer.Bus = "Master";
         AddChild(_actionPlayer);
+
+        _softActionPlayer = new AudioStreamPlayer();
+        _softActionPlayer.VolumeDb = ActionVolume - 15f; // Half volume (-6dB)
+        _softActionPlayer.Bus = "Master";
+        AddChild(_softActionPlayer);
 
         // Preload sounds
         _clickSound = LoadSound("ui_click.ogg");
@@ -90,7 +96,7 @@ public partial class SoundManager : Node
     /// </summary>
     public void PlayPaintTick()
     {
-        PlaySound(_actionPlayer, _paintTickSound);
+        PlaySound(_softActionPlayer, _paintTickSound);
     }
 
     /// <summary>
