@@ -96,9 +96,9 @@ public sealed class Tile
 /// </remarks>
 public sealed class World
 {
-    // Default play area bounds (in tiles) - doubled for larger world
-    public const int DefaultWidth = 80;
-    public const int DefaultHeight = 80;
+    // Default play area bounds (in tiles) - 3:2 ratio to better fit widescreen monitors
+    public const int DefaultWidth = 150;
+    public const int DefaultHeight = 100;
 
     private readonly Tile[,] _tiles;
 

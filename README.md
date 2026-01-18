@@ -4,8 +4,8 @@ A top-down, grid-based life simulation sandbox.
 
 ## Requirements
 
-- [Godot 4.2+](https://godotengine.org/download) with .NET support
-- [.NET 6.0 SDK](https://dotnet.microsoft.com/download/dotnet/6.0)
+- [Godot 4.5+](https://godotengine.org/download) with .NET support
+- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 
 ## Quick Start
 
@@ -40,6 +40,24 @@ To run the automated test suite (unit and integration tests):
 ```bash
 dotnet test
 ```
+
+## Building for Release
+
+To build distributable executables for Windows, macOS, and Linux:
+
+```bash
+./build.sh
+```
+
+**Prerequisites:**
+- Godot export templates must be installed (Editor → Manage Export Templates → Download)
+
+**Output locations:**
+- `builds/windows/SimGame.exe`
+- `builds/macos/SimGame.app`
+- `builds/linux/SimGame.x86_64`
+
+The build script automatically copies the `content/` folder to each platform's build directory.
 
 ## Code Formatting (CSharpier)
 
