@@ -222,6 +222,7 @@ public partial class GameRoot : Node2D
             {
                 _homeScreen.NewGameRequested += OnNewGameRequested;
                 _homeScreen.LoadGameRequested += OnLoadGameRequested;
+                _homeScreen.Initialize(_content);
             }
         }
 
