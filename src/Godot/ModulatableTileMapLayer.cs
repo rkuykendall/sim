@@ -30,6 +30,7 @@ public partial class ModulatableTileMapLayer : TileMapLayer
     public void ClearTileColor(Vector2I coords)
     {
         _tileColors.Remove(coords);
+        NotifyRuntimeTileDataUpdate();
     }
 
     /// <summary>
