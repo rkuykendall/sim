@@ -15,6 +15,9 @@ public partial class HomeScreen : Control
     [Signal]
     public delegate void LoadGameRequestedEventHandler(string slotName);
 
+    [Signal]
+    public delegate void QuitRequestedEventHandler();
+
     [Export]
     public NodePath GridContainerPath { get; set; } = null!;
 
@@ -81,6 +84,10 @@ public partial class HomeScreen : Control
             var item = CreateSaveItem(save);
             _gridContainer.AddChild(item);
         }
+
+        // Add "Quit" button as last item
+        var quitItem = CreateQuitItem();
+        _gridContainer.AddChild(quitItem);
     }
 
     private Control CreateNewGameItem()
@@ -195,6 +202,56 @@ public partial class HomeScreen : Control
         container.MouseExited += () =>
         {
             styleBox.BgColor = new Color(0.1f, 0.1f, 0.1f);
+        };
+
+        return container;
+    }
+
+    private Control CreateQuitItem()
+    {
+        var container = new PanelContainer();
+        container.CustomMinimumSize = new Vector2(ThumbnailDisplayWidth, ThumbnailDisplayHeight);
+
+        // Style the panel
+        var styleBox = new StyleBoxFlat();
+        styleBox.BgColor = new Color(0.35f, 0.15f, 0.15f); // Dark red
+        styleBox.SetCornerRadiusAll(8);
+        container.AddThemeStyleboxOverride("panel", styleBox);
+
+        // Inner container for centering
+        var centerContainer = new CenterContainer();
+        centerContainer.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+
+        // X icon
+        var label = new Label();
+        label.Text = "✕";
+        label.AddThemeFontSizeOverride("font_size", 64);
+        label.AddThemeColorOverride("font_color", new Color(0.7f, 0.4f, 0.4f));
+
+        centerContainer.AddChild(label);
+        container.AddChild(centerContainer);
+
+        // Make clickable
+        container.GuiInput += (InputEvent @event) =>
+        {
+            if (@event is InputEventMouseButton mouseButton)
+            {
+                if (mouseButton.ButtonIndex == MouseButton.Left && mouseButton.Pressed)
+                {
+                    _soundManager?.PlaySelect();
+                    EmitSignal(SignalName.QuitRequested);
+                }
+            }
+        };
+
+        // Hover effect
+        container.MouseEntered += () =>
+        {
+            styleBox.BgColor = new Color(0.45f, 0.2f, 0.2f);
+        };
+        container.MouseExited += () =>
+        {
+            styleBox.BgColor = new Color(0.35f, 0.15f, 0.15f);
         };
 
         return container;

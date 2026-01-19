@@ -232,6 +232,7 @@ public partial class GameRoot : Node2D
             {
                 _homeScreen.NewGameRequested += OnNewGameRequested;
                 _homeScreen.LoadGameRequested += OnLoadGameRequested;
+                _homeScreen.QuitRequested += OnQuitRequested;
                 _homeScreen.Initialize(_content, _soundManager);
             }
         }
@@ -325,6 +326,12 @@ public partial class GameRoot : Node2D
         ShowGame();
 
         GD.Print($"Loaded game: {slotName}");
+    }
+
+    private void OnQuitRequested()
+    {
+        GD.Print("Quit requested");
+        GetTree().Quit();
     }
 
     private void InitializeGameWorld()
