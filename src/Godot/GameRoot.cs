@@ -138,7 +138,7 @@ public partial class GameRoot : Node2D
     private ColorRect? _shadowRect;
     private ShaderMaterial? _shadowShaderMaterial;
     private CRTShaderController? _crtShaderController;
-    private Camera2D? _camera;
+    private CameraController? _camera;
     private CanvasLayer? _uiLayer;
     private BuildToolbar? _toolbar;
     private MusicManager? _musicManager;
@@ -208,7 +208,7 @@ public partial class GameRoot : Node2D
             }
         }
         if (!string.IsNullOrEmpty(CameraPath))
-            _camera = GetNodeOrNull<Camera2D>(CameraPath);
+            _camera = GetNodeOrNull<CameraController>(CameraPath);
         if (!string.IsNullOrEmpty(UILayerPath))
             _uiLayer = GetNodeOrNull<CanvasLayer>(UILayerPath);
         if (!string.IsNullOrEmpty(ToolbarPath))
@@ -364,12 +364,13 @@ public partial class GameRoot : Node2D
         // Initialize toolbar with content
         _toolbar?.Initialize(_sim.Content, _soundManager, DebugMode);
 
-        // Center camera
+        // Center camera and set bounds
         if (_camera != null)
         {
-            var worldCenterX = (_sim.World.Width * RenderingConstants.RenderedTileSize) / 2f;
-            var worldCenterY = (_sim.World.Height * RenderingConstants.RenderedTileSize) / 2f;
-            _camera.Position = new Vector2(worldCenterX, worldCenterY);
+            var worldWidth = _sim.World.Width * RenderingConstants.RenderedTileSize;
+            var worldHeight = _sim.World.Height * RenderingConstants.RenderedTileSize;
+            _camera.Position = new Vector2(worldWidth / 2f, worldHeight / 2f);
+            _camera.SetWorldBounds(worldWidth, worldHeight);
         }
 
         // Reset selection state
