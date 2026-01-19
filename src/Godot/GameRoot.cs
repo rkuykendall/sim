@@ -17,6 +17,10 @@ public partial class GameRoot : Node2D
     private const int MaxTicksPerFrame = 100; // Safety cap for frame spikes
     private SimulationSpeed _simulationSpeed = SimulationSpeed.Normal;
 
+    // Autosave settings
+    private const float AutosaveIntervalSeconds = 60f; // Autosave every 60 seconds
+    private float _timeSinceLastAutosave = 0f;
+
     private enum SimulationSpeed
     {
         Paused = 0,
@@ -365,6 +369,7 @@ public partial class GameRoot : Node2D
         _selectedPawnId = null;
         _selectedBuildingId = null;
         _accumulator = 0f;
+        _timeSinceLastAutosave = 0f;
     }
 
     private void ClearAllNodes()
@@ -420,6 +425,20 @@ public partial class GameRoot : Node2D
         ReturnToHome();
     }
 
+    /// <summary>
+    /// Performs an autosave of the current game state.
+    /// </summary>
+    private void PerformAutosave()
+    {
+        if (_sim == null || _currentSaveSlot == null)
+            return;
+
+        var saveData = SaveService.ToSaveData(_sim, _currentSaveSlot);
+        SaveFileManager.WriteSave(_currentSaveSlot, saveData);
+        _timeSinceLastAutosave = 0f;
+        GD.Print($"Autosaved game: {_currentSaveSlot}");
+    }
+
     public override void _Process(double delta)
     {
         // Only process game logic when in game mode
@@ -460,6 +479,13 @@ public partial class GameRoot : Node2D
 
         // Update music manager with current theme state
         _musicManager?.UpdateMusicState(snapshot);
+
+        // Autosave logic (based on real time, not game time)
+        _timeSinceLastAutosave += (float)delta;
+        if (_timeSinceLastAutosave >= AutosaveIntervalSeconds)
+        {
+            PerformAutosave();
+        }
 
         SyncPawns(snapshot);
         SyncBuildings(snapshot);

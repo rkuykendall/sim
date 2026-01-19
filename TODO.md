@@ -7,7 +7,7 @@
 - [ ] A way to delete saves which is safe for kids. How can we make kid-safe features but keep them touch-screen accessible?
 
 ## Save System
-- [ ] Auto save
+- [x] Auto save
 
 ## Camera
 - [ ] Bumpers near the edge of the map for the camera
