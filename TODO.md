@@ -3,7 +3,8 @@
 ## UI/UX
 - [x] Select first building by default
 - [x] Quit button on home screen
-- [ ] Full screen mode by default
+- [x] Full screen mode by default
+- [ ] Kid-safe quit button (hold-to-quit or similar)
 - [ ] A way to delete saves which is safe for kids. How can we make kid-safe features but keep them touch-screen accessible?
 
 ## Save System

@@ -7,7 +7,7 @@ public sealed class UserSettings
 {
     private const string SettingsPath = "user://settings.json";
 
-    public bool Fullscreen { get; set; } = false;
+    public bool Fullscreen { get; set; } = true;
 
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
