@@ -15,9 +15,6 @@ public partial class CameraController : Camera2D
     private bool _hasBounds = false;
 
     private Vector2 _zoomTarget;
-    private Vector2 _dragStartMousePos;
-    private Vector2 _dragStartCameraPos;
-    private bool _isDragging;
 
     public override void _Ready()
     {
@@ -53,7 +50,6 @@ public partial class CameraController : Camera2D
     {
         ProcessZoom((float)delta);
         ProcessSimplePan((float)delta);
-        ProcessClickAndDrag();
         ClampToWorldBounds();
     }
 
@@ -93,26 +89,5 @@ public partial class CameraController : Camera2D
 
         // Apply zoom-aware speed so panning feels consistent regardless of zoom level
         Position += moveAmount * delta * PanSpeed * (1 / Zoom.X);
-    }
-
-    private void ProcessClickAndDrag()
-    {
-        if (!_isDragging && Input.IsActionJustPressed("camera_pan"))
-        {
-            _dragStartMousePos = GetViewport().GetMousePosition();
-            _dragStartCameraPos = Position;
-            _isDragging = true;
-        }
-
-        if (_isDragging && Input.IsActionJustReleased("camera_pan"))
-        {
-            _isDragging = false;
-        }
-
-        if (_isDragging)
-        {
-            var moveVector = GetViewport().GetMousePosition() - _dragStartMousePos;
-            Position = _dragStartCameraPos - moveVector * (1 / Zoom.X);
-        }
     }
 }
