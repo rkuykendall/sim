@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace SimGame.Core;
@@ -9,16 +10,76 @@ public interface ISystem
     void Tick(SimContext ctx);
 }
 
+/// <summary>
+/// Stores profiling results for a single system.
+/// </summary>
+public sealed class SystemProfile
+{
+    public string SystemName { get; init; } = "";
+    public long TotalTicks { get; set; }
+    public int CallCount { get; set; }
+    public double TotalMilliseconds => TotalTicks * 1000.0 / Stopwatch.Frequency;
+    public double AverageMilliseconds => CallCount > 0 ? TotalMilliseconds / CallCount : 0;
+}
+
 public sealed class SystemManager
 {
     private readonly List<ISystem> _systems = new();
+    private readonly Dictionary<ISystem, SystemProfile> _profiles = new();
+    private readonly Stopwatch _stopwatch = new();
+    private bool _profilingEnabled;
 
-    public void Add(ISystem s) => _systems.Add(s);
+    public void Add(ISystem s)
+    {
+        _systems.Add(s);
+        _profiles[s] = new SystemProfile { SystemName = s.GetType().Name };
+    }
+
+    /// <summary>
+    /// Enable or disable profiling. When enabled, each system's Tick time is measured.
+    /// </summary>
+    public void SetProfilingEnabled(bool enabled) => _profilingEnabled = enabled;
+
+    /// <summary>
+    /// Reset all profiling counters.
+    /// </summary>
+    public void ResetProfiles()
+    {
+        foreach (var profile in _profiles.Values)
+        {
+            profile.TotalTicks = 0;
+            profile.CallCount = 0;
+        }
+    }
+
+    /// <summary>
+    /// Get profiling results for all systems, sorted by total time descending.
+    /// </summary>
+    public IReadOnlyList<SystemProfile> GetProfiles()
+    {
+        return _profiles.Values.OrderByDescending(p => p.TotalTicks).ToList();
+    }
 
     public void TickAll(SimContext ctx)
     {
-        foreach (var s in _systems)
-            s.Tick(ctx);
+        if (_profilingEnabled)
+        {
+            foreach (var s in _systems)
+            {
+                _stopwatch.Restart();
+                s.Tick(ctx);
+                _stopwatch.Stop();
+
+                var profile = _profiles[s];
+                profile.TotalTicks += _stopwatch.ElapsedTicks;
+                profile.CallCount++;
+            }
+        }
+        else
+        {
+            foreach (var s in _systems)
+                s.Tick(ctx);
+        }
     }
 }
 
@@ -1755,211 +1816,164 @@ public sealed class AISystem : ISystem
         );
     }
 
+    /// <summary>
+    /// Context passed to building filter/scorer functions.
+    /// </summary>
+    private readonly struct BuildingSearchContext
+    {
+        public EntityId ObjId { get; init; }
+        public BuildingComponent ObjComp { get; init; }
+        public BuildingDef ObjDef { get; init; }
+        public TileCoord ObjPos { get; init; }
+        public int Distance { get; init; }
+        public ResourceComponent? ResourceComp { get; init; }
+        public AttachmentComponent? AttachmentComp { get; init; }
+    }
+
+    /// <summary>
+    /// Generic building search: filters candidates, scores them, returns first reachable by score.
+    /// </summary>
+    private EntityId? FindBestReachableBuilding(
+        SimContext ctx,
+        EntityId pawnId,
+        Func<BuildingSearchContext, bool> filter,
+        Func<BuildingSearchContext, EntityId, float> scorer
+    )
+    {
+        if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
+            return null;
+
+        var candidates = new List<(EntityId id, float score)>();
+
+        foreach (var objId in ctx.Entities.AllBuildings())
+        {
+            var objComp = ctx.Entities.Buildings[objId];
+            var objDef = ctx.Content.Buildings[objComp.BuildingDefId];
+
+            if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos))
+                continue;
+
+            int dist =
+                Math.Abs(pawnPos.Coord.X - objPos.Coord.X)
+                + Math.Abs(pawnPos.Coord.Y - objPos.Coord.Y);
+
+            ctx.Entities.Resources.TryGetValue(objId, out var resourceComp);
+            ctx.Entities.Attachments.TryGetValue(objId, out var attachmentComp);
+
+            var searchCtx = new BuildingSearchContext
+            {
+                ObjId = objId,
+                ObjComp = objComp,
+                ObjDef = objDef,
+                ObjPos = objPos.Coord,
+                Distance = dist,
+                ResourceComp = resourceComp,
+                AttachmentComp = attachmentComp,
+            };
+
+            if (!filter(searchCtx))
+                continue;
+
+            float score = scorer(searchCtx, pawnId);
+            candidates.Add((objId, score));
+        }
+
+        candidates.Sort((a, b) => b.score.CompareTo(a.score));
+
+        foreach (var (objId, _) in candidates)
+        {
+            if (IsBuildingReachable(ctx, pawnId, objId))
+                return objId;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Calculate attachment score modifier for a pawn at a building.
+    /// </summary>
+    private static float GetAttachmentScore(
+        AttachmentComponent? attachmentComp,
+        EntityId pawnId,
+        float myWeight,
+        float otherWeight
+    )
+    {
+        if (attachmentComp == null)
+            return 0;
+
+        float score = 0;
+        int myAttachment = attachmentComp.UserAttachments.GetValueOrDefault(pawnId, 0);
+        score += myAttachment * myWeight;
+
+        int highestOtherAttachment = 0;
+        foreach (var (otherId, attachment) in attachmentComp.UserAttachments)
+        {
+            if (otherId != pawnId && attachment > highestOtherAttachment)
+                highestOtherAttachment = attachment;
+        }
+        score -= highestOtherAttachment * otherWeight;
+
+        return score;
+    }
+
     private EntityId? FindBuildingForNeed(SimContext ctx, EntityId pawnId, int needId)
     {
-        if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
-            return null;
+        int pawnGold = ctx.Entities.Gold.TryGetValue(pawnId, out var goldComp)
+            ? goldComp.Amount
+            : 0;
 
-        // Get pawn's gold for affordability check
-        int pawnGold = 0;
-        if (ctx.Entities.Gold.TryGetValue(pawnId, out var goldComp))
-        {
-            pawnGold = goldComp.Amount;
-        }
-
-        EntityId? best = null;
-        float bestScore = float.MinValue;
-
-        foreach (var objId in ctx.Entities.AllBuildings())
-        {
-            var objComp = ctx.Entities.Buildings[objId];
-            var objDef = ctx.Content.Buildings[objComp.BuildingDefId];
-
-            if (objDef.SatisfiesNeedId != needId)
-                continue;
-            if (objComp.InUse)
-                continue;
-
-            // Skip buildings that don't sell to consumers
-            if (!objDef.CanSellToConsumers)
-                continue;
-
-            // Skip buildings the pawn can't afford
-            if (pawnGold < objDef.GetCost())
-                continue;
-
-            // Skip buildings that have resources but are empty
-            if (ctx.Entities.Resources.TryGetValue(objId, out var resourceComp))
-            {
-                if (resourceComp.CurrentAmount <= 0)
-                    continue;
-            }
-
-            if (!IsBuildingReachable(ctx, pawnId, objId))
-                continue;
-
-            if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos))
-                continue;
-
-            int dist =
-                Math.Abs(pawnPos.Coord.X - objPos.Coord.X)
-                + Math.Abs(pawnPos.Coord.Y - objPos.Coord.Y);
-
-            // Calculate preference score based on attachment
-            float score = -dist; // Closer is better
-
-            if (ctx.Entities.Attachments.TryGetValue(objId, out var attachmentComp))
-            {
-                // My attachment increases preference
-                int myAttachment = attachmentComp.UserAttachments.GetValueOrDefault(pawnId, 0);
-                score += myAttachment * 20;
-
-                // Others' attachment decreases preference
-                int highestOtherAttachment = 0;
-                foreach (var (otherId, attachment) in attachmentComp.UserAttachments)
-                {
-                    if (otherId != pawnId && attachment > highestOtherAttachment)
-                    {
-                        highestOtherAttachment = attachment;
-                    }
-                }
-                score -= highestOtherAttachment * 15;
-            }
-
-            if (score > bestScore)
-            {
-                bestScore = score;
-                best = objId;
-            }
-        }
-
-        return best;
+        return FindBestReachableBuilding(
+            ctx,
+            pawnId,
+            filter: b =>
+                b.ObjDef.SatisfiesNeedId == needId
+                && !b.ObjComp.InUse
+                && b.ObjDef.CanSellToConsumers
+                && pawnGold >= b.ObjDef.GetCost()
+                && (b.ResourceComp == null || b.ResourceComp.CurrentAmount > 0),
+            scorer: (b, pid) =>
+                -b.Distance
+                + GetAttachmentScore(b.AttachmentComp, pid, myWeight: 20, otherWeight: 15)
+        );
     }
 
-    /// <summary>
-    /// Find an building that needs workers (has depleted resources and can be worked at).
-    /// </summary>
     private EntityId? FindBuildingToWorkAt(SimContext ctx, EntityId pawnId)
     {
-        if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
-            return null;
+        int pawnGold = ctx.Entities.Gold.TryGetValue(pawnId, out var goldComp)
+            ? goldComp.Amount
+            : 0;
 
-        // Get pawn's gold for affordability check
-        int pawnGold = 0;
-        if (ctx.Entities.Gold.TryGetValue(pawnId, out var goldComp))
-        {
-            pawnGold = goldComp.Amount;
-        }
-
-        EntityId? best = null;
-        float bestScore = float.MinValue;
-
-        foreach (var objId in ctx.Entities.AllBuildings())
-        {
-            var objComp = ctx.Entities.Buildings[objId];
-            var objDef = ctx.Content.Buildings[objComp.BuildingDefId];
-
-            // Only consider buildings that can be worked at
-            if (!objDef.CanBeWorkedAt)
-                continue;
-            if (objComp.InUse)
-                continue;
-
-            // Skip buildings the pawn can't afford the work buy-in for
-            if (pawnGold < objDef.GetWorkBuyIn())
-                continue;
-
-            // Only work at buildings that have resources and need replenishment
-            if (!ctx.Entities.Resources.TryGetValue(objId, out var resourceComp))
-                continue;
-
-            // Calculate resource percentage
-            float resourcePercent = resourceComp.CurrentAmount / resourceComp.MaxAmount;
-
-            // Only work at buildings that are below 80% capacity
-            if (resourcePercent >= 0.8f)
-                continue;
-
-            if (!IsBuildingReachable(ctx, pawnId, objId))
-                continue;
-
-            if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos))
-                continue;
-
-            int dist =
-                Math.Abs(pawnPos.Coord.X - objPos.Coord.X)
-                + Math.Abs(pawnPos.Coord.Y - objPos.Coord.Y);
-
-            // Calculate work preference score
-            // Higher urgency (low resources) and attachment increase score
-            float score = (100 - resourcePercent * 100) - (dist * 0.5f);
-
-            if (ctx.Entities.Attachments.TryGetValue(objId, out var attachmentComp))
+        return FindBestReachableBuilding(
+            ctx,
+            pawnId,
+            filter: b =>
+                b.ObjDef.CanBeWorkedAt
+                && !b.ObjComp.InUse
+                && pawnGold >= b.ObjDef.GetWorkBuyIn()
+                && b.ResourceComp != null
+                && (b.ResourceComp.CurrentAmount / b.ResourceComp.MaxAmount) < 0.8f,
+            scorer: (b, pid) =>
             {
-                // My attachment to this job increases preference
-                int myAttachment = attachmentComp.UserAttachments.GetValueOrDefault(pawnId, 0);
-                score += myAttachment * 10;
-
-                // Others' attachment slightly decreases preference (but urgency can override)
-                int highestOtherAttachment = 0;
-                foreach (var (otherId, attachment) in attachmentComp.UserAttachments)
-                {
-                    if (otherId != pawnId && attachment > highestOtherAttachment)
-                    {
-                        highestOtherAttachment = attachment;
-                    }
-                }
-                score -= highestOtherAttachment * 5;
+                float resourcePercent = b.ResourceComp!.CurrentAmount / b.ResourceComp.MaxAmount;
+                float urgency = 100 - resourcePercent * 100;
+                return urgency
+                    - (b.Distance * 0.5f)
+                    + GetAttachmentScore(b.AttachmentComp, pid, myWeight: 10, otherWeight: 5);
             }
-
-            if (score > bestScore)
-            {
-                bestScore = score;
-                best = objId;
-            }
-        }
-
-        return best;
+        );
     }
 
-    /// <summary>
-    /// Find any building (even if in use) that could satisfy one of the given needs.
-    /// Used for finding a place to wait when all relevant bu are busy.
-    /// </summary>
     private EntityId? FindAnyBuildingForNeeds(SimContext ctx, EntityId pawnId, List<int> needIds)
     {
-        if (!ctx.Entities.Positions.TryGetValue(pawnId, out var pawnPos))
-            return null;
-
-        EntityId? best = null;
-        int bestDist = int.MaxValue;
-
-        foreach (var objId in ctx.Entities.AllBuildings())
-        {
-            var objComp = ctx.Entities.Buildings[objId];
-            var objDef = ctx.Content.Buildings[objComp.BuildingDefId];
-
-            // Check if this building satisfies any of our needs
-            if (!objDef.SatisfiesNeedId.HasValue || !needIds.Contains(objDef.SatisfiesNeedId.Value))
-                continue;
-            if (!IsBuildingReachable(ctx, pawnId, objId))
-                continue;
-
-            if (!ctx.Entities.Positions.TryGetValue(objId, out var objPos))
-                continue;
-
-            int dist =
-                Math.Abs(pawnPos.Coord.X - objPos.Coord.X)
-                + Math.Abs(pawnPos.Coord.Y - objPos.Coord.Y);
-
-            if (dist < bestDist)
-            {
-                bestDist = dist;
-                best = objId;
-            }
-        }
-
-        return best;
+        return FindBestReachableBuilding(
+            ctx,
+            pawnId,
+            filter: b =>
+                b.ObjDef.SatisfiesNeedId.HasValue
+                && needIds.Contains(b.ObjDef.SatisfiesNeedId.Value),
+            scorer: (b, _) => -b.Distance // Closer is better (negative so higher score = closer)
+        );
     }
 
     /// <summary>

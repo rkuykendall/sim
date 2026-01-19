@@ -34,7 +34,7 @@ Palettes = {
         "#6987C9",
         "#95190C",
         "#FCFC62",
-        #FFBA49",
+        "#FFBA49",
     },
     Curiosities = {
         "#46425e",

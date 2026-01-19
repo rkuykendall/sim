@@ -65,6 +65,7 @@ public sealed class Simulation
     public int Seed { get; }
     public int SelectedPaletteId { get; }
     public ThemeSystem ThemeSystem { get; }
+    public SystemManager Systems => _systems;
 
     private readonly SystemManager _systems = new();
 
