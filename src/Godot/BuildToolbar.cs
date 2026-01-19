@@ -76,6 +76,13 @@ public partial class BuildToolbar : HBoxContainer
         var firstTerrain = content.Terrains.OrderBy(kv => kv.Key).FirstOrDefault();
         BuildToolState.SelectedTerrainDefId = firstTerrain.Key;
 
+        // Select first building by default
+        var firstBuilding = content.Buildings.OrderBy(kv => kv.Key).FirstOrDefault();
+        if (firstBuilding.Value != null)
+        {
+            BuildToolState.SelectedBuildingDefId = firstBuilding.Key;
+        }
+
         CreateColorAndToolButtons();
         RebuildOptions();
         UpdateAllButtons();
