@@ -91,15 +91,6 @@ public partial class GameRoot : Node2D
     public NodePath TilesRootPath { get; set; } = ".";
 
     [Export]
-    public NodePath InfoPanelPath { get; set; } = "";
-
-    [Export]
-    public NodePath BuildingInfoPanelPath { get; set; } = "";
-
-    [Export]
-    public NodePath TimeDisplayPath { get; set; } = "";
-
-    [Export]
     public NodePath ShadowRectPath { get; set; } = "";
 
     [Export]
@@ -132,9 +123,7 @@ public partial class GameRoot : Node2D
         new();
     private Dictionary<int, List<(Vector2I coord, Color color)>> _autotileUpdates = new();
     private Dictionary<int, List<Vector2I>> _autotileClearCells = new();
-    private PawnInfoPanel? _infoPanel;
-    private BuildingInfoPanel? _BuildingInfoPanel;
-    private TimeDisplay? _timeDisplay;
+    private DebugPanel? _debugPanel;
     private ColorRect? _shadowRect;
     private ShaderMaterial? _shadowShaderMaterial;
     private CRTShaderController? _crtShaderController;
@@ -173,12 +162,6 @@ public partial class GameRoot : Node2D
         _buildingsRoot = GetNode<Node2D>(BuildingsRootPath);
         _tilesRoot = GetNode<Node2D>(TilesRootPath);
 
-        if (!string.IsNullOrEmpty(InfoPanelPath))
-            _infoPanel = GetNodeOrNull<PawnInfoPanel>(InfoPanelPath);
-        if (!string.IsNullOrEmpty(BuildingInfoPanelPath))
-            _BuildingInfoPanel = GetNodeOrNull<BuildingInfoPanel>(BuildingInfoPanelPath);
-        if (!string.IsNullOrEmpty(TimeDisplayPath))
-            _timeDisplay = GetNodeOrNull<TimeDisplay>(TimeDisplayPath);
         if (!string.IsNullOrEmpty(CRTShaderLayerPath))
         {
             _crtShaderController = GetNodeOrNull<CRTShaderController>(CRTShaderLayerPath);
@@ -211,6 +194,13 @@ public partial class GameRoot : Node2D
             _camera = GetNodeOrNull<CameraController>(CameraPath);
         if (!string.IsNullOrEmpty(UILayerPath))
             _uiLayer = GetNodeOrNull<CanvasLayer>(UILayerPath);
+
+        // Create debug panel programmatically
+        _debugPanel = new DebugPanel();
+        _debugPanel.SetAnchorsPreset(Control.LayoutPreset.TopRight);
+        _debugPanel.Position = new Vector2(-260, 10);
+        _uiLayer?.AddChild(_debugPanel);
+
         if (!string.IsNullOrEmpty(ToolbarPath))
         {
             _toolbar = GetNodeOrNull<BuildToolbar>(ToolbarPath);
@@ -259,9 +249,7 @@ public partial class GameRoot : Node2D
 
         // Hide game UI elements
         _toolbar?.Hide();
-        _infoPanel?.Hide();
-        _BuildingInfoPanel?.Hide();
-        _timeDisplay?.Hide();
+        _debugPanel?.SetDebugMode(false);
         _pawnsRoot?.Hide();
         _buildingsRoot?.Hide();
         _tilesRoot?.Hide();
@@ -363,6 +351,10 @@ public partial class GameRoot : Node2D
 
         // Initialize toolbar with content
         _toolbar?.Initialize(_sim.Content, _soundManager, DebugMode);
+
+        // Initialize debug panel
+        _debugPanel?.Initialize(_sim.Content);
+        _debugPanel?.SetDebugMode(_debugMode);
 
         // Center camera and set bounds
         if (_camera != null)
@@ -539,6 +531,7 @@ public partial class GameRoot : Node2D
                 _debugMode = !_debugMode;
                 GD.Print($"Debug mode: {_debugMode}");
                 _toolbar?.SetDebugMode(_debugMode);
+                _debugPanel?.SetDebugMode(_debugMode);
                 QueueRedraw();
                 return;
             }
@@ -747,7 +740,6 @@ public partial class GameRoot : Node2D
 
                 _selectedPawnId = clickedPawnId;
                 _selectedBuildingId = null;
-                _BuildingInfoPanel?.Hide();
 
                 if (_pawnNodes.TryGetValue(_selectedPawnId.Value, out var newNode))
                 {
@@ -772,7 +764,6 @@ public partial class GameRoot : Node2D
 
                 _selectedPawnId = null;
                 _selectedBuildingId = clickedBuildingId;
-                _infoPanel?.Hide();
                 return;
             }
 
@@ -786,8 +777,7 @@ public partial class GameRoot : Node2D
             }
             _selectedPawnId = null;
             _selectedBuildingId = null;
-            _infoPanel?.Hide();
-            _BuildingInfoPanel?.Hide();
+            _debugPanel?.ClearSelection();
         }
 
         if (@event is InputEventMouseMotion)
@@ -1289,27 +1279,24 @@ public partial class GameRoot : Node2D
 
     private void UpdateInfoPanel(RenderSnapshot snapshot)
     {
-        if (_infoPanel == null)
+        if (_debugPanel == null)
             return;
 
         if (!_selectedPawnId.HasValue)
-        {
-            _infoPanel.Hide();
             return;
-        }
 
         var pawn = snapshot.Pawns.FirstOrDefault(p => p.Id.Value == _selectedPawnId.Value);
         if (pawn == null)
         {
-            _infoPanel.Hide();
             _selectedPawnId = null;
+            _debugPanel.ClearSelection();
             return;
         }
 
         var entityId = new EntityId(_selectedPawnId.Value);
         _sim.Entities.Needs.TryGetValue(entityId, out var needs);
         _sim.Entities.Buffs.TryGetValue(entityId, out var buffs);
-        _infoPanel.ShowPawn(pawn, needs, buffs, _sim.Content, _sim);
+        _debugPanel.ShowPawn(pawn, needs, buffs, _sim);
     }
 
     /// <summary>
@@ -1654,7 +1641,7 @@ public partial class GameRoot : Node2D
             if (_selectedPawnId == id)
             {
                 _selectedPawnId = null;
-                _infoPanel?.Hide();
+                _debugPanel?.ClearSelection();
             }
         }
     }
@@ -1714,52 +1701,48 @@ public partial class GameRoot : Node2D
             if (_selectedBuildingId == id)
             {
                 _selectedBuildingId = null;
-                _BuildingInfoPanel?.Hide();
+                _debugPanel?.ClearSelection();
             }
         }
     }
 
     private void UpdateBuildingInfoPanel(RenderSnapshot snapshot)
     {
-        if (_BuildingInfoPanel == null)
+        if (_debugPanel == null)
             return;
 
         if (!_selectedBuildingId.HasValue)
-        {
-            _BuildingInfoPanel.Hide();
             return;
-        }
 
         var obj = snapshot.Buildings.FirstOrDefault(o => o.Id.Value == _selectedBuildingId.Value);
         if (obj == null)
         {
-            _BuildingInfoPanel.Hide();
             _selectedBuildingId = null;
+            _debugPanel.ClearSelection();
             return;
         }
 
-        _BuildingInfoPanel.ShowBuilding(obj, _sim.Content, _sim);
+        _debugPanel.ShowBuilding(obj, _sim);
     }
 
     private void UpdateTimeDisplay(RenderSnapshot snapshot)
     {
-        if (_timeDisplay == null)
+        if (_debugPanel == null)
             return;
 
+        // Always update time - the panel decides what to show based on mode
+        _debugPanel.UpdateTime(snapshot.Time);
+
+        // If nothing selected, ensure we're in time mode
         if (!_selectedPawnId.HasValue && !_selectedBuildingId.HasValue)
         {
-            _timeDisplay.Show();
-            _timeDisplay.UpdateTime(snapshot.Time);
-        }
-        else
-        {
-            _timeDisplay.Hide();
+            _debugPanel.ClearSelection();
         }
     }
 
     private void UpdateSpeedDisplay()
     {
-        if (_timeDisplay == null)
+        if (_debugPanel == null)
             return;
 
         string speedText = _simulationSpeed switch
@@ -1772,7 +1755,7 @@ public partial class GameRoot : Node2D
             _ => "1x",
         };
 
-        _timeDisplay.UpdateSpeed(speedText);
+        _debugPanel.UpdateSpeed(speedText);
     }
 
     private void UpdateNightOverlay(RenderSnapshot snapshot)

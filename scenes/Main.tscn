@@ -1,12 +1,9 @@
-[gd_scene load_steps=15 format=3 uid="uid://main"]
+[gd_scene load_steps=12 format=3 uid="uid://main"]
 
 [ext_resource type="Script" path="res://src/Godot/GameRoot.cs" id="1"]
 [ext_resource type="Script" path="res://src/Godot/CameraController.cs" id="1_camera"]
 [ext_resource type="PackedScene" uid="uid://pawn" path="res://scenes/Pawn.tscn" id="2"]
 [ext_resource type="PackedScene" uid="uid://building" path="res://scenes/Building.tscn" id="3"]
-[ext_resource type="PackedScene" uid="uid://PawnInfoPanel" path="res://scenes/PawnInfoPanel.tscn" id="4"]
-[ext_resource type="PackedScene" uid="uid://BuildingInfoPanel" path="res://scenes/BuildingInfoPanel.tscn" id="5"]
-[ext_resource type="PackedScene" uid="uid://timedisplay" path="res://scenes/TimeDisplay.tscn" id="6"]
 [ext_resource type="PackedScene" uid="uid://buildtoolbar" path="res://scenes/BuildToolbar.tscn" id="7"]
 [ext_resource type="Script" path="res://src/Godot/CRTShaderController.cs" id="8"]
 [ext_resource type="Material" path="res://shaders/screen_effects_material.tres" id="9"]
@@ -45,9 +42,6 @@ BuildingScene = ExtResource("3")
 PawnsRootPath = NodePath("../Pawns")
 BuildingsRootPath = NodePath("../Buildings")
 TilesRootPath = NodePath("../Tiles")
-InfoPanelPath = NodePath("../UI/PawnInfoPanel")
-BuildingInfoPanelPath = NodePath("../UI/BuildingInfoPanel")
-TimeDisplayPath = NodePath("../UI/TimeDisplay")
 ShadowRectPath = NodePath("../ShadowLayer/ShadowRect")
 CRTShaderLayerPath = NodePath("../CRTShaderLayer")
 CameraPath = NodePath("../Camera2D")
@@ -58,24 +52,6 @@ SoundManagerPath = NodePath("../SoundManager")
 HomeScreenPath = NodePath("../UI/HomeScreen")
 
 [node name="UI" type="CanvasLayer" parent="."]
-
-[node name="PawnInfoPanel" parent="UI" instance=ExtResource("4")]
-offset_left = -205.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = 200.0
-
-[node name="BuildingInfoPanel" parent="UI" instance=ExtResource("5")]
-offset_left = -205.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = 90.0
-
-[node name="TimeDisplay" parent="UI" instance=ExtResource("6")]
-offset_left = -205.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = 60.0
 
 [node name="BuildToolbar" parent="UI" instance=ExtResource("7")]
 
