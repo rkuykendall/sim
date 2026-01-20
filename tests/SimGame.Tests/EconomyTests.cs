@@ -255,7 +255,8 @@ public class EconomyTests
 
         results.Add($"\nTotal pawn gold: {totalPawnGold}g");
         results.Add($"Total building gold: {totalBuildingGold}g");
-        results.Add($"Total gold in economy: {totalPawnGold + totalBuildingGold}g");
+        results.Add($"Tax pool: {sim.TaxPool}g");
+        results.Add($"Total gold in economy: {totalPawnGold + totalBuildingGold + sim.TaxPool}g");
 
         // Calculate wealth inequality (difference between richest and poorest pawn)
         if (pawnWealth.Count > 0)
@@ -280,7 +281,7 @@ public class EconomyTests
 
         // Gold is conserved (no money created or destroyed)
         int expectedGold = 5 * 100; // 5 pawns × 100g starting
-        Assert.Equal(expectedGold, totalPawnGold + totalBuildingGold);
+        Assert.Equal(expectedGold, totalPawnGold + totalBuildingGold + sim.TaxPool);
 
         // No pawn is broke - everyone can still participate in economy
         foreach (var pawnId in sim.Entities.AllPawns())
@@ -296,20 +297,18 @@ public class EconomyTests
             $"Economy should be balanced. Pawns have {pawnShare:P0} of gold (expected 30-70%)"
         );
 
-        // Wealth stratification exists but isn't extreme
+        // Wealth stratification should be minimal (tax system equalizes wealth)
         if (pawnWealth.Count > 1)
         {
             int richest = pawnWealth.First().gold;
             int poorest = pawnWealth.Last().gold;
             int wealthGap = richest - poorest;
 
-            // Some gap should exist (stratification)
-            Assert.True(wealthGap > 0, "Some wealth stratification should emerge");
-
-            // But poorest shouldn't be destitute compared to richest
+            // Tax system should keep wealth relatively equal
+            // Allow some small differences but not extreme stratification
             Assert.True(
-                poorest >= richest / 3,
-                $"Poorest pawn ({poorest}g) shouldn't have less than 1/3 of richest ({richest}g)"
+                poorest >= richest / 2,
+                $"Tax system should prevent extreme stratification. Poorest pawn ({poorest}g) shouldn't have less than 1/2 of richest ({richest}g)"
             );
         }
     }

@@ -1241,6 +1241,27 @@ public sealed class AISystem : ISystem
         }
     }
 
+    private int CountPawnsTargeting(SimContext ctx, EntityId buildingId, EntityId excludePawn)
+    {
+        int count = 0;
+        foreach (var otherId in ctx.Entities.AllPawns())
+        {
+            if (otherId == excludePawn)
+                continue;
+            if (!ctx.Entities.Actions.TryGetValue(otherId, out var otherAction))
+                continue;
+
+            if (otherAction.CurrentAction?.TargetEntity == buildingId)
+                count++;
+            foreach (var qa in otherAction.ActionQueue)
+            {
+                if (qa.TargetEntity == buildingId)
+                    count++;
+            }
+        }
+        return count;
+    }
+
     /// <summary>
     /// Calculate which needs require attention, sorted by urgency (most urgent first).
     /// </summary>
@@ -1530,12 +1551,10 @@ public sealed class AISystem : ISystem
             pawnId,
             filter: b =>
                 b.ObjId != excludeId
-                && !b.ObjComp.InUse(ctx.Entities, b.ObjId)
-                && b.OtherPawnsTargeting == 0
                 && b.ResourceComp != null
                 && b.ResourceComp.ResourceType == resourceType
                 && b.ResourceComp.CurrentAmount >= 10, // Minimum threshold
-            scorer: (b, _) => b.ResourceComp!.CurrentAmount - (b.Distance * 0.5f) // Prefer fuller and closer
+            scorer: (b, _) => b.ResourceComp!.CurrentAmount
         );
     }
 
@@ -1821,11 +1840,24 @@ public sealed class AISystem : ISystem
                 OtherPawnsTargeting = otherPawnsTargeting,
             };
 
+            // Apply universal filters first: in-use state and pawn targeting limits
+            if (objComp.InUse(ctx.Entities, objId))
+                continue;
+            if (otherPawnsTargeting >= 2)
+                continue;
+
+            // Then apply custom filter
             if (!filter(searchCtx))
                 continue;
 
-            float score = scorer(searchCtx, pawnId);
-            candidates.Add((objId, score));
+            // Calculate base score (common across all searches)
+            float baseScore = -(searchCtx.Distance * 0.5f) - (otherPawnsTargeting * 10);
+
+            // Add custom scoring on top
+            float customScore = scorer(searchCtx, pawnId);
+            float finalScore = baseScore + customScore;
+
+            candidates.Add((objId, finalScore));
         }
 
         candidates.Sort((a, b) => b.score.CompareTo(a.score));
@@ -1878,14 +1910,11 @@ public sealed class AISystem : ISystem
             pawnId,
             filter: b =>
                 b.ObjDef.SatisfiesNeedId == needId
-                && !b.ObjComp.InUse(ctx.Entities, b.ObjId)
-                && b.OtherPawnsTargeting == 0 // Skip buildings others are headed to
                 && b.ObjDef.CanSellToConsumers
                 && pawnGold >= b.ObjDef.GetCost()
                 && (b.ResourceComp == null || b.ResourceComp.CurrentAmount > 0),
             scorer: (b, pid) =>
-                -b.Distance
-                + GetAttachmentScore(b.AttachmentComp, pid, myWeight: 20, otherWeight: 15)
+                GetAttachmentScore(b.AttachmentComp, pid, myWeight: 20, otherWeight: 15)
         );
     }
 
@@ -1900,8 +1929,6 @@ public sealed class AISystem : ISystem
             pawnId,
             filter: b =>
                 b.ObjDef.CanBeWorkedAt
-                && !b.ObjComp.InUse(ctx.Entities, b.ObjId)
-                && b.OtherPawnsTargeting == 0 // Skip buildings others are headed to
                 && pawnGold >= b.ObjDef.GetWorkBuyIn()
                 && b.ResourceComp != null
                 && (b.ResourceComp.CurrentAmount / b.ResourceComp.MaxAmount) < 0.8f,
@@ -1910,7 +1937,6 @@ public sealed class AISystem : ISystem
                 float resourcePercent = b.ResourceComp!.CurrentAmount / b.ResourceComp.MaxAmount;
                 float urgency = 100 - resourcePercent * 100;
                 return urgency
-                    - (b.Distance * 0.5f)
                     + GetAttachmentScore(b.AttachmentComp, pid, myWeight: 10, otherWeight: 5);
             }
         );
