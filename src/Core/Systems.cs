@@ -411,9 +411,6 @@ public sealed class ActionSystem : ISystem
 
         if (ctx.Entities.Buildings.TryGetValue(targetId, out var buildingComp))
         {
-            buildingComp.InUse = true;
-            buildingComp.UsedBy = pawnId;
-
             // Update display name to "Using X" now that we're actually using it
             var buildingDef = ctx.Content.Buildings[buildingComp.BuildingDefId];
             if (action.DisplayName != $"Using {buildingDef.Name}")
@@ -540,13 +537,6 @@ public sealed class ActionSystem : ISystem
                 }
             }
 
-            // Release the building
-            if (buildingComp != null)
-            {
-                buildingComp.InUse = false;
-                buildingComp.UsedBy = null;
-            }
-
             // Add a brief idle action showing result
             if (buildingComp != null && action.SatisfiesNeedId.HasValue)
             {
@@ -628,9 +618,6 @@ public sealed class ActionSystem : ISystem
 
         if (ctx.Entities.Buildings.TryGetValue(targetId, out var buildingComp2))
         {
-            buildingComp2.InUse = true;
-            buildingComp2.UsedBy = pawnId;
-
             // Update display name to "Working at X" now that we're actually working
             var buildingDef2 = ctx.Content.Buildings[buildingComp2.BuildingDefId];
             if (action.DisplayName != $"Working at {buildingDef2.Name}")
@@ -744,13 +731,6 @@ public sealed class ActionSystem : ISystem
                 }
             }
 
-            // Release the building
-            if (buildingComp2 != null)
-            {
-                buildingComp2.InUse = false;
-                buildingComp2.UsedBy = null;
-            }
-
             // Add a brief happy idle action showing satisfaction
             if (buildingComp2 != null && action.SatisfiesNeedId.HasValue)
             {
@@ -830,10 +810,6 @@ public sealed class ActionSystem : ISystem
                 return;
             }
 
-            // Mark building in use while picking up
-            buildingComp.InUse = true;
-            buildingComp.UsedBy = pawnId;
-
             int elapsed = ctx.Time.Tick - actionComp.ActionStartTick;
             if (elapsed >= action.DurationTicks)
             {
@@ -853,9 +829,6 @@ public sealed class ActionSystem : ISystem
                     }
                 }
 
-                // Release building
-                buildingComp.InUse = false;
-                buildingComp.UsedBy = null;
                 actionComp.CurrentAction = null;
             }
         }
@@ -975,10 +948,6 @@ public sealed class ActionSystem : ISystem
             return;
         }
 
-        // Mark building in use while dropping off
-        buildingComp.InUse = true;
-        buildingComp.UsedBy = pawnId;
-
         int elapsed = ctx.Time.Tick - actionComp.ActionStartTick;
         if (elapsed >= action.DurationTicks)
         {
@@ -1065,10 +1034,6 @@ public sealed class ActionSystem : ISystem
                     attachmentComp.UserAttachments[pawnId] + 1
                 );
             }
-
-            // Release building
-            buildingComp.InUse = false;
-            buildingComp.UsedBy = null;
 
             // Add a brief happy idle action
             if (action.SatisfiesNeedId.HasValue)
@@ -1565,7 +1530,7 @@ public sealed class AISystem : ISystem
             pawnId,
             filter: b =>
                 b.ObjId != excludeId
-                && !b.ObjComp.InUse
+                && !b.ObjComp.InUse(ctx.Entities, b.ObjId)
                 && b.OtherPawnsTargeting == 0
                 && b.ResourceComp != null
                 && b.ResourceComp.ResourceType == resourceType
@@ -1913,7 +1878,7 @@ public sealed class AISystem : ISystem
             pawnId,
             filter: b =>
                 b.ObjDef.SatisfiesNeedId == needId
-                && !b.ObjComp.InUse
+                && !b.ObjComp.InUse(ctx.Entities, b.ObjId)
                 && b.OtherPawnsTargeting == 0 // Skip buildings others are headed to
                 && b.ObjDef.CanSellToConsumers
                 && pawnGold >= b.ObjDef.GetCost()
@@ -1935,7 +1900,7 @@ public sealed class AISystem : ISystem
             pawnId,
             filter: b =>
                 b.ObjDef.CanBeWorkedAt
-                && !b.ObjComp.InUse
+                && !b.ObjComp.InUse(ctx.Entities, b.ObjId)
                 && b.OtherPawnsTargeting == 0 // Skip buildings others are headed to
                 && pawnGold >= b.ObjDef.GetWorkBuyIn()
                 && b.ResourceComp != null

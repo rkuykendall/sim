@@ -975,8 +975,6 @@ public sealed class Simulation
         {
             BuildingDefId = save.BuildingDefId ?? 0,
             ColorIndex = save.BuildingColorIndex ?? 0,
-            InUse = save.InUse ?? false,
-            UsedBy = save.UsedBy.HasValue ? new EntityId(save.UsedBy.Value) : null,
         };
         sim.Entities.Gold[id] = new GoldComponent { Amount = save.BuildingGold ?? 0 };
 

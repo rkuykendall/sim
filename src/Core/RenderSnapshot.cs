@@ -231,9 +231,10 @@ public static class RenderSnapshotBuilder
 
             // Get name of pawn using this building
             string? usedByName = null;
-            if (obj.InUse && obj.UsedBy.HasValue)
+            var usedById = obj.UsedBy(sim.Entities, objId);
+            if (obj.InUse(sim.Entities, objId) && usedById.HasValue)
             {
-                if (sim.Entities.Pawns.TryGetValue(obj.UsedBy.Value, out var userPawn))
+                if (sim.Entities.Pawns.TryGetValue(usedById.Value, out var userPawn))
                     usedByName = userPawn.Name;
             }
 
@@ -283,7 +284,7 @@ public static class RenderSnapshotBuilder
                     Y = pos.Coord.Y,
                     BuildingDefId = obj.BuildingDefId,
                     Name = buildingDef.Name,
-                    InUse = obj.InUse,
+                    InUse = obj.InUse(sim.Entities, objId),
                     UsedByName = usedByName,
                     ColorIndex = obj.ColorIndex,
                     Gold = buildingGold,

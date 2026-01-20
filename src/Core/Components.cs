@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SimGame.Core;
 
@@ -46,9 +48,60 @@ public sealed class ActionComponent
 public sealed class BuildingComponent
 {
     public int BuildingDefId { get; set; }
-    public bool InUse { get; set; }
-    public EntityId? UsedBy { get; set; }
     public int ColorIndex { get; set; } = 0; // Index into color palette
+
+    /// <summary>
+    /// Computed: Is any pawn currently targeting this building?
+    /// This is calculated from pawn ActionComponents, not stored.
+    /// </summary>
+    public bool InUse(EntityManager entities, EntityId buildingId)
+    {
+        // Check if any pawn is targeting this building
+        foreach (var pawnId in entities.AllPawns())
+        {
+            if (entities.Actions.TryGetValue(pawnId, out var actionComp))
+            {
+                // Check current action or any queued action
+                if (
+                    (actionComp.CurrentAction?.TargetEntity == buildingId)
+                    || actionComp.ActionQueue.Any(a => a.TargetEntity == buildingId)
+                )
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Computed: Which pawn is currently using this building (if any)?
+    /// This is calculated from pawn ActionComponents, not stored.
+    /// </summary>
+    public EntityId? UsedBy(EntityManager entities, EntityId buildingId)
+    {
+        // Find the pawn currently targeting this building
+        foreach (var pawnId in entities.AllPawns())
+        {
+            if (entities.Actions.TryGetValue(pawnId, out var actionComp))
+            {
+                // Current action takes priority
+                if (actionComp.CurrentAction?.TargetEntity == buildingId)
+                {
+                    return pawnId;
+                }
+
+                // Then check queued actions
+                if (actionComp.ActionQueue.Any(a => a.TargetEntity == buildingId))
+                {
+                    return pawnId;
+                }
+            }
+        }
+
+        return null;
+    }
 }
 
 // Resource storage (for buildings that provide resources like food, water)

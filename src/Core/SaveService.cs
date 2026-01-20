@@ -163,8 +163,7 @@ public static class SaveService
             {
                 entity.BuildingDefId = building.BuildingDefId;
                 entity.BuildingColorIndex = building.ColorIndex;
-                entity.InUse = building.InUse;
-                entity.UsedBy = building.UsedBy?.Value;
+                // Note: InUse and UsedBy are computed dynamically from pawn actions, not serialized
             }
 
             if (em.Resources.TryGetValue(id, out var resource))
