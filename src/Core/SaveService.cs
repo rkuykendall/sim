@@ -43,6 +43,7 @@ public static class SaveService
             CurrentTick = sim.Time.Tick,
             SelectedPaletteId = sim.SelectedPaletteId,
             NextEntityId = sim.Entities.NextId,
+            TaxPool = sim.TaxPool,
             World = SerializeWorld(sim.World),
             Entities = SerializeEntities(sim),
         };
@@ -163,7 +164,6 @@ public static class SaveService
             {
                 entity.BuildingDefId = building.BuildingDefId;
                 entity.BuildingColorIndex = building.ColorIndex;
-                // Note: InUse and UsedBy are computed dynamically from pawn actions, not serialized
             }
 
             if (em.Resources.TryGetValue(id, out var resource))

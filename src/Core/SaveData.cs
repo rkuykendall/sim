@@ -15,6 +15,7 @@ public sealed class SaveData
     public int CurrentTick { get; set; }
     public int SelectedPaletteId { get; set; }
     public int NextEntityId { get; set; }
+    public int TaxPool { get; set; } = 0;
     public WorldSaveData World { get; set; } = new();
     public List<EntitySaveData> Entities { get; set; } = new();
 }

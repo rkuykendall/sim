@@ -57,6 +57,16 @@ public sealed class Simulation
     /// </summary>
     private const int PawnSpawnInterval = TimeService.TicksPerDay / 48;
 
+    /// <summary>
+    /// Tax redistribution interval (every N days).
+    /// </summary>
+    private const int TaxInterval = TimeService.TicksPerDay; // Every day
+
+    /// <summary>
+    /// Tax rate as a percentage (0-100).
+    /// </summary>
+    private const float TaxRate = 10f; // 10%
+
     public World World { get; }
     public EntityManager Entities { get; } = new();
     public TimeService Time { get; }
@@ -66,6 +76,11 @@ public sealed class Simulation
     public int SelectedPaletteId { get; }
     public ThemeSystem ThemeSystem { get; }
     public SystemManager Systems => _systems;
+
+    /// <summary>
+    /// Accumulated tax pool for redistribution. Includes collected taxes and gold from deleted buildings.
+    /// </summary>
+    public int TaxPool { get; set; } = 0;
 
     private readonly SystemManager _systems = new();
 
@@ -243,6 +258,12 @@ public sealed class Simulation
                 {
                     World.GetTile(tile).BuildingBlocksMovement = false;
                 }
+            }
+
+            // Capture building's gold into tax pool before destruction
+            if (Entities.Gold.TryGetValue(id, out var gold) && gold.Amount > 0)
+            {
+                TaxPool += gold.Amount;
             }
         }
 
@@ -886,6 +907,80 @@ public sealed class Simulation
                 catch (InvalidOperationException) { }
             }
         }
+
+        // Progressive tax redistribution
+        if (Time.Tick % TaxInterval == 0 && Time.Tick > 0)
+        {
+            PerformTaxRedistribution();
+        }
+    }
+
+    /// <summary>
+    /// Collect tax from all pawns and buildings, redistribute equally to pawns and workable buildings.
+    /// This acts as an equalizing force to unstick the economy.
+    /// Gold from deleted buildings is also included via TaxPool.
+    /// </summary>
+    private void PerformTaxRedistribution()
+    {
+        // Collect from all pawns
+        foreach (var (pawnId, _) in Entities.Pawns)
+        {
+            if (Entities.Gold.TryGetValue(pawnId, out var gold) && gold.Amount > 0)
+            {
+                int tax = (int)(gold.Amount * TaxRate / 100f);
+                gold.Amount -= tax;
+                TaxPool += tax;
+            }
+        }
+
+        // Collect from all buildings
+        foreach (var (buildingId, _) in Entities.Buildings)
+        {
+            if (Entities.Gold.TryGetValue(buildingId, out var gold) && gold.Amount > 0)
+            {
+                int tax = (int)(gold.Amount * TaxRate / 100f);
+                gold.Amount -= tax;
+                TaxPool += tax;
+            }
+        }
+
+        if (TaxPool == 0)
+            return;
+
+        // Count recipients: all pawns + buildings that can be worked at
+        var recipients = new List<EntityId>();
+
+        foreach (var (pawnId, _) in Entities.Pawns)
+        {
+            recipients.Add(pawnId);
+        }
+
+        foreach (var (buildingId, buildingComp) in Entities.Buildings)
+        {
+            var buildingDef = Content.Buildings[buildingComp.BuildingDefId];
+            if (buildingDef.CanBeWorkedAt)
+            {
+                recipients.Add(buildingId);
+            }
+        }
+
+        if (recipients.Count == 0)
+            return;
+
+        // Distribute equally, save remainder for next time
+        int perRecipient = TaxPool / recipients.Count;
+        int remainder = TaxPool % recipients.Count;
+
+        foreach (var recipientId in recipients)
+        {
+            if (Entities.Gold.TryGetValue(recipientId, out var gold))
+            {
+                gold.Amount += perRecipient;
+            }
+        }
+
+        // Save remainder for next redistribution (no gold lost)
+        TaxPool = remainder;
     }
 
     public RenderSnapshot CreateRenderSnapshot()
@@ -961,6 +1056,9 @@ public sealed class Simulation
 
         // Restore time
         sim.Time.SetTick(data.CurrentTick);
+
+        // Restore tax pool
+        sim.TaxPool = data.TaxPool;
 
         return sim;
     }
