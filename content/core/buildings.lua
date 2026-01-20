@@ -60,9 +60,15 @@ Buildings = {
         grantsBuff = 12,        -- Socialized
         buffDuration = 3000,    -- 2.5 minutes
         spriteKey = "tavern",
+        resourceType = "drinks",
+        maxResourceAmount = 100,
+        depletionMult = 1.0,    -- Drinks deplete when served
+        canBeWorkedAt = true,
         tileSize = 2,
         baseCost = 8,           -- Medium-low cost social building
-        baseProduction = 1.5,
+        baseProduction = 1.5,   -- Payout = 12g
+        workType = "direct",    -- Bartender makes drinks on-site
+        canSellToConsumers = true,
     },
     LumberMill = {
         satisfiesNeed = "Purpose",
