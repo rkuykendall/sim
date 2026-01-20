@@ -173,4 +173,5 @@ public sealed class ActionDef
     public TileCoord? TerrainTargetCoord { get; init; } // For terrain harvesting (pickup from tile)
     public string? ResourceType { get; init; } // Resource being hauled
     public float ResourceAmount { get; init; } // Amount to transfer
+    public EntityId? SourceEntity { get; init; } // Source building for wholesale payment (building-to-building)
 }

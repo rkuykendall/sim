@@ -952,13 +952,14 @@ public sealed class ActionSystem : ISystem
         if (elapsed >= action.DurationTicks)
         {
             // Transfer resources from inventory to building
+            float transferAmount = 0f;
             if (
                 ctx.Entities.Resources.TryGetValue(targetId, out var destResource)
                 && inventory.ResourceType == destResource.ResourceType
                 && inventory.Amount > 0
             )
             {
-                float transferAmount = Math.Min(
+                transferAmount = Math.Min(
                     inventory.Amount,
                     destResource.MaxAmount - destResource.CurrentAmount
                 );
@@ -969,6 +970,21 @@ public sealed class ActionSystem : ISystem
                     inventory.ResourceType = null;
                     inventory.Amount = 0;
                 }
+            }
+
+            // Building-to-building wholesale payment: destination pays source for goods
+            // Rate: 1g per 15 units (wholesale discount)
+            if (
+                action.SourceEntity.HasValue
+                && transferAmount > 0
+                && ctx.Entities.Gold.TryGetValue(targetId, out var destGold)
+                && ctx.Entities.Gold.TryGetValue(action.SourceEntity.Value, out var sourceGold)
+            )
+            {
+                int wholesalePayment = (int)(transferAmount / 15.0f); // 1g per 15 units
+                int actualPayment = Math.Min(wholesalePayment, destGold.Amount);
+                destGold.Amount -= actualPayment;
+                sourceGold.Amount += actualPayment;
             }
 
             // Economic transaction: pawn pays buy-in, receives payout from building stores
@@ -1474,6 +1490,7 @@ public sealed class AISystem : ISystem
                 Type = ActionType.DropOff,
                 Animation = AnimationType.Idle, // Pawn is hidden during dropoff
                 TargetEntity = destinationId,
+                SourceEntity = sourceBuilding, // For wholesale payment to source
                 DurationTicks = 100, // Quick unloading time
                 ResourceType = destDef.HaulSourceResourceType,
                 ResourceAmount = 30f,

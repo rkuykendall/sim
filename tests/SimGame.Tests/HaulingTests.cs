@@ -471,7 +471,8 @@ public class HaulingTests
         }
 
         // 2 pawns × 100g + 2 workable buildings × 100g = 400g
-        Assert.Equal(400, totalGold);
+        // TaxPool may hold remainder from redistribution
+        Assert.Equal(400, totalGold + sim.TaxPool);
 
         // Market should have received some food from hauling (key supply chain test)
         // Even if it was consumed, the total throughput should be positive
