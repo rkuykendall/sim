@@ -1256,20 +1256,22 @@ public sealed class AISystem : ISystem
         {
             if (isWorkAction)
             {
-                QueueWorkAtBuilding(ctx, actionComp, targetBuilding.Value, purposeNeedId!.Value);
+                QueueWorkAtBuilding(
+                    ctx,
+                    pawnId,
+                    actionComp,
+                    targetBuilding.Value,
+                    purposeNeedId!.Value
+                );
             }
             else
             {
                 QueueUseBuilding(ctx, actionComp, targetBuilding.Value);
             }
         }
-        else if (urgentNeeds.Count > 0 && urgentNeeds[0].urgency < -50)
-        {
-            // Critical needs but no available buildings - wait near a building
-            QueueWaitForBuilding(ctx, pawnId, actionComp, urgentNeeds);
-        }
         else
         {
+            // No available buildings - wander (will show thought bubble for unmet needs)
             WanderRandomly(ctx, pawnId, actionComp);
         }
     }
@@ -1377,6 +1379,7 @@ public sealed class AISystem : ISystem
     /// </summary>
     private void QueueWorkAtBuilding(
         SimContext ctx,
+        EntityId pawnId,
         ActionComponent actionComp,
         EntityId targetBuilding,
         int purposeNeedId
@@ -1393,6 +1396,7 @@ public sealed class AISystem : ISystem
             case BuildingWorkType.HaulFromBuilding:
                 QueueHaulFromBuildingWork(
                     ctx,
+                    pawnId,
                     actionComp,
                     targetBuilding,
                     buildingDef,
@@ -1441,6 +1445,7 @@ public sealed class AISystem : ISystem
     /// </summary>
     private void QueueHaulFromBuildingWork(
         SimContext ctx,
+        EntityId pawnId,
         ActionComponent actionComp,
         EntityId destinationId,
         BuildingDef destDef,
@@ -1448,7 +1453,12 @@ public sealed class AISystem : ISystem
     )
     {
         // Find source building with the required resource
-        var sourceBuilding = FindSourceBuilding(ctx, destDef.HaulSourceResourceType, destinationId);
+        var sourceBuilding = FindSourceBuilding(
+            ctx,
+            pawnId,
+            destDef.HaulSourceResourceType,
+            destinationId
+        );
         if (sourceBuilding == null)
         {
             // No source available - fall back to wandering
@@ -1540,41 +1550,28 @@ public sealed class AISystem : ISystem
     /// <summary>
     /// Find a source building with the required resource type.
     /// </summary>
-    private EntityId? FindSourceBuilding(SimContext ctx, string? resourceType, EntityId excludeId)
+    private EntityId? FindSourceBuilding(
+        SimContext ctx,
+        EntityId pawnId,
+        string? resourceType,
+        EntityId excludeId
+    )
     {
         if (resourceType == null)
             return null;
 
-        EntityId? best = null;
-        float bestScore = float.MinValue;
-
-        foreach (var objId in ctx.Entities.AllBuildings())
-        {
-            if (objId == excludeId)
-                continue;
-
-            var objComp = ctx.Entities.Buildings[objId];
-            if (objComp.InUse)
-                continue;
-
-            // Must have matching resource type and resources available
-            if (!ctx.Entities.Resources.TryGetValue(objId, out var resourceComp))
-                continue;
-            if (resourceComp.ResourceType != resourceType)
-                continue;
-            if (resourceComp.CurrentAmount < 10) // Minimum threshold
-                continue;
-
-            // Score by resource amount (prefer fuller buildings)
-            float score = resourceComp.CurrentAmount;
-            if (score > bestScore)
-            {
-                bestScore = score;
-                best = objId;
-            }
-        }
-
-        return best;
+        return FindBestReachableBuilding(
+            ctx,
+            pawnId,
+            filter: b =>
+                b.ObjId != excludeId
+                && !b.ObjComp.InUse
+                && b.OtherPawnsTargeting == 0
+                && b.ResourceComp != null
+                && b.ResourceComp.ResourceType == resourceType
+                && b.ResourceComp.CurrentAmount >= 10, // Minimum threshold
+            scorer: (b, _) => b.ResourceComp!.CurrentAmount - (b.Distance * 0.5f) // Prefer fuller and closer
+        );
     }
 
     /// <summary>
@@ -1650,60 +1647,6 @@ public sealed class AISystem : ISystem
                 return true;
         }
         return false;
-    }
-
-    /// <summary>
-    /// Queue an action to wait near a building when all relevant buildings are in use.
-    /// </summary>
-    private void QueueWaitForBuilding(
-        SimContext ctx,
-        EntityId pawnId,
-        ActionComponent actionComp,
-        List<(int needId, float urgency)> urgentNeeds
-    )
-    {
-        var waitTarget = FindAnyBuildingForNeeds(
-            ctx,
-            pawnId,
-            urgentNeeds.Select(n => n.needId).ToList()
-        );
-        if (waitTarget == null)
-        {
-            // No buildings exist at all for our needs - wander
-            WanderRandomly(ctx, pawnId, actionComp);
-            return;
-        }
-
-        var objComp = ctx.Entities.Buildings[waitTarget.Value];
-        var objDef = ctx.Content.Buildings[objComp.BuildingDefId];
-        var objPos = ctx.Entities.Positions[waitTarget.Value];
-
-        var waitSpot = FindWaitingSpot(ctx, objPos.Coord, pawnId);
-        if (waitSpot != null)
-        {
-            actionComp.ActionQueue.Enqueue(
-                new ActionDef
-                {
-                    Type = ActionType.MoveTo,
-                    Animation = AnimationType.Walk,
-                    TargetCoord = waitSpot,
-                    DisplayName = $"Waiting for {objDef.Name}",
-                }
-            );
-        }
-        else
-        {
-            // Can't find waiting spot, just idle briefly
-            actionComp.ActionQueue.Enqueue(
-                new ActionDef
-                {
-                    Type = ActionType.Idle,
-                    Animation = AnimationType.Idle,
-                    DurationTicks = 20,
-                    DisplayName = $"Waiting for {objDef.Name}",
-                }
-            );
-        }
     }
 
     private void WanderRandomly(SimContext ctx, EntityId pawnId, ActionComponent actionComp)
@@ -1828,6 +1771,46 @@ public sealed class AISystem : ISystem
         public int Distance { get; init; }
         public ResourceComponent? ResourceComp { get; init; }
         public AttachmentComponent? AttachmentComp { get; init; }
+        public int OtherPawnsTargeting { get; init; }
+    }
+
+    /// <summary>
+    /// Count how many other pawns are currently targeting a building
+    /// (have it as TargetEntity in their current action or queue).
+    /// </summary>
+    private static int CountPawnsTargetingBuilding(
+        EntityManager entities,
+        EntityId buildingId,
+        EntityId excludePawnId
+    )
+    {
+        int count = 0;
+        foreach (var pawnId in entities.AllPawns())
+        {
+            if (pawnId == excludePawnId)
+                continue;
+
+            if (!entities.Actions.TryGetValue(pawnId, out var actionComp))
+                continue;
+
+            // Check current action
+            if (actionComp.CurrentAction?.TargetEntity == buildingId)
+            {
+                count++;
+                continue;
+            }
+
+            // Check queued actions
+            foreach (var queued in actionComp.ActionQueue)
+            {
+                if (queued.TargetEntity == buildingId)
+                {
+                    count++;
+                    break;
+                }
+            }
+        }
+        return count;
     }
 
     /// <summary>
@@ -1859,6 +1842,7 @@ public sealed class AISystem : ISystem
 
             ctx.Entities.Resources.TryGetValue(objId, out var resourceComp);
             ctx.Entities.Attachments.TryGetValue(objId, out var attachmentComp);
+            int otherPawnsTargeting = CountPawnsTargetingBuilding(ctx.Entities, objId, pawnId);
 
             var searchCtx = new BuildingSearchContext
             {
@@ -1869,6 +1853,7 @@ public sealed class AISystem : ISystem
                 Distance = dist,
                 ResourceComp = resourceComp,
                 AttachmentComp = attachmentComp,
+                OtherPawnsTargeting = otherPawnsTargeting,
             };
 
             if (!filter(searchCtx))
@@ -1929,6 +1914,7 @@ public sealed class AISystem : ISystem
             filter: b =>
                 b.ObjDef.SatisfiesNeedId == needId
                 && !b.ObjComp.InUse
+                && b.OtherPawnsTargeting == 0 // Skip buildings others are headed to
                 && b.ObjDef.CanSellToConsumers
                 && pawnGold >= b.ObjDef.GetCost()
                 && (b.ResourceComp == null || b.ResourceComp.CurrentAmount > 0),
@@ -1950,6 +1936,7 @@ public sealed class AISystem : ISystem
             filter: b =>
                 b.ObjDef.CanBeWorkedAt
                 && !b.ObjComp.InUse
+                && b.OtherPawnsTargeting == 0 // Skip buildings others are headed to
                 && pawnGold >= b.ObjDef.GetWorkBuyIn()
                 && b.ResourceComp != null
                 && (b.ResourceComp.CurrentAmount / b.ResourceComp.MaxAmount) < 0.8f,
@@ -1962,43 +1949,6 @@ public sealed class AISystem : ISystem
                     + GetAttachmentScore(b.AttachmentComp, pid, myWeight: 10, otherWeight: 5);
             }
         );
-    }
-
-    private EntityId? FindAnyBuildingForNeeds(SimContext ctx, EntityId pawnId, List<int> needIds)
-    {
-        return FindBestReachableBuilding(
-            ctx,
-            pawnId,
-            filter: b =>
-                b.ObjDef.SatisfiesNeedId.HasValue
-                && needIds.Contains(b.ObjDef.SatisfiesNeedId.Value),
-            scorer: (b, _) => -b.Distance // Closer is better (negative so higher score = closer)
-        );
-    }
-
-    /// <summary>
-    /// Find a walkable tile near a building where a pawn can wait.
-    /// </summary>
-    private TileCoord? FindWaitingSpot(SimContext ctx, TileCoord buildingPos, EntityId pawnId)
-    {
-        // Look for walkable tiles within 2 tiles of the building
-        for (int dx = -2; dx <= 2; dx++)
-        {
-            for (int dy = -2; dy <= 2; dy++)
-            {
-                if (dx == 0 && dy == 0)
-                    continue; // Skip the building tile itself
-
-                var candidate = new TileCoord(buildingPos.X + dx, buildingPos.Y + dy);
-
-                if (ctx.World.IsWalkable(candidate))
-                {
-                    return candidate;
-                }
-            }
-        }
-
-        return null;
     }
 
     private bool IsBuildingReachable(SimContext ctx, EntityId pawnId, EntityId objId)
