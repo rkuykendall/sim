@@ -80,8 +80,8 @@ public partial class PreviewSquare : Button
     /// <param name="terrainDefId">Selected terrain ID, or null</param>
     /// <param name="content">Content registry for looking up definitions</param>
     /// <param name="palette">Current color palette</param>
-    /// <param name="isBuildingPreview">True if this is the building preview (shows generic-building.png when null)</param>
-    /// <param name="isTerrainPreview">True if this is the terrain preview (shows generic-terrain.png when null)</param>
+    /// <param name="isBuildingPreview">True if this is the building preview (shows menu/build.png when null)</param>
+    /// <param name="isTerrainPreview">True if this is the terrain preview (shows menu/paint.png when null)</param>
     /// <param name="isDeletePreview">True if this is the delete preview (shows delete.png)</param>
     /// <param name="isSelectPreview">True if this is the select preview (shows select.png)</param>
     public void UpdatePreview(
@@ -124,25 +124,25 @@ public partial class PreviewSquare : Button
         // Fallback to unknown.png if sprite key exists but texture not found
         if (texture == null && (buildingDefId.HasValue || terrainDefId.HasValue))
         {
-            texture = GD.Load<Texture2D>("res://sprites/unknown.png");
+            texture = GD.Load<Texture2D>("res://sprites/placeholders/unknown.png");
         }
 
         // Show generic icons when nothing is selected
         if (texture == null && isSelectPreview)
         {
-            texture = GD.Load<Texture2D>("res://sprites/select.png");
+            texture = GD.Load<Texture2D>("res://sprites/tools/select.png");
         }
         else if (texture == null && isBuildingPreview)
         {
-            texture = GD.Load<Texture2D>("res://sprites/generic-building.png");
+            texture = GD.Load<Texture2D>("res://sprites/menu/build.png");
         }
         else if (texture == null && isTerrainPreview)
         {
-            texture = GD.Load<Texture2D>("res://sprites/generic-terrain.png");
+            texture = GD.Load<Texture2D>("res://sprites/menu/paint.png");
         }
         else if (texture == null && isDeletePreview)
         {
-            texture = GD.Load<Texture2D>("res://sprites/delete.png");
+            texture = GD.Load<Texture2D>("res://sprites/tools/delete.png");
         }
 
         if (texture != null)

@@ -129,7 +129,7 @@ public partial class BuildToolbar : HBoxContainer
             (
                 () =>
                     CreateToolButton(
-                        "generic-building.png",
+                        "menu/build.png",
                         BuildToolMode.PlaceBuilding,
                         "Place Building"
                     ),
@@ -196,7 +196,7 @@ public partial class BuildToolbar : HBoxContainer
             CustomMinimumSize = new Vector2(96, 96),
             TooltipText = "Home (Save & Exit)",
         };
-        var texture = GD.Load<Texture2D>("res://sprites/home.png");
+        var texture = GD.Load<Texture2D>("res://sprites/menu/home.png");
         if (texture != null)
         {
             homeBtn.SetSprite(texture, Colors.White);
@@ -285,7 +285,7 @@ public partial class BuildToolbar : HBoxContainer
             case BuildToolMode.OutlineSquare:
             case BuildToolMode.FloodFill:
                 // Add delete option first
-                optionsList.Add((-1, "delete.png", "Delete", false, true));
+                optionsList.Add((-1, "tools/delete.png", "Delete", false, true));
 
                 // Then add all terrain options
                 foreach (var (id, def) in _content.Terrains.OrderBy(kv => kv.Key))
@@ -622,7 +622,7 @@ public partial class BuildToolbar : HBoxContainer
             CustomMinimumSize = new Vector2(96, 96),
             TooltipText = "Flood Fill",
         };
-        var texture = GD.Load<Texture2D>("res://sprites/fill.png");
+        var texture = GD.Load<Texture2D>("res://sprites/tools/fill.png");
         if (texture != null)
         {
             fillBtn.SetSprite(texture, _currentPalette[BuildToolState.SelectedColorIndex]);
@@ -638,7 +638,7 @@ public partial class BuildToolbar : HBoxContainer
             CustomMinimumSize = new Vector2(96, 96),
             TooltipText = "Fill Square",
         };
-        var texture = GD.Load<Texture2D>("res://sprites/box.png");
+        var texture = GD.Load<Texture2D>("res://sprites/tools/box.png");
         if (texture != null)
         {
             fillBtn.SetSprite(texture, _currentPalette[BuildToolState.SelectedColorIndex]);
@@ -654,7 +654,7 @@ public partial class BuildToolbar : HBoxContainer
             CustomMinimumSize = new Vector2(96, 96),
             TooltipText = "Outline Square",
         };
-        var texture = GD.Load<Texture2D>("res://sprites/square.png");
+        var texture = GD.Load<Texture2D>("res://sprites/tools/square.png");
         if (texture != null)
         {
             outlineBtn.SetSprite(texture, _currentPalette[BuildToolState.SelectedColorIndex]);
