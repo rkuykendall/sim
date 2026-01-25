@@ -58,6 +58,11 @@ public sealed class RenderBuilding
 
     // Debug: Attachment info (pawn ID -> attachment strength)
     public IReadOnlyDictionary<EntityId, int>? Attachments { get; init; }
+
+    // Sprite sheet info for rendering variants and phases
+    public int SpriteVariants { get; init; } = 1;
+    public int SpritePhases { get; init; } = 1;
+    public int MaxPawnWealth { get; init; } // Wealth of the wealthiest attached pawn (for phase selection)
 }
 
 public sealed class RenderTime
@@ -257,7 +262,9 @@ public static class RenderSnapshotBuilder
             }
 
             // Get attachment info (which pawns are attached to this building)
+            // and calculate the max wealth of attached pawns for phase rendering
             var buildingAttachments = new Dictionary<EntityId, int>();
+            int maxPawnWealth = 0;
             if (sim.Entities.Attachments.TryGetValue(objId, out var attachComp))
             {
                 foreach (var (attachedPawnId, strength) in attachComp.UserAttachments)
@@ -265,6 +272,15 @@ public static class RenderSnapshotBuilder
                     if (strength > 0)
                     {
                         buildingAttachments[attachedPawnId] = strength;
+
+                        // Track the wealthiest attached pawn for phase rendering
+                        if (sim.Entities.Gold.TryGetValue(attachedPawnId, out var attachedPawnGold))
+                        {
+                            if (attachedPawnGold.Amount > maxPawnWealth)
+                            {
+                                maxPawnWealth = attachedPawnGold.Amount;
+                            }
+                        }
                     }
                 }
             }
@@ -296,6 +312,9 @@ public static class RenderSnapshotBuilder
                     MaxResource = maxResource,
                     CanBeWorkedAt = canBeWorkedAt,
                     Attachments = buildingAttachments,
+                    SpriteVariants = buildingDef.SpriteVariants,
+                    SpritePhases = buildingDef.SpritePhases,
+                    MaxPawnWealth = maxPawnWealth,
                 }
             );
         }

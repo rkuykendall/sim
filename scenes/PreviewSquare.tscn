@@ -4,5 +4,4 @@
 
 [node name="PreviewSquare" type="Button"]
 custom_minimum_size = Vector2(96, 96)
-tooltip_text = "Click to change color"
 script = ExtResource("1")

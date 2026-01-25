@@ -15,6 +15,7 @@ public sealed class TestSimulationBuilder
         Seed = 12345, // Fixed seed to ensure deterministic palette selection
         WorldBounds = (0, 4, 0, 4), // Default 5x5 world
         DisableThemes = true, // Disable themes by default for deterministic tests
+        TaxMultiplier = 1.0f, // Disable tax inflation for deterministic economy tests
     };
 
     private readonly ContentRegistry _content = new();

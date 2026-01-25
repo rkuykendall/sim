@@ -57,6 +57,10 @@ public sealed class BuildingDef : IContentDef
     public IReadOnlyList<(int dx, int dy)> UseAreas { get; init; } = Array.Empty<(int, int)>(); // Relative tile offsets where pawn can use this building
     public string SpriteKey { get; init; } = ""; // Path to sprite texture
 
+    // Sprite sheet support (for buildings with multiple variants and development phases)
+    public int SpriteVariants { get; init; } = 1; // Number of visual variants (rows in sprite sheet)
+    public int SpritePhases { get; init; } = 1; // Number of development phases (columns in sprite sheet)
+
     // Resource system
     public string? ResourceType { get; init; } // "food", "water", etc. - null if building doesn't use resources
     public float MaxResourceAmount { get; init; } = 100f;

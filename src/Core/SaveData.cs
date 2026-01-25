@@ -60,7 +60,8 @@ public sealed class EntitySaveData
     public InventorySaveData? Inventory { get; set; }
 
     // Building-specific
-    public int? BuildingDefId { get; set; }
+    public string? BuildingDefName { get; set; } // Preferred: stable across content reloads
+    public int? BuildingDefId { get; set; } // Deprecated: kept for backward compatibility
     public int? BuildingColorIndex { get; set; }
     public bool? InUse { get; set; }
     public int? UsedBy { get; set; }

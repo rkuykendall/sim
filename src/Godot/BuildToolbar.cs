@@ -127,12 +127,7 @@ public partial class BuildToolbar : HBoxContainer
             (() => CreateOutlineSquareToolButton(), BuildToolMode.OutlineSquare),
             (() => CreateFloodFillToolButton(), BuildToolMode.FloodFill),
             (
-                () =>
-                    CreateToolButton(
-                        "menu/build.png",
-                        BuildToolMode.PlaceBuilding,
-                        "Place Building"
-                    ),
+                () => CreateToolButton("menu/build.png", BuildToolMode.PlaceBuilding),
                 BuildToolMode.PlaceBuilding
             ),
         };
@@ -140,7 +135,7 @@ public partial class BuildToolbar : HBoxContainer
         {
             toolDefs.Add(
                 (
-                    () => CreateToolButton("select.png", BuildToolMode.Select, "Select"),
+                    () => CreateToolButton("tools/select.png", BuildToolMode.Select),
                     BuildToolMode.Select
                 )
             );
@@ -191,11 +186,7 @@ public partial class BuildToolbar : HBoxContainer
 
     private Button CreateHomeButton()
     {
-        var homeBtn = new SpriteIconButton
-        {
-            CustomMinimumSize = new Vector2(96, 96),
-            TooltipText = "Home (Save & Exit)",
-        };
+        var homeBtn = new SpriteIconButton { CustomMinimumSize = new Vector2(96, 96) };
         var texture = GD.Load<Texture2D>("res://sprites/menu/home.png");
         if (texture != null)
         {
@@ -218,22 +209,14 @@ public partial class BuildToolbar : HBoxContainer
 
     private Button CreatePaintToolButton()
     {
-        var paintBtn = new PreviewSquare
-        {
-            CustomMinimumSize = new Vector2(96, 96),
-            TooltipText = "Paint Terrain",
-        };
+        var paintBtn = new PreviewSquare { CustomMinimumSize = new Vector2(96, 96) };
         paintBtn.Pressed += () => OnToolSelected(BuildToolMode.PlaceTerrain);
         return paintBtn;
     }
 
-    private SpriteIconButton CreateToolButton(string spriteKey, BuildToolMode mode, string tooltip)
+    private SpriteIconButton CreateToolButton(string spriteKey, BuildToolMode mode)
     {
-        var button = new SpriteIconButton
-        {
-            CustomMinimumSize = new Vector2(96, 96),
-            TooltipText = tooltip,
-        };
+        var button = new SpriteIconButton { CustomMinimumSize = new Vector2(96, 96) };
 
         var texture = GD.Load<Texture2D>($"res://sprites/{spriteKey}");
         if (texture != null)
@@ -312,11 +295,7 @@ public partial class BuildToolbar : HBoxContainer
         bool isDelete
     )
     {
-        var button = new SpriteIconButton
-        {
-            CustomMinimumSize = new Vector2(96, 96),
-            TooltipText = name,
-        };
+        var button = new SpriteIconButton { CustomMinimumSize = new Vector2(96, 96) };
 
         Texture2D? texture = null;
 
@@ -617,11 +596,7 @@ public partial class BuildToolbar : HBoxContainer
 
     private Button CreateFloodFillToolButton()
     {
-        var fillBtn = new SpriteIconButton
-        {
-            CustomMinimumSize = new Vector2(96, 96),
-            TooltipText = "Flood Fill",
-        };
+        var fillBtn = new SpriteIconButton { CustomMinimumSize = new Vector2(96, 96) };
         var texture = GD.Load<Texture2D>("res://sprites/tools/fill.png");
         if (texture != null)
         {
@@ -633,11 +608,7 @@ public partial class BuildToolbar : HBoxContainer
 
     private Button CreateFillSquareToolButton()
     {
-        var fillBtn = new SpriteIconButton
-        {
-            CustomMinimumSize = new Vector2(96, 96),
-            TooltipText = "Fill Square",
-        };
+        var fillBtn = new SpriteIconButton { CustomMinimumSize = new Vector2(96, 96) };
         var texture = GD.Load<Texture2D>("res://sprites/tools/box.png");
         if (texture != null)
         {
@@ -649,11 +620,7 @@ public partial class BuildToolbar : HBoxContainer
 
     private Button CreateOutlineSquareToolButton()
     {
-        var outlineBtn = new SpriteIconButton
-        {
-            CustomMinimumSize = new Vector2(96, 96),
-            TooltipText = "Outline Square",
-        };
+        var outlineBtn = new SpriteIconButton { CustomMinimumSize = new Vector2(96, 96) };
         var texture = GD.Load<Texture2D>("res://sprites/tools/square.png");
         if (texture != null)
         {

@@ -218,7 +218,7 @@ public static class ContentLoader
 
             var interactionDurationData = data.Get("interactionDuration");
             var interactionDuration = interactionDurationData.IsNil()
-                ? 1000
+                ? 100
                 : (int)interactionDurationData.Number;
 
             var grantsBuffData = data.Get("grantsBuff");
@@ -263,6 +263,13 @@ public static class ContentLoader
                 ? true
                 : canSellToConsumersData.Boolean;
 
+            // Sprite sheet properties for variants and development phases
+            var spriteVariantsData = data.Get("spriteVariants");
+            var spriteVariants = spriteVariantsData.IsNil() ? 1 : (int)spriteVariantsData.Number;
+
+            var spritePhasesData = data.Get("spritePhases");
+            var spritePhases = spritePhasesData.IsNil() ? 1 : (int)spritePhasesData.Number;
+
             var building = new BuildingDef
             {
                 Name = key,
@@ -289,6 +296,8 @@ public static class ContentLoader
                 HaulSourceResourceType = haulSourceResourceType,
                 HaulSourceTerrainKey = haulSourceTerrainKey,
                 CanSellToConsumers = canSellToConsumers,
+                SpriteVariants = spriteVariants,
+                SpritePhases = spritePhases,
             };
 
             registry.RegisterBuilding(key, building);

@@ -14,7 +14,7 @@ public abstract class Theme
 
     /// <summary>
     /// Path to the music file to play, or null for no music.
-    /// Example: "res://Music/Classics/Gymnopédie No.1.ogg"
+    /// Example: "res://music/classics/gymnopedie_no_1.ogg"
     /// </summary>
     public abstract string? MusicFile { get; }
 
@@ -50,18 +50,18 @@ public sealed class DayTheme : Theme
 {
     private static readonly string[] DayTracks = new[]
     {
-        "res://music/Tracks/Cuddle Clouds.ogg",
-        "res://music/Tracks/Drifting Memories.ogg",
-        "res://music/Tracks/Evening Harmony.ogg",
-        "res://music/Tracks/Floating Dream.ogg",
-        "res://music/Tracks/Forgotten Biomes.ogg",
-        "res://music/Tracks/Gentle Breeze.ogg",
-        "res://music/Tracks/Golden Gleam.ogg",
-        "res://music/Tracks/Polar Lights.ogg",
-        "res://music/Tracks/Strange Worlds.ogg",
-        "res://music/Tracks/Sunlight Through Leaves.ogg",
-        "res://music/Tracks/Wanderers Tale.ogg",
-        "res://music/Tracks/Whispering Woods.ogg",
+        "res://music/tracks/cuddle_clouds.ogg",
+        "res://music/tracks/drifting_memories.ogg",
+        "res://music/tracks/evening_harmony.ogg",
+        "res://music/tracks/floating_dream.ogg",
+        "res://music/tracks/forgotten_biomes.ogg",
+        "res://music/tracks/gentle_breeze.ogg",
+        "res://music/tracks/golden_gleam.ogg",
+        "res://music/tracks/polar_lights.ogg",
+        "res://music/tracks/strange_worlds.ogg",
+        "res://music/tracks/sunlight_through_leaves.ogg",
+        "res://music/tracks/wanderers_tale.ogg",
+        "res://music/tracks/whispering_woods.ogg",
     };
 
     private string? _selectedMusicFile;
@@ -100,7 +100,7 @@ public sealed class NightTheme : Theme
     private int _lastDayRan = -1;
 
     public override string Name => "Night";
-    public override string? MusicFile => "res://Music/Classics/Gymnopédie No.1.ogg";
+    public override string? MusicFile => "res://music/classics/gymnopedie_no_1.ogg";
 
     /// <summary>
     /// Night theme has priority 10 during nighttime (higher than day theme).

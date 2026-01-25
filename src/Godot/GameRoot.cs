@@ -281,7 +281,7 @@ public partial class GameRoot : Node2D
         // Generate save name
         _currentSaveSlot = SaveFileManager.GenerateSaveName();
 
-        // Create new simulation
+        // Create new simulation (uses default 1.1x tax multiplier for idle-game growth)
         _sim = new Simulation(_content);
 
         // Initialize the game world
@@ -458,6 +458,14 @@ public partial class GameRoot : Node2D
             _sim.Tick();
             _accumulator -= _tickDelta;
             ticksProcessed++;
+
+            // Log economy stats once per in-game day (must be inside loop to catch exact tick)
+            if (_sim.Time.Tick % TimeService.TicksPerDay == 0 && _sim.Time.Tick > 0)
+            {
+                GD.Print(
+                    $"[Day {_sim.Time.Day}] Total wealth: {_sim.TotalWealth}g, Tax pool: {_sim.TaxPool}g, Pawns: {_sim.Entities.Pawns.Count}"
+                );
+            }
         }
 
         // If we hit the cap, reset accumulator and warn
@@ -1668,7 +1676,13 @@ public partial class GameRoot : Node2D
                         var texture = SpriteResourceManager.GetTexture(buildingDef6.SpriteKey);
                         if (texture != null)
                         {
-                            ovInit.InitializeWithSprite(texture, buildingDef6.TileSize);
+                            ovInit.InitializeWithSprite(
+                                texture,
+                                buildingDef6.TileSize,
+                                buildingDef6.SpriteVariants,
+                                buildingDef6.SpritePhases,
+                                obj.Id.Value
+                            );
                         }
                     }
                 }
@@ -1684,6 +1698,7 @@ public partial class GameRoot : Node2D
             if (node is BuildingView ov)
             {
                 ov.SetBuildingInfo(obj.Name, obj.InUse, obj.ColorIndex, _currentPalette);
+                ov.UpdateSpritePhase(obj.MaxPawnWealth);
             }
         }
 

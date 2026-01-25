@@ -30,6 +30,12 @@ public sealed class SimulationConfig
     public bool DisableThemes { get; set; } = false;
 
     /// <summary>
+    /// Tax multiplier for idle-game economy growth. Default 1.0 (no change).
+    /// Values > 1 grow the economy, values &lt; 1 shrink it.
+    /// </summary>
+    public float? TaxMultiplier { get; set; }
+
+    /// <summary>
     /// Buildings to place in the world: (BuildingDefId, X, Y)
     /// </summary>
     public List<(int BuildingDefId, int X, int Y)> Buildings { get; set; } = new();
@@ -67,6 +73,23 @@ public sealed class Simulation
     /// </summary>
     private const float TaxRate = 10f; // 10%
 
+    /// <summary>
+    /// Default idle-game multiplier applied to collected taxes before redistribution.
+    /// Values > 1 grow the economy, values &lt; 1 shrink it.
+    /// </summary>
+    private const float DefaultTaxMultiplier = 1.1f;
+
+    /// <summary>
+    /// Attachment decay interval in ticks.
+    /// </summary>
+    private const int AttachmentDecayInterval = TimeService.TicksPerDay;
+
+    /// <summary>
+    /// Only decay attachments at or below this threshold.
+    /// Attachments above this are considered "regulars" and don't decay.
+    /// </summary>
+    private const int AttachmentDecayThreshold = 5;
+
     public World World { get; }
     public EntityManager Entities { get; } = new();
     public TimeService Time { get; }
@@ -81,6 +104,27 @@ public sealed class Simulation
     /// Accumulated tax pool for redistribution. Includes collected taxes and gold from deleted buildings.
     /// </summary>
     public int TaxPool { get; set; } = 0;
+
+    /// <summary>
+    /// Total wealth in the economy (all pawn gold + all building gold + tax pool).
+    /// </summary>
+    public int TotalWealth
+    {
+        get
+        {
+            int total = TaxPool;
+            foreach (var (_, gold) in Entities.Gold)
+            {
+                total += gold.Amount;
+            }
+            return total;
+        }
+    }
+
+    /// <summary>
+    /// Tax multiplier for idle-game economy. Configured at construction, defaults to 1.1.
+    /// </summary>
+    private readonly float _taxMultiplier;
 
     private readonly SystemManager _systems = new();
 
@@ -101,6 +145,7 @@ public sealed class Simulation
 
         Seed = config?.Seed ?? Environment.TickCount;
         Random = new Random(Seed);
+        _taxMultiplier = config?.TaxMultiplier ?? DefaultTaxMultiplier;
 
         SelectedPaletteId = SelectColorPalette(content, Seed);
 
@@ -913,6 +958,12 @@ public sealed class Simulation
         {
             PerformTaxRedistribution();
         }
+
+        // Attachment decay - weak attachments fade over time
+        if (Time.Tick % AttachmentDecayInterval == 0 && Time.Tick > 0)
+        {
+            PerformAttachmentDecay();
+        }
     }
 
     /// <summary>
@@ -943,6 +994,9 @@ public sealed class Simulation
                 TaxPool += tax;
             }
         }
+
+        // Apply idle-game multiplier to collected taxes before redistribution
+        TaxPool = (int)(TaxPool * _taxMultiplier);
 
         if (TaxPool == 0)
             return;
@@ -981,6 +1035,44 @@ public sealed class Simulation
 
         // Save remainder for next redistribution (no gold lost)
         TaxPool = remainder;
+    }
+
+    /// <summary>
+    /// Decay weak attachments over time. Only attachments at or below the threshold decay.
+    /// This cleans up "noise" from one-time visitors while preserving regular customer relationships.
+    /// </summary>
+    private void PerformAttachmentDecay()
+    {
+        foreach (var (buildingId, _) in Entities.Buildings)
+        {
+            if (!Entities.Attachments.TryGetValue(buildingId, out var attachmentComp))
+                continue;
+
+            // Collect keys to remove (can't modify during iteration)
+            var toRemove = new List<EntityId>();
+
+            foreach (var (pawnId, strength) in attachmentComp.UserAttachments)
+            {
+                if (strength <= AttachmentDecayThreshold)
+                {
+                    int newStrength = strength - 1;
+                    if (newStrength <= 0)
+                    {
+                        toRemove.Add(pawnId);
+                    }
+                    else
+                    {
+                        attachmentComp.UserAttachments[pawnId] = newStrength;
+                    }
+                }
+            }
+
+            // Remove fully decayed attachments
+            foreach (var pawnId in toRemove)
+            {
+                attachmentComp.UserAttachments.Remove(pawnId);
+            }
+        }
     }
 
     public RenderSnapshot CreateRenderSnapshot()
@@ -1068,10 +1160,21 @@ public sealed class Simulation
         var id = new EntityId(save.Id);
         var coord = new TileCoord(save.X, save.Y);
 
+        // Prefer name-based lookup (stable), fall back to ID (legacy saves)
+        int buildingDefId;
+        if (!string.IsNullOrEmpty(save.BuildingDefName))
+        {
+            buildingDefId = sim.Content.GetBuildingId(save.BuildingDefName) ?? 0;
+        }
+        else
+        {
+            buildingDefId = save.BuildingDefId ?? 0;
+        }
+
         sim.Entities.Positions[id] = new PositionComponent { Coord = coord };
         sim.Entities.Buildings[id] = new BuildingComponent
         {
-            BuildingDefId = save.BuildingDefId ?? 0,
+            BuildingDefId = buildingDefId,
             ColorIndex = save.BuildingColorIndex ?? 0,
         };
         sim.Entities.Gold[id] = new GoldComponent { Amount = save.BuildingGold ?? 0 };
@@ -1084,6 +1187,20 @@ public sealed class Simulation
                 CurrentAmount = save.Resource.CurrentAmount,
                 MaxAmount = save.Resource.MaxAmount,
                 DepletionMult = save.Resource.DepletionMult,
+            };
+        }
+        else if (
+            sim.Content.Buildings.TryGetValue(buildingDefId, out var buildingDef)
+            && buildingDef.ResourceType != null
+        )
+        {
+            // Initialize missing resource from definition (legacy save compatibility)
+            sim.Entities.Resources[id] = new ResourceComponent
+            {
+                ResourceType = buildingDef.ResourceType,
+                CurrentAmount = buildingDef.MaxResourceAmount,
+                MaxAmount = buildingDef.MaxResourceAmount,
+                DepletionMult = buildingDef.DepletionMult,
             };
         }
 

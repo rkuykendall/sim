@@ -662,8 +662,12 @@ public sealed class ActionSystem : ISystem
 
                 if (ctx.Entities.Gold.TryGetValue(pawnId, out var pawnGold))
                 {
-                    // Deduct buy-in from pawn
+                    // Deduct buy-in from pawn and give to building
                     pawnGold.Amount -= buyIn;
+                    if (ctx.Entities.Gold.TryGetValue(targetId, out var buildingGoldForBuyIn))
+                    {
+                        buildingGoldForBuyIn.Amount += buyIn;
+                    }
 
                     if (buildingDefForPay.IsGoldSource)
                     {
@@ -997,6 +1001,9 @@ public sealed class ActionSystem : ISystem
 
                 if (ctx.Entities.Gold.TryGetValue(targetId, out var buildingGold))
                 {
+                    // Buy-in goes to building
+                    buildingGold.Amount += buyIn;
+
                     int actualPayout = Math.Min(payout, buildingGold.Amount);
                     buildingGold.Amount -= actualPayout;
                     pawnGold.Amount += actualPayout;
@@ -1203,33 +1210,26 @@ public sealed class AISystem : ISystem
         var purposeNeedId = ctx.Content.GetNeedId("Purpose");
 
         // Try to find an available building for any of our urgent needs
-        // Only seek buildings when the need is actually pressing (urgency < 50)
+        // Needs are already filtered (< 90) and sorted by value (lowest first)
         EntityId? targetBuilding = null;
         bool isWorkAction = false;
-        foreach (var (needId, urgency) in urgentNeeds)
+        foreach (var (needId, _) in urgentNeeds)
         {
-            // Only pursue buildings for needs that are actually low or causing issues
-            // Urgency < 50 means either:
-            // - Need value is very low (< 50), OR
-            // - Need has a debuff (urgency gets -50 or -100 modifier)
-            if (urgency < 50)
+            // Purpose need is satisfied by working, not consuming
+            if (purposeNeedId.HasValue && needId == purposeNeedId.Value)
             {
-                // Purpose need is satisfied by working, not consuming
-                if (purposeNeedId.HasValue && needId == purposeNeedId.Value)
+                targetBuilding = FindBuildingToWorkAt(ctx, pawnId);
+                if (targetBuilding != null)
                 {
-                    targetBuilding = FindBuildingToWorkAt(ctx, pawnId);
-                    if (targetBuilding != null)
-                    {
-                        isWorkAction = true;
-                        break;
-                    }
+                    isWorkAction = true;
+                    break;
                 }
-                else
-                {
-                    targetBuilding = FindBuildingForNeed(ctx, pawnId, needId);
-                    if (targetBuilding != null)
-                        break;
-                }
+            }
+            else
+            {
+                targetBuilding = FindBuildingForNeed(ctx, pawnId, needId);
+                if (targetBuilding != null)
+                    break;
             }
         }
 
@@ -1279,75 +1279,30 @@ public sealed class AISystem : ISystem
     }
 
     /// <summary>
-    /// Calculate which needs require attention, sorted by urgency (most urgent first).
+    /// Calculate which needs require attention, sorted by value (lowest first = most urgent).
+    /// Only returns needs below the threshold.
     /// </summary>
-    private List<(int needId, float urgency)> CalculateUrgentNeeds(
+    private List<(int needId, float value)> CalculateUrgentNeeds(
         SimContext ctx,
         EntityId pawnId,
         NeedsComponent needs
     )
     {
-        var urgentNeeds = new List<(int needId, float urgency)>();
+        const float NeedThreshold = 90f;
 
-        // Get active need debuffs to check which needs are causing problems
-        var activeNeedDebuffs = new HashSet<(BuffSource source, int needId)>();
-        if (ctx.Entities.Buffs.TryGetValue(pawnId, out var buffs))
-        {
-            foreach (var buff in buffs.ActiveBuffs)
-            {
-                if (buff.Source == BuffSource.NeedCritical || buff.Source == BuffSource.NeedLow)
-                    activeNeedDebuffs.Add((buff.Source, buff.SourceId));
-            }
-        }
+        var urgentNeeds = new List<(int needId, float value)>();
 
         foreach (var (needId, value) in needs.Needs)
         {
-            if (!ctx.Content.Needs.TryGetValue(needId, out var needDef))
-                continue;
-
-            float? urgency = CalculateNeedUrgency(needDef, value, activeNeedDebuffs);
-            if (urgency.HasValue)
-                urgentNeeds.Add((needId, urgency.Value));
+            if (value < NeedThreshold)
+            {
+                urgentNeeds.Add((needId, value));
+            }
         }
 
-        // Sort by urgency (lowest first = most urgent)
-        urgentNeeds.Sort((a, b) => a.urgency.CompareTo(b.urgency));
+        // Sort by value ascending - lowest need first
+        urgentNeeds.Sort((a, b) => a.value.CompareTo(b.value));
         return urgentNeeds;
-    }
-
-    /// <summary>
-    /// Calculate urgency for a single need. Returns null if the need doesn't require attention.
-    /// Lower values = more urgent.
-    /// </summary>
-    private float? CalculateNeedUrgency(
-        NeedDef needDef,
-        float value,
-        HashSet<(BuffSource source, int needId)> activeNeedDebuffs
-    )
-    {
-        bool hasCriticalDebuff = activeNeedDebuffs.Contains((BuffSource.NeedCritical, needDef.Id));
-        bool hasLowDebuff = activeNeedDebuffs.Contains((BuffSource.NeedLow, needDef.Id));
-        bool hasDebuffFromNeed = hasCriticalDebuff || hasLowDebuff;
-
-        // Skip needs that are high AND not causing debuffs
-        if (value >= 90f && !hasDebuffFromNeed)
-            return null;
-
-        float urgency = value;
-        if (hasDebuffFromNeed)
-        {
-            // Having a debuff makes this very urgent
-            if (hasCriticalDebuff)
-                urgency -= 100; // Critical debuff - highest priority
-            else
-                urgency -= 50; // Low debuff - high priority
-        }
-        else if (value < needDef.LowThreshold)
-        {
-            urgency -= 20; // About to get a debuff
-        }
-
-        return urgency;
     }
 
     /// <summary>

@@ -11,6 +11,8 @@ Buildings = {
         spriteKey = "home",
         tileSize = 2,
         baseCost = 0,           -- Free to use (levels by pawn wealth instead)
+        spriteVariants = 2,     -- 2 visual variants (rows)
+        spritePhases = 5,       -- 5 development phases (columns) based on pawn wealth
     },
     Farm = {
         satisfiesNeed = "Hunger",

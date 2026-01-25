@@ -162,7 +162,12 @@ public static class SaveService
 
             if (em.Buildings.TryGetValue(id, out var building))
             {
-                entity.BuildingDefId = building.BuildingDefId;
+                // Save building name for stable content lookup (IDs can change between loads)
+                if (sim.Content.Buildings.TryGetValue(building.BuildingDefId, out var buildingDef))
+                {
+                    entity.BuildingDefName = buildingDef.Name;
+                }
+                entity.BuildingDefId = building.BuildingDefId; // Keep for backward compat
                 entity.BuildingColorIndex = building.ColorIndex;
             }
 
