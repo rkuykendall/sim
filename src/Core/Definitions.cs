@@ -73,6 +73,21 @@ public sealed class BuildingDef : IContentDef
     public string? HaulSourceTerrainKey { get; init; } // Terrain type to harvest from (for HaulFromTerrain, e.g., "Trees")
     public bool CanSellToConsumers { get; init; } = true; // Whether consumers can buy resources here
 
+    // Capacity system
+    public int Capacity { get; init; } = 1; // Default concurrent user capacity
+    public IReadOnlyList<int>? CapacityPerPhase { get; init; } // Capacity per development phase (for Home)
+
+    /// <summary>
+    /// Get the capacity for this building at the given phase.
+    /// If CapacityPerPhase is set, uses that; otherwise returns Capacity.
+    /// </summary>
+    public int GetCapacity(int phase = 0)
+    {
+        if (CapacityPerPhase != null && CapacityPerPhase.Count > 0)
+            return CapacityPerPhase[Math.Clamp(phase, 0, CapacityPerPhase.Count - 1)];
+        return Capacity;
+    }
+
     // Economic system
     public const int DefaultBaseCost = 10;
     public const float DefaultBaseProduction = 2f;

@@ -977,7 +977,7 @@ public sealed class ActionSystem : ISystem
             }
 
             // Building-to-building wholesale payment: destination pays source for goods
-            // Rate: 1g per 15 units (wholesale discount)
+            // Rate: 1g per 10 units (wholesale discount)
             if (
                 action.SourceEntity.HasValue
                 && transferAmount > 0
@@ -985,7 +985,7 @@ public sealed class ActionSystem : ISystem
                 && ctx.Entities.Gold.TryGetValue(action.SourceEntity.Value, out var sourceGold)
             )
             {
-                int wholesalePayment = (int)(transferAmount / 15.0f); // 1g per 15 units
+                int wholesalePayment = (int)(transferAmount / 10.0f); // 1g per 10 units
                 int actualPayment = Math.Min(wholesalePayment, destGold.Amount);
                 destGold.Amount -= actualPayment;
                 sourceGold.Amount += actualPayment;
@@ -1731,6 +1731,27 @@ public sealed class AISystem : ISystem
     }
 
     /// <summary>
+    /// Calculate the development phase of a building based on the wealth of attached pawns.
+    /// Phase = max pawn wealth / 100 (clamped to valid range).
+    /// </summary>
+    private static int GetBuildingPhase(EntityManager entities, EntityId buildingId)
+    {
+        if (!entities.Attachments.TryGetValue(buildingId, out var attachmentComp))
+            return 0;
+
+        int maxWealth = 0;
+        foreach (var pawnId in attachmentComp.UserAttachments.Keys)
+        {
+            if (entities.Gold.TryGetValue(pawnId, out var goldComp))
+            {
+                maxWealth = Math.Max(maxWealth, goldComp.Amount);
+            }
+        }
+
+        return maxWealth / 100;
+    }
+
+    /// <summary>
     /// Count how many other pawns are currently targeting a building
     /// (have it as TargetEntity in their current action or queue).
     /// </summary>
@@ -1812,10 +1833,10 @@ public sealed class AISystem : ISystem
                 OtherPawnsTargeting = otherPawnsTargeting,
             };
 
-            // Apply universal filters first: in-use state and pawn targeting limits
-            if (objComp.InUse(ctx.Entities, objId))
-                continue;
-            if (otherPawnsTargeting >= 2)
+            // Apply capacity-based filtering
+            int phase = GetBuildingPhase(ctx.Entities, objId);
+            int capacity = objDef.GetCapacity(phase);
+            if (otherPawnsTargeting + 1 > capacity) // +1 for self
                 continue;
 
             // Then apply custom filter

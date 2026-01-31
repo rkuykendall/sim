@@ -71,7 +71,7 @@ public sealed class Simulation
     /// <summary>
     /// Tax rate as a percentage (0-100).
     /// </summary>
-    private const float TaxRate = 10f; // 10%
+    private const float TaxRate = 15f; // 15%
 
     /// <summary>
     /// Default idle-game multiplier applied to collected taxes before redistribution.
@@ -777,8 +777,8 @@ public sealed class Simulation
     }
 
     /// <summary>
-    /// Gets the maximum number of pawns allowed in the simulation based on housing.
-    /// Each home can house one pawn.
+    /// Gets the maximum number of pawns allowed in the simulation based on housing capacity.
+    /// Capacity scales with the wealth of attached pawns (home development phase).
     /// </summary>
     public int GetMaxPawns()
     {
@@ -786,19 +786,44 @@ public sealed class Simulation
         if (!homeId.HasValue)
             return 1;
 
-        int homeCount = 0;
+        var homeDef = Content.Buildings[homeId.Value];
+        int totalCapacity = 0;
+
         foreach (var objId in Entities.AllBuildings())
         {
             if (Entities.Buildings.TryGetValue(objId, out var buildingComp))
             {
                 if (buildingComp.BuildingDefId == homeId.Value)
                 {
-                    homeCount++;
+                    // Calculate phase based on max wealth of attached pawns
+                    int phase = GetBuildingPhase(objId);
+                    totalCapacity += homeDef.GetCapacity(phase);
                 }
             }
         }
 
-        return Math.Max(1, homeCount);
+        return Math.Max(1, totalCapacity);
+    }
+
+    /// <summary>
+    /// Calculate the development phase of a building based on the wealth of attached pawns.
+    /// Phase = max pawn wealth / 100 (clamped to valid range).
+    /// </summary>
+    private int GetBuildingPhase(EntityId buildingId)
+    {
+        if (!Entities.Attachments.TryGetValue(buildingId, out var attachmentComp))
+            return 0;
+
+        int maxWealth = 0;
+        foreach (var pawnId in attachmentComp.UserAttachments.Keys)
+        {
+            if (Entities.Gold.TryGetValue(pawnId, out var goldComp))
+            {
+                maxWealth = Math.Max(maxWealth, goldComp.Amount);
+            }
+        }
+
+        return maxWealth / 100;
     }
 
     /// <summary>

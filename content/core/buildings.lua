@@ -13,6 +13,7 @@ Buildings = {
         baseCost = 0,           -- Free to use (levels by pawn wealth instead)
         spriteVariants = 2,     -- 2 visual variants (rows)
         spritePhases = 5,       -- 5 development phases (columns) based on pawn wealth
+        capacityPerPhase = {1, 2, 4, 8, 16}, -- Housing capacity scales with pawn wealth
     },
     Farm = {
         satisfiesNeed = "Hunger",
@@ -24,10 +25,11 @@ Buildings = {
         depletionMult = 1.0,
         canBeWorkedAt = true,
         tileSize = 2,
-        baseCost = 5,           -- Low cost, entry-level job (0 buy-in)
-        baseProduction = 2.0,   -- Payout = 10g
+        baseCost = 4,           -- Low cost, entry-level job (0 buy-in)
+        baseProduction = 2.5,   -- Payout = 10g
         workType = "direct",    -- Work creates food here
         canSellToConsumers = false, -- Pawns buy food at Market, not Farm
+        capacity = 3,           -- Max concurrent workers/users
     },
     Market = {
         satisfiesNeed = "Hunger",
@@ -39,11 +41,12 @@ Buildings = {
         depletionMult = 1.0,
         canBeWorkedAt = true,
         tileSize = 2,
-        baseCost = 10,          -- Medium cost, requires capital (10g buy-in)
-        baseProduction = 2.0,   -- Payout = 20g
+        baseCost = 8,           -- Medium cost, requires capital
+        baseProduction = 2.5,   -- Payout = 20g
         workType = "haulFromBuilding", -- Work = haul food from Farm
         haulSourceResourceType = "food",
         canSellToConsumers = true, -- Pawns buy food here
+        capacity = 20,          -- Large capacity for public building
     },
     Well = {
         satisfiesNeed = "Hygiene",
@@ -56,6 +59,7 @@ Buildings = {
         tileSize = 1,
         baseCost = 0,
         baseProduction = 0.0,
+        capacity = 6,           -- Medium capacity public utility
     },
     Tavern = {
         satisfiesNeed = "Social",
@@ -67,10 +71,11 @@ Buildings = {
         depletionMult = 1.0,    -- Drinks deplete when served
         canBeWorkedAt = true,
         tileSize = 2,
-        baseCost = 8,           -- Medium-low cost social building
-        baseProduction = 1.5,   -- Payout = 12g
+        baseCost = 6,           -- Medium-low cost social building
+        baseProduction = 2.0,   -- Payout = 12g
         workType = "direct",    -- Bartender makes drinks on-site
         canSellToConsumers = true,
+        capacity = 20,          -- Large capacity social building
     },
     LumberMill = {
         satisfiesNeed = "Purpose",
@@ -82,11 +87,12 @@ Buildings = {
         depletionMult = 0.0,    -- Lumber doesn't deplete from mill use (it's sold elsewhere)
         canBeWorkedAt = true,
         tileSize = 2,
-        baseCost = 8,           -- Medium cost
-        baseProduction = 2.5,   -- Payout = 20g
+        baseCost = 7,           -- Medium cost
+        baseProduction = 3.0,   -- Payout = 21g
         workType = "haulFromTerrain", -- Work = chop trees, bring lumber
         haulSourceTerrainKey = "Trees",
         canSellToConsumers = false, -- Just a production building
+        capacity = 3,           -- Small work building capacity
     },
     -- Theatre = {
     --     satisfiesNeed = "Social",

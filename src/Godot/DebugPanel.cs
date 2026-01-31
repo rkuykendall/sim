@@ -432,6 +432,21 @@ public partial class DebugPanel : PanelContainer
         _buildingDebugContainer.AddChild(goldLabel);
         _buildingDebugLabels.Add(goldLabel);
 
+        // Capacity info
+        var capacityLabel = new Label
+        {
+            Text =
+                $"Capacity: {building.CurrentUsers}/{building.Capacity}"
+                + (building.Phase > 0 ? $" (phase {building.Phase})" : ""),
+        };
+        capacityLabel.AddThemeFontSizeOverride("font_size", 14);
+        capacityLabel.Modulate =
+            building.CurrentUsers >= building.Capacity ? Colors.Orange
+            : building.CurrentUsers > 0 ? Colors.Yellow
+            : Colors.White;
+        _buildingDebugContainer.AddChild(capacityLabel);
+        _buildingDebugLabels.Add(capacityLabel);
+
         // Use cost
         if (building.Cost > 0)
         {

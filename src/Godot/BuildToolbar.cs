@@ -311,8 +311,18 @@ public partial class BuildToolbar : HBoxContainer
 
         if (texture != null)
         {
-            // For autotiled terrains, show only the 1x1 variant (lower-left 16x16)
+            // For buildings with multiple phases/variants, show only the first (top-left)
             if (
+                isBuilding
+                && _content != null
+                && _content.Buildings.TryGetValue(id, out var buildingDef)
+                && (buildingDef.SpritePhases > 1 || buildingDef.SpriteVariants > 1)
+            )
+            {
+                texture = ExtractBuildingFirstPhase(texture, buildingDef.TileSize);
+            }
+            // For autotiled terrains, show only the 1x1 variant (lower-left 16x16)
+            else if (
                 !isBuilding
                 && !isDelete
                 && _content != null
@@ -405,6 +415,38 @@ public partial class BuildToolbar : HBoxContainer
         croppedImage.BlitRect(
             image,
             new Rect2I(0, 0, RenderingConstants.SourceTileSize, RenderingConstants.SourceTileSize),
+            new Vector2I(0, 0)
+        );
+
+        return ImageTexture.CreateFromImage(croppedImage);
+    }
+
+    /// <summary>
+    /// Extracts the first phase/variant from a building sprite sheet (top-left portion).
+    /// Building sprites are arranged as: rows = variants, columns = phases.
+    /// Each building cell is tileSize × tileSize source tiles.
+    /// </summary>
+    private Texture2D ExtractBuildingFirstPhase(Texture2D originalTexture, int tileSize)
+    {
+        var image = originalTexture.GetImage();
+        if (image == null)
+            return originalTexture;
+
+        // Building size in pixels (tileSize × tileSize tiles, each tile is SourceTileSize pixels)
+        int buildingPixelSize = tileSize * RenderingConstants.SourceTileSize;
+
+        // Create a new image for the cropped region (first phase, first variant = top-left)
+        var croppedImage = Image.CreateEmpty(
+            buildingPixelSize,
+            buildingPixelSize,
+            false,
+            image.GetFormat()
+        );
+
+        // Copy the top-left building cell
+        croppedImage.BlitRect(
+            image,
+            new Rect2I(0, 0, buildingPixelSize, buildingPixelSize),
             new Vector2I(0, 0)
         );
 

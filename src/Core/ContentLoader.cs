@@ -270,6 +270,22 @@ public static class ContentLoader
             var spritePhasesData = data.Get("spritePhases");
             var spritePhases = spritePhasesData.IsNil() ? 1 : (int)spritePhasesData.Number;
 
+            // Capacity system
+            var capacityData = data.Get("capacity");
+            var capacity = capacityData.IsNil() ? 1 : (int)capacityData.Number;
+
+            var capacityPerPhaseData = data.Get("capacityPerPhase");
+            IReadOnlyList<int>? capacityPerPhase = null;
+            if (!capacityPerPhaseData.IsNil() && capacityPerPhaseData.Table != null)
+            {
+                var capacityList = new List<int>();
+                foreach (var value in capacityPerPhaseData.Table.Values)
+                {
+                    capacityList.Add((int)value.Number);
+                }
+                capacityPerPhase = capacityList;
+            }
+
             var building = new BuildingDef
             {
                 Name = key,
@@ -298,6 +314,8 @@ public static class ContentLoader
                 CanSellToConsumers = canSellToConsumers,
                 SpriteVariants = spriteVariants,
                 SpritePhases = spritePhases,
+                Capacity = capacity,
+                CapacityPerPhase = capacityPerPhase,
             };
 
             registry.RegisterBuilding(key, building);

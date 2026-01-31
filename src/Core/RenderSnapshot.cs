@@ -63,6 +63,11 @@ public sealed class RenderBuilding
     public int SpriteVariants { get; init; } = 1;
     public int SpritePhases { get; init; } = 1;
     public int MaxPawnWealth { get; init; } // Wealth of the wealthiest attached pawn (for phase selection)
+
+    // Capacity info
+    public int Phase { get; init; } // Current development phase (based on max pawn wealth)
+    public int Capacity { get; init; } = 1; // Max concurrent users at current phase
+    public int CurrentUsers { get; init; } // Number of pawns currently targeting this building
 }
 
 public sealed class RenderTime
@@ -95,6 +100,36 @@ public sealed class RenderSnapshot
 
 public static class RenderSnapshotBuilder
 {
+    /// <summary>
+    /// Count how many pawns are currently targeting a building
+    /// (have it as TargetEntity in their current action or queue).
+    /// </summary>
+    private static int CountPawnsTargetingBuilding(EntityManager entities, EntityId buildingId)
+    {
+        int count = 0;
+        foreach (var pawnId in entities.AllPawns())
+        {
+            if (!entities.Actions.TryGetValue(pawnId, out var actionComp))
+                continue;
+
+            if (actionComp.CurrentAction?.TargetEntity == buildingId)
+            {
+                count++;
+                continue;
+            }
+
+            foreach (var queued in actionComp.ActionQueue)
+            {
+                if (queued.TargetEntity == buildingId)
+                {
+                    count++;
+                    break;
+                }
+            }
+        }
+        return count;
+    }
+
     public static RenderSnapshot Build(Simulation sim)
     {
         var pawns = new List<RenderPawn>();
@@ -292,6 +327,11 @@ public static class RenderSnapshotBuilder
                 buildingGold = buildingGoldComp.Amount;
             }
 
+            // Calculate capacity info
+            int phase = maxPawnWealth / 100;
+            int capacity = buildingDef.GetCapacity(phase);
+            int currentUsers = CountPawnsTargetingBuilding(sim.Entities, objId);
+
             buildings.Add(
                 new RenderBuilding
                 {
@@ -315,6 +355,9 @@ public static class RenderSnapshotBuilder
                     SpriteVariants = buildingDef.SpriteVariants,
                     SpritePhases = buildingDef.SpritePhases,
                     MaxPawnWealth = maxPawnWealth,
+                    Phase = phase,
+                    Capacity = capacity,
+                    CurrentUsers = currentUsers,
                 }
             );
         }
