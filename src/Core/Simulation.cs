@@ -96,7 +96,7 @@ public sealed class Simulation
     public Random Random { get; }
     public ContentRegistry Content { get; }
     public int Seed { get; }
-    public int SelectedPaletteId { get; }
+    public int SelectedPaletteId { get; private set; }
     public ThemeSystem ThemeSystem { get; }
     public SystemManager Systems => _systems;
 
@@ -119,6 +119,17 @@ public sealed class Simulation
             }
             return total;
         }
+    }
+
+    /// <summary>
+    /// Cycle to the next color palette in order.
+    /// </summary>
+    public void CyclePalette()
+    {
+        var paletteIds = Content.ColorPalettes.Keys.OrderBy(id => id).ToList();
+        int currentIndex = paletteIds.IndexOf(SelectedPaletteId);
+        int nextIndex = (currentIndex + 1) % paletteIds.Count;
+        SelectedPaletteId = paletteIds[nextIndex];
     }
 
     /// <summary>

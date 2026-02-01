@@ -34,6 +34,7 @@ public partial class DebugPanel : PanelContainer
 
     // Time labels
     private Label _timeLabel = null!;
+    private Button _paletteButton = null!;
 
     // Pawn labels and containers
     private Label _pawnNameLabel = null!;
@@ -81,6 +82,10 @@ public partial class DebugPanel : PanelContainer
         _timeLabel = new Label { Name = "TimeLabel" };
         _timeLabel.AddThemeFontSizeOverride("font_size", 20);
         _timeContainer.AddChild(_timeLabel);
+
+        _paletteButton = new Button { Text = "Cycle Palette" };
+        _paletteButton.Pressed += OnPaletteButtonPressed;
+        _timeContainer.AddChild(_paletteButton);
 
         // Build pawn container
         _pawnContainer = new VBoxContainer { Name = "PawnContainer" };
@@ -168,6 +173,16 @@ public partial class DebugPanel : PanelContainer
     public void Initialize(ContentRegistry content)
     {
         _content = content;
+    }
+
+    public void SetSimulation(Simulation sim)
+    {
+        _sim = sim;
+    }
+
+    private void OnPaletteButtonPressed()
+    {
+        _sim?.CyclePalette();
     }
 
     public void SetDebugMode(bool enabled)

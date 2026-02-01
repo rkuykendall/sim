@@ -354,6 +354,7 @@ public partial class GameRoot : Node2D
 
         // Initialize debug panel
         _debugPanel?.Initialize(_sim.Content);
+        _debugPanel?.SetSimulation(_sim);
         _debugPanel?.SetDebugMode(_debugMode);
 
         // Center camera and set bounds
@@ -483,6 +484,17 @@ public partial class GameRoot : Node2D
             _currentPalette = GameColorPalette.ToGodotColors(snapshot.ColorPalette);
             _currentPaletteId = _sim.SelectedPaletteId;
             _toolbar?.UpdatePalette(_currentPalette);
+
+            // Refresh all tiles with new palette colors (for debug palette cycling)
+            var allTiles = new List<TileCoord>();
+            for (int x = 0; x < _sim.World.Width; x++)
+            {
+                for (int y = 0; y < _sim.World.Height; y++)
+                {
+                    allTiles.Add(new TileCoord(x, y));
+                }
+            }
+            SyncTiles(allTiles.ToArray());
         }
 
         // Update music manager with current theme state
