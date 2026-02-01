@@ -40,35 +40,41 @@ public partial class PreviewSquare : Button
 
     private void InitializeBorder()
     {
-        // Always apply a 4px border (invisible by default)
+        // 4px transparent border (outer clickable edge) + 4px content margin (selection indicator)
+        // BgColor fills the content margin area, ColorRect/TextureRect covers the center
         var styleBox = new StyleBoxFlat
         {
-            BorderColor = new Color(1, 1, 1, 0), // Transparent white
+            BgColor = new Color(0, 0, 0, 0), // Transparent (white when selected)
+            BorderColor = new Color(1, 1, 1, 0), // Always transparent
             BorderWidthLeft = 4,
             BorderWidthRight = 4,
             BorderWidthTop = 4,
             BorderWidthBottom = 4,
-            DrawCenter = false,
+            ContentMarginLeft = 4,
+            ContentMarginRight = 4,
+            ContentMarginTop = 4,
+            ContentMarginBottom = 4,
+            DrawCenter = true,
         };
         AddThemeStyleboxOverride("normal", styleBox);
         AddThemeStyleboxOverride("hover", styleBox);
         AddThemeStyleboxOverride("pressed", styleBox);
         AddThemeStyleboxOverride("focus", styleBox);
 
-        // Always inset both rects to account for border
+        // Inset both rects: 4px border + 4px margin = 8px total
         if (_colorRect != null)
         {
-            _colorRect.OffsetLeft = 4;
-            _colorRect.OffsetTop = 4;
-            _colorRect.OffsetRight = -4;
-            _colorRect.OffsetBottom = -4;
+            _colorRect.OffsetLeft = 8;
+            _colorRect.OffsetTop = 8;
+            _colorRect.OffsetRight = -8;
+            _colorRect.OffsetBottom = -8;
         }
         if (_textureRect != null)
         {
-            _textureRect.OffsetLeft = 4;
-            _textureRect.OffsetTop = 4;
-            _textureRect.OffsetRight = -4;
-            _textureRect.OffsetBottom = -4;
+            _textureRect.OffsetLeft = 8;
+            _textureRect.OffsetTop = 8;
+            _textureRect.OffsetRight = -8;
+            _textureRect.OffsetBottom = -8;
         }
     }
 
@@ -168,15 +174,21 @@ public partial class PreviewSquare : Button
     /// <param name="selected">True to show selected state</param>
     public void SetSelected(bool selected)
     {
-        // Update border color (visible when selected, transparent when not)
+        // BgColor shows in the content margin area (inner 4px ring)
+        // Border is always transparent (outer 4px clickable edge)
         var styleBox = new StyleBoxFlat
         {
-            BorderColor = selected ? Colors.White : new Color(1, 1, 1, 0),
+            BgColor = selected ? Colors.White : new Color(0, 0, 0, 0),
+            BorderColor = new Color(1, 1, 1, 0), // Always transparent
             BorderWidthLeft = 4,
             BorderWidthRight = 4,
             BorderWidthTop = 4,
             BorderWidthBottom = 4,
-            DrawCenter = false,
+            ContentMarginLeft = 4,
+            ContentMarginRight = 4,
+            ContentMarginTop = 4,
+            ContentMarginBottom = 4,
+            DrawCenter = true,
         };
         AddThemeStyleboxOverride("normal", styleBox);
         AddThemeStyleboxOverride("hover", styleBox);

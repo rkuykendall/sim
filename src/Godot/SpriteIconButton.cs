@@ -19,28 +19,34 @@ public partial class SpriteIconButton : Button
 
     private void InitializeBorder()
     {
-        // Always apply a 4px border (invisible by default)
+        // 4px transparent border (outer clickable edge) + 4px content margin (selection indicator)
+        // BgColor fills the content margin area, TextureRect covers the center
         var styleBox = new StyleBoxFlat
         {
-            BorderColor = new Color(1, 1, 1, 0), // Transparent white
+            BgColor = new Color(0, 0, 0, 0), // Transparent (white when selected)
+            BorderColor = new Color(1, 1, 1, 0), // Always transparent
             BorderWidthLeft = 4,
             BorderWidthRight = 4,
             BorderWidthTop = 4,
             BorderWidthBottom = 4,
-            DrawCenter = false,
+            ContentMarginLeft = 4,
+            ContentMarginRight = 4,
+            ContentMarginTop = 4,
+            ContentMarginBottom = 4,
+            DrawCenter = true,
         };
         AddThemeStyleboxOverride("normal", styleBox);
         AddThemeStyleboxOverride("hover", styleBox);
         AddThemeStyleboxOverride("pressed", styleBox);
         AddThemeStyleboxOverride("focus", styleBox);
 
-        // Always inset TextureRect to account for border
+        // Inset TextureRect: 4px border + 4px margin = 8px total
         if (_textureRect != null)
         {
-            _textureRect.OffsetLeft = 4;
-            _textureRect.OffsetTop = 4;
-            _textureRect.OffsetRight = -4;
-            _textureRect.OffsetBottom = -4;
+            _textureRect.OffsetLeft = 8;
+            _textureRect.OffsetTop = 8;
+            _textureRect.OffsetRight = -8;
+            _textureRect.OffsetBottom = -8;
         }
     }
 
@@ -108,15 +114,21 @@ public partial class SpriteIconButton : Button
     {
         _selected = selected;
 
-        // Update border color (visible when selected, transparent when not)
+        // BgColor shows in the content margin area (inner 4px ring)
+        // Border is always transparent (outer 4px clickable edge)
         var styleBox = new StyleBoxFlat
         {
-            BorderColor = selected ? Colors.White : new Color(1, 1, 1, 0),
+            BgColor = selected ? Colors.White : new Color(0, 0, 0, 0),
+            BorderColor = new Color(1, 1, 1, 0), // Always transparent
             BorderWidthLeft = 4,
             BorderWidthRight = 4,
             BorderWidthTop = 4,
             BorderWidthBottom = 4,
-            DrawCenter = false,
+            ContentMarginLeft = 4,
+            ContentMarginRight = 4,
+            ContentMarginTop = 4,
+            ContentMarginBottom = 4,
+            DrawCenter = true,
         };
         AddThemeStyleboxOverride("normal", styleBox);
         AddThemeStyleboxOverride("hover", styleBox);
