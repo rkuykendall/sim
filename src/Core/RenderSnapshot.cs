@@ -373,14 +373,6 @@ public static class RenderSnapshotBuilder
                 (sim.Time.Tick % TimeService.TicksPerDay) / (float)TimeService.TicksPerDay,
         };
 
-        // Get the selected color palette
-        var colorPalette = sim.Content.ColorPalettes.TryGetValue(
-            sim.SelectedPaletteId,
-            out var palette
-        )
-            ? palette.Colors
-            : Array.Empty<ColorDef>();
-
         // Get current theme state
         var theme = new RenderTheme
         {
@@ -395,7 +387,7 @@ public static class RenderSnapshotBuilder
             Buildings = buildings,
             Time = time,
             Theme = theme,
-            ColorPalette = colorPalette,
+            ColorPalette = sim.Palette,
         };
     }
 }

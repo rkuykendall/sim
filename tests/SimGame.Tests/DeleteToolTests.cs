@@ -92,7 +92,7 @@ public class DeleteToolTests
         tile = sim.World.GetTile(new TileCoord(2, 2));
         Assert.Equal(flatId, tile.BaseTerrainTypeId);
         Assert.Null(tile.OverlayTerrainTypeId);
-        Assert.Equal(0, tile.ColorIndex); // Color reset to default
+        Assert.Equal(2, tile.ColorIndex); // Color reset to default (color #3)
     }
 
     [Fact]

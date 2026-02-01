@@ -97,6 +97,7 @@ public sealed class Simulation
     public ContentRegistry Content { get; }
     public int Seed { get; }
     public int SelectedPaletteId { get; private set; }
+    public IReadOnlyList<ColorDef> Palette { get; private set; } = Array.Empty<ColorDef>();
     public ThemeSystem ThemeSystem { get; }
     public SystemManager Systems => _systems;
 
@@ -130,6 +131,15 @@ public sealed class Simulation
         int currentIndex = paletteIds.IndexOf(SelectedPaletteId);
         int nextIndex = (currentIndex + 1) % paletteIds.Count;
         SelectedPaletteId = paletteIds[nextIndex];
+        Palette = Content.ColorPalettes[SelectedPaletteId].Colors;
+    }
+
+    /// <summary>
+    /// Set the palette directly (used when loading from save).
+    /// </summary>
+    internal void SetPalette(List<ColorDef> palette)
+    {
+        Palette = palette;
     }
 
     /// <summary>
@@ -159,6 +169,7 @@ public sealed class Simulation
         _taxMultiplier = config?.TaxMultiplier ?? DefaultTaxMultiplier;
 
         SelectedPaletteId = SelectColorPalette(content, Seed);
+        Palette = content.ColorPalettes[SelectedPaletteId].Colors;
 
         if (config?.WorldBounds != null)
         {
@@ -1188,6 +1199,12 @@ public sealed class Simulation
 
         // Restore tax pool
         sim.TaxPool = data.TaxPool;
+
+        // Restore palette from save (if available), otherwise use content lookup
+        if (data.Palette != null && data.Palette.Count > 0)
+        {
+            sim.SetPalette(data.Palette.Select(SaveService.HexToColorDef).ToList());
+        }
 
         return sim;
     }

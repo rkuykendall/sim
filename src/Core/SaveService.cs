@@ -42,6 +42,7 @@ public static class SaveService
             Seed = sim.Seed,
             CurrentTick = sim.Time.Tick,
             SelectedPaletteId = sim.SelectedPaletteId,
+            Palette = sim.Palette.Select(ColorDefToHex).ToList(),
             NextEntityId = sim.Entities.NextId,
             TaxPool = sim.TaxPool,
             World = SerializeWorld(sim.World),
@@ -216,6 +217,28 @@ public static class SaveService
             SavedAt = data.SavedAt,
             Day = day,
             PawnCount = pawnCount,
+        };
+    }
+
+    private static string ColorDefToHex(ColorDef c)
+    {
+        int r = (int)Math.Round(Math.Clamp(c.R, 0f, 1f) * 255);
+        int g = (int)Math.Round(Math.Clamp(c.G, 0f, 1f) * 255);
+        int b = (int)Math.Round(Math.Clamp(c.B, 0f, 1f) * 255);
+        return $"#{r:X2}{g:X2}{b:X2}";
+    }
+
+    internal static ColorDef HexToColorDef(string hex)
+    {
+        hex = hex.TrimStart('#');
+        int r = Convert.ToInt32(hex.Substring(0, 2), 16);
+        int g = Convert.ToInt32(hex.Substring(2, 2), 16);
+        int b = Convert.ToInt32(hex.Substring(4, 2), 16);
+        return new ColorDef
+        {
+            R = r / 255f,
+            G = g / 255f,
+            B = b / 255f,
         };
     }
 }

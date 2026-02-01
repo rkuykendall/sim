@@ -14,6 +14,7 @@ public sealed class SaveData
     public int Seed { get; set; }
     public int CurrentTick { get; set; }
     public int SelectedPaletteId { get; set; }
+    public List<string> Palette { get; set; } = new(); // Hex colors like "#RRGGBB"
     public int NextEntityId { get; set; }
     public int TaxPool { get; set; } = 0;
     public WorldSaveData World { get; set; } = new();
