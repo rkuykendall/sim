@@ -91,9 +91,9 @@ public partial class BuildToolbar : HBoxContainer
     public void UpdatePalette(Color[] palette)
     {
         _currentPalette = palette;
-        // Select second color by default if available, else first
-        if (palette.Length > 1)
-            BuildToolState.SelectedColorIndex = 1;
+        // Select fourth color by default if available, else first
+        if (palette.Length > 3)
+            BuildToolState.SelectedColorIndex = 3;
         else
             BuildToolState.SelectedColorIndex = 0;
         // Rebuild left panel if color count changed

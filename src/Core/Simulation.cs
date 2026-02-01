@@ -216,6 +216,7 @@ public sealed class Simulation
             {
                 var tile = World.GetTile(x, y);
                 tile.BaseTerrainTypeId = flatTerrainId;
+                tile.ColorIndex = 2; // Default to color #3
 
                 if (Content.Terrains.TryGetValue(flatTerrainId, out var terrainDef))
                 {
@@ -673,7 +674,7 @@ public sealed class Simulation
             tile.BaseTerrainTypeId = flatTerrainId;
             tile.WalkabilityCost = flatTerrain.WalkabilityCost;
             tile.BlocksLight = flatTerrain.BlocksLight;
-            tile.ColorIndex = 0;
+            tile.ColorIndex = 2; // Default to color #3
         }
 
         return GetTilesWithNeighbors(new[] { coord });
