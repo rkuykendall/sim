@@ -235,7 +235,8 @@ public partial class GameRoot : Node2D
     {
         if (_userSettings.Fullscreen)
         {
-            DisplayServer.WindowSetMode(DisplayServer.WindowMode.Fullscreen);
+            // ExclusiveFullscreen prevents macOS Dock/Menu Bar from appearing on hover
+            DisplayServer.WindowSetMode(DisplayServer.WindowMode.ExclusiveFullscreen);
         }
         else
         {
