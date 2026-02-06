@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using SimGame.Core;
@@ -6,46 +7,45 @@ namespace SimGame.Godot;
 
 /// <summary>
 /// Generates minimap thumbnail textures from save data for the home screen.
-/// Renders tile colors only (no buildings or pawns) for a simple visual preview.
+/// Renders 1 pixel per tile using tile colors for a simple visual preview.
 /// </summary>
 public static class SaveThumbnailGenerator
 {
-    // Thumbnail matches world aspect ratio (3:2)
-    public const int ThumbnailWidth = 150;
-    public const int ThumbnailHeight = 100;
-
     /// <summary>
     /// Generate a thumbnail texture from save data.
+    /// Creates a 1:1 pixel-per-tile image matching world dimensions.
     /// </summary>
     public static ImageTexture Generate(SaveData saveData, ContentRegistry content)
     {
-        var image = Image.CreateEmpty(ThumbnailWidth, ThumbnailHeight, false, Image.Format.Rgb8);
+        var worldWidth = saveData.World.Width;
+        var worldHeight = saveData.World.Height;
 
-        // Get the color palette used by this save
-        var palette = content.ColorPalettes.TryGetValue(saveData.SelectedPaletteId, out var p)
-            ? p
-            : content.ColorPalettes.Values.FirstOrDefault();
+        var image = Image.CreateEmpty(worldWidth, worldHeight, false, Image.Format.Rgb8);
 
-        if (palette == null)
+        // Use saved palette if available, otherwise fall back to content lookup
+        List<ColorDef> palette;
+        if (saveData.Palette != null && saveData.Palette.Count > 0)
+        {
+            palette = saveData.Palette.Select(SaveService.HexToColorDef).ToList();
+        }
+        else if (content.ColorPalettes.TryGetValue(saveData.SelectedPaletteId, out var p))
+        {
+            palette = p.Colors.ToList();
+        }
+        else
         {
             // Fallback: fill with gray if no palette
             image.Fill(new Color(0.3f, 0.3f, 0.3f));
             return ImageTexture.CreateFromImage(image);
         }
 
-        var worldWidth = saveData.World.Width;
-        var worldHeight = saveData.World.Height;
-
-        for (int y = 0; y < ThumbnailHeight; y++)
+        // Render 1 pixel per tile
+        for (int y = 0; y < worldHeight; y++)
         {
-            for (int x = 0; x < ThumbnailWidth; x++)
+            for (int x = 0; x < worldWidth; x++)
             {
-                // Map thumbnail pixel to world tile
-                int tileX = x * worldWidth / ThumbnailWidth;
-                int tileY = y * worldHeight / ThumbnailHeight;
-
-                // Tiles are stored row by row (x + y * width)
-                int tileIndex = tileX + tileY * worldWidth;
+                // Tiles are stored column by column: (0,0), (0,1)... (0,H-1), (1,0)...
+                int tileIndex = y + x * worldHeight;
 
                 if (tileIndex >= 0 && tileIndex < saveData.World.Tiles.Count)
                 {
@@ -56,9 +56,9 @@ public static class SaveThumbnailGenerator
                         ? tile.OverlayColorIndex
                         : tile.ColorIndex;
 
-                    if (colorIndex >= 0 && colorIndex < palette.Colors.Count)
+                    if (colorIndex >= 0 && colorIndex < palette.Count)
                     {
-                        var colorDef = palette.Colors[colorIndex];
+                        var colorDef = palette[colorIndex];
                         var color = new Color(colorDef.R, colorDef.G, colorDef.B);
                         image.SetPixel(x, y, color);
                     }
@@ -76,17 +76,20 @@ public static class SaveThumbnailGenerator
 
     /// <summary>
     /// Generate a placeholder thumbnail for the "New Game" button.
+    /// Uses default world dimensions (150x100).
     /// </summary>
     public static ImageTexture GenerateNewGamePlaceholder()
     {
-        var image = Image.CreateEmpty(ThumbnailWidth, ThumbnailHeight, false, Image.Format.Rgb8);
+        int width = World.DefaultWidth;
+        int height = World.DefaultHeight;
+        var image = Image.CreateEmpty(width, height, false, Image.Format.Rgb8);
 
         // Simple gradient or solid color for new game
         var baseColor = new Color(0.15f, 0.4f, 0.15f); // Dark green
 
-        for (int y = 0; y < ThumbnailHeight; y++)
+        for (int y = 0; y < height; y++)
         {
-            for (int x = 0; x < ThumbnailWidth; x++)
+            for (int x = 0; x < width; x++)
             {
                 // Simple crosshatch pattern
                 bool pattern = ((x + y) % 8 < 4);
