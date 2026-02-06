@@ -717,7 +717,7 @@ public sealed class ActionSystem : ISystem
                         SourceId = buildingDef3.Id,
                         MoodOffset = 15f, // Productive feeling from working
                         StartTick = ctx.Time.Tick,
-                        EndTick = ctx.Time.Tick + 2400, // Duration: 2400 ticks
+                        EndTick = ctx.Time.Tick + 1200, // Duration: 1 minute
                     }
                 );
 
@@ -1040,7 +1040,7 @@ public sealed class ActionSystem : ISystem
                         SourceId = buildingDef.Id,
                         MoodOffset = 15f,
                         StartTick = ctx.Time.Tick,
-                        EndTick = ctx.Time.Tick + 2400,
+                        EndTick = ctx.Time.Tick + 1200, // 1 minute
                     }
                 );
             }
