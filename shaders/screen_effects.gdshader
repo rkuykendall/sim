@@ -29,7 +29,11 @@ uniform float transition_speed : hint_range(0.01, 40.0) = 0.5;
 uniform bool enable_grain = true;
 uniform bool enable_scanlines = true;
 uniform bool enable_rgb_grid = true;
-uniform float brightness_multiplier:hint_range(1.0,1.5, 0.05) = 1.05;
+uniform bool enable_bloom = true;
+uniform float brightness_multiplier : hint_range(1.0, 2.0, 0.05) = 1.15;
+uniform float contrast : hint_range(0.8, 1.5, 0.05) = 1.1;
+uniform float bloom_intensity : hint_range(0.0, 0.5, 0.05) = 0.15;
+uniform float bloom_threshold : hint_range(0.3, 1.0, 0.05) = 0.6;
 
 // RGB grid scale - how many screen pixels per RGB pattern (lower = finer grain)
 uniform float rgb_grid_scale : hint_range(1.0, 8.0, 1.0) = 2.0;
@@ -57,6 +61,25 @@ float band_ease(float t, float start, float end, float speed)
 float filmGrainNoise(in float time, in vec2 uv)
 {
     return fract(sin(dot(uv, vec2(12.9898, 78.233) * time)) * 43758.5453);
+}
+
+// Simple box blur for bloom effect
+vec3 sample_bloom(sampler2D tex, vec2 uv, vec2 pixel_size)
+{
+    vec3 sum = vec3(0.0);
+    // Sample a 5x5 grid with weighted contributions
+    for (int x = -2; x <= 2; x++) {
+        for (int y = -2; y <= 2; y++) {
+            vec2 offset = vec2(float(x), float(y)) * pixel_size * 2.0;
+            vec3 sample_col = texture(tex, uv + offset).rgb;
+            // Only include bright pixels
+            float luminance = dot(sample_col, vec3(0.299, 0.587, 0.114));
+            if (luminance > bloom_threshold) {
+                sum += sample_col * (luminance - bloom_threshold);
+            }
+        }
+    }
+    return sum / 25.0;
 }
 
 void fragment()
@@ -171,8 +194,22 @@ void fragment()
 		}
 	}
 
+	// Bloom effect - add glow from bright areas
+	if (enable_bloom)
+	{
+		vec2 pixel_size = 1.0 / vec2(textureSize(screen_texture, 0));
+		vec3 bloom = sample_bloom(screen_texture, xy, pixel_size);
+		color.rgb += bloom * bloom_intensity;
+	}
+
+	// Contrast adjustment (expand around midpoint)
+	color.rgb = (color.rgb - 0.5) * contrast + 0.5;
+
 	// Final brightness adjustment
 	color.rgb *= brightness_multiplier;
+
+	// Clamp to valid range
+	color.rgb = clamp(color.rgb, 0.0, 1.0);
 
 	COLOR = color;
 }
