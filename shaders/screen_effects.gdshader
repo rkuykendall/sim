@@ -30,9 +30,9 @@ uniform bool enable_grain = true;
 uniform bool enable_scanlines = true;
 uniform bool enable_rgb_grid = true;
 uniform bool enable_bloom = true;
-uniform float brightness_multiplier : hint_range(1.0, 2.0, 0.05) = 1.15;
-uniform float contrast : hint_range(0.8, 1.5, 0.05) = 1.1;
-uniform float bloom_intensity : hint_range(0.0, 0.5, 0.05) = 0.15;
+uniform float brightness_multiplier : hint_range(1.0, 2.0, 0.05) = 1;
+uniform float contrast : hint_range(0.8, 1.5, 0.05) = 1.2;
+uniform float bloom_intensity : hint_range(0.0, 0.5, 0.05) = 0.3;
 uniform float bloom_threshold : hint_range(0.3, 1.0, 0.05) = 0.6;
 
 // RGB grid scale - how many screen pixels per RGB pattern (lower = finer grain)
@@ -194,6 +194,9 @@ void fragment()
 		}
 	}
 
+	// Contrast adjustment (expand around midpoint)
+	color.rgb = (color.rgb - 0.5) * contrast + 0.5;
+
 	// Bloom effect - add glow from bright areas
 	if (enable_bloom)
 	{
@@ -201,9 +204,6 @@ void fragment()
 		vec3 bloom = sample_bloom(screen_texture, xy, pixel_size);
 		color.rgb += bloom * bloom_intensity;
 	}
-
-	// Contrast adjustment (expand around midpoint)
-	color.rgb = (color.rgb - 0.5) * contrast + 0.5;
 
 	// Final brightness adjustment
 	color.rgb *= brightness_multiplier;
