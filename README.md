@@ -1,3 +1,13 @@
+# Paint Town
+
+## Itch.io — Short description / tagline
+
+> Paint a town. Watch it come alive.
+
+## Itch.io — Description
+
+> Paint Town is a pixel simulation painter. Think KidPix mixed with a Colony Sim but for 4-year-olds. Pick up a tool, paint some terrain, drop a few buildings, and tiny pixel people show up and start living their lives. Flood-fill a forest. Outline a town square. Stamp down a farm and a tavern.
+
 # SimGame
 
 A top-down, grid-based life simulation sandbox.
