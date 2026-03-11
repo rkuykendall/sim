@@ -1,15 +1,15 @@
 [gd_scene load_steps=12 format=3 uid="uid://main"]
 
-[ext_resource type="Script" path="res://src/Godot/GameRoot.cs" id="1"]
-[ext_resource type="Script" path="res://src/Godot/CameraController.cs" id="1_camera"]
+[ext_resource type="Script" path="res://src/Godot/GameRoot.gd" id="1"]
+[ext_resource type="Script" path="res://src/Godot/CameraController.gd" id="1_camera"]
 [ext_resource type="PackedScene" uid="uid://pawn" path="res://scenes/Pawn.tscn" id="2"]
 [ext_resource type="PackedScene" uid="uid://building" path="res://scenes/Building.tscn" id="3"]
 [ext_resource type="PackedScene" uid="uid://buildtoolbar" path="res://scenes/BuildToolbar.tscn" id="7"]
-[ext_resource type="Script" path="res://src/Godot/CRTShaderController.cs" id="8"]
+[ext_resource type="Script" path="res://src/Godot/CRTShaderController.gd" id="8"]
 [ext_resource type="Material" path="res://shaders/screen_effects_material.tres" id="9"]
-[ext_resource type="Script" path="res://src/Godot/MusicManager.cs" id="11"]
+[ext_resource type="Script" path="res://src/Godot/MusicManager.gd" id="11"]
 [ext_resource type="PackedScene" uid="uid://homescreen" path="res://scenes/HomeScreen.tscn" id="12"]
-[ext_resource type="Script" path="res://src/Godot/SoundManager.cs" id="13"]
+[ext_resource type="Script" path="res://src/Godot/SoundManager.gd" id="13"]
 
 [node name="Main" type="Node2D"]
 y_sort_enabled = true
@@ -37,19 +37,19 @@ color = Color(0, 0, 0, 0)
 
 [node name="GameRoot" type="Node2D" parent="."]
 script = ExtResource("1")
-PawnScene = ExtResource("2")
-BuildingScene = ExtResource("3")
-PawnsRootPath = NodePath("../Pawns")
-BuildingsRootPath = NodePath("../Buildings")
-TilesRootPath = NodePath("../Tiles")
-ShadowRectPath = NodePath("../ShadowLayer/ShadowRect")
-CRTShaderLayerPath = NodePath("../CRTShaderLayer")
-CameraPath = NodePath("../Camera2D")
-UILayerPath = NodePath("../UI")
-ToolbarPath = NodePath("../UI/BuildToolbar")
-MusicManagerPath = NodePath("../MusicManager")
-SoundManagerPath = NodePath("../SoundManager")
-HomeScreenPath = NodePath("../UI/HomeScreen")
+pawn_scene = ExtResource("2")
+building_scene = ExtResource("3")
+pawns_root_path = NodePath("../Pawns")
+buildings_root_path = NodePath("../Buildings")
+tiles_root_path = NodePath("../Tiles")
+shadow_rect_path = NodePath("../ShadowLayer/ShadowRect")
+crt_shader_layer_path = NodePath("../CRTShaderLayer")
+camera_path = NodePath("../Camera2D")
+ui_layer_path = NodePath("../UI")
+toolbar_path = NodePath("../UI/BuildToolbar")
+music_manager_path = NodePath("../MusicManager")
+sound_manager_path = NodePath("../SoundManager")
+home_screen_path = NodePath("../UI/HomeScreen")
 
 [node name="UI" type="CanvasLayer" parent="."]
 
@@ -81,8 +81,7 @@ volume_db = -10.0
 
 [node name="MusicManager" type="Node" parent="."]
 script = ExtResource("11")
-AudioPlayerPath = NodePath("../AudioPlayer")
-GameRootPath = NodePath("../GameRoot")
+audio_player_path = NodePath("../AudioPlayer")
 
 [node name="SoundManager" type="Node" parent="."]
 script = ExtResource("13")

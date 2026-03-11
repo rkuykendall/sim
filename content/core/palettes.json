@@ -1,0 +1,18 @@
+{
+    "Rainbow": ["#e6261f", "#eb7532", "#f7d038", "#a3e048", "#49da9a", "#34bbe6", "#4355db", "#d23be7"],
+    "Islands": ["#964253", "#ffb570", "#ffe478", "#8fde5d", "#3ca370", "#4da6ff", "#4b5bab", "#ffb5b5"],
+    "Ocean": ["#FF8066", "#FFB380", "#FFE64D", "#339980", "#48ACF0", "#4DFFE5", "#997FCC", "#F374AE"],
+    "Lava": ["#E84A35", "#FF715B", "#FFBA49", "#4CD468", "#56D2FF", "#6987C9", "#703ABB", "#C53A9D"],
+    "Curiosities": ["#ffb0a3", "#ffd6a3", "#ffeecc", "#a3ffce", "#00b9be", "#a3d2ff", "#605987", "#ff6973"],
+    "Pollen": ["#FF5154", "#FFE7D6", "#FFF79A", "#72FFD2", "#00b9be", "#72DDF7", "#91A6FF", "#FF88DC"],
+    "Capp": ["#d1495b", "#edae49", "#fadda2", "#007f5f", "#8ecde6", "#66a1ff", "#6b61ff", "#d66ba5"],
+    "PastelQT": ["#cb8175", "#f0cf8e", "#f6edcd", "#a8c8a6", "#6d8d8a", "#6ea4d6", "#7b84b5", "#8f7bb5"],
+    "Hydrangea": ["#EE7674", "#F9B5AC", "#FEE5AC", "#93FFB7", "#66B2FF", "#4A7B9D", "#5D4E7E", "#987284"],
+    "Soybeachy": ["#e55388", "#e59f88", "#e5d988", "#88e5a1", "#6dd5cc", "#00b9be", "#8882e5", "#d288e5"],
+    "CheesePalette": ["#f01b0f", "#ff7700", "#ffd860", "#6f7844", "#2a6671", "#4b3b94", "#8f2d91", "#e91e63"],
+    "Retrocal": ["#c6505a", "#ee9c5d", "#fcffc0", "#74a33f", "#6eb8a8", "#7fc8b7", "#b59be8", "#e070b1"],
+    "Blessing": ["#ff6f91", "#ffd9b3", "#f7ffae", "#96fbc7", "#6ae2ff", "#74569b", "#d8bfd8", "#ffb3cb"],
+    "RustGold": ["#FF6B6C", "#FFB56B", "#f6cd26", "#4E944F", "#96E6B3", "#0091AD", "#c2c2fe", "#FF6EFF"],
+    "Pocket": ["#FF6F61", "#FFA372", "#FFE6B3", "#d0e6b3", "#9BC1BC", "#5DA5D5", "#779ECB", "#FFB3BA"],
+    "TintWheel": ["#FF8A8A", "#FFB38A", "#FFE68A", "#C8FF8A", "#8AFFB8", "#8AFFF0", "#8AB8FF", "#D08AFF"]
+}

@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://buildtoolbar"]
 
-[ext_resource type="Script" path="res://src/Godot/BuildToolbar.cs" id="1"]
+[ext_resource type="Script" path="res://src/Godot/BuildToolbar.gd" id="1"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.1, 0.1, 0.1, 0.8)
@@ -19,8 +19,8 @@ offset_right = 0.0
 offset_bottom = 0.0
 theme_override_constants/separation = 0
 script = ExtResource("1")
-LeftPanelPath = NodePath("LeftPanel/MarginContainer/ToolsGrid")
-OptionsContainerPath = NodePath("OptionsPanel/MarginContainer/OptionsFlow")
+left_panel_path = NodePath("LeftPanel/MarginContainer/ToolsGrid")
+options_container_path = NodePath("OptionsPanel/MarginContainer/OptionsFlow")
 
 [node name="LeftPanel" type="PanelContainer" parent="."]
 custom_minimum_size = Vector2(192, 0)

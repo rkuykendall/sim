@@ -20,13 +20,11 @@ echo "========================"
 GODOT=""
 if command -v godot &> /dev/null; then
     GODOT="godot"
-elif [ -f "/Applications/Godot_mono.app/Contents/MacOS/Godot" ]; then
-    GODOT="/Applications/Godot_mono.app/Contents/MacOS/Godot"
 elif [ -f "/Applications/Godot.app/Contents/MacOS/Godot" ]; then
     GODOT="/Applications/Godot.app/Contents/MacOS/Godot"
 else
     echo -e "${RED}Error: Godot not found in PATH or /Applications${NC}"
-    echo "Please install Godot 4.5 .NET version or add it to your PATH"
+    echo "Please install Godot 4.5 or add it to your PATH"
     exit 1
 fi
 
@@ -37,12 +35,6 @@ echo ""
 echo "Checking prerequisites..."
 echo -e "${YELLOW}Note: Export templates must be installed in Godot Editor first${NC}"
 echo "      (Editor -> Manage Export Templates -> Download)"
-echo ""
-
-# Build .NET project first
-echo -e "${YELLOW}Building .NET project...${NC}"
-dotnet build -c Release
-echo -e "${GREEN}Done!${NC}"
 echo ""
 
 # Create build directories
@@ -71,7 +63,7 @@ echo -e "${YELLOW}Exporting for Linux...${NC}"
     echo -e "${RED}Linux export failed. Make sure Linux export templates are installed.${NC}"
 }
 
-# Copy content files (Lua files need to be accessible via filesystem, not packed in .pck)
+# Copy content files (JSON files need to be accessible via filesystem, not packed in .pck)
 echo ""
 echo -e "${YELLOW}Copying content files...${NC}"
 
