@@ -2,7 +2,7 @@ class_name PawnView
 extends Node2D
 
 const SOURCE_SIZE: int = RenderingConstants.SOURCE_TILE_SIZE
-const LERP_SPEED: float = 300.0   # pixels per second
+const LERP_SPEED: float = 0.01  # fraction per frame at 60fps (matches C# behavior)
 
 var _sprite: AnimatedSprite2D
 var _bubble_node: Node2D
@@ -54,11 +54,17 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	# Smooth position lerp
-	if position.distance_to(_target_position) > 0.5:
-		position = position.move_toward(_target_position, LERP_SPEED * delta)
-	else:
-		position = _target_position
+	# Smooth position lerp — exponential ease-out matching C# Lerp(0.01) at 60fps
+	position = position.lerp(_target_position, 1.0 - pow(1.0 - LERP_SPEED, delta * 60.0))
+
+	# Flip sprite to face movement direction
+	if _sprite.sprite_frames != null:
+		var velocity: Vector2 = _target_position - position
+		if velocity.length_squared() > 0.1:
+			if velocity.x < 0:
+				_sprite.flip_h = true
+			elif velocity.x > 0:
+				_sprite.flip_h = false
 
 	# Floating bubble animation
 	if _bubble_node.visible:
@@ -75,10 +81,10 @@ func initialize_with_sprite(
 	look_up_tex: Texture2D
 ) -> void:
 	var frames := SpriteFrames.new()
-	_add_animation(frames, "walk",      walk_tex,      8,  8.0,  true)
+	_add_animation(frames, "walk",      walk_tex,      8,  6.0,  true)
 	_add_animation(frames, "idle",      idle_tex,      3,  3.0,  true)
-	_add_animation(frames, "axe",       axe_tex,       5,  8.0,  true)
-	_add_animation(frames, "pickaxe",   pickaxe_tex,   5,  8.0,  true)
+	_add_animation(frames, "axe",       axe_tex,       5,  6.0,  true)
+	_add_animation(frames, "pickaxe",   pickaxe_tex,   5,  6.0,  true)
 	_add_animation(frames, "look_down", look_down_tex, 1,  1.0,  false)
 	_add_animation(frames, "look_up",   look_up_tex,   1,  1.0,  false)
 	_sprite.sprite_frames = frames
