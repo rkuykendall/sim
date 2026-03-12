@@ -16,6 +16,9 @@ Thumbs.db
 # Reference materials and planning (not for version control)
 REFERENCE/
 
+# Build output
+builds/
+
 # Too large for git at this time
 music/
 sfx/

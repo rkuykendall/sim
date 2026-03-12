@@ -22,6 +22,8 @@ if command -v godot &> /dev/null; then
     GODOT="godot"
 elif [ -f "/Applications/Godot.app/Contents/MacOS/Godot" ]; then
     GODOT="/Applications/Godot.app/Contents/MacOS/Godot"
+elif [ -f "/Applications/Godot_mono.app/Contents/MacOS/Godot" ]; then
+    GODOT="/Applications/Godot_mono.app/Contents/MacOS/Godot"
 else
     echo -e "${RED}Error: Godot not found in PATH or /Applications${NC}"
     echo "Please install Godot 4.5 or add it to your PATH"
@@ -42,6 +44,7 @@ echo -e "${YELLOW}Creating build directories...${NC}"
 mkdir -p builds/paint-town-windows
 mkdir -p builds/paint-town-macos
 mkdir -p builds/paint-town-linux
+mkdir -p builds/paint-town-web
 echo -e "${GREEN}Done!${NC}"
 echo ""
 
@@ -63,19 +66,23 @@ echo -e "${YELLOW}Exporting for Linux...${NC}"
     echo -e "${RED}Linux export failed. Make sure Linux export templates are installed.${NC}"
 }
 
-# Copy content files (JSON files need to be accessible via filesystem, not packed in .pck)
+echo ""
+echo -e "${YELLOW}Exporting for Web...${NC}"
+"$GODOT" --headless --export-release "Web" builds/paint-town-web/index.html || {
+    echo -e "${RED}Web export failed. Make sure Web export templates are installed.${NC}"
+}
+
+# Copy content files to desktop builds (allows players to mod them)
+# Web build skips this — content is packed into the .wasm export
 echo ""
 echo -e "${YELLOW}Copying content files...${NC}"
 
-# Windows: content folder next to exe
 cp -r content builds/paint-town-windows/
 echo "  Copied to builds/paint-town-windows/content/"
 
-# macOS: content folder inside app bundle Resources
 cp -r content builds/paint-town-macos/SimGame.app/Contents/Resources/
 echo "  Copied to builds/paint-town-macos/SimGame.app/Contents/Resources/content/"
 
-# Linux: content folder next to executable
 cp -r content builds/paint-town-linux/
 echo "  Copied to builds/paint-town-linux/content/"
 
@@ -91,6 +98,8 @@ zip -r paint-town-macos.zip paint-town-macos/
 echo "  Created builds/paint-town-macos.zip"
 zip -r paint-town-linux.zip paint-town-linux/
 echo "  Created builds/paint-town-linux.zip"
+zip -r paint-town-web.zip paint-town-web/
+echo "  Created builds/paint-town-web.zip"
 cd ..
 echo -e "${GREEN}Done!${NC}"
 
@@ -102,8 +111,10 @@ echo "Output locations:"
 echo "  Windows: builds/paint-town-windows/SimGame.exe"
 echo "  macOS:   builds/paint-town-macos/SimGame.app"
 echo "  Linux:   builds/paint-town-linux/SimGame.x86_64"
+echo "  Web:     builds/paint-town-web/index.html"
 echo ""
 echo "Zip archives:"
 echo "  builds/paint-town-windows.zip"
 echo "  builds/paint-town-macos.zip"
 echo "  builds/paint-town-linux.zip"
+echo "  builds/paint-town-web.zip"

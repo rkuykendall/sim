@@ -1039,10 +1039,19 @@ func _calculate_entry_position(tile_x: int, tile_y: int) -> Vector2:
 
 
 static func _get_content_path() -> String:
-	if OS.has_feature("editor"):
-		return ProjectSettings.globalize_path("res://content")
-	var exe_path: String = OS.get_executable_path()
-	var exe_dir: String = exe_path.get_base_dir()
-	if OS.has_feature("macos"):
-		return (exe_dir.path_join("..").path_join("Resources").path_join("content"))
-	return exe_dir.path_join("content")
+	# Web: always read from packed resources
+	if OS.has_feature("web"):
+		return "res://content"
+	# Desktop release: try content folder next to exe first (allows modding),
+	# fall back to packed res:// if not present
+	if not OS.has_feature("editor"):
+		var exe_dir: String = OS.get_executable_path().get_base_dir()
+		var override_path: String
+		if OS.has_feature("macos"):
+			override_path = exe_dir.path_join("..").path_join("Resources").path_join("content")
+		else:
+			override_path = exe_dir.path_join("content")
+		if FileAccess.file_exists(override_path.path_join("core/buildings.json")):
+			return override_path
+	# Editor or no override found: use packed resources
+	return "res://content"
