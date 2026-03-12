@@ -95,9 +95,9 @@ func _ready() -> void:
 	_user_settings = UserSettings.load()
 	_apply_fullscreen()
 
-	var content_path: String = _get_content_path()
-	print("[GameRoot] Content path: %s" % content_path)
-	_content = ContentLoader.load_all(content_path)
+	var mod_path: String = _get_mod_content_path()
+	print("[GameRoot] Mod content path: %s" % (mod_path if not mod_path.is_empty() else "(none)"))
+	_content = ContentLoader.load_all(mod_path)
 	_tick_delta = 1.0 / Simulation.TICK_RATE
 
 	_pawns_root    = get_node(pawns_root_path)
@@ -1038,20 +1038,12 @@ func _calculate_entry_position(tile_x: int, tile_y: int) -> Vector2:
 	return Vector2(cx, cy)
 
 
-static func _get_content_path() -> String:
-	# Web: always read from packed resources
-	if OS.has_feature("web"):
-		return "res://content"
-	# Desktop release: try content folder next to exe first (allows modding),
-	# fall back to packed res:// if not present
-	if not OS.has_feature("editor"):
-		var exe_dir: String = OS.get_executable_path().get_base_dir()
-		var override_path: String
-		if OS.has_feature("macos"):
-			override_path = exe_dir.path_join("..").path_join("Resources").path_join("content")
-		else:
-			override_path = exe_dir.path_join("content")
-		if FileAccess.file_exists(override_path.path_join("core/buildings.json")):
-			return override_path
-	# Editor or no override found: use packed resources
-	return "res://content"
+static func _get_mod_content_path() -> String:
+	# Web and editor: no filesystem mod path; base content loaded from res://
+	if OS.has_feature("web") or OS.has_feature("editor"):
+		return ""
+	# Desktop release: return content/ folder next to exe for additive mod loading
+	var exe_dir: String = OS.get_executable_path().get_base_dir()
+	if OS.has_feature("macos"):
+		return exe_dir.path_join("..").path_join("Resources").path_join("content")
+	return exe_dir.path_join("content")

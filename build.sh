@@ -72,18 +72,23 @@ echo -e "${YELLOW}Exporting for Web...${NC}"
     echo -e "${RED}Web export failed. Make sure Web export templates are installed.${NC}"
 }
 
-# Copy content files to desktop builds (allows players to mod them)
-# Web build skips this — content is packed into the .wasm export
+# Copy example_content/ as content/ for desktop builds.
+# This ships a sample mod (extra palette + README) showing players how to add content.
+# Base content is always packed into the executable via res://; these files extend it.
+# Web build skips this — web has no filesystem mod support.
 echo ""
-echo -e "${YELLOW}Copying content files...${NC}"
+echo -e "${YELLOW}Copying example mod content...${NC}"
 
-cp -r content builds/paint-town-windows/
+mkdir -p builds/paint-town-windows/content
+cp -r example_content/. builds/paint-town-windows/content/
 echo "  Copied to builds/paint-town-windows/content/"
 
-cp -r content builds/paint-town-macos/SimGame.app/Contents/Resources/
+mkdir -p "builds/paint-town-macos/SimGame.app/Contents/Resources/content"
+cp -r example_content/. "builds/paint-town-macos/SimGame.app/Contents/Resources/content/"
 echo "  Copied to builds/paint-town-macos/SimGame.app/Contents/Resources/content/"
 
-cp -r content builds/paint-town-linux/
+mkdir -p builds/paint-town-linux/content
+cp -r example_content/. builds/paint-town-linux/content/
 echo "  Copied to builds/paint-town-linux/content/"
 
 echo -e "${GREEN}Done!${NC}"

@@ -8,13 +8,21 @@ const DEFAULT_BASE_COST: int = 10
 const DEFAULT_BASE_PRODUCTION: float = 2.0
 
 
-static func load_all(content_path: String) -> ContentRegistry:
+static func load_all(mod_path: String = "") -> ContentRegistry:
 	var registry := ContentRegistry.new()
 
-	_load_file(registry, content_path.path_join("core/palettes.json"), _parse_palette)
-	_load_file(registry, content_path.path_join("core/needs.json"), _parse_need)
-	_load_file(registry, content_path.path_join("core/terrains.json"), _parse_terrain)
-	_load_file(registry, content_path.path_join("core/buildings.json"), _parse_building)
+	# Always load base content from packed resources (works on all platforms)
+	_load_file(registry, "res://content/core/palettes.json", _parse_palette)
+	_load_file(registry, "res://content/core/needs.json", _parse_need)
+	_load_file(registry, "res://content/core/terrains.json", _parse_terrain)
+	_load_file(registry, "res://content/core/buildings.json", _parse_building)
+
+	# Additively load from content/ folder next to exe on desktop (for modding)
+	if not mod_path.is_empty():
+		_load_file(registry, mod_path.path_join("core/palettes.json"), _parse_palette, true)
+		_load_file(registry, mod_path.path_join("core/needs.json"), _parse_need, true)
+		_load_file(registry, mod_path.path_join("core/terrains.json"), _parse_terrain, true)
+		_load_file(registry, mod_path.path_join("core/buildings.json"), _parse_building, true)
 
 	_load_mods(registry)
 
@@ -44,9 +52,10 @@ static func _load_mods(registry: ContentRegistry) -> void:
 
 # --- File loading ----------------------------------------------------------
 
-static func _load_file(registry: ContentRegistry, path: String, parser: Callable) -> void:
+static func _load_file(registry: ContentRegistry, path: String, parser: Callable, optional: bool = false) -> void:
 	if not FileAccess.file_exists(path):
-		push_warning("ContentLoader: file not found: %s" % path)
+		if not optional:
+			push_warning("ContentLoader: file not found: %s" % path)
 		return
 
 	var text := FileAccess.get_file_as_string(path)
