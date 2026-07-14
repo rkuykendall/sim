@@ -69,6 +69,20 @@ To build distributable executables for Windows, macOS, and Linux:
 
 The build script automatically copies the `content/` folder to each platform's build directory.
 
+## Running the Web Build
+
+Browsers require the `Cross-Origin-Opener-Policy` / `Cross-Origin-Embedder-Policy` headers to load Godot's web export (needed for `SharedArrayBuffer`), so you can't just open `builds/paint-town-web/index.html` directly from disk. Use the included local server instead:
+
+```bash
+python3 serve_web.py
+```
+
+Then open the printed URL (`http://localhost:8080` by default) in a browser. Pass a different port as an argument if 8080 is taken:
+
+```bash
+python3 serve_web.py 3000
+```
+
 ## Code Formatting (CSharpier)
 
 This project uses [CSharpier](https://csharpier.com/) to enforce consistent C# code style.
