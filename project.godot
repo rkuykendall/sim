@@ -18,6 +18,10 @@ config/name="SimGame"
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.6")
 
+[gui]
+
+theme/custom="res://theme/DefaultTheme.tres"
+
 [display]
 
 window/size/viewport_width=640

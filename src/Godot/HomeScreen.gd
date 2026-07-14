@@ -59,8 +59,7 @@ func _create_new_game_item() -> Control:
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var label := Label.new()
-	label.text = "+"
-	label.add_theme_font_size_override("font_size", 64)
+	label.text = "NEW"
 	label.add_theme_color_override("font_color", Color(0.4, 0.7, 0.4))
 	center.add_child(label)
 	container.add_child(center)
@@ -128,8 +127,7 @@ func _create_quit_item() -> Control:
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var label := Label.new()
-	label.text = "✕"
-	label.add_theme_font_size_override("font_size", 64)
+	label.text = "QUIT"
 	label.add_theme_color_override("font_color", Color(0.7, 0.4, 0.4))
 	center.add_child(label)
 	container.add_child(center)
@@ -157,8 +155,7 @@ func _create_fullscreen_item() -> Control:
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var label := Label.new()
-	label.text = "[ ]"
-	label.add_theme_font_size_override("font_size", 48)
+	label.text = "FULLSCREEN"
 	label.add_theme_color_override("font_color", Color(0.4, 0.4, 0.7))
 	center.add_child(label)
 	container.add_child(center)
