@@ -333,6 +333,7 @@ func _process(delta: float) -> void:
 	_update_building_info_panel(snapshot)
 	_update_time_display(snapshot)
 	_update_night_overlay(snapshot)
+	_update_shadow_rect_bounds()
 
 	var mouse_pos: Vector2 = get_local_mouse_position()
 	_hovered_tile = _screen_to_tile(mouse_pos)
@@ -969,6 +970,15 @@ func _update_night_overlay(snapshot: Dictionary) -> void:
 		_shadow_shader_mat.set_shader_parameter("max_shadow_distance", shadow_distance)
 		var shadow_alpha: float = 0.3 * sun_elevation * sun_elevation
 		_shadow_shader_mat.set_shader_parameter("shadow_color", Color(0, 0, 0, shadow_alpha))
+
+
+func _update_shadow_rect_bounds() -> void:
+	if _shadow_rect == null or _camera == null:
+		return
+
+	var view_size: Vector2 = get_viewport_rect().size / _camera.zoom
+	_shadow_rect.position = _camera.position - view_size * 0.5
+	_shadow_rect.size = view_size
 
 
 # ---------------------------------------------------------------------------
