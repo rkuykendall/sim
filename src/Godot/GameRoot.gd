@@ -65,6 +65,7 @@ var _buildings_root: Node2D
 var _tiles_root: Node2D
 var _shadow_rect: ColorRect = null
 var _shadow_shader_mat: ShaderMaterial = null
+var _has_occluders: bool = false
 var _crt_shader_controller: CRTShaderController = null
 var _camera: CameraController = null
 var _ui_layer: CanvasLayer = null
@@ -691,6 +692,22 @@ func _sync_tiles(coords: Array) -> void:
 	for coord in coords:
 		_sync_single_tile(coord)
 	_apply_autotile_batches()
+	_recompute_has_occluders()
+
+
+func _recompute_has_occluders() -> void:
+	var found := false
+	for x in _sim.world.width:
+		for y in _sim.world.height:
+			if _sim.world.get_tile_xy(x, y).blocks_light:
+				found = true
+				break
+		if found:
+			break
+
+	_has_occluders = found
+	if _shadow_rect != null:
+		_shadow_rect.visible = _has_occluders
 
 
 func _prepare_autotile_batches() -> void:
