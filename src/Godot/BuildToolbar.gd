@@ -203,7 +203,8 @@ func _create_option_button(id: int, sprite_key: String, is_building: bool, is_de
 	elif is_building:
 		var ts: int = int(_content.buildings[id].get("tileSize", 1))
 		var px: int = ts * RenderingConstants.SOURCE_TILE_SIZE
-		texture = SpriteResourceManager.get_icon_texture(sprite_key, Rect2(0, 0, px, px))
+		var col: int = int(_content.buildings[id].get("spriteColumn", 0))
+		texture = SpriteResourceManager.get_icon_texture(sprite_key, Rect2(col * px, 0, px, px))
 	else:
 		var tile_size: int = RenderingConstants.SOURCE_TILE_SIZE
 		var is_auto: bool = _content.terrains[id].get("isAutotiling", false)

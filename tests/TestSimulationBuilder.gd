@@ -9,7 +9,6 @@ var _seed: int = DEFAULT_SEED
 var _world_width: int = DEFAULT_WORLD_SIZE
 var _world_height: int = DEFAULT_WORLD_SIZE
 var _disable_themes: bool = true
-var _tax_multiplier: float = 1.0
 var _start_hour: int = TimeService.DEFAULT_START_HOUR
 
 var _content: ContentRegistry
@@ -58,11 +57,6 @@ func with_start_hour(hour: int) -> TestSimulationBuilder:
 	return self
 
 
-func with_tax_multiplier(mult: float) -> TestSimulationBuilder:
-	_tax_multiplier = mult
-	return self
-
-
 # -------------------------------------------------------------------------
 # Content registration
 # -------------------------------------------------------------------------
@@ -95,8 +89,6 @@ func define_building(
 	buff_duration: int = 0,
 	use_areas: Array = [],          # Array of Vector2i offsets; [] = use default adjacency
 	tile_size: int = 1,
-	base_cost: int = 10,
-	base_production: float = 1.0,
 	can_be_worked_at: bool = false,
 	resource_type: String = "",
 	max_resource_amount: float = 100.0,
@@ -116,8 +108,6 @@ func define_building(
 		"grantsBuff":             grants_buff,
 		"buffDuration":           buff_duration,
 		"tileSize":               tile_size,
-		"baseCost":               base_cost,
-		"baseProduction":         base_production,
 		"canBeWorkedAt":          can_be_worked_at,
 		"resourceType":           resource_type,
 		"maxResourceAmount":      max_resource_amount,
@@ -128,10 +118,8 @@ func define_building(
 		"haulSourceTerrainId":    haul_terrain_id,
 		"canSellToConsumers":     can_sell_to_consumers,
 		"capacity":               1,
-		"capacityPerPhase":       [],
 		"spriteKey":              "",
 		"spriteVariants":         1,
-		"spritePhases":           1,
 	}
 	# Explicit use areas override default adjacency logic in ActionSystem
 	if not use_areas.is_empty():
@@ -181,8 +169,7 @@ func build():
 		_start_hour,
 		_world_width,
 		_world_height,
-		_disable_themes,
-		_tax_multiplier
+		_disable_themes
 	)
 
 	for b in _pending_buildings:

@@ -298,8 +298,7 @@ func _process(delta: float) -> void:
 		_accumulator -= _tick_delta
 		ticks_processed += 1
 		if _sim.time.tick % TimeService.TICKS_PER_DAY == 0 and _sim.time.tick > 0:
-			print("[Day %d] Total wealth: %dg, Tax pool: %dg, Pawns: %d" % [
-				_sim.time.day, _sim.get_total_wealth(), _sim.tax_pool, _sim.entities.all_pawns().size()])
+			print("[Day %d] Pawns: %d" % [_sim.time.day, _sim.entities.all_pawns().size()])
 
 	if ticks_processed >= MAX_TICKS_PER_FRAME and _accumulator >= _tick_delta:
 		_accumulator = 0.0
@@ -893,7 +892,7 @@ func _sync_buildings(snapshot: Dictionary) -> void:
 					var texture: Texture2D = SpriteResourceManager.get_texture(bdef.get("spriteKey", ""))
 					if texture != null:
 						node.initialize_with_sprite(texture, int(bdef.get("tileSize", 1)),
-							int(bdef.get("spriteVariants", 1)), int(bdef.get("spritePhases", 1)), obj_id)
+							int(bdef.get("spriteVariants", 1)), int(bdef.get("spriteColumn", 0)), obj_id)
 
 		var node = _building_nodes[obj_id]
 		node.position = Vector2(
@@ -902,7 +901,6 @@ func _sync_buildings(snapshot: Dictionary) -> void:
 		)
 		if node is BuildingView:
 			node.set_building_info(obj.get("name", ""), obj.get("in_use", false), obj.get("color_index", 0), _current_palette)
-			node.update_sprite_phase(obj.get("max_pawn_wealth", 0))
 
 	_ids_to_remove.clear()
 	for id in _building_nodes.keys():

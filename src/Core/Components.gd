@@ -74,10 +74,6 @@ class AttachmentComponent:
 	var user_attachments: Dictionary[int, int] = {}
 
 
-class GoldComponent:
-	var amount: int = 0
-
-
 class InventoryComponent:
 	var resource_type: String = ""   # "" = empty hands
 	var amount: float = 0.0

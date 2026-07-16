@@ -5,10 +5,9 @@ const SOURCE_SIZE: int = RenderingConstants.SOURCE_TILE_SIZE
 
 var _sprite: Sprite2D
 var _sprite_variants: int = 1
-var _sprite_phases: int = 1
+var _sprite_column: int = 0
 var _tile_size: int = 1
 var _entity_id: int = 0
-var _current_phase: int = -1
 
 
 func _ready() -> void:
@@ -22,12 +21,12 @@ func initialize_with_sprite(
 	texture: Texture2D,
 	tile_size: int,
 	sprite_variants: int,
-	sprite_phases: int,
+	sprite_column: int,
 	entity_id: int
 ) -> void:
 	_tile_size = tile_size
 	_sprite_variants = sprite_variants
-	_sprite_phases = sprite_phases
+	_sprite_column = sprite_column
 	_entity_id = entity_id
 	_sprite.texture = texture
 	_sprite.centered = true
@@ -43,7 +42,7 @@ func initialize_with_sprite(
 
 	# Pick variant row (stable per entity)
 	var variant_row: int = entity_id % _sprite_variants if _sprite_variants > 1 else 0
-	_set_atlas_region(variant_row, 0)
+	_set_atlas_region(variant_row, sprite_column)
 
 
 func set_building_info(name: String, in_use: bool, color_index: int, palette: Array) -> void:
@@ -51,20 +50,6 @@ func set_building_info(name: String, in_use: bool, color_index: int, palette: Ar
 		_sprite.modulate = palette[color_index]
 	else:
 		_sprite.modulate = Color.WHITE
-
-
-func update_sprite_phase(max_pawn_wealth: int) -> void:
-	if _sprite_phases <= 1:
-		return
-
-	var phase: int = max_pawn_wealth / 100
-	phase = clampi(phase, 0, _sprite_phases - 1)
-	if phase == _current_phase:
-		return
-
-	_current_phase = phase
-	var variant_row: int = _entity_id % _sprite_variants if _sprite_variants > 1 else 0
-	_set_atlas_region(variant_row, phase)
 
 
 func _set_atlas_region(variant_row: int, phase_col: int) -> void:

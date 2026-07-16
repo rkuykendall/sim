@@ -23,7 +23,6 @@ var _palette_button: Button
 
 var _pawn_name_label: Label
 var _pawn_mood_label: Label
-var _pawn_gold_label: Label
 var _pawn_action_label: Label
 var _pawn_needs_container: VBoxContainer
 var _pawn_buffs_container: VBoxContainer
@@ -84,7 +83,6 @@ func _build_ui() -> void:
 func _build_pawn_ui() -> void:
 	_pawn_name_label = _add_label(_pawn_container, "", 20)
 	_pawn_mood_label = _add_label(_pawn_container, "", 16)
-	_pawn_gold_label = _add_label(_pawn_container, "", 16)
 	_pawn_action_label = _add_label(_pawn_container, "", 16)
 
 	_add_header(_pawn_container, "Needs:")
@@ -147,10 +145,6 @@ func show_pawn(pawn: Dictionary, sim: Simulation) -> void:
 	var mood: float = pawn.get("mood", 0.0)
 	_pawn_mood_label.text = "Mood: %+d" % int(mood)
 	_pawn_mood_label.modulate = Color.LIME if mood > 20 else (Color.RED if mood < -20 else Color.WHITE)
-
-	var gold: int = pawn.get("gold", 0)
-	_pawn_gold_label.text = "Gold: %d" % gold
-	_pawn_gold_label.modulate = Color(1, 0.84, 0) if gold >= 100 else (Color.YELLOW if gold >= 50 else (Color.WHITE if gold > 0 else Color.RED))
 
 	_pawn_action_label.text = pawn.get("current_action", "Idle")
 
@@ -309,24 +303,11 @@ func _update_building_debug_display(building: Dictionary) -> void:
 		lbl.queue_free()
 	_building_debug_labels.clear()
 
-	var gold: int = building.get("gold", 0)
-	var gold_lbl := _add_label(_building_debug_container, "Gold: %d" % gold, 14)
-	gold_lbl.modulate = Color(1, 0.84, 0) if gold >= 100 else (Color.YELLOW if gold >= 50 else (Color.WHITE if gold > 0 else Color.GRAY))
-	_building_debug_labels.append(gold_lbl)
-
 	var capacity: int = building.get("capacity", 1)
 	var current_users: int = building.get("current_users", 0)
-	var phase: int = building.get("phase", 0)
-	var phase_str: String = " (phase %d)" % phase if phase > 0 else ""
-	var cap_lbl := _add_label(_building_debug_container, "Capacity: %d/%d%s" % [current_users, capacity, phase_str], 14)
+	var cap_lbl := _add_label(_building_debug_container, "Capacity: %d/%d" % [current_users, capacity], 14)
 	cap_lbl.modulate = Color.ORANGE if current_users >= capacity else (Color.YELLOW if current_users > 0 else Color.WHITE)
 	_building_debug_labels.append(cap_lbl)
-
-	var cost: int = building.get("cost", 0)
-	if cost > 0:
-		var cost_lbl := _add_label(_building_debug_container, "Use: %dg" % cost, 14)
-		cost_lbl.modulate = Color.CYAN
-		_building_debug_labels.append(cost_lbl)
 
 	var resource_type: String = building.get("resource_type", "")
 	var current_res: float = building.get("current_resource", -1.0)
@@ -337,14 +318,6 @@ func _update_building_debug_display(building: Dictionary) -> void:
 		var pct: float = current_res / max_res if max_res > 0 else 0.0
 		res_lbl.modulate = Color.RED if pct < 0.2 else (Color.ORANGE if pct < 0.5 else Color.LIME)
 		_building_debug_labels.append(res_lbl)
-
-		if building.get("can_be_worked_at", false):
-			var buy_in: int = building.get("work_buy_in", 0)
-			var payout: int = building.get("payout", 0)
-			var work_text: String = "Work: %dg in / %dg out" % [buy_in, payout] if buy_in > 0 else "Work: %dg out" % payout
-			var work_lbl := _add_label(_building_debug_container, work_text, 14)
-			work_lbl.modulate = Color.GREEN
-			_building_debug_labels.append(work_lbl)
 
 	var attach: Dictionary = building.get("attachments", {})
 	if not attach.is_empty():

@@ -134,19 +134,6 @@ func _execute_use_building(sim: Simulation, pawn_id: int, action_comp: Component
 		else:
 			has_resources = false
 
-	# Economic transaction
-	if has_resources:
-		var cost: int = _get_building_cost(building_def)
-		var pawn_gold: Components.GoldComponent = sim.entities.gold.get(pawn_id)
-		if pawn_gold != null:
-			if pawn_gold.amount < cost:
-				has_resources = false
-			else:
-				pawn_gold.amount -= cost
-				var building_gold: Components.GoldComponent = sim.entities.gold.get(target_id)
-				if building_gold != null:
-					building_gold.amount += cost
-
 	# Satisfy need
 	if has_resources and action.satisfies_need_id != -1:
 		var need_comp: Components.NeedsComponent = sim.entities.needs.get(pawn_id)
@@ -249,23 +236,6 @@ func _execute_work(sim: Simulation, pawn_id: int, action_comp: Components.Action
 	var resource_comp: Components.ResourceComponent = sim.entities.resources.get(target_id)
 	if resource_comp != null:
 		resource_comp.current_amount = minf(resource_comp.max_amount, resource_comp.current_amount + 30.0)
-
-	# Economic transaction
-	var buy_in: int = _get_work_buy_in(obj_def)
-	var payout: int = _get_payout(obj_def)
-	var pawn_gold: Components.GoldComponent = sim.entities.gold.get(pawn_id)
-	if pawn_gold != null:
-		pawn_gold.amount -= buy_in
-		var building_gold: Components.GoldComponent = sim.entities.gold.get(target_id)
-		if building_gold != null:
-			building_gold.amount += buy_in
-
-		if bool(obj_def.get("isGoldSource", false)) or int(obj_def.get("baseCost", 10)) == 0:
-			pawn_gold.amount += payout
-		elif building_gold != null:
-			var actual_payout: int = mini(payout, building_gold.amount)
-			building_gold.amount -= actual_payout
-			pawn_gold.amount += actual_payout
 
 	# Satisfy Purpose need
 	if action.satisfies_need_id != -1:
@@ -441,29 +411,6 @@ func _execute_drop_off(sim: Simulation, pawn_id: int, action_comp: Components.Ac
 			inventory.resource_type = ""
 			inventory.amount = 0.0
 
-	# Wholesale payment from destination to source building
-	if action.source_entity != -1 and transfer_amount > 0.0:
-		var dest_gold: Components.GoldComponent = sim.entities.gold.get(target_id)
-		var source_gold: Components.GoldComponent = sim.entities.gold.get(action.source_entity)
-		if dest_gold != null and source_gold != null:
-			var wholesale: int = int(transfer_amount / 10.0)
-			var actual: int = mini(wholesale, dest_gold.amount)
-			dest_gold.amount -= actual
-			source_gold.amount += actual
-
-	# Pawn pay/receive
-	var buy_in: int = _get_work_buy_in(building_def)
-	var payout: int = _get_payout(building_def)
-	var pawn_gold: Components.GoldComponent = sim.entities.gold.get(pawn_id)
-	if pawn_gold != null:
-		pawn_gold.amount -= buy_in
-		var building_gold: Components.GoldComponent = sim.entities.gold.get(target_id)
-		if building_gold != null:
-			building_gold.amount += buy_in
-			var actual_payout: int = mini(payout, building_gold.amount)
-			building_gold.amount -= actual_payout
-			pawn_gold.amount += actual_payout
-
 	# Satisfy Purpose need
 	if action.satisfies_need_id != -1:
 		var need_comp: Components.NeedsComponent = sim.entities.needs.get(pawn_id)
@@ -570,21 +517,3 @@ func _find_adjacent_walkable(world: World, target: Vector2i, from_coord: Vector2
 			best = adj
 
 	return best
-
-
-# --- Economic helpers ------------------------------------------------------
-
-func _get_building_cost(building_def: Dictionary, level: int = 0) -> int:
-	var base_cost: int = int(building_def.get("baseCost", 10))
-	return int(base_cost * pow(1.15, level))
-
-
-func _get_payout(building_def: Dictionary, level: int = 0) -> int:
-	return int(_get_building_cost(building_def, level) * float(building_def.get("baseProduction", 2.0)))
-
-
-func _get_work_buy_in(building_def: Dictionary, level: int = 0) -> int:
-	var payout: int = _get_payout(building_def, level)
-	if payout <= 10:
-		return 0
-	return payout / 2

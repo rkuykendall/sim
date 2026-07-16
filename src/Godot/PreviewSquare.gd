@@ -64,7 +64,10 @@ func update_preview(
 		if building_def_id != -1:
 			var bdef: Dictionary = content.buildings.get(building_def_id, {})
 			if not bdef.is_empty():
-				texture = SpriteResourceManager.get_texture(bdef.get("spriteKey", ""))
+				var ts: int = int(bdef.get("tileSize", 1))
+				var px: int = ts * RenderingConstants.SOURCE_TILE_SIZE
+				var col: int = int(bdef.get("spriteColumn", 0))
+				texture = SpriteResourceManager.get_icon_texture(bdef.get("spriteKey", ""), Rect2(col * px, 0, px, px))
 		elif terrain_def_id != -1:
 			var tdef: Dictionary = content.terrains.get(terrain_def_id, {})
 			if not tdef.is_empty():

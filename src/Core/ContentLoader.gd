@@ -3,11 +3,6 @@ class_name ContentLoader
 # Impassable sentinel — Lua used math.huge; JSON uses 1e9.
 const IMPASSABLE: float = 1e9
 
-# Default values matching C# BuildingDef constants.
-const DEFAULT_BASE_COST: int = 10
-const DEFAULT_BASE_PRODUCTION: float = 2.0
-
-
 static func load_all(mod_path: String = "") -> ContentRegistry:
 	var registry := ContentRegistry.new()
 
@@ -125,11 +120,9 @@ static func _parse_building(registry: ContentRegistry, key: String, value: Dicti
 		"buffDuration":           int(value.get("buffDuration", 0)),
 		"spriteKey":              value.get("spriteKey", ""),
 		"tileSize":               int(value.get("tileSize", 1)),
-		"baseCost":               int(value.get("baseCost", DEFAULT_BASE_COST)),
-		"baseProduction":         float(value.get("baseProduction", DEFAULT_BASE_PRODUCTION)),
 		"spriteVariants":         int(value.get("spriteVariants", 1)),
-		"spritePhases":           int(value.get("spritePhases", 1)),
-		"capacityPerPhase":       value.get("capacityPerPhase", []),
+		"spriteColumn":           int(value.get("spriteColumn", 0)),
+		"isHome":                 bool(value.get("isHome", false)),
 		"capacity":               int(value.get("capacity", 1)),
 		"resourceType":           value.get("resourceType", ""),
 		"maxResourceAmount":      float(value.get("maxResourceAmount", 100.0)),

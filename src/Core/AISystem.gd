@@ -381,14 +381,8 @@ func _get_buff_icon_id(sim: Simulation, buff: Definitions.BuffInstance) -> int:
 # --- Building search -------------------------------------------------------
 
 func _find_building_for_need(sim: Simulation, pawn_id: int, need_id: int) -> int:
-	var pawn_gold: int = 0
-	var gold_comp: Components.GoldComponent = sim.entities.gold.get(pawn_id)
-	if gold_comp != null:
-		pawn_gold = gold_comp.amount
-
-	# Capture loop variables for use in filter lambda
+	# Capture loop variable for use in filter lambda
 	var captured_need_id: int = need_id
-	var captured_gold: int = pawn_gold
 
 	return _find_best_reachable_building(
 		sim,
@@ -398,9 +392,6 @@ func _find_building_for_need(sim: Simulation, pawn_id: int, need_id: int) -> int
 			if int(bdef.get("satisfiesNeedId", -1)) != captured_need_id:
 				return false
 			if not bool(bdef.get("canSellToConsumers", true)):
-				return false
-			var cost: int = int(int(bdef.get("baseCost", 10)) * pow(1.15, 0))
-			if captured_gold < cost:
 				return false
 			var res: Components.ResourceComponent = ctx["resource_comp"]
 			if res != null and res.current_amount <= 0:
@@ -412,23 +403,12 @@ func _find_building_for_need(sim: Simulation, pawn_id: int, need_id: int) -> int
 
 
 func _find_building_to_work_at(sim: Simulation, pawn_id: int) -> int:
-	var pawn_gold: int = 0
-	var gold_comp: Components.GoldComponent = sim.entities.gold.get(pawn_id)
-	if gold_comp != null:
-		pawn_gold = gold_comp.amount
-
-	var captured_gold: int = pawn_gold
-
 	return _find_best_reachable_building(
 		sim,
 		pawn_id,
 		func(ctx: Dictionary) -> bool:
 			var bdef: Dictionary = ctx["obj_def"]
 			if not bool(bdef.get("canBeWorkedAt", false)):
-				return false
-			var payout: int = int(int(bdef.get("baseCost", 10)) * float(bdef.get("baseProduction", 2.0)))
-			var buy_in: int = 0 if payout <= 10 else payout / 2
-			if captured_gold < buy_in:
 				return false
 			var res: Components.ResourceComponent = ctx["resource_comp"]
 			if res == null:
@@ -534,9 +514,8 @@ func _find_best_reachable_building(
 		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(obj_id)
 		var other_targeting: int = _count_pawns_targeting(sim, obj_id, pawn_id)
 
-		# Phase-based capacity check
-		var phase: int = _get_building_phase(sim, obj_id)
-		var capacity: int = _get_capacity(obj_def, phase)
+		# Capacity check
+		var capacity: int = _get_capacity(obj_def)
 		if other_targeting + 1 > capacity:
 			continue
 
@@ -596,23 +575,8 @@ func _is_building_reachable(sim: Simulation, pawn_id: int, obj_id: int) -> bool:
 
 # --- Helpers ---------------------------------------------------------------
 
-func _get_capacity(building_def: Dictionary, phase: int) -> int:
-	var per_phase: Array = building_def.get("capacityPerPhase", [])
-	if not per_phase.is_empty():
-		return int(per_phase[clampi(phase, 0, per_phase.size() - 1)])
+func _get_capacity(building_def: Dictionary) -> int:
 	return int(building_def.get("capacity", 1))
-
-
-func _get_building_phase(sim: Simulation, building_id: int) -> int:
-	var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(building_id)
-	if attachment_comp == null:
-		return 0
-	var max_wealth: int = 0
-	for p_id in attachment_comp.user_attachments.keys():
-		var gold: Components.GoldComponent = sim.entities.gold.get(p_id)
-		if gold != null:
-			max_wealth = maxi(max_wealth, gold.amount)
-	return max_wealth / 100
 
 
 func _count_pawns_targeting(sim: Simulation, building_id: int, exclude_pawn: int) -> int:

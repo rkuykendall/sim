@@ -229,7 +229,7 @@ func test_roundtrip_complex() -> void:
 	var hunger_id := builder.define_need("hunger", 0.02, 30.0, 35.0, -20.0)
 	var energy_id := builder.define_need("energy", 0.01)
 	var farm_id := builder.define_building(
-		"farm", -1, 0.0, 100, 0.0, 0, [], 1, 10, 1.0, true, "food", 100.0
+		"farm", -1, 0.0, 100, 0.0, 0, [], 1, true, "food", 100.0
 	)
 	var bed_id := builder.define_building("bed", energy_id)
 	builder.add_building(farm_id, 2, 2)
@@ -257,7 +257,7 @@ func test_roundtrip_resources() -> void:
 	var builder = _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
 	var farm_id := builder.define_building(
-		"farm", -1, 0.0, 100, 0.0, 0, [], 1, 10, 1.0, true, "food", 100.0
+		"farm", -1, 0.0, 100, 0.0, 0, [], 1, true, "food", 100.0
 	)
 	builder.add_building(farm_id, 2, 2)
 	var original = builder.build()

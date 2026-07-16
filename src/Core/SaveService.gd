@@ -1,6 +1,6 @@
 class_name SaveService
 
-const SAVE_VERSION: int = 2
+const SAVE_VERSION: int = 3
 
 
 # ---------------------------------------------------------------------------
@@ -76,7 +76,6 @@ static func to_dict(sim: Simulation, save_name: String = "") -> Dictionary:
 		"selected_palette_id": sim.selected_palette_id,
 		"palette":            sim.palette.map(func(c: Color) -> String: return "#" + c.to_html(false)),
 		"next_entity_id":     sim.entities.next_id,
-		"tax_pool":           sim.tax_pool,
 		"world":              _serialize_world(sim.world),
 		"entities":           _serialize_entities(sim),
 	}
@@ -153,10 +152,6 @@ static func _serialize_entities(sim: Simulation) -> Array:
 				})
 			e["buffs"] = buffs
 
-		var gold: Components.GoldComponent = em.gold.get(pawn_id)
-		if gold != null:
-			e["gold"] = gold.amount
-
 		var inv: Components.InventoryComponent = em.inventory.get(pawn_id)
 		if inv != null:
 			e["inventory"] = {
@@ -200,10 +195,6 @@ static func _serialize_entities(sim: Simulation) -> Array:
 				attachments[str(pawn_id)] = ac.user_attachments[pawn_id]
 			e["attachments"] = attachments
 
-		var gold: Components.GoldComponent = em.gold.get(building_id)
-		if gold != null:
-			e["building_gold"] = gold.amount
-
 		out.append(e)
 
 	return out
@@ -224,8 +215,7 @@ static func from_dict(data: Dictionary, content: ContentRegistry) -> Simulation:
 		TimeService.DEFAULT_START_HOUR,
 		world_width,
 		world_height,
-		false,   # themes enabled
-		Simulation.DEFAULT_TAX_MULTIPLIER
+		false   # themes enabled
 	)
 
 	# Restore world tiles (overwrites auto-initialized terrain)
@@ -243,7 +233,6 @@ static func from_dict(data: Dictionary, content: ContentRegistry) -> Simulation:
 	# Restore simulation-level state
 	sim.entities.set_next_id(int(data.get("next_entity_id", 1)))
 	sim.time.set_tick(int(data.get("current_tick", 0)))
-	sim.tax_pool = int(data.get("tax_pool", 0))
 	sim.selected_palette_id = int(data.get("selected_palette_id", -1))
 
 	var palette_hexes: Array = data.get("palette", [])
@@ -311,10 +300,6 @@ static func _restore_building(sim: Simulation, e: Dictionary) -> void:
 	bc.color_index = int(e.get("building_color_index", 0))
 	sim.entities.buildings[entity_id] = bc
 
-	var gold := Components.GoldComponent.new()
-	gold.amount = int(e.get("building_gold", 0))
-	sim.entities.gold[entity_id] = gold
-
 	# Resource component
 	if e.has("resource"):
 		var r: Dictionary = e["resource"]
@@ -371,10 +356,6 @@ static func _restore_pawn(sim: Simulation, e: Dictionary) -> void:
 	var mood := Components.MoodComponent.new()
 	mood.mood = float(e.get("mood", 0.0))
 	sim.entities.moods[entity_id] = mood
-
-	var gold := Components.GoldComponent.new()
-	gold.amount = int(e.get("gold", 0))
-	sim.entities.gold[entity_id] = gold
 
 	var buff_comp := Components.BuffComponent.new()
 	if e.has("buffs"):

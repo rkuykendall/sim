@@ -5,11 +5,6 @@ const TICK_RATE: int = 20  # Ticks per real second
 # How often to try spawning a new pawn (every 1/48th of an in-game day)
 const PAWN_SPAWN_INTERVAL: int = TimeService.TICKS_PER_DAY / 48
 
-# Economy
-const TAX_INTERVAL: int = TimeService.TICKS_PER_DAY
-const TAX_RATE: float = 15.0            # Percent collected each interval
-const DEFAULT_TAX_MULTIPLIER: float = 1.1  # Idle-game growth multiplier
-
 # Attachment decay (weak ties fade over time)
 const ATTACHMENT_DECAY_INTERVAL: int = TimeService.TICKS_PER_DAY
 const ATTACHMENT_DECAY_THRESHOLD: int = 5  # Only decay attachments at or below this
@@ -21,13 +16,11 @@ var time: TimeService
 var theme_system: ThemeSystem
 
 var sim_seed: int
-var tax_pool: int = 0
 
 var selected_palette_id: int = -1
 var palette: Array[Color] = []
 
 var _systems: SystemManager
-var _tax_multiplier: float = DEFAULT_TAX_MULTIPLIER
 
 
 func _init(
@@ -36,11 +29,9 @@ func _init(
 	start_hour: int = TimeService.DEFAULT_START_HOUR,
 	world_width: int = World.DEFAULT_WIDTH,
 	world_height: int = World.DEFAULT_HEIGHT,
-	disable_themes: bool = false,
-	tax_multiplier: float = DEFAULT_TAX_MULTIPLIER
+	disable_themes: bool = false
 ) -> void:
 	content = p_content
-	_tax_multiplier = tax_multiplier
 
 	sim_seed = p_seed if p_seed >= 0 else randi()
 	seed(sim_seed)
@@ -103,10 +94,6 @@ func tick() -> void:
 		var pawn_count: int = entities.all_pawns().size()
 		if pawn_count < get_max_pawns():
 			create_pawn()
-
-	# Tax redistribution
-	if time.tick % TAX_INTERVAL == 0 and time.tick > 0:
-		_perform_tax_redistribution()
 
 	# Attachment decay
 	if time.tick % ATTACHMENT_DECAY_INTERVAL == 0 and time.tick > 0:
@@ -205,11 +192,6 @@ func destroy_entity(entity_id: int) -> void:
 			for tile_coord in occupied:
 				if world.is_in_bounds(tile_coord):
 					world.get_tile(tile_coord).building_blocks_movement = false
-
-		# Capture building's gold into tax pool before destruction
-		var gold: Components.GoldComponent = entities.gold.get(entity_id)
-		if gold != null and gold.amount > 0:
-			tax_pool += gold.amount
 
 	entities.destroy(entity_id)
 
@@ -392,19 +374,14 @@ func cycle_palette() -> void:
 # --- Capacity / pawns ------------------------------------------------------
 
 func get_max_pawns() -> int:
-	var home_id: int = content.get_building_id("Home")
-	if home_id == -1:
-		return 1
-
-	var home_def: Dictionary = content.buildings[home_id]
 	var total: int = 0
-
 	for obj_id in entities.all_buildings():
 		var bc: Components.BuildingComponent = entities.buildings.get(obj_id)
-		if bc == null or bc.building_def_id != home_id:
+		if bc == null:
 			continue
-		var phase: int = _get_building_phase(obj_id)
-		total += _get_capacity(home_def, phase)
+		var bdef: Dictionary = content.buildings.get(bc.building_def_id, {})
+		if bool(bdef.get("isHome", false)):
+			total += int(bdef.get("capacity", 1))
 
 	return maxi(1, total)
 
@@ -450,63 +427,6 @@ func _compute_diversity_map() -> Array:
 			scores[x + y * world.width] = mini(9, (x_score + y_score) / 2)
 
 	return scores
-
-
-# --- Economy ---------------------------------------------------------------
-
-func get_total_wealth() -> int:
-	var total: int = tax_pool
-	for gold in entities.gold.values():
-		total += gold.amount
-	return total
-
-
-func _perform_tax_redistribution() -> void:
-	# Collect from all pawns
-	for pawn_id in entities.all_pawns():
-		var gold: Components.GoldComponent = entities.gold.get(pawn_id)
-		if gold != null and gold.amount > 0:
-			var tax: int = int(gold.amount * TAX_RATE / 100.0)
-			gold.amount -= tax
-			tax_pool += tax
-
-	# Collect from all buildings
-	for building_id in entities.all_buildings():
-		var gold: Components.GoldComponent = entities.gold.get(building_id)
-		if gold != null and gold.amount > 0:
-			var tax: int = int(gold.amount * TAX_RATE / 100.0)
-			gold.amount -= tax
-			tax_pool += tax
-
-	# Apply idle-game multiplier
-	tax_pool = int(tax_pool * _tax_multiplier)
-
-	if tax_pool == 0:
-		return
-
-	# Distribute to all pawns + workable buildings
-	var recipients: Array[int] = []
-	for pawn_id in entities.all_pawns():
-		recipients.append(pawn_id)
-	for building_id in entities.all_buildings():
-		var bc: Components.BuildingComponent = entities.buildings.get(building_id)
-		if bc != null:
-			var bdef: Dictionary = content.buildings.get(bc.building_def_id, {})
-			if bool(bdef.get("canBeWorkedAt", false)):
-				recipients.append(building_id)
-
-	if recipients.is_empty():
-		return
-
-	var per_recipient: int = tax_pool / recipients.size()
-	var remainder: int = tax_pool % recipients.size()
-
-	for recipient_id in recipients:
-		var gold: Components.GoldComponent = entities.gold.get(recipient_id)
-		if gold != null:
-			gold.amount += per_recipient
-
-	tax_pool = remainder  # Carry over remainder
 
 
 func _perform_attachment_decay() -> void:
@@ -612,25 +532,6 @@ func _get_flat_terrain_id() -> int:
 	return -1
 
 
-func _get_building_phase(building_id: int) -> int:
-	var ac: Components.AttachmentComponent = entities.attachments.get(building_id)
-	if ac == null:
-		return 0
-	var max_wealth: int = 0
-	for pawn_id in ac.user_attachments.keys():
-		var gold: Components.GoldComponent = entities.gold.get(pawn_id)
-		if gold != null:
-			max_wealth = maxi(max_wealth, gold.amount)
-	return max_wealth / 100
-
-
-func _get_capacity(building_def: Dictionary, phase: int) -> int:
-	var per_phase: Array = building_def.get("capacityPerPhase", [])
-	if not per_phase.is_empty():
-		return int(per_phase[clampi(phase, 0, per_phase.size() - 1)])
-	return int(building_def.get("capacity", 1))
-
-
 # --- Debug / display -------------------------------------------------------
 
 func format_entity_id(entity_id: int) -> String:
@@ -691,7 +592,6 @@ func _build_pawn_snapshots() -> Array:
 			continue
 
 		var mood_comp: Components.MoodComponent = entities.moods.get(pawn_id)
-		var gold_comp: Components.GoldComponent = entities.gold.get(pawn_id)
 
 		var animation: int = Definitions.AnimationType.IDLE
 		var current_action_name: String = "Idle"
@@ -722,7 +622,6 @@ func _build_pawn_snapshots() -> Array:
 			"x": pos.coord.x,
 			"y": pos.coord.y,
 			"mood": mood_comp.mood if mood_comp != null else 0.0,
-			"gold": gold_comp.amount if gold_comp != null else 0,
 			"animation": animation,
 			"current_action": current_action_name,
 			"current_action_type": current_action_type,
@@ -746,7 +645,6 @@ func _build_building_snapshots() -> Array:
 			continue
 
 		var bdef: Dictionary = content.buildings.get(bc.building_def_id, {})
-		var phase: int = _get_building_phase(building_id)
 
 		# Count active users and find first user for display
 		var current_users: int = 0
@@ -775,18 +673,10 @@ func _build_building_snapshots() -> Array:
 			if pawn_comp != null:
 				used_by_name = pawn_comp.name
 
-		var gold_comp: Components.GoldComponent = entities.gold.get(building_id)
 		var rc: Components.ResourceComponent = entities.resources.get(building_id)
 		var ac: Components.AttachmentComponent = entities.attachments.get(building_id)
 
-		var attachments: Dictionary = {}
-		var max_pawn_wealth: int = 0
-		if ac != null:
-			attachments = ac.user_attachments.duplicate()
-			for attached_pawn_id in ac.user_attachments.keys():
-				var pg: Components.GoldComponent = entities.gold.get(attached_pawn_id)
-				if pg != null:
-					max_pawn_wealth = maxi(max_pawn_wealth, pg.amount)
+		var attachments: Dictionary = ac.user_attachments.duplicate() if ac != null else {}
 
 		result.append({
 			"id": building_id,
@@ -797,18 +687,12 @@ func _build_building_snapshots() -> Array:
 			"in_use": in_use,
 			"used_by_name": used_by_name,
 			"color_index": bc.color_index,
-			"max_pawn_wealth": max_pawn_wealth,
-			"gold": gold_comp.amount if gold_comp != null else 0,
-			"capacity": _get_capacity(bdef, phase),
+			"capacity": int(bdef.get("capacity", 1)),
 			"current_users": current_users,
-			"phase": phase,
-			"cost": int(bdef.get("useCost", 0)),
 			"resource_type": rc.resource_type if rc != null else "",
 			"current_resource": rc.current_amount if rc != null else -1.0,
 			"max_resource": rc.max_amount if rc != null else -1.0,
 			"can_be_worked_at": bool(bdef.get("canBeWorkedAt", false)),
-			"work_buy_in": int(bdef.get("workBuyIn", 0)),
-			"payout": int(bdef.get("payout", 0)),
 			"attachments": attachments,
 		})
 	return result

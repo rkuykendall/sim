@@ -12,7 +12,6 @@ var actions: Dictionary[int, Components.ActionComponent] = {}
 var buildings: Dictionary[int, Components.BuildingComponent] = {}
 var resources: Dictionary[int, Components.ResourceComponent] = {}
 var attachments: Dictionary[int, Components.AttachmentComponent] = {}
-var gold: Dictionary[int, Components.GoldComponent] = {}
 var inventory: Dictionary[int, Components.InventoryComponent] = {}
 
 
@@ -33,8 +32,7 @@ func set_next_id(id: int) -> void:
 func create_pawn(
 	coord: Vector2i,
 	pawn_name: String = "Pawn",
-	starting_needs: Dictionary = {},
-	starting_gold: int = 100
+	starting_needs: Dictionary = {}
 ) -> int:
 	var id := _create()
 
@@ -57,10 +55,6 @@ func create_pawn(
 	buffs[id] = Components.BuffComponent.new()
 	actions[id] = Components.ActionComponent.new()
 
-	var g := Components.GoldComponent.new()
-	g.amount = starting_gold
-	gold[id] = g
-
 	inventory[id] = Components.InventoryComponent.new()
 
 	return id
@@ -78,9 +72,6 @@ func create_building(coord: Vector2i, building_def_id: int, color_index: int) ->
 	building.color_index = color_index
 	buildings[id] = building
 
-	var g := Components.GoldComponent.new()
-	gold[id] = g
-
 	return id
 
 
@@ -94,7 +85,6 @@ func destroy(id: int) -> void:
 	buildings.erase(id)
 	resources.erase(id)
 	attachments.erase(id)
-	gold.erase(id)
 	inventory.erase(id)
 
 

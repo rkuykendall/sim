@@ -1,14 +1,58 @@
 {
-    "Home": {
+    "Home1": {
         "satisfiesNeed": "Energy",
         "grantsBuff": 20,
         "buffDuration": 800,
         "spriteKey": "home",
         "tileSize": 2,
-        "baseCost": 0,
         "spriteVariants": 2,
-        "spritePhases": 5,
-        "capacityPerPhase": [1, 2, 4, 8, 16]
+        "spriteColumn": 0,
+        "isHome": true,
+        "capacity": 1
+    },
+    "Home2": {
+        "satisfiesNeed": "Energy",
+        "grantsBuff": 20,
+        "buffDuration": 800,
+        "spriteKey": "home",
+        "tileSize": 2,
+        "spriteVariants": 2,
+        "spriteColumn": 1,
+        "isHome": true,
+        "capacity": 2
+    },
+    "Home3": {
+        "satisfiesNeed": "Energy",
+        "grantsBuff": 20,
+        "buffDuration": 800,
+        "spriteKey": "home",
+        "tileSize": 2,
+        "spriteVariants": 2,
+        "spriteColumn": 2,
+        "isHome": true,
+        "capacity": 4
+    },
+    "Home4": {
+        "satisfiesNeed": "Energy",
+        "grantsBuff": 20,
+        "buffDuration": 800,
+        "spriteKey": "home",
+        "tileSize": 2,
+        "spriteVariants": 2,
+        "spriteColumn": 3,
+        "isHome": true,
+        "capacity": 8
+    },
+    "Home5": {
+        "satisfiesNeed": "Energy",
+        "grantsBuff": 20,
+        "buffDuration": 800,
+        "spriteKey": "home",
+        "tileSize": 2,
+        "spriteVariants": 2,
+        "spriteColumn": 4,
+        "isHome": true,
+        "capacity": 16
     },
     "Well": {
         "satisfiesNeed": "Hygiene",
@@ -19,8 +63,6 @@
         "maxResourceAmount": 999,
         "depletionMult": 0.0,
         "tileSize": 1,
-        "baseCost": 0,
-        "baseProduction": 0.0,
         "capacity": 6
     },
     "Farm": {
@@ -33,8 +75,6 @@
         "depletionMult": 1.0,
         "canBeWorkedAt": true,
         "tileSize": 2,
-        "baseCost": 4,
-        "baseProduction": 2.5,
         "workType": "direct",
         "canSellToConsumers": false,
         "capacity": 3
@@ -49,8 +89,6 @@
         "depletionMult": 1.0,
         "canBeWorkedAt": true,
         "tileSize": 2,
-        "baseCost": 8,
-        "baseProduction": 2.5,
         "workType": "haulFromBuilding",
         "haulSourceResourceType": "food",
         "canSellToConsumers": true,
@@ -66,8 +104,6 @@
         "depletionMult": 1.0,
         "canBeWorkedAt": true,
         "tileSize": 2,
-        "baseCost": 6,
-        "baseProduction": 2.0,
         "workType": "direct",
         "canSellToConsumers": true,
         "capacity": 20
@@ -82,8 +118,6 @@
         "depletionMult": 0.0,
         "canBeWorkedAt": true,
         "tileSize": 2,
-        "baseCost": 7,
-        "baseProduction": 3.0,
         "workType": "haulFromTerrain",
         "haulSourceTerrainKey": "Trees",
         "canSellToConsumers": false,
