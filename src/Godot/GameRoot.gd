@@ -819,14 +819,7 @@ func _sync_pawns(snapshot: Dictionary) -> void:
 			_pawns_root.get_parent().add_child(node)
 			_pawn_nodes[pawn_id] = node
 			if node is PawnView:
-				node.initialize_with_sprite(
-					SpriteResourceManager.get_texture("character_walk"),
-					SpriteResourceManager.get_texture("character_idle"),
-					SpriteResourceManager.get_texture("character_axe"),
-					SpriteResourceManager.get_texture("character_pickaxe"),
-					SpriteResourceManager.get_texture("character_look_down"),
-					SpriteResourceManager.get_texture("character_look_up")
-				)
+				node.initialize_with_sprite(SpriteResourceManager.get_texture("character_sheet"))
 
 		var target_pos := Vector2(
 			pawn.get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE + RenderingConstants.RENDERED_TILE_SIZE * 0.5,

@@ -27,8 +27,6 @@ enum AnimationType {
 	WALK,
 	AXE,
 	PICKAXE,
-	LOOK_UP,
-	LOOK_DOWN,
 }
 
 enum ExpressionType {

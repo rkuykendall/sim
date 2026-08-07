@@ -1,8 +1,16 @@
 class_name PawnView
 extends Node2D
 
-const SOURCE_SIZE: int = RenderingConstants.SOURCE_TILE_SIZE
 const LERP_SPEED: float = 0.01  # fraction per frame at 60fps (matches C# behavior)
+
+# Character sheet layout: 24x24 frames, one animation per row.
+# [row, frame_count, fps, loop]
+const CHAR_FRAME_SIZE: int = 24
+const CHAR_ANIMS: Dictionary = {
+	"idle":     [0, 8, 8.0, true],
+	"walk":     [1, 4, 8.0, true],
+	"exertion": [3, 1, 1.0, false],
+}
 
 var _sprite: AnimatedSprite2D
 var _bubble_node: Node2D
@@ -43,11 +51,11 @@ func _ready() -> void:
 	_selection_rect = ColorRect.new()
 	_selection_rect.name = "SelectionRect"
 	_selection_rect.color = Color(1, 1, 1, 0.3)
-	_selection_rect.size = Vector2(SOURCE_SIZE * RenderingConstants.SPRITE_SCALE,
-		SOURCE_SIZE * RenderingConstants.SPRITE_SCALE)
+	_selection_rect.size = Vector2(RenderingConstants.RENDERED_TILE_SIZE,
+		RenderingConstants.RENDERED_TILE_SIZE)
 	_selection_rect.position = Vector2(
-		-SOURCE_SIZE * RenderingConstants.SPRITE_SCALE * 0.5,
-		-SOURCE_SIZE * RenderingConstants.SPRITE_SCALE * 0.5
+		-RenderingConstants.RENDERED_TILE_SIZE * 0.5,
+		-RenderingConstants.RENDERED_TILE_SIZE * 0.5
 	)
 	_selection_rect.visible = false
 	add_child(_selection_rect)
@@ -72,21 +80,11 @@ func _process(delta: float) -> void:
 		_bubble_node.position = Vector2(0, -40.0 + sin(_bubble_time) * _bubble_float_amount)
 
 
-func initialize_with_sprite(
-	walk_tex: Texture2D,
-	idle_tex: Texture2D,
-	axe_tex: Texture2D,
-	pickaxe_tex: Texture2D,
-	look_down_tex: Texture2D,
-	look_up_tex: Texture2D
-) -> void:
+func initialize_with_sprite(sheet_tex: Texture2D) -> void:
 	var frames := SpriteFrames.new()
-	_add_animation(frames, "walk",      walk_tex,      8,  6.0,  true)
-	_add_animation(frames, "idle",      idle_tex,      3,  3.0,  true)
-	_add_animation(frames, "axe",       axe_tex,       5,  6.0,  true)
-	_add_animation(frames, "pickaxe",   pickaxe_tex,   5,  6.0,  true)
-	_add_animation(frames, "look_down", look_down_tex, 1,  1.0,  false)
-	_add_animation(frames, "look_up",   look_up_tex,   1,  1.0,  false)
+	for anim_name: String in CHAR_ANIMS:
+		var def: Array = CHAR_ANIMS[anim_name]
+		_add_animation(frames, anim_name, sheet_tex, def[0], def[1], def[2], def[3])
 	_sprite.sprite_frames = frames
 	_sprite.scale = Vector2(RenderingConstants.SPRITE_SCALE, RenderingConstants.SPRITE_SCALE)
 	_sprite.play("idle")
@@ -96,6 +94,7 @@ func _add_animation(
 	frames: SpriteFrames,
 	anim_name: String,
 	texture: Texture2D,
+	row: int,
 	frame_count: int,
 	fps: float,
 	loop: bool
@@ -110,7 +109,7 @@ func _add_animation(
 	for i in frame_count:
 		var atlas := AtlasTexture.new()
 		atlas.atlas = texture
-		atlas.region = Rect2(i * SOURCE_SIZE, 0, SOURCE_SIZE, SOURCE_SIZE)
+		atlas.region = Rect2(i * CHAR_FRAME_SIZE, row * CHAR_FRAME_SIZE, CHAR_FRAME_SIZE, CHAR_FRAME_SIZE)
 		frames.add_frame(anim_name, atlas)
 
 
@@ -129,12 +128,10 @@ func set_current_animation(animation: Definitions.AnimationType) -> void:
 
 	var anim_name: String
 	match animation:
-		Definitions.AnimationType.WALK:      anim_name = "walk"
-		Definitions.AnimationType.AXE:       anim_name = "axe"
-		Definitions.AnimationType.PICKAXE:   anim_name = "pickaxe"
-		Definitions.AnimationType.LOOK_DOWN: anim_name = "look_down"
-		Definitions.AnimationType.LOOK_UP:   anim_name = "look_up"
-		_:                                   anim_name = "idle"
+		Definitions.AnimationType.WALK:    anim_name = "walk"
+		Definitions.AnimationType.AXE:     anim_name = "exertion"
+		Definitions.AnimationType.PICKAXE: anim_name = "exertion"
+		_:                                 anim_name = "idle"
 
 	if _sprite.animation != anim_name:
 		_sprite.play(anim_name)

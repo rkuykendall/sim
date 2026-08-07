@@ -23,12 +23,7 @@ const _SPRITE_PATH_MAP: Dictionary = {
 	"tavern":             "res://sprites/buildings/tavern.png",
 	"market":             "res://sprites/buildings/market.png",
 	# Character sprites
-	"character_walk":     "res://sprites/characters/walk_strip8.png",
-	"character_idle":     "res://sprites/characters/idle_strip3.png",
-	"character_axe":      "res://sprites/characters/axe_strip5.png",
-	"character_pickaxe":  "res://sprites/characters/pickaxe_strip5.png",
-	"character_look_down":"res://sprites/characters/look_down.png",
-	"character_look_up":  "res://sprites/characters/look_up.png",
+	"character_sheet":    "res://sprites/characters/character_sheet.png",
 	# Bubble sprites
 	"bubble_thought":     "res://sprites/ui/bubbles/thought_bubble.png",
 	"bubble_happy":       "res://sprites/ui/bubbles/heart_bubble.png",
