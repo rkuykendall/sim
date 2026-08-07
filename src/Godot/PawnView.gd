@@ -87,6 +87,10 @@ func initialize_with_sprite(sheet_tex: Texture2D) -> void:
 		_add_animation(frames, anim_name, sheet_tex, def[0], def[1], def[2], def[3])
 	_sprite.sprite_frames = frames
 	_sprite.scale = Vector2(RenderingConstants.SPRITE_SCALE, RenderingConstants.SPRITE_SCALE)
+	# The character art rests at the bottom-center of each (larger) frame; shift the
+	# centered sprite up so its bottom edge lands on the tile's bottom edge, not the frame's.
+	var frame_render_size: float = CHAR_FRAME_SIZE * RenderingConstants.SPRITE_SCALE
+	_sprite.position.y = (RenderingConstants.RENDERED_TILE_SIZE - frame_render_size) / 2.0
 	_sprite.play("idle")
 
 
