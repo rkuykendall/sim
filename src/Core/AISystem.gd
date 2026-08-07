@@ -2,6 +2,18 @@ class_name AISystem
 
 const NEED_THRESHOLD: float = 90.0
 
+# Cached per-tile diversity scores (see _compute_diversity_map). Recomputing this over the
+# full world grid is expensive, so it's cached here and only rebuilt when the world's terrain
+# actually changes — callers must invoke mark_world_dirty() after painting/clearing tiles.
+var _diversity_map: Array = []
+var _diversity_map_dirty: bool = true
+
+
+## Call after any terrain mutation (painting, deleting) so the cached diversity map rebuilds
+## on next use instead of serving stale scores.
+func mark_world_dirty() -> void:
+	_diversity_map_dirty = true
+
 
 func tick(sim: Simulation) -> void:
 	for pawn_id in sim.entities.all_pawns():
@@ -209,7 +221,7 @@ func _wander_randomly(sim: Simulation, pawn_id: int, action_comp: Components.Act
 		return
 
 	# Flat diversity map: int value per tile, indexed x + y * width
-	var diversity_map: Array = _compute_diversity_map(sim.world)
+	var diversity_map: Array = _get_diversity_map(sim.world)
 
 	# Gather candidate destinations: 10 random tiles + nearby 8-dir tiles at dist 1-3
 	var potential: Array[Vector2i] = []
@@ -220,14 +232,16 @@ func _wander_randomly(sim: Simulation, pawn_id: int, action_comp: Components.Act
 		Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0),
 		Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1),
 	]
+	# Cap diversity for nearby tiles to avoid pawns getting stuck near low-variety areas.
+	# Tracked separately (not written into diversity_map) since that array is now a shared
+	# cache reused across every pawn's decision, not a fresh copy per call.
+	var capped_nearby: Dictionary = {}
 	for d in dirs:
 		for dist in range(1, 4):
 			var nearby := Vector2i(pos.coord.x + d.x * dist, pos.coord.y + d.y * dist)
 			potential.append(nearby)
-			# Cap diversity for nearby tiles to avoid pawns getting stuck near low-variety areas
 			if sim.world.is_in_bounds(nearby):
-				var idx: int = nearby.x + nearby.y * sim.world.width
-				diversity_map[idx] = mini(1, diversity_map[idx])
+				capped_nearby[nearby.x + nearby.y * sim.world.width] = true
 
 	# Filter to valid walkable candidates (not current position)
 	var candidates: Array = []
@@ -237,7 +251,10 @@ func _wander_randomly(sim: Simulation, pawn_id: int, action_comp: Components.Act
 		if not sim.world.is_walkable(target):
 			continue
 		var idx: int = target.x + target.y * sim.world.width
-		candidates.append({ "coord": target, "diversity": diversity_map[idx] })
+		var diversity: int = diversity_map[idx]
+		if capped_nearby.has(idx):
+			diversity = mini(1, diversity)
+		candidates.append({ "coord": target, "diversity": diversity })
 
 	if candidates.is_empty():
 		return
@@ -281,6 +298,13 @@ func _wander_randomly(sim: Simulation, pawn_id: int, action_comp: Components.Act
 		idle.expression = expr_result[0] as Definitions.ExpressionType
 		idle.expression_icon_def_id = expr_result[1]
 	action_comp.action_queue.push_back(idle)
+
+
+func _get_diversity_map(world: World) -> Array:
+	if _diversity_map_dirty or _diversity_map.size() != world.width * world.height:
+		_diversity_map = _compute_diversity_map(world)
+		_diversity_map_dirty = false
+	return _diversity_map
 
 
 # Compute per-tile diversity scores based on adjacent tile differences.

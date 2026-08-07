@@ -14,6 +14,7 @@ var entities: EntityManager
 var content: ContentRegistry
 var time: TimeService
 var theme_system: ThemeSystem
+var ai_system: AISystem
 
 var sim_seed: int
 
@@ -58,7 +59,8 @@ func _init(
 	if not disable_themes:
 		_systems.add(theme_system)
 	_systems.add(ActionSystem.new())
-	_systems.add(AISystem.new())
+	ai_system = AISystem.new()
+	_systems.add(ai_system)
 
 
 # Initialize all world tiles with Flat terrain.
@@ -225,6 +227,7 @@ func paint_terrain(coord: Vector2i, terrain_def_id: int, color_index: int = 0) -
 	tile.walkability_cost = float(terrain_def.get("walkabilityCost", 1.0))
 	tile.blocks_light = bool(terrain_def.get("blocksLight", false))
 
+	ai_system.mark_world_dirty()
 	return get_tiles_with_neighbors([coord])
 
 
@@ -286,6 +289,7 @@ func delete_at_tile(coord: Vector2i) -> Array[Vector2i]:
 		return get_tiles_with_neighbors([coord])
 
 	var tile: World.Tile = world.get_tile(coord)
+	ai_system.mark_world_dirty()
 
 	# Clear overlay if present
 	if tile.overlay_terrain_type_id != -1:
