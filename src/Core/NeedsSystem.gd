@@ -6,7 +6,7 @@ func tick(sim: Simulation) -> void:
 	var is_sleep_time: bool = sim.time.is_sleep_time
 	var energy_need_id: int = sim.content.get_need_id("Energy")
 
-	for pawn_id in sim.entities.all_pawns():
+	for pawn_id in sim.entities.pawns:
 		var need_comp: Components.NeedsComponent = sim.entities.needs.get(pawn_id)
 		if need_comp == null:
 			continue

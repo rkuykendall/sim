@@ -93,7 +93,7 @@ func tick() -> void:
 
 	# Pawn spawning
 	if time.tick % PAWN_SPAWN_INTERVAL == 0:
-		var pawn_count: int = entities.all_pawns().size()
+		var pawn_count: int = entities.pawns.size()
 		if pawn_count < get_max_pawns():
 			create_pawn()
 
@@ -379,10 +379,8 @@ func cycle_palette() -> void:
 
 func get_max_pawns() -> int:
 	var total: int = 0
-	for obj_id in entities.all_buildings():
-		var bc: Components.BuildingComponent = entities.buildings.get(obj_id)
-		if bc == null:
-			continue
+	for obj_id in entities.buildings:
+		var bc: Components.BuildingComponent = entities.buildings[obj_id]
 		var bdef: Dictionary = content.buildings.get(bc.building_def_id, {})
 		if bool(bdef.get("isHome", false)):
 			total += int(bdef.get("capacity", 1))
@@ -390,51 +388,51 @@ func get_max_pawns() -> int:
 	return maxi(1, total)
 
 
+# --- Queries -----------------------------------------------------------------
+
+## Finds a pawn entity id by its display name, or -1 if none match.
+func find_pawn_by_name(name: String) -> int:
+	for pawn_id in entities.pawns:
+		if entities.pawns[pawn_id].name == name:
+			return pawn_id
+	return -1
+
+
+## Returns a pawn's current value for the given need, or 0.0 if the pawn or need is unknown.
+func get_need_value(pawn_id: int, need_id: int) -> float:
+	var need_comp: Components.NeedsComponent = entities.needs.get(pawn_id)
+	if need_comp == null:
+		return 0.0
+	return need_comp.needs.get(need_id, 0.0)
+
+
+## Returns a pawn's current mood, or 0.0 if the pawn is unknown.
+func get_mood(pawn_id: int) -> float:
+	var mood_comp: Components.MoodComponent = entities.moods.get(pawn_id)
+	return mood_comp.mood if mood_comp != null else 0.0
+
+
+## Advances the simulation by the given number of ticks.
+func run_ticks(count: int) -> void:
+	for _i in count:
+		tick()
+
+
 # --- Map analysis ----------------------------------------------------------
 
+# Reuses AISystem's cached diversity map (see AISystem._get_diversity_map) rather than
+# recomputing the same per-tile scan independently.
 func score_map_diversity() -> int:
-	var diversity_map: Array = _compute_diversity_map()
+	var diversity_map: Array = ai_system._get_diversity_map(world)
 	var score: int = 0
 	for value in diversity_map:
 		score += value
-	score += entities.all_buildings().size()
+	score += entities.buildings.size()
 	return score
 
 
-func _compute_diversity_map() -> Array:
-	var scores: Array = []
-	scores.resize(world.width * world.height)
-	for i in scores.size():
-		scores[i] = 0
-
-	for x in world.width:
-		for y in world.height:
-			var x_score: int = 0
-			var y_score: int = 0
-			var tile: World.Tile = world.get_tile_xy(x, y)
-			var tile_hash: int = tile.tile_hash
-
-			if x > 0:
-				x_score = scores[(x - 1) + y * world.width]
-				if tile_hash != world.get_tile_xy(x - 1, y).tile_hash:
-					x_score += 1
-				elif x_score > 0:
-					x_score -= 1
-
-			if y > 0:
-				y_score = scores[x + (y - 1) * world.width]
-				if tile_hash != world.get_tile_xy(x, y - 1).tile_hash:
-					y_score += 1
-				elif y_score > 0:
-					y_score -= 1
-
-			scores[x + y * world.width] = mini(9, (x_score + y_score) / 2)
-
-	return scores
-
-
 func _perform_attachment_decay() -> void:
-	for building_id in entities.all_buildings():
+	for building_id in entities.buildings:
 		var ac: Components.AttachmentComponent = entities.attachments.get(building_id)
 		if ac == null:
 			continue
@@ -582,7 +580,7 @@ func create_render_snapshot() -> Dictionary:
 func _build_pawn_snapshots() -> Array:
 	# Pre-build reverse attachment map: pawn_id -> {building_id: strength}
 	var pawn_attachments: Dictionary = {}
-	for building_id in entities.all_buildings():
+	for building_id in entities.buildings:
 		var ac: Components.AttachmentComponent = entities.attachments.get(building_id)
 		if ac == null:
 			continue
@@ -592,7 +590,7 @@ func _build_pawn_snapshots() -> Array:
 			pawn_attachments[attached_pawn_id][building_id] = ac.user_attachments[attached_pawn_id]
 
 	var result: Array = []
-	for pawn_id in entities.all_pawns():
+	for pawn_id in entities.pawns:
 		var pos: Components.PositionComponent = entities.positions.get(pawn_id)
 		if pos == null:
 			continue
@@ -644,7 +642,7 @@ func _build_pawn_snapshots() -> Array:
 
 func _build_building_snapshots() -> Array:
 	var result: Array = []
-	for building_id in entities.all_buildings():
+	for building_id in entities.buildings:
 		var pos: Components.PositionComponent = entities.positions.get(building_id)
 		var bc: Components.BuildingComponent = entities.buildings.get(building_id)
 		if pos == null or bc == null:
@@ -656,7 +654,7 @@ func _build_building_snapshots() -> Array:
 		var current_users: int = 0
 		var in_use: bool = false
 		var used_by_pawn_id: int = -1
-		for pawn_id in entities.all_pawns():
+		for pawn_id in entities.pawns:
 			var action_comp: Components.ActionComponent = entities.actions.get(pawn_id)
 			if action_comp == null:
 				continue

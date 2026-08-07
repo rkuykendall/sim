@@ -67,3 +67,24 @@ func run_test(name: String, callable: Callable) -> bool:
 
 func run_all() -> Dictionary:
 	return {"pass": _pass_count, "fail": _fail_count}
+
+
+# -------------------------------------------------------------------------
+# Shared test helpers (avoid re-deriving these in every suite; anything that
+# reads generic simulation state — needs, mood, pawn lookup by name, ticking —
+# belongs on Simulation itself instead, see Simulation.gd's "Queries" section)
+# -------------------------------------------------------------------------
+
+## Returns the first pawn entity id, or -1 if there are none. Useful for single-pawn tests.
+func _get_first_pawn(sim) -> int:
+	var pawns = sim.entities.all_pawns()
+	return pawns[0] if not pawns.is_empty() else -1
+
+
+## Finds a building entity id by its building_def_id. Assumes at most one instance of that
+## def exists — fine for tests, but not meaningful in real gameplay where many can coexist.
+func _get_building_by_def_id(sim, def_id: int) -> int:
+	for building_id in sim.entities.buildings:
+		if sim.entities.buildings[building_id].building_def_id == def_id:
+			return building_id
+	return -1

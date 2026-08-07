@@ -16,7 +16,7 @@ func mark_world_dirty() -> void:
 
 
 func tick(sim: Simulation) -> void:
-	for pawn_id in sim.entities.all_pawns():
+	for pawn_id in sim.entities.pawns:
 		var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 		if action_comp == null:
 			continue
@@ -522,10 +522,8 @@ func _find_best_reachable_building(
 
 	var candidates: Array = []
 
-	for obj_id in sim.entities.all_buildings():
-		var obj_comp: Components.BuildingComponent = sim.entities.buildings.get(obj_id)
-		if obj_comp == null:
-			continue
+	for obj_id in sim.entities.buildings:
+		var obj_comp: Components.BuildingComponent = sim.entities.buildings[obj_id]
 		var obj_def: Dictionary = sim.content.buildings.get(obj_comp.building_def_id, {})
 		if obj_def.is_empty():
 			continue
@@ -605,7 +603,7 @@ func _get_capacity(building_def: Dictionary) -> int:
 
 func _count_pawns_targeting(sim: Simulation, building_id: int, exclude_pawn: int) -> int:
 	var count: int = 0
-	for other_id in sim.entities.all_pawns():
+	for other_id in sim.entities.pawns:
 		if other_id == exclude_pawn:
 			continue
 		var ac: Components.ActionComponent = sim.entities.actions.get(other_id)

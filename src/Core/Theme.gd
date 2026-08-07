@@ -115,7 +115,7 @@ class NightTheme:
 		if energy_id == -1:
 			return
 
-		for pawn_id in sim.entities.all_pawns():
+		for pawn_id in sim.entities.pawns:
 			var need_comp: Components.NeedsComponent = sim.entities.needs.get(pawn_id)
 			if need_comp != null and need_comp.needs.has(energy_id):
 				need_comp.needs[energy_id] = 0.0

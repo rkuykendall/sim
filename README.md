@@ -14,8 +14,7 @@ A top-down, grid-based life simulation sandbox.
 
 ## Requirements
 
-- [Godot 4.5+](https://godotengine.org/download) with .NET support
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [Godot 4.5+](https://godotengine.org/download) — pure GDScript, no .NET/C# toolchain needed
 
 ## Quick Start
 
@@ -23,32 +22,36 @@ A top-down, grid-based life simulation sandbox.
 # Open in Godot
 godot project.godot
 
-# Or build from command line
-dotnet build
-godot --headless --build-solutions --quit
+# Or run directly from the command line
 godot
-
-# Or all at once
-csharpier format .; dotnet build; dotnet test; godot --headless --build-solutions --quit; godot
 ```
 
 ## Project Structure
 
 ```
 ├── src/
-│   ├── Core/          # Engine-agnostic simulation (pure C#)
+│   ├── Core/          # Engine-agnostic simulation (pure GDScript, no Godot nodes)
 │   └── Godot/         # Godot rendering & input
 ├── scenes/            # Godot scene files (.tscn)
+├── tests/             # Headless GDScript test suite
 ├── DESIGN.md          # Full game design document
 └── project.godot      # Godot project config
 ```
 
 ## Running Tests
 
-To run the automated test suite (unit and integration tests):
+The test suite (`tests/`) is plain GDScript, run headless via Godot's `--script` flag — no separate test runner or build step required:
 
 ```bash
-dotnet test
+godot --headless --script tests/run_tests.gd
+```
+
+This runs every suite registered in `tests/run_tests.gd` and prints a `PASS`/`FAIL` line per test, ending with a pass/fail summary. The process exits non-zero if any test fails, so it's CI-friendly.
+
+If `godot` isn't on your `PATH`, use the full binary path instead, e.g. on macOS:
+
+```bash
+/Applications/Godot.app/Contents/MacOS/Godot --headless --script tests/run_tests.gd
 ```
 
 ## Building for Release
@@ -82,35 +85,6 @@ Then open the printed URL (`http://localhost:8080` by default) in a browser. Pas
 ```bash
 python3 serve_web.py 3000
 ```
-
-## Code Formatting (CSharpier)
-
-This project uses [CSharpier](https://csharpier.com/) to enforce consistent C# code style.
-
-- **Format all code:**
-  ```bash
-  csharpier format .
-  ```
-- **Check formatting (CI/pre-commit):**
-  ```bash
-  csharpier check .
-  ```
-- **Pre-commit enforcement:**
-  A pre-commit git hook will block commits if code is not formatted. To fix formatting errors, run the format command above.
-
-If you just installed CSharpier, you may need to add it to your PATH:
-
-```bash
-export PATH="$PATH:/Users/rkuykendall/.dotnet/tools"
-```
-
-This will build and execute all tests in the solution, including those in `tests/SimGame.Tests/`. You can also run tests for a specific project or file:
-
-```bash
-dotnet test tests/SimGame.Tests/SimGame.Tests.csproj
-```
-
-For more options, see the [dotnet test documentation](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-test).
 
 ## Architecture
 

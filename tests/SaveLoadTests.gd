@@ -118,7 +118,7 @@ func test_restore_pawn_state() -> void:
 	builder.add_pawn("Bob", 2, 3, {hunger_id: 60.0})
 	var original = builder.build()
 
-	_run_ticks(original, 10)
+	original.run_ticks(10)
 
 	var data = _SaveService.to_dict(original, "test-save")
 	var restored = _SaveService.from_dict(data, original.content)
@@ -133,7 +133,7 @@ func test_restore_pawn_state() -> void:
 	assert_not_eq(restored_pawn_id, -1, "Bob should be restored")
 
 	# Check position
-	var orig_pawn_id := _get_pawn_by_name(original, "Bob")
+	var orig_pawn_id := original.find_pawn_by_name("Bob")
 	var orig_pos = original.entities.positions.get(orig_pawn_id)
 	var rest_pos = restored.entities.positions.get(restored_pawn_id)
 	if orig_pos != null and rest_pos != null:
@@ -193,7 +193,7 @@ func test_restore_time() -> void:
 	builder.define_terrain("flat", true, "flat", false, true)
 	var original = builder.build()
 
-	_run_ticks(original, 100)
+	original.run_ticks(100)
 	var orig_tick = original.time.tick
 
 	var data = _SaveService.to_dict(original, "test-save")
@@ -241,7 +241,7 @@ func test_roundtrip_complex() -> void:
 	original.paint_terrain(Vector2i(4, 1), wall_id)
 	original.paint_terrain(Vector2i(4, 2), wall_id)
 
-	_run_ticks(original, 50)
+	original.run_ticks(50)
 
 	var data = _SaveService.to_dict(original, "test-save")
 	var restored = _SaveService.from_dict(data, original.content)
@@ -279,13 +279,13 @@ func test_roundtrip_can_continue() -> void:
 	builder.add_pawn("TestPawn", 2, 2, {hunger_id: 100.0})
 	var original = builder.build()
 
-	_run_ticks(original, 50)
+	original.run_ticks(50)
 
 	var data = _SaveService.to_dict(original, "test-save")
 	var restored = _SaveService.from_dict(data, original.content)
 
 	var tick_before = restored.time.tick
-	_run_ticks(restored, 100)
+	restored.run_ticks(100)
 
 	assert_eq(restored.time.tick, tick_before + 100, "Restored sim should advance 100 more ticks")
 
@@ -294,20 +294,3 @@ func test_roundtrip_can_continue() -> void:
 	if need_comp != null:
 		var hunger: float = need_comp.needs.get(hunger_id, 100.0)
 		assert_lt(hunger, 100.0, "Hunger should have decayed after running ticks")
-
-
-# -------------------------------------------------------------------------
-# Helpers
-# -------------------------------------------------------------------------
-
-func _get_pawn_by_name(sim, name: String) -> int:
-	for pawn_id in sim.entities.all_pawns():
-		var pc = sim.entities.pawns.get(pawn_id)
-		if pc != null and pc.name == name:
-			return pawn_id
-	return -1
-
-
-func _run_ticks(sim, count: int) -> void:
-	for _i in count:
-		sim.tick()

@@ -27,7 +27,7 @@ func test_seeks_food_when_debuff() -> void:
 	var pawn_id := _get_first_pawn(sim)
 	assert_not_eq(pawn_id, -1, "Should have a pawn")
 
-	_run_ticks(sim, 5)
+	sim.run_ticks(5)
 
 	# After 5 ticks pawn should be en route to or queued for Market
 	var action_comp = sim.entities.actions.get(pawn_id)
@@ -57,7 +57,7 @@ func test_wanders_when_no_debuffs() -> void:
 	var pawn_id := _get_first_pawn(sim)
 	assert_not_eq(pawn_id, -1, "Should have a pawn")
 
-	_run_ticks(sim, 5)
+	sim.run_ticks(5)
 
 	var action_comp = sim.entities.actions.get(pawn_id)
 	var is_going_to_market := false
@@ -91,7 +91,7 @@ func test_lifecycle_eat_wander_return() -> void:
 
 	for tick in 500:
 		sim.tick()
-		var hunger := _get_need_value(sim, pawn_id, hunger_id)
+		var hunger := sim.get_need_value(pawn_id, hunger_id)
 		var action_comp = sim.entities.actions.get(pawn_id)
 
 		# Detect market use (hunger jumps up significantly)
@@ -138,36 +138,15 @@ func test_survives_long_term() -> void:
 
 	for _tick in 1000:
 		sim.tick()
-		var hunger := _get_need_value(sim, pawn_id, hunger_id)
+		var hunger := sim.get_need_value(pawn_id, hunger_id)
 		if hunger > last_hunger + 10.0:
 			times_used_market += 1
 		if hunger < min_hunger:
 			min_hunger = hunger
 		last_hunger = hunger
 
-	var final_hunger := _get_need_value(sim, pawn_id, hunger_id)
+	var final_hunger := sim.get_need_value(pawn_id, hunger_id)
 
 	assert_ge(float(times_used_market), 3.0, "Pawn should have eaten at least 3 times over 1000 ticks")
 	assert_gt(min_hunger, 0.0, "Pawn should never have starved (hunger never hit 0)")
 	assert_gt(final_hunger, 0.0, "Pawn should still be alive at end")
-
-
-# -------------------------------------------------------------------------
-# Helpers
-# -------------------------------------------------------------------------
-
-func _get_first_pawn(sim) -> int:
-	var pawns = sim.entities.all_pawns()
-	return pawns[0] if not pawns.is_empty() else -1
-
-
-func _get_need_value(sim, pawn_id: int, need_id: int) -> float:
-	var need_comp = sim.entities.needs.get(pawn_id)
-	if need_comp == null:
-		return 0.0
-	return need_comp.needs.get(need_id, 0.0)
-
-
-func _run_ticks(sim, count: int) -> void:
-	for _i in count:
-		sim.tick()

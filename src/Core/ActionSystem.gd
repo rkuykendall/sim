@@ -4,7 +4,7 @@ const MOVE_TICKS_PER_TILE: int = 10
 
 
 func tick(sim: Simulation) -> void:
-	for pawn_id in sim.entities.all_pawns():
+	for pawn_id in sim.entities.pawns:
 		var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 		if action_comp == null:
 			continue

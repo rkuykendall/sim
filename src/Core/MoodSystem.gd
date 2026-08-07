@@ -2,7 +2,7 @@ class_name MoodSystem
 
 
 func tick(sim: Simulation) -> void:
-	for pawn_id in sim.entities.all_pawns():
+	for pawn_id in sim.entities.pawns:
 		var mood_comp: Components.MoodComponent = sim.entities.moods.get(pawn_id)
 		if mood_comp == null:
 			continue

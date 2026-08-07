@@ -5,6 +5,12 @@ const _IntegrationTests = preload("res://tests/SimulationIntegrationTests.gd")
 const _PathfindingTests = preload("res://tests/PathfindingWallTests.gd")
 const _LifecycleTests   = preload("res://tests/PawnLifecycleTests.gd")
 const _SaveLoadTests    = preload("res://tests/SaveLoadTests.gd")
+const _AISystemTests    = preload("res://tests/AISystemTests.gd")
+const _MultiPawnTests   = preload("res://tests/MultiPawnTests.gd")
+const _WorkAndHaulTests = preload("res://tests/WorkAndHaulTests.gd")
+const _BuffMoodTests    = preload("res://tests/BuffMoodTests.gd")
+const _PaintingTests    = preload("res://tests/TerrainPaintingTests.gd")
+const _QueriesTests     = preload("res://tests/SimulationQueriesTests.gd")
 
 
 func _init() -> void:
@@ -14,7 +20,7 @@ func _init() -> void:
 	var total_pass := 0
 	var total_fail := 0
 
-	for suite_script in [_IntegrationTests, _PathfindingTests, _LifecycleTests, _SaveLoadTests]:
+	for suite_script in [_IntegrationTests, _PathfindingTests, _LifecycleTests, _SaveLoadTests, _AISystemTests, _MultiPawnTests, _WorkAndHaulTests, _BuffMoodTests, _PaintingTests, _QueriesTests]:
 		var suite = suite_script.new()
 		suite.run()
 		var results: Dictionary = suite.run_all()

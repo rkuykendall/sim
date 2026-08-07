@@ -32,13 +32,13 @@ func test_low_hunger_uses_market() -> void:
 
 	var pawn_id := _get_first_pawn(sim)
 	assert_not_null(pawn_id, "Should have a pawn")
-	var initial_hunger := _get_need_value(sim, pawn_id, hunger_id)
+	var initial_hunger := sim.get_need_value(pawn_id, hunger_id)
 	assert_approx(initial_hunger, 0.0, 0.1, "Initial hunger should be ~0")
 
 	# Walk ~4 tiles + use building + buffer
-	_run_ticks(sim, 100)
+	sim.run_ticks(100)
 
-	var final_hunger := _get_need_value(sim, pawn_id, hunger_id)
+	var final_hunger := sim.get_need_value(pawn_id, hunger_id)
 	assert_gt(final_hunger, initial_hunger, "Hunger should increase after eating")
 	assert_gt(final_hunger, 40.0, "Hunger should be > 40 after eating")
 
@@ -60,9 +60,9 @@ func test_full_hunger_no_market() -> void:
 	var pawn_id := _get_first_pawn(sim)
 	assert_not_null(pawn_id, "Should have a pawn")
 
-	_run_ticks(sim, 50)
+	sim.run_ticks(50)
 
-	var hunger := _get_need_value(sim, pawn_id, hunger_id)
+	var hunger := sim.get_need_value(pawn_id, hunger_id)
 	assert_gt(hunger, 95.0, "Hunger should remain high (~100) with slow decay and no trip to market")
 
 
@@ -72,7 +72,7 @@ func test_ticks_advance_time() -> void:
 	var sim = builder.build()
 	var initial_tick = sim.time.tick
 
-	_run_ticks(sim, 100)
+	sim.run_ticks(100)
 
 	assert_eq(sim.time.tick, initial_tick + 100, "Tick counter should advance by 100")
 
@@ -86,12 +86,12 @@ func test_needs_decay() -> void:
 
 	var pawn_id := _get_first_pawn(sim)
 	assert_not_null(pawn_id, "Should have a pawn")
-	var initial_hunger := _get_need_value(sim, pawn_id, hunger_id)
+	var initial_hunger := sim.get_need_value(pawn_id, hunger_id)
 	assert_approx(initial_hunger, 100.0, 0.1, "Initial hunger should be 100")
 
-	_run_ticks(sim, 100)
+	sim.run_ticks(100)
 
-	var final_hunger := _get_need_value(sim, pawn_id, hunger_id)
+	var final_hunger := sim.get_need_value(pawn_id, hunger_id)
 	assert_lt(final_hunger, initial_hunger, "Hunger should decay over time")
 	# 0.5 decay/tick × 100 ticks = 50 points decay → ~50 remaining
 	assert_lt(final_hunger, 60.0, "Hunger should have decayed to at most 60")
@@ -113,9 +113,9 @@ func test_navigates_to_building() -> void:
 	assert_not_null(pawn_id, "Should have a pawn")
 
 	# 9 tiles × 10 ticks/tile + 20 ticks interaction + buffer
-	_run_ticks(sim, 200)
+	sim.run_ticks(200)
 
-	var final_hunger := _get_need_value(sim, pawn_id, hunger_id)
+	var final_hunger := sim.get_need_value(pawn_id, hunger_id)
 	assert_gt(final_hunger, 40.0, "Pawn should have eaten (hunger > 40)")
 
 
@@ -137,24 +137,3 @@ func test_destroy_restores_walkability() -> void:
 
 	assert_true(sim.world.get_tile(coord).walkable, "Tile should be walkable after building destruction")
 	assert_false(sim.entities.buildings.has(building_id), "Building should be removed from entities")
-
-
-# -------------------------------------------------------------------------
-# Helpers
-# -------------------------------------------------------------------------
-
-func _get_first_pawn(sim) -> int:
-	var pawns = sim.entities.all_pawns()
-	return pawns[0] if not pawns.is_empty() else -1
-
-
-func _get_need_value(sim, pawn_id: int, need_id: int) -> float:
-	var need_comp = sim.entities.needs.get(pawn_id)
-	if need_comp == null:
-		return 0.0
-	return need_comp.needs.get(need_id, 0.0)
-
-
-func _run_ticks(sim, count: int) -> void:
-	for _i in count:
-		sim.tick()

@@ -27,14 +27,14 @@ func test_pawn_blocked_by_wall() -> void:
 	for y in 5:
 		sim.paint_terrain(Vector2i(2, y), wall_id)
 
-	var pawn_id := _get_pawn_by_name(sim, "Alice")
+	var pawn_id := sim.find_pawn_by_name("Alice")
 	assert_not_null(pawn_id)
 	assert_not_eq(pawn_id, -1, "Pawn Alice should exist")
 
-	_run_ticks(sim, 100)
+	sim.run_ticks(100)
 
 	# Pawn should not have satisfied restfulness (still at 0 or very low, minus decay)
-	var restfulness := _get_need_value(sim, pawn_id, restfulness_id)
+	var restfulness := sim.get_need_value(pawn_id, restfulness_id)
 	# Need started at 0 and has been decaying — should still be 0 (clamped)
 	assert_approx(restfulness, 0.0, 5.0, "Pawn should not have satisfied restfulness behind wall")
 
@@ -54,13 +54,13 @@ func test_pawn_can_reach_with_gap() -> void:
 	sim.paint_terrain(Vector2i(2, 1), wall_id)
 	sim.paint_terrain(Vector2i(2, 3), wall_id)
 
-	var pawn_id := _get_pawn_by_name(sim, "Bob")
+	var pawn_id := sim.find_pawn_by_name("Bob")
 	assert_not_null(pawn_id)
 	assert_not_eq(pawn_id, -1, "Pawn Bob should exist")
 
-	_run_ticks(sim, 100)
+	sim.run_ticks(100)
 
-	var tiredness := _get_need_value(sim, pawn_id, tiredness_id)
+	var tiredness := sim.get_need_value(pawn_id, tiredness_id)
 	assert_lt(tiredness, 100.0, "Pawn should have reached and used the bed (tiredness < 100)")
 
 
@@ -78,11 +78,11 @@ func test_pawn_never_on_wall() -> void:
 
 	sim.paint_terrain(Vector2i(1, 1), wall_id)
 
-	var pawn_id := _get_pawn_by_name(sim, "Carol")
+	var pawn_id := sim.find_pawn_by_name("Carol")
 	assert_not_null(pawn_id)
 	assert_not_eq(pawn_id, -1, "Pawn Carol should exist")
 
-	_run_ticks(sim, 100)
+	sim.run_ticks(100)
 
 	var pos_comp = sim.entities.positions.get(pawn_id)
 	if pos_comp != null:
@@ -100,13 +100,13 @@ func test_pawn_reach_diagonal() -> void:
 	builder.add_building(bed_id, 2, 2)
 	var sim = builder.build()
 
-	var pawn_id := _get_pawn_by_name(sim, "Dave")
+	var pawn_id := sim.find_pawn_by_name("Dave")
 	assert_not_null(pawn_id)
 	assert_not_eq(pawn_id, -1, "Pawn Dave should exist")
 
-	_run_ticks(sim, 100)
+	sim.run_ticks(100)
 
-	var tiredness := _get_need_value(sim, pawn_id, tiredness_id)
+	var tiredness := sim.get_need_value(pawn_id, tiredness_id)
 	assert_lt(tiredness, 100.0, "Pawn should have reached and used the bed")
 
 
@@ -125,36 +125,12 @@ func test_pawn_blocked_diagonal() -> void:
 	for x in 5:
 		sim.paint_terrain(Vector2i(4 - x, x), wall_id)
 
-	var pawn_id := _get_pawn_by_name(sim, "Eve")
+	var pawn_id := sim.find_pawn_by_name("Eve")
 	assert_not_null(pawn_id)
 	assert_not_eq(pawn_id, -1, "Pawn Eve should exist")
 
-	_run_ticks(sim, 100)
+	sim.run_ticks(100)
 
 	# Need started at 0 and decays — should remain at 0 (cannot increase without building use)
-	var tiredness := _get_need_value(sim, pawn_id, tiredness_id)
+	var tiredness := sim.get_need_value(pawn_id, tiredness_id)
 	assert_approx(tiredness, 0.0, 5.0, "Pawn should not have reached building through diagonal wall")
-
-
-# -------------------------------------------------------------------------
-# Helpers
-# -------------------------------------------------------------------------
-
-func _get_pawn_by_name(sim, name: String) -> int:
-	for pawn_id in sim.entities.all_pawns():
-		var pc = sim.entities.pawns.get(pawn_id)
-		if pc != null and pc.name == name:
-			return pawn_id
-	return -1
-
-
-func _get_need_value(sim, pawn_id: int, need_id: int) -> float:
-	var need_comp = sim.entities.needs.get(pawn_id)
-	if need_comp == null:
-		return 0.0
-	return need_comp.needs.get(need_id, 0.0)
-
-
-func _run_ticks(sim, count: int) -> void:
-	for _i in count:
-		sim.tick()
