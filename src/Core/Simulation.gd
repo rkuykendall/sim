@@ -570,6 +570,8 @@ func create_render_snapshot() -> Dictionary:
 		"time": snap_time,
 		"theme": snap_theme,
 		"palette": palette,
+		"move_ticks_per_tile": ActionSystem.MOVE_TICKS_PER_TILE,
+		"tick_rate": TICK_RATE,
 	}
 
 

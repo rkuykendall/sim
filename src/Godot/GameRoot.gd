@@ -803,6 +803,14 @@ func _apply_autotile_updates(layer: ModulatableTileMapLayer, terrain_id: int) ->
 
 func _sync_pawns(snapshot: Dictionary) -> void:
 	_active_ids.clear()
+
+	# One tile-step's real-world duration: sim-tick time, scaled down by the current
+	# fast-forward multiplier so pawns visually keep pace with tick processing.
+	var move_ticks_per_tile: int = snapshot.get("move_ticks_per_tile", 10)
+	var tick_rate: int = snapshot.get("tick_rate", 20)
+	var speed_multiplier: int = maxi(int(_sim_speed), 1)
+	var move_duration: float = (float(move_ticks_per_tile) / float(tick_rate)) / float(speed_multiplier)
+
 	for pawn in snapshot.get("pawns", []):
 		var pawn_id: int = pawn.get("id", -1)
 		if pawn_id == -1:
@@ -830,6 +838,7 @@ func _sync_pawns(snapshot: Dictionary) -> void:
 			if is_new:
 				var entry_pos: Vector2 = _calculate_entry_position(pawn.get("x", 0), pawn.get("y", 0))
 				node.set_initial_position(entry_pos)
+			node.set_move_duration(move_duration)
 			node.set_target_position(target_pos)
 			node.set_current_animation(pawn.get("animation", Definitions.AnimationType.IDLE))
 			node.set_mood(pawn.get("mood", 0.0))

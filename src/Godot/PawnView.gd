@@ -1,7 +1,7 @@
 class_name PawnView
 extends Node2D
 
-const LERP_SPEED: float = 0.01  # fraction per frame at 60fps (matches C# behavior)
+const DEFAULT_MOVE_DURATION: float = 0.5  # fallback, matches sim's default tile-step time
 
 # Character sheet layout: 24x24 frames, one animation per row.
 # [row, frame_count, fps, loop]
@@ -17,6 +17,9 @@ var _bubble_node: Node2D
 var _bubble_wrapper: Sprite2D
 var _bubble_icon: Sprite2D
 var _target_position: Vector2
+var _move_start: Vector2
+var _move_elapsed: float = 0.0
+var _move_duration: float = DEFAULT_MOVE_DURATION
 var _bubble_time: float = 0.0
 var _bubble_float_speed: float = 2.0
 var _bubble_float_amount: float = 3.0
@@ -62,16 +65,20 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	# Smooth position lerp — exponential ease-out matching C# Lerp(0.01) at 60fps
-	position = position.lerp(_target_position, 1.0 - pow(1.0 - LERP_SPEED, delta * 60.0))
+	# Interpolate over the exact duration of one tile-step (set via set_move_duration),
+	# instead of an asymptotic ease, so the sprite arrives exactly when the sim does.
+	if position != _target_position:
+		_move_elapsed += delta
+		var t: float = 1.0 if _move_duration <= 0.0 else clampf(_move_elapsed / _move_duration, 0.0, 1.0)
+		position = _move_start.lerp(_target_position, t)
 
-	# Flip sprite to face movement direction
-	if _sprite.sprite_frames != null:
-		var velocity: Vector2 = _target_position - position
-		if velocity.length_squared() > 0.1:
-			if velocity.x < 0:
+		# Flip sprite based on the step's overall direction (stable for the whole step,
+		# rather than recomputed from the shrinking per-frame position delta).
+		if _sprite.sprite_frames != null:
+			var dx: float = _target_position.x - _move_start.x
+			if dx < -0.1:
 				_sprite.flip_h = true
-			elif velocity.x > 0:
+			elif dx > 0.1:
 				_sprite.flip_h = false
 
 	# Floating bubble animation
@@ -119,11 +126,22 @@ func _add_animation(
 
 func set_initial_position(pos: Vector2) -> void:
 	position = pos
+	_move_start = pos
 	_target_position = pos
 
 
 func set_target_position(pos: Vector2) -> void:
+	if pos == _target_position:
+		return
+	_move_start = position
+	_move_elapsed = 0.0
 	_target_position = pos
+
+
+## Sets how long one tile-step should take to visually traverse, in seconds.
+## Passed in each frame by GameRoot since it depends on the sim's tick rate and current game speed.
+func set_move_duration(seconds: float) -> void:
+	_move_duration = seconds
 
 
 func set_current_animation(animation: Definitions.AnimationType) -> void:
