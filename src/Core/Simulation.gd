@@ -437,18 +437,20 @@ func _perform_attachment_decay() -> void:
 		if ac == null:
 			continue
 
-		var to_remove: Array[int] = []
-		for pawn_id in ac.user_attachments.keys():
-			var strength: int = ac.user_attachments[pawn_id]
-			if strength <= ATTACHMENT_DECAY_THRESHOLD:
-				var new_strength: int = strength - 1
-				if new_strength <= 0:
-					to_remove.append(pawn_id)
-				else:
-					ac.user_attachments[pawn_id] = new_strength
+		for need_id in ac.need_attachments:
+			var per_pawn: Dictionary = ac.need_attachments[need_id]
+			var to_remove: Array[int] = []
+			for pawn_id in per_pawn.keys():
+				var strength: int = per_pawn[pawn_id]
+				if strength <= ATTACHMENT_DECAY_THRESHOLD:
+					var new_strength: int = strength - 1
+					if new_strength <= 0:
+						to_remove.append(pawn_id)
+					else:
+						per_pawn[pawn_id] = new_strength
 
-		for pawn_id in to_remove:
-			ac.user_attachments.erase(pawn_id)
+			for pawn_id in to_remove:
+				per_pawn.erase(pawn_id)
 
 
 # --- Tile geometry helpers -------------------------------------------------
@@ -578,16 +580,17 @@ func create_render_snapshot() -> Dictionary:
 
 
 func _build_pawn_snapshots() -> Array:
-	# Pre-build reverse attachment map: pawn_id -> {building_id: strength}
+	# Pre-build reverse attachment map: pawn_id -> {building_id: total strength across needs}
 	var pawn_attachments: Dictionary = {}
 	for building_id in entities.buildings:
 		var ac: Components.AttachmentComponent = entities.attachments.get(building_id)
 		if ac == null:
 			continue
-		for attached_pawn_id in ac.user_attachments.keys():
+		var totals: Dictionary = ac.total_strengths()
+		for attached_pawn_id in totals:
 			if not pawn_attachments.has(attached_pawn_id):
 				pawn_attachments[attached_pawn_id] = {}
-			pawn_attachments[attached_pawn_id][building_id] = ac.user_attachments[attached_pawn_id]
+			pawn_attachments[attached_pawn_id][building_id] = totals[attached_pawn_id]
 
 	var result: Array = []
 	for pawn_id in entities.pawns:
@@ -680,7 +683,7 @@ func _build_building_snapshots() -> Array:
 		var rc: Components.ResourceComponent = entities.resources.get(building_id)
 		var ac: Components.AttachmentComponent = entities.attachments.get(building_id)
 
-		var attachments: Dictionary = ac.user_attachments.duplicate() if ac != null else {}
+		var attachments: Dictionary = ac.total_strengths() if ac != null else {}
 
 		result.append({
 			"id": building_id,

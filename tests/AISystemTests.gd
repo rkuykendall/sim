@@ -11,6 +11,7 @@ func run() -> void:
 	run_test("DiversityMap_ReusesSameArrayWhenWorldUnchanged", test_diversity_map_cached_reference_reused)
 	run_test("TrappedPawn_GetsFallbackAction_InsteadOfEmptyQueue", test_trapped_pawn_gets_fallback_action)
 	run_test("TrappedPawn_DoesNotRedecideEveryTick", test_trapped_pawn_does_not_redecide_every_tick)
+	run_test("ConsumerAttachment_DoesNotBiasWorkScoring", test_consumer_attachment_does_not_bias_work_scoring)
 
 
 # A lone pawn with no needs wanders continuously; the cached diversity map must stay
@@ -125,6 +126,43 @@ func test_trapped_pawn_does_not_redecide_every_tick() -> void:
 	assert_true(
 		is_same(action_comp.current_action, action_ref),
 		"current_action was replaced by a new decision instead of the fallback persisting"
+	)
+
+
+# Attachment is tracked per need. A pawn with max attachment to a building for Social (built
+# purely by visiting it as a consumer) should not have that carry over to Purpose (work)
+# scoring for the same building — a nearer, equally-eligible building should still win.
+func test_consumer_attachment_does_not_bias_work_scoring() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(20, 20)
+	var social_id := builder.define_need("Social", 0.01)
+	var purpose_id := builder.define_need("Purpose", 0.01)
+
+	var far_id := builder.define_building(
+		"FarTavern", social_id, 50.0, 20, 0.0, 0, [], 1, true, "stone", 100.0, "direct"
+	)
+	var near_id := builder.define_building(
+		"NearMine", -1, 50.0, 20, 0.0, 0, [], 1, true, "stone", 100.0, "direct"
+	)
+	builder.add_building(far_id, 18, 10)
+	builder.add_building(near_id, 8, 10)
+	builder.add_pawn("Worker", 10, 10, {social_id: 100.0, purpose_id: 50.0})
+	var sim := builder.build()
+
+	var far_entity_id := _get_building_by_def_id(sim, far_id)
+	var near_entity_id := _get_building_by_def_id(sim, near_id)
+	sim.entities.resources[far_entity_id].current_amount = 0.0
+	sim.entities.resources[near_entity_id].current_amount = 0.0
+
+	var pawn_id := sim.find_pawn_by_name("Worker")
+	# Max attachment to the far building, but only for Social — never worked or delivered there.
+	sim.entities.attachments[far_entity_id].need_attachments[social_id] = {pawn_id: 10}
+
+	var candidates := sim.ai_system._find_work_candidates(sim, pawn_id, purpose_id)
+
+	assert_eq(
+		candidates[0], near_entity_id,
+		"Nearer building should win work scoring; Social attachment to the farther one must not leak into Purpose scoring"
 	)
 
 

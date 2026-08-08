@@ -159,12 +159,10 @@ func _execute_use_building(sim: Simulation, pawn_id: int, action_comp: Component
 			buff_comp.active_buffs.append(b)
 
 	# Increment attachment
-	if has_resources:
+	if has_resources and action.satisfies_need_id != -1:
 		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(target_id)
 		if attachment_comp != null:
-			attachment_comp.user_attachments[pawn_id] = mini(
-				10, attachment_comp.user_attachments.get(pawn_id, 0) + 1
-			)
+			attachment_comp.increment(action.satisfies_need_id, pawn_id)
 
 	# Brief idle reaction
 	if action.satisfies_need_id != -1:
@@ -261,11 +259,10 @@ func _execute_work(sim: Simulation, pawn_id: int, action_comp: Components.Action
 		buff_comp.active_buffs.append(b)
 
 	# Increment attachment
-	var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(target_id)
-	if attachment_comp != null:
-		attachment_comp.user_attachments[pawn_id] = mini(
-			10, attachment_comp.user_attachments.get(pawn_id, 0) + 1
-		)
+	if action.satisfies_need_id != -1:
+		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(target_id)
+		if attachment_comp != null:
+			attachment_comp.increment(action.satisfies_need_id, pawn_id)
 
 	# Brief idle
 	if action.satisfies_need_id != -1:
@@ -435,11 +432,10 @@ func _execute_drop_off(sim: Simulation, pawn_id: int, action_comp: Components.Ac
 		buff_comp.active_buffs.append(b)
 
 	# Increment attachment
-	var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(target_id)
-	if attachment_comp != null:
-		attachment_comp.user_attachments[pawn_id] = mini(
-			10, attachment_comp.user_attachments.get(pawn_id, 0) + 1
-		)
+	if action.satisfies_need_id != -1:
+		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(target_id)
+		if attachment_comp != null:
+			attachment_comp.increment(action.satisfies_need_id, pawn_id)
 
 	# Brief idle
 	if action.satisfies_need_id != -1:

@@ -68,7 +68,7 @@ func _try_queue_work(
 	action_comp: Components.ActionComponent,
 	purpose_need_id: int
 ) -> bool:
-	for candidate_id in _find_work_candidates(sim, pawn_id):
+	for candidate_id in _find_work_candidates(sim, pawn_id, purpose_need_id):
 		if _queue_work_at_building(sim, pawn_id, action_comp, candidate_id, purpose_need_id):
 			return true
 	return false
@@ -448,13 +448,13 @@ func _find_building_for_need(sim: Simulation, pawn_id: int, need_id: int) -> int
 				return false
 			return true,
 		func(ctx: Dictionary, pid: int) -> float:
-			return _get_attachment_score(ctx["attachment_comp"], pid, 20.0, 15.0)
+			return _get_attachment_score(ctx["attachment_comp"], pid, captured_need_id, 20.0, 15.0)
 	)
 
 
 ## All reachable, work-eligible buildings, best-scoring first (see _try_queue_work — callers
 ## try these in order since the top pick can still fail to yield actual work).
-func _find_work_candidates(sim: Simulation, pawn_id: int) -> Array[int]:
+func _find_work_candidates(sim: Simulation, pawn_id: int, purpose_need_id: int) -> Array[int]:
 	return _gather_reachable_candidates(
 		sim,
 		pawn_id,
@@ -469,7 +469,7 @@ func _find_work_candidates(sim: Simulation, pawn_id: int) -> Array[int]:
 		func(ctx: Dictionary, pid: int) -> float:
 			var res: Components.ResourceComponent = ctx["resource_comp"]
 			var urgency: float = 100.0 - (res.current_amount / res.max_amount) * 100.0
-			return urgency + _get_attachment_score(ctx["attachment_comp"], pid, 10.0, 5.0)
+			return urgency + _get_attachment_score(ctx["attachment_comp"], pid, purpose_need_id, 10.0, 5.0)
 	)
 
 
@@ -662,17 +662,19 @@ func _count_pawns_targeting(sim: Simulation, building_id: int, exclude_pawn: int
 func _get_attachment_score(
 	attachment_comp: Components.AttachmentComponent,
 	pawn_id: int,
+	need_id: int,
 	my_weight: float,
 	other_weight: float
 ) -> float:
 	if attachment_comp == null:
 		return 0.0
-	var my_attachment: int = attachment_comp.user_attachments.get(pawn_id, 0)
+	var per_pawn: Dictionary = attachment_comp.need_attachments.get(need_id, {})
+	var my_attachment: int = per_pawn.get(pawn_id, 0)
 	var score: float = my_attachment * my_weight
 	var highest_other: int = 0
-	for other_id in attachment_comp.user_attachments.keys():
+	for other_id in per_pawn.keys():
 		if other_id != pawn_id:
-			var att: int = attachment_comp.user_attachments[other_id]
+			var att: int = per_pawn[other_id]
 			if att > highest_other:
 				highest_other = att
 	score -= highest_other * other_weight

@@ -191,8 +191,12 @@ static func _serialize_entities(sim: Simulation) -> Array:
 		var ac: Components.AttachmentComponent = em.attachments.get(building_id)
 		if ac != null:
 			var attachments: Dictionary = {}
-			for pawn_id in ac.user_attachments:
-				attachments[str(pawn_id)] = ac.user_attachments[pawn_id]
+			for need_id in ac.need_attachments:
+				var per_pawn: Dictionary = ac.need_attachments[need_id]
+				var per_pawn_out: Dictionary = {}
+				for pawn_id in per_pawn:
+					per_pawn_out[str(pawn_id)] = per_pawn[pawn_id]
+				attachments[str(need_id)] = per_pawn_out
 			e["attachments"] = attachments
 
 		out.append(e)
@@ -322,12 +326,20 @@ static func _restore_building(sim: Simulation, e: Dictionary) -> void:
 			rc.depletion_mult = float(bdef.get("depletionMult", 1.0))
 			sim.entities.resources[entity_id] = rc
 
-	# Attachment component
+	# Attachment component. Values are per-need pawn maps ({"need_id": {"pawn_id": strength}}).
+	# Older saves stored a flat {"pawn_id": strength} with no need context — that data can't be
+	# attributed to a need, so it's dropped rather than guessed; attachments rebuild through play.
 	var ac := Components.AttachmentComponent.new()
 	if e.has("attachments"):
 		var att: Dictionary = e["attachments"]
 		for key in att:
-			ac.user_attachments[int(key)] = int(att[key])
+			var value = att[key]
+			if value is Dictionary:
+				var need_id: int = int(key)
+				var per_pawn_out: Dictionary = {}
+				for pawn_key in value:
+					per_pawn_out[int(pawn_key)] = int(value[pawn_key])
+				ac.need_attachments[need_id] = per_pawn_out
 	sim.entities.attachments[entity_id] = ac
 
 

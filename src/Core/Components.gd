@@ -70,8 +70,29 @@ class ResourceComponent:
 
 
 class AttachmentComponent:
-	# pawn_id -> attachment strength (0-10)
-	var user_attachments: Dictionary[int, int] = {}
+	# need_id -> (pawn_id -> attachment strength, 0-10). Kept separate per need so, e.g.,
+	# visiting a building to satisfy Social doesn't carry over to Purpose (work) scoring there.
+	var need_attachments: Dictionary[int, Dictionary] = {}
+
+	func get_strength(need_id: int, pawn_id: int) -> int:
+		var per_pawn: Dictionary = need_attachments.get(need_id, {})
+		return per_pawn.get(pawn_id, 0)
+
+	func increment(need_id: int, pawn_id: int) -> void:
+		if not need_attachments.has(need_id):
+			need_attachments[need_id] = {}
+		var per_pawn: Dictionary = need_attachments[need_id]
+		per_pawn[pawn_id] = mini(10, per_pawn.get(pawn_id, 0) + 1)
+
+	## Total strength across all needs, per pawn — for display/snapshot purposes only;
+	## AI scoring always reads a specific need's bucket via get_strength().
+	func total_strengths() -> Dictionary:
+		var totals: Dictionary = {}
+		for need_id in need_attachments:
+			var per_pawn: Dictionary = need_attachments[need_id]
+			for pawn_id in per_pawn:
+				totals[pawn_id] = totals.get(pawn_id, 0) + per_pawn[pawn_id]
+		return totals
 
 
 class InventoryComponent:

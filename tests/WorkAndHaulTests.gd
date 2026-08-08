@@ -186,7 +186,7 @@ func test_haul_from_building_no_source_spills_over() -> void:
 	sim.entities.resources[farm_entity_id].current_amount = 0.0    # equally eligible, and workable
 
 	var pawn_id := sim.find_pawn_by_name("Worker")
-	sim.entities.attachments[market_entity_id].user_attachments[pawn_id] = 10  # max attachment
+	sim.entities.attachments[market_entity_id].need_attachments[purpose_id] = {pawn_id: 10}  # max attachment
 
 	var action_comp = sim.entities.actions.get(pawn_id)
 
