@@ -472,9 +472,7 @@ func _find_work_candidates(sim: Simulation, pawn_id: int, purpose_need_id: int) 
 				return false
 			return (res.current_amount / res.max_amount) < 0.8,
 		func(ctx: Dictionary, pid: int) -> float:
-			var res: Components.ResourceComponent = ctx["resource_comp"]
-			var urgency: float = 100.0 - (res.current_amount / res.max_amount) * 100.0
-			return urgency + _get_attachment_score(ctx["attachment_comp"], pid, purpose_need_id, 10.0, 5.0)
+			return _get_attachment_score(ctx["attachment_comp"], pid, purpose_need_id, 10.0, 5.0)
 	)
 
 
@@ -676,11 +674,13 @@ func _get_attachment_score(
 	var per_pawn: Dictionary = attachment_comp.need_attachments.get(need_id, {})
 	var my_attachment: int = per_pawn.get(pawn_id, 0)
 	var score: float = my_attachment * my_weight
-	var highest_other: int = 0
+	# Sum (not max) of everyone else's attachment — a building three others are already
+	# attached to should look less inviting than one only a single pawn has claimed, so
+	# demand naturally spreads across capacity instead of piling onto whichever building
+	# happened to recruit first.
+	var others_total: int = 0
 	for other_id in per_pawn.keys():
 		if other_id != pawn_id:
-			var att: int = per_pawn[other_id]
-			if att > highest_other:
-				highest_other = att
-	score -= highest_other * other_weight
+			others_total += per_pawn[other_id]
+	score -= others_total * other_weight
 	return score

@@ -12,6 +12,7 @@ func run() -> void:
 	run_test("TrappedPawn_GetsFallbackAction_InsteadOfEmptyQueue", test_trapped_pawn_gets_fallback_action)
 	run_test("TrappedPawn_DoesNotRedecideEveryTick", test_trapped_pawn_does_not_redecide_every_tick)
 	run_test("ConsumerAttachment_DoesNotBiasWorkScoring", test_consumer_attachment_does_not_bias_work_scoring)
+	run_test("WorkScoring_PenalizesTotalCrowd_NotJustTheSingleMostAttachedPawn", test_work_scoring_sums_other_pawns_attachment)
 
 
 # A lone pawn with no needs wanders continuously; the cached diversity map must stay
@@ -163,6 +164,48 @@ func test_consumer_attachment_does_not_bias_work_scoring() -> void:
 	assert_eq(
 		candidates[0], near_entity_id,
 		"Nearer building should win work scoring; Social attachment to the farther one must not leak into Purpose scoring"
+	)
+
+
+# A building with several moderately-attached workers should look more crowded than one with
+# a single more-attached worker — total headcount, not the single strongest tie, is what
+# should discourage a new pawn from piling on. This is what let a single high-demand building
+# (e.g. a Tavern under constant consumer draw) snowball into recruiting far more workers than
+# capacity-equal alternatives, since only the single highest attachment ever counted against it.
+func test_work_scoring_sums_other_pawns_attachment() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(20, 20)
+	var purpose_id := builder.define_need("Purpose", 0.01)
+
+	var crowded_id := builder.define_building(
+		"Crowded", -1, 50.0, 20, 0.0, 0, [], 1, true, "stone", 100.0, "direct"
+	)
+	var quiet_id := builder.define_building(
+		"Quiet", -1, 50.0, 20, 0.0, 0, [], 1, true, "stone", 100.0, "direct"
+	)
+	builder.add_building(crowded_id, 10, 8)
+	builder.add_building(quiet_id, 10, 12)
+	builder.add_pawn("NewWorker", 10, 10, {purpose_id: 50.0})
+	var sim := builder.build()
+
+	var crowded_entity_id := _get_building_by_def_id(sim, crowded_id)
+	var quiet_entity_id := _get_building_by_def_id(sim, quiet_id)
+	sim.entities.resources[crowded_entity_id].current_amount = 0.0
+	sim.entities.resources[quiet_entity_id].current_amount = 0.0
+
+	# Crowded: three other pawns each at a modest strength 4 (sum 12, max 4).
+	# Quiet: one other pawn at a higher strength 6 (sum 6, max 6).
+	# Under a max-only penalty, Quiet would look MORE claimed (6 > 4) and lose. Summing
+	# correctly identifies Crowded as the more contested building instead.
+	sim.entities.attachments[crowded_entity_id].need_attachments[purpose_id] = {8001: 4, 8002: 4, 8003: 4}
+	sim.entities.attachments[quiet_entity_id].need_attachments[purpose_id] = {9001: 6}
+
+	var pawn_id := sim.find_pawn_by_name("NewWorker")
+	var candidates := sim.ai_system._find_work_candidates(sim, pawn_id, purpose_id)
+
+	assert_eq(
+		candidates[0], quiet_entity_id,
+		"A new worker should prefer the building with fewer total attached workers, not just a lower single strongest attachment"
 	)
 
 
