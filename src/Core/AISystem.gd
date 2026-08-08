@@ -467,6 +467,13 @@ func _find_work_candidates(sim: Simulation, pawn_id: int, purpose_need_id: int) 
 			var bdef: Dictionary = ctx["obj_def"]
 			if not bool(bdef.get("canBeWorkedAt", false)):
 				return false
+			# haulFromTerrain sources (e.g. Trees) never run dry, so there's no real
+			# "already fully stocked, back off" signal the way there is for a Farm or
+			# Market whose stock reflects genuine scarcity — and unlike those, a
+			# haulFromTerrain destination doesn't need to track its own stock at all,
+			# so it's also fine for it to have no ResourceComponent whatsoever.
+			if bdef.get("workType", "direct") == "haulFromTerrain":
+				return true
 			var res: Components.ResourceComponent = ctx["resource_comp"]
 			if res == null:
 				return false

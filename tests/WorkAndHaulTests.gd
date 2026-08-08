@@ -13,6 +13,8 @@ func run() -> void:
 	run_test("HaulFromTerrain_NoTerrain_FallsBackToWander", test_haul_from_terrain_no_terrain_falls_back)
 	run_test("HaulFromBuilding_NoSource_SpillsOverToOtherWork", test_haul_from_building_no_source_spills_over)
 	run_test("DirectWork_UsesBuildingsOwnProductionAmount", test_direct_work_uses_custom_production_amount)
+	run_test("HaulFromTerrain_StaysWorkEligible_EvenWhenStockIsNearlyFull", test_haul_from_terrain_stays_eligible_when_full)
+	run_test("HaulFromTerrain_WorksWithNoResourceStorageAtAll", test_haul_from_terrain_without_resource_component)
 
 
 # workType "direct": a pawn works in place at a low-stock building, which should both
@@ -122,6 +124,75 @@ func test_haul_from_terrain() -> void:
 
 	assert_gt(sim.entities.resources[dest_entity_id].current_amount, 10.0, "Destination stock should increase after harvesting delivery")
 	assert_gt(sim.get_need_value(pawn_id, purpose_id), 50.0, "Purpose should increase after completing the harvest")
+
+
+# haulFromTerrain sources (e.g. Trees) never run dry, unlike a haulFromBuilding source that
+# can genuinely be depleted. A haulFromTerrain destination building must stay work-eligible
+# even once its own stock is nearly full — otherwise it fills up once, permanently drops out
+# of every future candidate list, and silently stops offering work for the rest of the game
+# (this is exactly what happened to the real LumberMill building). haulFromBuilding should
+# still respect the stock-based eligibility gate, since its supply is genuinely finite.
+func test_haul_from_terrain_stays_eligible_when_full() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(9, 9)
+	var purpose_id := builder.define_need("Purpose", 0.01)
+	builder.define_terrain("Floor", true, "flat")
+	var trees_id := builder.define_terrain("Trees", true)
+	var sawmill_id := builder.define_building(
+		"Sawmill", purpose_id, 40.0, 20, 0.0, 0, [], 1, true, "wood", 100.0,
+		"haulFromTerrain", "", "Trees"
+	)
+	var warehouse_id := builder.define_building(
+		"Warehouse", purpose_id, 40.0, 20, 0.0, 0, [], 1, true, "stone", 100.0,
+		"haulFromBuilding", "stone"
+	)
+	builder.add_building(sawmill_id, 4, 4)
+	builder.add_building(warehouse_id, 4, 6)
+	builder.add_pawn("Worker", 4, 5, {purpose_id: 50.0})
+	var sim = builder.build()
+
+	var sawmill_entity_id := _get_building_by_def_id(sim, sawmill_id)
+	var warehouse_entity_id := _get_building_by_def_id(sim, warehouse_id)
+	sim.entities.resources[sawmill_entity_id].current_amount = 95.0
+	sim.entities.resources[warehouse_entity_id].current_amount = 95.0
+
+	var pawn_id := sim.find_pawn_by_name("Worker")
+	var candidates: Array = sim.ai_system._find_work_candidates(sim, pawn_id, purpose_id)
+
+	assert_true(candidates.has(sawmill_entity_id), "A nearly-full haulFromTerrain building should still be a work candidate")
+	assert_false(candidates.has(warehouse_entity_id), "A nearly-full haulFromBuilding destination should NOT be a work candidate")
+
+
+# The real LumberMill has no resourceType at all now (the stock display was purely vestigial —
+# nothing ever consumed it) — a haulFromTerrain building must work end-to-end with no
+# ResourceComponent whatsoever, not just tolerate a full one.
+func test_haul_from_terrain_without_resource_component() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(9, 9)
+	var purpose_id := builder.define_need("Purpose", 0.01)
+	builder.define_terrain("Floor", true, "flat")
+	var trees_id := builder.define_terrain("Trees", true)
+	# No resource_type passed -> no ResourceComponent gets created for this building.
+	var mill_id := builder.define_building(
+		"Mill", purpose_id, 40.0, 20, 0.0, 0, [], 1, true, "", 100.0,
+		"haulFromTerrain", "", "Trees"
+	)
+	builder.add_building(mill_id, 4, 4)
+	builder.add_pawn("Woodcutter", 4, 5, {purpose_id: 50.0})
+	var sim = builder.build()
+
+	sim.paint_terrain(Vector2i(6, 4), trees_id)
+
+	var mill_entity_id := _get_building_by_def_id(sim, mill_id)
+	assert_true(sim.entities.resources.get(mill_entity_id) == null, "Setup should have no ResourceComponent for this building")
+
+	var pawn_id := sim.find_pawn_by_name("Woodcutter")
+	var candidates: Array = sim.ai_system._find_work_candidates(sim, pawn_id, purpose_id)
+	assert_true(candidates.has(mill_entity_id), "A haulFromTerrain building with no ResourceComponent should still be a work candidate")
+
+	sim.run_ticks(2200)  # PICK_UP duration is a fixed 1500 ticks (see AISystem._queue_haul_from_terrain)
+
+	assert_gt(sim.get_need_value(pawn_id, purpose_id), 50.0, "Purpose should increase after completing the harvest, even with nowhere to store the result")
 
 
 # When a haulFromBuilding destination can't find any source building (all matching sources

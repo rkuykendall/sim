@@ -172,15 +172,22 @@ static func _serialize_entities(sim: Simulation) -> Array:
 			e["y"] = pos.coord.y
 
 		var bc: Components.BuildingComponent = em.buildings.get(building_id)
+		var bdef: Dictionary = {}
 		if bc != null:
 			# Save name (stable) + id (backward compat)
-			var bdef: Dictionary = sim.content.buildings.get(bc.building_def_id, {})
+			bdef = sim.content.buildings.get(bc.building_def_id, {})
 			e["building_def_name"] = bdef.get("name", "")
 			e["building_def_id"]   = bc.building_def_id
 			e["building_color_index"] = bc.color_index
 
+		# Only persist a resource block if the building's CURRENT content definition still
+		# calls for one. A stale ResourceComponent can linger in memory after a content change
+		# drops a building's resourceType (e.g. loaded from an older save) — saving is the
+		# strict side of this pair (loading stays lenient for backward compat), so writing the
+		# save back out is what lets data self-correct to match current content, rather than
+		# propagating vestigial fields forward indefinitely.
 		var res: Components.ResourceComponent = em.resources.get(building_id)
-		if res != null:
+		if res != null and not String(bdef.get("resourceType", "")).is_empty():
 			e["resource"] = {
 				"resource_type":   res.resource_type,
 				"current_amount":  res.current_amount,

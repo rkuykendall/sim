@@ -18,6 +18,7 @@ func run() -> void:
 	run_test("RoundTrip_ComplexScenario", test_roundtrip_complex)
 	run_test("RoundTrip_WithResources", test_roundtrip_resources)
 	run_test("RoundTrip_RestoredSimulationCanContinue", test_roundtrip_can_continue)
+	run_test("SaveData_DropsStaleResourceComponent_WhenContentNoLongerDeclaresOne", test_serialize_drops_stale_resource)
 
 
 func test_serialize_empty() -> void:
@@ -270,6 +271,37 @@ func test_roundtrip_resources() -> void:
 	assert_not_null(rc, "Resource component should be restored")
 	assert_eq(rc.resource_type, "food", "Resource type should be 'food'")
 	assert_approx(rc.max_amount, 100.0, 0.1, "Max resource amount should be 100")
+
+
+# Loading is deliberately lenient (see SaveService.from_dict's "legacy save compat" branch),
+# but saving is where stale data should get corrected: if a building's ResourceComponent is
+# still sitting in memory (e.g. carried over from an older save, from before a content change
+# dropped that building's resourceType) but the CURRENT content definition no longer declares
+# one, saving must not propagate it forward — otherwise vestigial fields never go away.
+func test_serialize_drops_stale_resource() -> void:
+	var builder = _Builder.new()
+	builder.define_terrain("flat", true, "flat", false, true)
+	# No resource_type passed -> content declares no resourceType for this building.
+	var mill_id := builder.define_building(
+		"Mill", -1, 0.0, 100, 0.0, 0, [], 1, true, ""
+	)
+	builder.add_building(mill_id, 2, 2)
+	var sim = builder.build()
+
+	var building_id = sim.entities.all_buildings()[0]
+	var stale_rc := Components.ResourceComponent.new()
+	stale_rc.resource_type = "lumber"
+	stale_rc.current_amount = 100.0
+	stale_rc.max_amount = 100.0
+	sim.entities.resources[building_id] = stale_rc
+
+	var data = _SaveService.to_dict(sim, "test-save")
+	var building_entry: Dictionary = {}
+	for e in data["entities"]:
+		if int(e.get("id", -1)) == building_id:
+			building_entry = e
+
+	assert_false(building_entry.has("resource"), "A stale resource component should not be persisted once content no longer declares a resourceType for this building")
 
 
 func test_roundtrip_can_continue() -> void:
