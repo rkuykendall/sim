@@ -2,6 +2,12 @@ class_name AISystem
 
 const NEED_THRESHOLD: float = 90.0
 
+# How long a pawn with no valid action (no reachable building, no walkable wander candidate)
+# waits before retrying — without this, AISystem retries the full decision (building search +
+# wander candidate search) on that pawn every single tick, forever, since an empty queue never
+# trips the "already has something to do" skip.
+const STUCK_RETRY_DELAY_TICKS: int = 30
+
 # Cached per-tile diversity scores (see _compute_diversity_map). Recomputing this over the
 # full world grid is expensive, so it's cached here and only rebuilt when the world's terrain
 # actually changes — callers must invoke mark_world_dirty() after painting/clearing tiles.
@@ -24,7 +30,6 @@ func tick(sim: Simulation) -> void:
 		if need_comp == null:
 			continue
 
-		# Skip pawns that already have something to do
 		if action_comp.current_action != null or action_comp.action_queue.size() > 0:
 			continue
 
@@ -40,28 +45,33 @@ func _decide_next_action(
 	var urgent_needs := _calculate_urgent_needs(sim, need_comp)
 	var purpose_need_id: int = sim.content.get_need_id("Purpose")
 
-	var target_building: int = -1
-	var is_work_action: bool = false
-
 	for pair in urgent_needs:
 		var need_id: int = pair[0]
 		if need_id == purpose_need_id:
-			target_building = _find_building_to_work_at(sim, pawn_id)
-			if target_building != -1:
-				is_work_action = true
-				break
+			if _try_queue_work(sim, pawn_id, action_comp, purpose_need_id):
+				return
 		else:
-			target_building = _find_building_for_need(sim, pawn_id, need_id)
+			var target_building: int = _find_building_for_need(sim, pawn_id, need_id)
 			if target_building != -1:
-				break
+				_queue_use_building(sim, action_comp, target_building)
+				return
 
-	if target_building != -1:
-		if is_work_action:
-			_queue_work_at_building(sim, pawn_id, action_comp, target_building, purpose_need_id)
-		else:
-			_queue_use_building(sim, action_comp, target_building)
-	else:
-		_wander_randomly(sim, pawn_id, action_comp)
+	_wander_randomly(sim, pawn_id, action_comp)
+
+
+# Tries each reachable work candidate, highest-scoring first, until one actually yields
+# queueable work — a candidate can pass the urgency/attachment scoring and still fail to
+# provide work (e.g. a haul job with no source currently in stock).
+func _try_queue_work(
+	sim: Simulation,
+	pawn_id: int,
+	action_comp: Components.ActionComponent,
+	purpose_need_id: int
+) -> bool:
+	for candidate_id in _find_work_candidates(sim, pawn_id):
+		if _queue_work_at_building(sim, pawn_id, action_comp, candidate_id, purpose_need_id):
+			return true
+	return false
 
 
 # --- Need urgency ----------------------------------------------------------
@@ -104,7 +114,7 @@ func _queue_work_at_building(
 	action_comp: Components.ActionComponent,
 	target_id: int,
 	purpose_need_id: int
-) -> void:
+) -> bool:
 	var building_comp: Components.BuildingComponent = sim.entities.buildings[target_id]
 	var building_def: Dictionary = sim.content.buildings[building_comp.building_def_id]
 	var work_type: String = building_def.get("workType", "direct")
@@ -112,10 +122,12 @@ func _queue_work_at_building(
 	match work_type:
 		"direct":
 			_queue_direct_work(sim, action_comp, target_id, building_def, purpose_need_id)
+			return true
 		"haulFromBuilding":
-			_queue_haul_from_building(sim, pawn_id, action_comp, target_id, building_def, purpose_need_id)
+			return _queue_haul_from_building(sim, pawn_id, action_comp, target_id, building_def, purpose_need_id)
 		"haulFromTerrain":
-			_queue_haul_from_terrain(sim, action_comp, target_id, building_def, purpose_need_id)
+			return _queue_haul_from_terrain(sim, action_comp, target_id, building_def, purpose_need_id)
+	return false
 
 
 func _queue_direct_work(
@@ -143,11 +155,11 @@ func _queue_haul_from_building(
 	dest_id: int,
 	dest_def: Dictionary,
 	purpose_need_id: int
-) -> void:
+) -> bool:
 	var resource_type: String = dest_def.get("haulSourceResourceType", "")
 	var source_id: int = _find_source_building(sim, pawn_id, resource_type, dest_id)
 	if source_id == -1:
-		return  # No source — fall back to wandering
+		return false
 
 	var source_comp: Components.BuildingComponent = sim.entities.buildings[source_id]
 	var source_def: Dictionary = sim.content.buildings[source_comp.building_def_id]
@@ -174,6 +186,7 @@ func _queue_haul_from_building(
 	drop_off.need_satisfaction_amount = 40.0
 	drop_off.display_name = "Delivering to %s" % dest_def["name"]
 	action_comp.action_queue.push_back(drop_off)
+	return true
 
 
 func _queue_haul_from_terrain(
@@ -182,11 +195,11 @@ func _queue_haul_from_terrain(
 	dest_id: int,
 	dest_def: Dictionary,
 	purpose_need_id: int
-) -> void:
+) -> bool:
 	var terrain_def_id: int = int(dest_def.get("haulSourceTerrainId", -1))
 	var terrain_coord: Vector2i = _find_nearest_terrain(sim, dest_id, terrain_def_id)
 	if terrain_coord == Vector2i(-1, -1):
-		return  # No terrain — fall back to wandering
+		return false
 
 	var resource_type: String = dest_def.get("resourceType", "")
 
@@ -211,6 +224,7 @@ func _queue_haul_from_terrain(
 	drop_off.need_satisfaction_amount = 40.0
 	drop_off.display_name = "Delivering to %s" % dest_def["name"]
 	action_comp.action_queue.push_back(drop_off)
+	return true
 
 
 # --- Wandering -------------------------------------------------------------
@@ -233,8 +247,8 @@ func _wander_randomly(sim: Simulation, pawn_id: int, action_comp: Components.Act
 		Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1),
 	]
 	# Cap diversity for nearby tiles to avoid pawns getting stuck near low-variety areas.
-	# Tracked separately (not written into diversity_map) since that array is now a shared
-	# cache reused across every pawn's decision, not a fresh copy per call.
+	# Tracked separately rather than written into diversity_map, since that's a shared cache
+	# reused across every pawn's decision — mutating it here would corrupt it for everyone else.
 	var capped_nearby: Dictionary = {}
 	for d in dirs:
 		for dist in range(1, 4):
@@ -257,6 +271,7 @@ func _wander_randomly(sim: Simulation, pawn_id: int, action_comp: Components.Act
 		candidates.append({ "coord": target, "diversity": diversity })
 
 	if candidates.is_empty():
+		_queue_stuck_idle(action_comp)
 		return
 
 	# Sort by diversity descending (higher diversity = more interesting area)
@@ -297,6 +312,17 @@ func _wander_randomly(sim: Simulation, pawn_id: int, action_comp: Components.Act
 		idle.has_expression = true
 		idle.expression = expr_result[0] as Definitions.ExpressionType
 		idle.expression_icon_def_id = expr_result[1]
+	action_comp.action_queue.push_back(idle)
+
+
+# Queued when a pawn has no walkable wander candidate anywhere (fully boxed in) — see
+# STUCK_RETRY_DELAY_TICKS.
+func _queue_stuck_idle(action_comp: Components.ActionComponent) -> void:
+	var idle := Definitions.ActionDef.new()
+	idle.type = Definitions.ActionType.IDLE
+	idle.animation = Definitions.AnimationType.IDLE
+	idle.duration_ticks = STUCK_RETRY_DELAY_TICKS
+	idle.display_name = "Stuck"
 	action_comp.action_queue.push_back(idle)
 
 
@@ -426,8 +452,10 @@ func _find_building_for_need(sim: Simulation, pawn_id: int, need_id: int) -> int
 	)
 
 
-func _find_building_to_work_at(sim: Simulation, pawn_id: int) -> int:
-	return _find_best_reachable_building(
+## All reachable, work-eligible buildings, best-scoring first (see _try_queue_work — callers
+## try these in order since the top pick can still fail to yield actual work).
+func _find_work_candidates(sim: Simulation, pawn_id: int) -> Array[int]:
+	return _gather_reachable_candidates(
 		sim,
 		pawn_id,
 		func(ctx: Dictionary) -> bool:
@@ -507,18 +535,19 @@ func _has_adjacent_walkable(world: World, coord: Vector2i) -> bool:
 	return false
 
 
-# Generic building search with filter and scorer callables.
+# Generic building search with filter and scorer callables — returns every matching, reachable
+# building, best-scoring first.
 # ctx dict keys: obj_id, obj_comp, obj_def, obj_pos (Vector2i), distance,
 #                resource_comp, attachment_comp, other_pawns_targeting
-func _find_best_reachable_building(
+func _gather_reachable_candidates(
 	sim: Simulation,
 	pawn_id: int,
 	filter: Callable,
 	scorer: Callable
-) -> int:
+) -> Array[int]:
 	var pawn_pos: Components.PositionComponent = sim.entities.positions.get(pawn_id)
 	if pawn_pos == null:
-		return -1
+		return []
 
 	var candidates: Array = []
 
@@ -561,11 +590,22 @@ func _find_best_reachable_building(
 
 	candidates.sort_custom(func(a, b): return a["score"] > b["score"])
 
+	var reachable: Array[int] = []
 	for candidate in candidates:
 		if _is_building_reachable(sim, pawn_id, candidate["id"]):
-			return candidate["id"]
+			reachable.append(candidate["id"])
+	return reachable
 
-	return -1
+
+# Convenience wrapper for callers that only want the single best match.
+func _find_best_reachable_building(
+	sim: Simulation,
+	pawn_id: int,
+	filter: Callable,
+	scorer: Callable
+) -> int:
+	var candidates := _gather_reachable_candidates(sim, pawn_id, filter, scorer)
+	return candidates[0] if not candidates.is_empty() else -1
 
 
 func _is_building_reachable(sim: Simulation, pawn_id: int, obj_id: int) -> bool:

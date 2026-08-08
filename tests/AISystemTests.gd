@@ -9,12 +9,12 @@ func run() -> void:
 	run_test("DiversityMap_RebuildsAfterPaintTerrain", test_diversity_map_rebuilds_after_paint)
 	run_test("DiversityMap_RebuildsAfterDeleteAtTile", test_diversity_map_rebuilds_after_delete)
 	run_test("DiversityMap_ReusesSameArrayWhenWorldUnchanged", test_diversity_map_cached_reference_reused)
+	run_test("TrappedPawn_GetsFallbackAction_InsteadOfEmptyQueue", test_trapped_pawn_gets_fallback_action)
+	run_test("TrappedPawn_DoesNotRedecideEveryTick", test_trapped_pawn_does_not_redecide_every_tick)
 
 
-# A lone pawn with no needs wanders continuously. The per-decision "cap nearby diversity"
-# logic used to mutate the shared cached array in place — this guards against that bug
-# resurfacing: the cache must be bit-for-bit identical before and after many wander cycles
-# that occur with no actual terrain change in between.
+# A lone pawn with no needs wanders continuously; the cached diversity map must stay
+# bit-for-bit identical across many wander cycles when the world itself hasn't changed.
 func test_diversity_map_stable_across_wandering() -> void:
 	var builder := _Builder.new()
 	builder.with_world_bounds(8, 8)
@@ -81,3 +81,65 @@ func test_diversity_map_cached_reference_reused() -> void:
 	var second: Array = sim.ai_system._get_diversity_map(sim.world)
 	assert_true(first == second, "Repeated reads with no world change should be equal")
 	assert_true(is_same(first, second), "Repeated reads with no world change should reuse the same Array instance")
+
+
+# A pawn fully boxed in by walls (no reachable buildings, no walkable wander candidate
+# anywhere nearby or in the random global sample) must still get queued *something* —
+# a fallback idle/wait — rather than being left with an empty queue.
+func test_trapped_pawn_gets_fallback_action() -> void:
+	var sim := _build_trapped_pawn_scenario()
+	var pawn_id := sim.find_pawn_by_name("Trapped")
+	var action_comp = sim.entities.actions.get(pawn_id)
+
+	sim.tick()  # AISystem's first decision attempt for this pawn
+
+	assert_true(
+		action_comp.current_action != null or not action_comp.action_queue.is_empty(),
+		"A pawn with no valid action should get a fallback action, not an empty queue"
+	)
+
+
+# An empty queue never trips AISystem's "already has something to do" skip, so without a
+# persistent fallback it would re-run the full decision every tick. Verified via
+# action_start_tick rather than wall-clock timing, since a synthetic scenario is too cheap
+# for timing to be a reliable, non-flaky signal.
+func test_trapped_pawn_does_not_redecide_every_tick() -> void:
+	var sim := _build_trapped_pawn_scenario()
+	var pawn_id := sim.find_pawn_by_name("Trapped")
+	var action_comp = sim.entities.actions.get(pawn_id)
+
+	sim.tick()  # AISystem queues the fallback idle (current_action is still null this tick —
+	            # ActionSystem, which pops the queue into current_action, runs before AISystem)
+	sim.tick()  # ActionSystem pops it into current_action and sets action_start_tick
+
+	assert_not_null(action_comp.current_action, "Fallback idle should be the active action by now")
+	var action_ref = action_comp.current_action
+	var start_tick_ref: int = action_comp.action_start_tick
+
+	sim.run_ticks(5)  # well within the fallback's retry-delay duration
+
+	assert_eq(
+		action_comp.action_start_tick, start_tick_ref,
+		"A fresh decision was made on a later tick — the fallback should persist instead of retrying every tick"
+	)
+	assert_true(
+		is_same(action_comp.current_action, action_ref),
+		"current_action was replaced by a new decision instead of the fallback persisting"
+	)
+
+
+func _build_trapped_pawn_scenario() -> Simulation:
+	var builder := _Builder.new()
+	builder.with_world_bounds(4, 4)
+	var wall_id := builder.define_terrain("Wall", false)
+	builder.add_pawn("Trapped", 2, 2, {})
+	var sim := builder.build()
+
+	# Wall off every tile except the pawn's own tile — no wander candidate, random or nearby,
+	# can ever be walkable.
+	for x in 5:
+		for y in 5:
+			if Vector2i(x, y) != Vector2i(2, 2):
+				sim.paint_terrain(Vector2i(x, y), wall_id)
+
+	return sim

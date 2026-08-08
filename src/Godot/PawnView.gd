@@ -65,15 +65,14 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	# Interpolate over the exact duration of one tile-step (set via set_move_duration),
-	# instead of an asymptotic ease, so the sprite arrives exactly when the sim does.
+	# Interpolates over the exact duration of one tile-step (set via set_move_duration) so the
+	# sprite arrives exactly when the sim does.
 	if position != _target_position:
 		_move_elapsed += delta
 		var t: float = 1.0 if _move_duration <= 0.0 else clampf(_move_elapsed / _move_duration, 0.0, 1.0)
 		position = _move_start.lerp(_target_position, t)
 
-		# Flip sprite based on the step's overall direction (stable for the whole step,
-		# rather than recomputed from the shrinking per-frame position delta).
+		# Flip based on the step's overall direction so it stays stable for the whole step.
 		if _sprite.sprite_frames != null:
 			var dx: float = _target_position.x - _move_start.x
 			if dx < -0.1:
