@@ -217,14 +217,18 @@ func set_current_animation(animation: Definitions.AnimationType) -> void:
 
 
 ## Shows an overhead icon for what the pawn's inventory currently holds. Only resource types
-## with a matching sprite get an icon (just "wood" for now) — others are silently hidden
-## rather than looked up, since most resource types (e.g. "food") have no carry icon yet.
+## listed here have an icon — every other haulSourceResourceType in buildings.json (add one as
+## its sprite is ready) is silently hidden rather than looked up, so an unmapped type never
+## spams a missing-texture warning every frame.
+const CARRY_ICON_RESOURCE_TYPES: Array[String] = ["wood", "food"]
+
+
 func set_carrying(resource_type: String) -> void:
 	if resource_type == _carrying_resource_type:
 		return
 	_carrying_resource_type = resource_type
-	if resource_type == "wood":
-		_item_sprite.texture = SpriteResourceManager.get_texture("wood")
+	if resource_type in CARRY_ICON_RESOURCE_TYPES:
+		_item_sprite.texture = SpriteResourceManager.get_texture(resource_type)
 		_item_sprite.visible = true
 	else:
 		_item_sprite.visible = false
