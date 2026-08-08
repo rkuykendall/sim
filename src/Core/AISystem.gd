@@ -206,7 +206,10 @@ func _queue_haul_from_terrain(
 	if terrain_coord == Vector2i(-1, -1):
 		return false
 
-	var resource_type: String = dest_def.get("resourceType", "")
+	# Distinct from the destination's own storage "resourceType" (which LumberMill no longer
+	# has — see buildings.json) — this only labels what the pawn is carrying, independent of
+	# whether the destination tracks stock of it at all.
+	var resource_type: String = dest_def.get("haulSourceResourceType", "")
 
 	var pick_up := Definitions.ActionDef.new()
 	pick_up.type = Definitions.ActionType.PICK_UP

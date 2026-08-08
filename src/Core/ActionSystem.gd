@@ -404,16 +404,17 @@ func _execute_drop_off(sim: Simulation, pawn_id: int, action_comp: Components.Ac
 	if sim.time.tick - action_comp.action_start_tick < action.duration_ticks:
 		return
 
-	# Transfer inventory to building
-	var transfer_amount: float = 0.0
+	# Transfer inventory to building, if it tracks stock of this resource at all (e.g.
+	# LumberMill doesn't — see buildings.json).
 	var dest_resource: Components.ResourceComponent = sim.entities.resources.get(target_id)
 	if dest_resource != null and inventory.resource_type == dest_resource.resource_type and inventory.amount > 0.0:
-		transfer_amount = minf(inventory.amount, dest_resource.max_amount - dest_resource.current_amount)
+		var transfer_amount: float = minf(inventory.amount, dest_resource.max_amount - dest_resource.current_amount)
 		dest_resource.current_amount += transfer_amount
-		inventory.amount -= transfer_amount
-		if inventory.amount <= 0.0:
-			inventory.resource_type = ""
-			inventory.amount = 0.0
+
+	# The delivery itself is complete regardless — the pawn's hands are empty now whether or
+	# not the destination could store (all of) what they were carrying.
+	inventory.resource_type = ""
+	inventory.amount = 0.0
 
 	# Satisfy Purpose need
 	if action.satisfies_need_id != -1:

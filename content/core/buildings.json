@@ -119,6 +119,7 @@
     "tileSize": 2,
     "workType": "haulFromTerrain",
     "haulSourceTerrainKey": "Trees",
+    "haulSourceResourceType": "wood",
     "canSellToConsumers": false,
     "capacity": 3
   }

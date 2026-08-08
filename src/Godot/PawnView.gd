@@ -12,7 +12,19 @@ const CHAR_ANIMS: Dictionary = {
 	"exertion": [3, 1, 1.0, false],
 }
 
+# Overhead icons (same spot as the expression bubble) — axe swings during the AXE animation
+# (tree harvesting), item icon shows whenever the pawn's inventory is carrying something with
+# a matching sprite. Scaled to match the character/tile/building convention (SPRITE_SCALE),
+# not the (smaller, unscaled) bubble convention.
+const OVERHEAD_ICON_OFFSET: Vector2 = Vector2(0, -40)
+const AXE_SWING_ANGLE: float = 0.785398  # 45 degrees, each direction (90 total sweep)
+const AXE_SWING_DURATION: float = 0.5    # seconds for the downswing itself (or upswing)
+
 var _sprite: AnimatedSprite2D
+var _axe_sprite: Sprite2D
+var _axe_swing_timer: float = 0.0
+var _item_sprite: Sprite2D
+var _carrying_resource_type: String = ""
 var _bubble_node: Node2D
 var _bubble_wrapper: Sprite2D
 var _bubble_icon: Sprite2D
@@ -31,6 +43,22 @@ func _ready() -> void:
 	_sprite = AnimatedSprite2D.new()
 	_sprite.name = "Sprite"
 	add_child(_sprite)
+
+	_axe_sprite = Sprite2D.new()
+	_axe_sprite.name = "Axe"
+	_axe_sprite.texture = SpriteResourceManager.get_texture("axe")
+	_axe_sprite.position = OVERHEAD_ICON_OFFSET
+	_axe_sprite.scale = Vector2(RenderingConstants.SPRITE_SCALE, RenderingConstants.SPRITE_SCALE)
+	_axe_sprite.rotation = -AXE_SWING_ANGLE
+	_axe_sprite.visible = false
+	add_child(_axe_sprite)
+
+	_item_sprite = Sprite2D.new()
+	_item_sprite.name = "CarriedItem"
+	_item_sprite.position = OVERHEAD_ICON_OFFSET
+	_item_sprite.scale = Vector2(RenderingConstants.SPRITE_SCALE, RenderingConstants.SPRITE_SCALE)
+	_item_sprite.visible = false
+	add_child(_item_sprite)
 
 	_bubble_node = Node2D.new()
 	_bubble_node.name = "BubbleNode"
@@ -84,6 +112,27 @@ func _process(delta: float) -> void:
 	if _bubble_node.visible:
 		_bubble_time += delta * _bubble_float_speed
 		_bubble_node.position = Vector2(0, -40.0 + sin(_bubble_time) * _bubble_float_amount)
+
+	# Axe swing — a full back-and-forth: eased downswing from raised to struck, then an
+	# equally-animated upswing back to raised. The character's own body pose follows which
+	# leg we're on — "exertion" for the strike, "idle" for the raise. flip_h mirrors the axe's
+	# texture but NOT the screen-space direction its rotation turns — the same rotation sign
+	# reads as "swinging forward" for a right-facing pawn and "swinging backward" for a
+	# mirrored, left-facing one, so the sweep direction has to invert with facing too.
+	if _axe_sprite.visible:
+		_axe_sprite.flip_h = _sprite.flip_h  # face the same way as the pawn's body
+		var facing_sign: float = -1.0 if _sprite.flip_h else 1.0
+		_axe_swing_timer = fmod(_axe_swing_timer + delta, AXE_SWING_DURATION * 2.0)
+		var is_downswing: bool = _axe_swing_timer < AXE_SWING_DURATION
+		if is_downswing:
+			_axe_sprite.rotation = facing_sign * lerpf(-AXE_SWING_ANGLE, AXE_SWING_ANGLE, _axe_swing_timer / AXE_SWING_DURATION)
+		else:
+			var up_t: float = (_axe_swing_timer - AXE_SWING_DURATION) / AXE_SWING_DURATION
+			_axe_sprite.rotation = facing_sign * lerpf(AXE_SWING_ANGLE, -AXE_SWING_ANGLE, up_t)
+
+		var body_anim: String = "exertion" if is_downswing else "idle"
+		if _sprite.animation != body_anim:
+			_sprite.play(body_anim)
 
 
 func initialize_with_sprite(sheet_tex: Texture2D) -> void:
@@ -147,15 +196,38 @@ func set_current_animation(animation: Definitions.AnimationType) -> void:
 	if _sprite.sprite_frames == null:
 		return
 
+	var show_axe: bool = animation == Definitions.AnimationType.AXE
+	if show_axe and not _axe_sprite.visible:
+		# Restart from the raised position instead of popping in mid-arc.
+		_axe_swing_timer = 0.0
+		_axe_sprite.rotation = (-1.0 if _sprite.flip_h else 1.0) * -AXE_SWING_ANGLE
+	_axe_sprite.visible = show_axe
+
+	if show_axe:
+		return  # body pose is driven by the swing phase in _process() instead
+
 	var anim_name: String
 	match animation:
 		Definitions.AnimationType.WALK:    anim_name = "walk"
-		Definitions.AnimationType.AXE:     anim_name = "exertion"
 		Definitions.AnimationType.PICKAXE: anim_name = "exertion"
 		_:                                 anim_name = "idle"
 
 	if _sprite.animation != anim_name:
 		_sprite.play(anim_name)
+
+
+## Shows an overhead icon for what the pawn's inventory currently holds. Only resource types
+## with a matching sprite get an icon (just "wood" for now) — others are silently hidden
+## rather than looked up, since most resource types (e.g. "food") have no carry icon yet.
+func set_carrying(resource_type: String) -> void:
+	if resource_type == _carrying_resource_type:
+		return
+	_carrying_resource_type = resource_type
+	if resource_type == "wood":
+		_item_sprite.texture = SpriteResourceManager.get_texture("wood")
+		_item_sprite.visible = true
+	else:
+		_item_sprite.visible = false
 
 
 func set_mood(mood: float) -> void:

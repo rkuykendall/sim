@@ -724,6 +724,7 @@ func _build_pawn_snapshots() -> Array:
 			continue
 
 		var mood_comp: Components.MoodComponent = entities.moods.get(pawn_id)
+		var inv_comp: Components.InventoryComponent = entities.inventory.get(pawn_id)
 
 		var animation: int = Definitions.AnimationType.IDLE
 		var current_action_name: String = "Idle"
@@ -734,6 +735,7 @@ func _build_pawn_snapshots() -> Array:
 		var path_coords: Array = []
 		var path_index: int = 0
 		var target_tile: Vector2i = Vector2i(-1, -1)
+		var has_building_target: bool = false
 
 		var action_comp: Components.ActionComponent = entities.actions.get(pawn_id)
 		if action_comp != null and action_comp.current_action != null:
@@ -745,6 +747,7 @@ func _build_pawn_snapshots() -> Array:
 			expression = act.expression
 			expression_icon_def_id = act.expression_icon_def_id
 			target_tile = act.target_coord
+			has_building_target = act.target_entity != -1
 			path_index = action_comp.path_index
 			for coord in action_comp.current_path:
 				path_coords.append({"x": coord.x, "y": coord.y})
@@ -754,9 +757,11 @@ func _build_pawn_snapshots() -> Array:
 			"x": pos.coord.x,
 			"y": pos.coord.y,
 			"mood": mood_comp.mood if mood_comp != null else 0.0,
+			"carrying_resource_type": inv_comp.resource_type if inv_comp != null else "",
 			"animation": animation,
 			"current_action": current_action_name,
 			"current_action_type": current_action_type,
+			"has_building_target": has_building_target,
 			"has_expression": has_expression,
 			"expression": expression,
 			"expression_icon_def_id": expression_icon_def_id,

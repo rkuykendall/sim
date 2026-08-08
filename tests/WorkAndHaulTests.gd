@@ -15,6 +15,9 @@ func run() -> void:
 	run_test("DirectWork_UsesBuildingsOwnProductionAmount", test_direct_work_uses_custom_production_amount)
 	run_test("HaulFromTerrain_StaysWorkEligible_EvenWhenStockIsNearlyFull", test_haul_from_terrain_stays_eligible_when_full)
 	run_test("HaulFromTerrain_WorksWithNoResourceStorageAtAll", test_haul_from_terrain_without_resource_component)
+	run_test("Snapshot_HaulFromTerrainPickup_HasNoBuildingTarget", test_snapshot_haul_from_terrain_pickup_has_no_building_target)
+	run_test("Snapshot_HaulFromBuildingPickup_HasBuildingTarget", test_snapshot_haul_from_building_pickup_has_building_target)
+	run_test("HaulFromTerrain_ClearsInventory_EvenWhenDestinationHasNoStorage", test_haul_from_terrain_clears_inventory_without_storage)
 
 
 # workType "direct": a pawn works in place at a low-stock building, which should both
@@ -107,7 +110,7 @@ func test_haul_from_terrain() -> void:
 	var trees_id := builder.define_terrain("Trees", true)
 	var dest_id := builder.define_building(
 		"Sawmill", purpose_id, 40.0, 20, 0.0, 0, [], 1, true, "wood", 100.0,
-		"haulFromTerrain", "", "Trees"
+		"haulFromTerrain", "wood", "Trees"
 	)
 	builder.add_building(dest_id, 4, 4)
 	builder.add_pawn("Woodcutter", 4, 5, {purpose_id: 50.0})
@@ -193,6 +196,38 @@ func test_haul_from_terrain_without_resource_component() -> void:
 	sim.run_ticks(2200)  # PICK_UP duration is a fixed 1500 ticks (see AISystem._queue_haul_from_terrain)
 
 	assert_gt(sim.get_need_value(pawn_id, purpose_id), 50.0, "Purpose should increase after completing the harvest, even with nowhere to store the result")
+
+
+# The real LumberMill has no ResourceComponent to receive deliveries into (see the previous
+# test), but pawns still carry a resource_type/amount in their own InventoryComponent between
+# pickup and drop-off. Completing the delivery must always empty the pawn's hands, whether or
+# not the destination could actually store what they were carrying — otherwise the pawn (and
+# the carried-item icon in the UI, driven by this same field) stays stuck "carrying wood"
+# forever, since nothing else ever clears it.
+func test_haul_from_terrain_clears_inventory_without_storage() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(9, 9)
+	var purpose_id := builder.define_need("Purpose", 0.01)
+	builder.define_terrain("Floor", true, "flat")
+	var trees_id := builder.define_terrain("Trees", true)
+	# No resource_type (storage) but a haul_source_resource_type (carry label) — matches the
+	# real LumberMill's shape.
+	var mill_id := builder.define_building(
+		"Mill", purpose_id, 40.0, 20, 0.0, 0, [], 1, true, "", 100.0,
+		"haulFromTerrain", "wood", "Trees"
+	)
+	builder.add_building(mill_id, 4, 4)
+	builder.add_pawn("Woodcutter", 4, 5, {purpose_id: 50.0})
+	var sim = builder.build()
+
+	sim.paint_terrain(Vector2i(6, 4), trees_id)
+	var pawn_id := sim.find_pawn_by_name("Woodcutter")
+
+	sim.run_ticks(2200)  # long enough for pickup + delivery to fully complete (see sibling test)
+
+	var inv: Components.InventoryComponent = sim.entities.inventory.get(pawn_id)
+	assert_eq(inv.resource_type, "", "Pawn's inventory should be empty after completing delivery, even with nowhere to store the wood")
+	assert_eq(inv.amount, 0.0, "Pawn's carried amount should be zero after completing delivery")
 
 
 # When a haulFromBuilding destination can't find any source building (all matching sources
@@ -292,3 +327,81 @@ func test_haul_from_building_no_source_spills_over() -> void:
 	assert_eq(action_comp.action_queue.size(), 1, "Pawn should have queued exactly one action")
 	assert_eq(action_comp.action_queue[0].type, _Definitions.ActionType.WORK, "Queued action should be real work, not a wander")
 	assert_eq(action_comp.action_queue[0].target_entity, farm_entity_id, "Pawn should spill over to the Farm since Market can't actually be worked")
+
+
+# GameRoot hides a pawn's sprite while PICK_UP targets a building (they're inside it), but a
+# PICK_UP harvesting from open terrain (e.g. chopping trees) has no building at all — the
+# render snapshot must expose enough to tell the two apart, or terrain harvesting incorrectly
+# hides the pawn the whole time they're chopping.
+func test_snapshot_haul_from_terrain_pickup_has_no_building_target() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(9, 9)
+	var purpose_id := builder.define_need("Purpose", 0.01)
+	builder.define_terrain("Floor", true, "flat")
+	var trees_id := builder.define_terrain("Trees", true)
+	var mill_id := builder.define_building(
+		"Sawmill", purpose_id, 40.0, 20, 0.0, 0, [], 1, true, "", 100.0,
+		"haulFromTerrain", "", "Trees"
+	)
+	builder.add_building(mill_id, 4, 4)
+	builder.add_pawn("Woodcutter", 4, 5, {purpose_id: 50.0})
+	var sim = builder.build()
+	sim.paint_terrain(Vector2i(6, 4), trees_id)
+
+	var pawn_id := sim.find_pawn_by_name("Woodcutter")
+	assert_true(
+		_run_until_action_type(sim, pawn_id, _Definitions.ActionType.PICK_UP, 500),
+		"Setup should reach the harvesting phase within 500 ticks"
+	)
+
+	var snapshot: Dictionary = sim.create_render_snapshot()
+	var pawn_snap: Dictionary = _find_pawn_snapshot(snapshot, pawn_id)
+	assert_eq(pawn_snap.get("current_action_type"), _Definitions.ActionType.PICK_UP, "Should be captured mid-harvest")
+	assert_false(pawn_snap.get("has_building_target", true), "Harvesting from terrain should have no building target")
+
+
+func test_snapshot_haul_from_building_pickup_has_building_target() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(8, 8)
+	var purpose_id := builder.define_need("Purpose", 0.01)
+	var source_id := builder.define_building(
+		"LumberMill", -1, 50.0, 20, 0.0, 0, [], 1, false, "wood", 100.0
+	)
+	var dest_id := builder.define_building(
+		"Tavern", purpose_id, 40.0, 20, 0.0, 0, [], 1, true, "wood", 100.0,
+		"haulFromBuilding", "wood"
+	)
+	builder.add_building(source_id, 1, 4)
+	builder.add_building(dest_id, 6, 4)
+	builder.add_pawn("Hauler", 4, 4, {purpose_id: 50.0})
+	var sim = builder.build()
+
+	var dest_entity_id := _get_building_by_def_id(sim, dest_id)
+	sim.entities.resources[dest_entity_id].current_amount = 10.0
+	var pawn_id := sim.find_pawn_by_name("Hauler")
+
+	assert_true(
+		_run_until_action_type(sim, pawn_id, _Definitions.ActionType.PICK_UP, 500),
+		"Setup should reach the pickup phase within 500 ticks"
+	)
+
+	var snapshot: Dictionary = sim.create_render_snapshot()
+	var pawn_snap: Dictionary = _find_pawn_snapshot(snapshot, pawn_id)
+	assert_eq(pawn_snap.get("current_action_type"), _Definitions.ActionType.PICK_UP, "Should be captured mid-pickup")
+	assert_true(pawn_snap.get("has_building_target", false), "Hauling from a building should have a building target")
+
+
+func _run_until_action_type(sim, pawn_id: int, action_type: int, max_ticks: int) -> bool:
+	for i in max_ticks:
+		sim.run_ticks(1)
+		var action_comp = sim.entities.actions.get(pawn_id)
+		if action_comp != null and action_comp.current_action != null and action_comp.current_action.type == action_type:
+			return true
+	return false
+
+
+func _find_pawn_snapshot(snapshot: Dictionary, pawn_id: int) -> Dictionary:
+	for pawn_snap in snapshot.get("pawns", []):
+		if int(pawn_snap.get("id", -1)) == pawn_id:
+			return pawn_snap
+	return {}

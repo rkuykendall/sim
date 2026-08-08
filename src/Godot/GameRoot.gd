@@ -841,6 +841,7 @@ func _sync_pawns(snapshot: Dictionary) -> void:
 			node.set_move_duration(move_duration)
 			node.set_target_position(target_pos)
 			node.set_current_animation(pawn.get("animation", Definitions.AnimationType.IDLE))
+			node.set_carrying(pawn.get("carrying_resource_type", ""))
 			node.set_mood(pawn.get("mood", 0.0))
 			node.set_selected(pawn_id == _selected_pawn_id)
 			node.set_expression(
@@ -850,13 +851,14 @@ func _sync_pawns(snapshot: Dictionary) -> void:
 				_sim.content
 			)
 			var action_type: int = pawn.get("current_action_type", Definitions.ActionType.IDLE)
-			var inside: bool = action_type in [
+			# PICK_UP covers both hauling from a building (pawn is inside it) and harvesting
+			# from open terrain (e.g. chopping trees) — only the former should hide the pawn.
+			var at_building: bool = action_type in [
 				Definitions.ActionType.USE_BUILDING,
 				Definitions.ActionType.WORK,
-				Definitions.ActionType.PICK_UP,
 				Definitions.ActionType.DROP_OFF,
-			]
-			node.visible = not inside
+			] or (action_type == Definitions.ActionType.PICK_UP and pawn.get("has_building_target", false))
+			node.visible = not at_building
 
 	_ids_to_remove.clear()
 	for id in _pawn_nodes.keys():

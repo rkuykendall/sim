@@ -24,6 +24,8 @@ const _SPRITE_PATH_MAP: Dictionary = {
 	"market":             "res://sprites/buildings/market.png",
 	# Character sprites
 	"character_sheet":    "res://sprites/characters/character_sheet.png",
+	"axe":                "res://sprites/characters/axe.png",
+	"wood":               "res://sprites/characters/wood.png",
 	# Bubble sprites
 	"bubble_thought":     "res://sprites/ui/bubbles/thought_bubble.png",
 	"bubble_happy":       "res://sprites/ui/bubbles/heart_bubble.png",
