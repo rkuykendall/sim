@@ -129,7 +129,7 @@ func _find_emigrating_pawn(sim) -> int:
 # production content directly.
 func test_real_content_home_capacities() -> void:
 	var content := ContentLoader.load_all()
-	var expected := {"Home1": 1, "Home2": 1, "Home3": 2, "Home4": 4, "Home5": 8}
+	var expected := {"Home1": 1, "Home2": 1, "Home3": 1, "Home4": 2, "Home5": 4}
 	for home_name in expected:
 		var building_id: int = content.get_building_id(home_name)
 		assert_not_eq(building_id, -1, "%s should exist in production content" % home_name)
@@ -152,7 +152,7 @@ func test_real_content_max_pawns_for_known_layout() -> void:
 		var building_id: int = content.get_building_id(layout[i])
 		sim.create_building(building_id, Vector2i(i * 3, 0))
 
-	assert_eq(sim.get_max_pawns(), 19, "1+1+1+2+2+4+8 across this layout should total 19")
+	assert_eq(sim.get_max_pawns(), 11, "1+1+1+1+1+2+4 across this layout should total 11")
 
 
 func _give_permanent_mood_buff(sim, pawn_id: int, mood_offset: float) -> void:

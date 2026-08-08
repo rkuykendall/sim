@@ -84,15 +84,17 @@ class AttachmentComponent:
 		var per_pawn: Dictionary = need_attachments[need_id]
 		per_pawn[pawn_id] = mini(10, per_pawn.get(pawn_id, 0) + 1)
 
-	## Total strength across all needs, per pawn — for display/snapshot purposes only;
-	## AI scoring always reads a specific need's bucket via get_strength().
-	func total_strengths() -> Dictionary:
-		var totals: Dictionary = {}
+	## Pivots need_attachments into pawn_id -> {need_id: strength} — for display/snapshot
+	## purposes only; AI scoring always reads a specific need's bucket via get_strength().
+	func per_pawn_breakdown() -> Dictionary:
+		var breakdown: Dictionary = {}
 		for need_id in need_attachments:
 			var per_pawn: Dictionary = need_attachments[need_id]
 			for pawn_id in per_pawn:
-				totals[pawn_id] = totals.get(pawn_id, 0) + per_pawn[pawn_id]
-		return totals
+				if not breakdown.has(pawn_id):
+					breakdown[pawn_id] = {}
+				breakdown[pawn_id][need_id] = per_pawn[pawn_id]
+		return breakdown
 
 
 class InventoryComponent:

@@ -5,9 +5,8 @@ const TICK_RATE: int = 20  # Ticks per real second
 # How often to try spawning a new pawn (every 1/48th of an in-game day)
 const PAWN_SPAWN_INTERVAL: int = TimeService.TICKS_PER_DAY / 48
 
-# Attachment decay (weak ties fade over time)
+# Attachment decay (ties fade over time unless kept up by repeat visits)
 const ATTACHMENT_DECAY_INTERVAL: int = TimeService.TICKS_PER_DAY
-const ATTACHMENT_DECAY_THRESHOLD: int = 5  # Only decay attachments at or below this
 
 # How much a single point of town attachment offsets mood when picking who emigrates —
 # tuned so a handful of strong ties (e.g. 10 attachment at one building) can outweigh a
@@ -308,6 +307,16 @@ func destroy_entity(entity_id: int) -> void:
 				if world.is_in_bounds(tile_coord):
 					world.get_tile(tile_coord).building_blocks_movement = false
 
+	# A pawn's attachment strength lives on the buildings it visited, not on the pawn itself —
+	# entities.destroy() only erases the destroyed entity's own component entries, so without
+	# this an emigrated/removed pawn's entries would linger in every building it ever visited.
+	for building_id in entities.buildings:
+		var ac: Components.AttachmentComponent = entities.attachments.get(building_id)
+		if ac == null:
+			continue
+		for need_id in ac.need_attachments:
+			ac.need_attachments[need_id].erase(entity_id)
+
 	entities.destroy(entity_id)
 
 
@@ -559,13 +568,11 @@ func _perform_attachment_decay() -> void:
 			var per_pawn: Dictionary = ac.need_attachments[need_id]
 			var to_remove: Array[int] = []
 			for pawn_id in per_pawn.keys():
-				var strength: int = per_pawn[pawn_id]
-				if strength <= ATTACHMENT_DECAY_THRESHOLD:
-					var new_strength: int = strength - 1
-					if new_strength <= 0:
-						to_remove.append(pawn_id)
-					else:
-						per_pawn[pawn_id] = new_strength
+				var new_strength: int = per_pawn[pawn_id] - 1
+				if new_strength <= 0:
+					to_remove.append(pawn_id)
+				else:
+					per_pawn[pawn_id] = new_strength
 
 			for pawn_id in to_remove:
 				per_pawn.erase(pawn_id)
@@ -698,17 +705,17 @@ func create_render_snapshot() -> Dictionary:
 
 
 func _build_pawn_snapshots() -> Array:
-	# Pre-build reverse attachment map: pawn_id -> {building_id: total strength across needs}
+	# Pre-build reverse attachment map: pawn_id -> {building_id: {need_id: strength}}
 	var pawn_attachments: Dictionary = {}
 	for building_id in entities.buildings:
 		var ac: Components.AttachmentComponent = entities.attachments.get(building_id)
 		if ac == null:
 			continue
-		var totals: Dictionary = ac.total_strengths()
-		for attached_pawn_id in totals:
+		var breakdown: Dictionary = ac.per_pawn_breakdown()
+		for attached_pawn_id in breakdown:
 			if not pawn_attachments.has(attached_pawn_id):
 				pawn_attachments[attached_pawn_id] = {}
-			pawn_attachments[attached_pawn_id][building_id] = totals[attached_pawn_id]
+			pawn_attachments[attached_pawn_id][building_id] = breakdown[attached_pawn_id]
 
 	var result: Array = []
 	for pawn_id in entities.pawns:
@@ -801,7 +808,7 @@ func _build_building_snapshots() -> Array:
 		var rc: Components.ResourceComponent = entities.resources.get(building_id)
 		var ac: Components.AttachmentComponent = entities.attachments.get(building_id)
 
-		var attachments: Dictionary = ac.total_strengths() if ac != null else {}
+		var attachments: Dictionary = ac.per_pawn_breakdown() if ac != null else {}
 
 		result.append({
 			"id": building_id,

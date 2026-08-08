@@ -291,11 +291,14 @@ func _update_pawn_attachments_display(pawn: Dictionary) -> void:
 		return
 
 	for building_id in attachments.keys():
-		var strength: int = attachments[building_id]
 		var formatted_id: String = _sim.format_entity_id(building_id) if _sim != null else str(building_id)
-		var lbl := _add_label(_pawn_attachments_container, "%s: %d/10" % [formatted_id, strength], 14)
-		lbl.modulate = Color.LIME if strength >= 8 else (Color.YELLOW if strength >= 5 else Color.WHITE)
-		_pawn_attachment_labels.append(lbl)
+		var per_need: Dictionary = attachments[building_id]
+		for need_id in per_need.keys():
+			var strength: int = per_need[need_id]
+			var need_name: String = _need_name(need_id)
+			var lbl := _add_label(_pawn_attachments_container, "%s — %s: %d" % [formatted_id, need_name, strength], 14)
+			lbl.modulate = Color.LIME if strength >= 8 else (Color.YELLOW if strength >= 5 else Color.WHITE)
+			_pawn_attachment_labels.append(lbl)
 
 
 func _update_building_debug_display(building: Dictionary) -> void:
@@ -325,11 +328,21 @@ func _update_building_debug_display(building: Dictionary) -> void:
 		hdr.modulate = Color.GRAY
 		_building_debug_labels.append(hdr)
 		for pawn_id in attach.keys():
-			var strength: int = attach[pawn_id]
 			var formatted: String = _sim.format_entity_id(pawn_id) if _sim != null else str(pawn_id)
-			var lbl := _add_label(_building_debug_container, "  %s: %d/10" % [formatted, strength], 14)
-			lbl.modulate = Color.LIME if strength >= 8 else (Color.YELLOW if strength >= 5 else Color.WHITE)
-			_building_debug_labels.append(lbl)
+			var per_need: Dictionary = attach[pawn_id]
+			for need_id in per_need.keys():
+				var strength: int = per_need[need_id]
+				var need_name: String = _need_name(need_id)
+				var lbl := _add_label(_building_debug_container, "  %s — %s: %d" % [formatted, need_name, strength], 14)
+				lbl.modulate = Color.LIME if strength >= 8 else (Color.YELLOW if strength >= 5 else Color.WHITE)
+				_building_debug_labels.append(lbl)
+
+
+func _need_name(need_id: int) -> String:
+	if _content == null:
+		return str(need_id)
+	var ndef: Dictionary = _content.needs.get(need_id, {})
+	return ndef.get("name", str(need_id))
 
 
 func _add_label(parent: Control, text: String, font_size: int) -> Label:
