@@ -12,6 +12,7 @@ func run() -> void:
 	run_test("HaulFromBuilding_NoSource_FallsBackToWander", test_haul_from_building_no_source_falls_back)
 	run_test("HaulFromTerrain_NoTerrain_FallsBackToWander", test_haul_from_terrain_no_terrain_falls_back)
 	run_test("HaulFromBuilding_NoSource_SpillsOverToOtherWork", test_haul_from_building_no_source_spills_over)
+	run_test("DirectWork_UsesBuildingsOwnProductionAmount", test_direct_work_uses_custom_production_amount)
 
 
 # workType "direct": a pawn works in place at a low-stock building, which should both
@@ -35,6 +36,31 @@ func test_direct_work() -> void:
 
 	assert_gt(sim.get_need_value(pawn_id, purpose_id), 50.0, "Purpose should increase after working")
 	assert_gt(sim.entities.resources[mine_entity_id].current_amount, 10.0, "Working should replenish the mine's stock")
+
+
+# Each direct-work building can set its own productionAmount (e.g. a Farm and a Tavern
+# shouldn't be forced to produce at the same rate just because they share workType "direct").
+func test_direct_work_uses_custom_production_amount() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(8, 8)
+	var purpose_id := builder.define_need("Purpose", 0.01)
+	var mine_id := builder.define_building(
+		"SlowMine", -1, 50.0, 20, 0.0, 0, [], 1, true, "stone", 100.0, "direct",
+		"", "", true, 1, false, 5.0
+	)
+	builder.add_building(mine_id, 4, 4)
+	builder.add_pawn("Miner", 3, 4, {purpose_id: 50.0})
+	var sim = builder.build()
+
+	var mine_entity_id := _get_building_by_def_id(sim, mine_id)
+	sim.entities.resources[mine_entity_id].current_amount = 10.0
+
+	sim.run_ticks(2300)
+
+	assert_approx(
+		sim.entities.resources[mine_entity_id].current_amount, 15.0, 0.01,
+		"A custom productionAmount of 5.0 should add exactly 5 to the starting stock of 10, not the default 30"
+	)
 
 
 # workType "haulFromBuilding": a pawn should pick resources up from a full source building

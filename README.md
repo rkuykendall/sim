@@ -64,6 +64,18 @@ godot --headless --path . --script tools/inspect_save.gd -- 1       # numeric sh
 godot --headless --path . --script tools/inspect_save.gd            # defaults to the most recent save
 ```
 
+`tools/economy_report.gd` runs a save forward in memory (never writes it back) and prints hunger/mood/building-stock trends — used to A/B test balance constants like `AISystem.HAUL_AMOUNT` and `ActionSystem.CONSUMER_DEPLETION_AMOUNT` before committing to a value:
+
+```bash
+godot --headless --path . --script tools/economy_report.gd -- "Save 1" 40   # slot, days (both optional; default: most recent save, 40 days)
+```
+
+`tools/advance_save.gd` advances a save by N in-game days and **writes the result back to the same slot** — used to fast-forward a save to its economy equilibrium (e.g. after a balance tweak) so play resumes from a settled state:
+
+```bash
+godot --headless --path . --script tools/advance_save.gd -- "Save 1" 100   # slot, days (both optional; default: most recent save, 10 days)
+```
+
 ## Building for Release
 
 To build distributable executables for Windows, macOS, and Linux:

@@ -4,7 +4,7 @@ const MOVE_TICKS_PER_TILE: int = 10
 
 # Economy balance — see AISystem.HAUL_AMOUNT / WORK_DURATION_TICKS for the supply side this
 # is tuned against.
-const CONSUMER_DEPLETION_AMOUNT: float = 15.0
+const CONSUMER_DEPLETION_AMOUNT: float = 6.0
 
 
 func tick(sim: Simulation) -> void:
@@ -239,7 +239,8 @@ func _execute_work(sim: Simulation, pawn_id: int, action_comp: Components.Action
 	# Replenish building resources
 	var resource_comp: Components.ResourceComponent = sim.entities.resources.get(target_id)
 	if resource_comp != null:
-		resource_comp.current_amount = minf(resource_comp.max_amount, resource_comp.current_amount + 30.0)
+		var production_amount: float = float(obj_def.get("productionAmount", 30.0))
+		resource_comp.current_amount = minf(resource_comp.max_amount, resource_comp.current_amount + production_amount)
 
 	# Satisfy Purpose need
 	if action.satisfies_need_id != -1:

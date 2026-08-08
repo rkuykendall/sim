@@ -11,7 +11,7 @@ const STUCK_RETRY_DELAY_TICKS: int = 30
 # Economy balance — tuned so hauling can roughly keep pace with consumption (see
 # ActionSystem.CONSUMER_DEPLETION_AMOUNT for the demand side of this).
 const WORK_DURATION_TICKS: int = 2000
-const HAUL_AMOUNT: float = 40.0
+const HAUL_AMOUNT: float = 80.0
 
 # Cached per-tile diversity scores (see _compute_diversity_map). Recomputing this over the
 # full world grid is expensive, so it's cached here and only rebuilt when the world's terrain

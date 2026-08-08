@@ -76,6 +76,7 @@
     "canBeWorkedAt": true,
     "tileSize": 2,
     "workType": "direct",
+    "productionAmount": 30,
     "canSellToConsumers": false,
     "capacity": 3
   },
@@ -105,6 +106,7 @@
     "canBeWorkedAt": true,
     "tileSize": 2,
     "workType": "direct",
+    "productionAmount": 30,
     "canSellToConsumers": true,
     "capacity": 20
   },

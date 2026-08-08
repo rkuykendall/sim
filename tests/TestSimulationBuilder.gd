@@ -97,7 +97,8 @@ func define_building(
 	haul_source_terrain_key: String = "",
 	can_sell_to_consumers: bool = true,
 	capacity: int = 1,
-	is_home: bool = false
+	is_home: bool = false,
+	production_amount: float = 30.0
 ) -> int:
 	var haul_terrain_id: int = -1
 	if not haul_source_terrain_key.is_empty():
@@ -115,6 +116,7 @@ func define_building(
 		"maxResourceAmount":      max_resource_amount,
 		"depletionMult":          1.0,
 		"workType":               work_type,
+		"productionAmount":       production_amount,
 		"haulSourceResourceType": haul_source_resource_type,
 		"haulSourceTerrainKey":   haul_source_terrain_key,
 		"haulSourceTerrainId":    haul_terrain_id,
