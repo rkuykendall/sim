@@ -2,6 +2,10 @@ class_name ActionSystem
 
 const MOVE_TICKS_PER_TILE: int = 10
 
+# Economy balance — see AISystem.HAUL_AMOUNT / WORK_DURATION_TICKS for the supply side this
+# is tuned against.
+const CONSUMER_DEPLETION_AMOUNT: float = 15.0
+
 
 func tick(sim: Simulation) -> void:
 	for pawn_id in sim.entities.pawns:
@@ -129,7 +133,7 @@ func _execute_use_building(sim: Simulation, pawn_id: int, action_comp: Component
 	if resource_comp != null:
 		if resource_comp.current_amount > 0:
 			resource_comp.current_amount = maxf(
-				0.0, resource_comp.current_amount - 20.0 * resource_comp.depletion_mult
+				0.0, resource_comp.current_amount - CONSUMER_DEPLETION_AMOUNT * resource_comp.depletion_mult
 			)
 		else:
 			has_resources = false

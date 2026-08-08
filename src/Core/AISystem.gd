@@ -8,6 +8,11 @@ const NEED_THRESHOLD: float = 90.0
 # trips the "already has something to do" skip.
 const STUCK_RETRY_DELAY_TICKS: int = 30
 
+# Economy balance — tuned so hauling can roughly keep pace with consumption (see
+# ActionSystem.CONSUMER_DEPLETION_AMOUNT for the demand side of this).
+const WORK_DURATION_TICKS: int = 2000
+const HAUL_AMOUNT: float = 40.0
+
 # Cached per-tile diversity scores (see _compute_diversity_map). Recomputing this over the
 # full world grid is expensive, so it's cached here and only rebuilt when the world's terrain
 # actually changes — callers must invoke mark_world_dirty() after painting/clearing tiles.
@@ -141,7 +146,7 @@ func _queue_direct_work(
 	action.type = Definitions.ActionType.WORK
 	action.animation = Definitions.AnimationType.PICKAXE
 	action.target_entity = target_id
-	action.duration_ticks = 2500
+	action.duration_ticks = WORK_DURATION_TICKS
 	action.satisfies_need_id = purpose_need_id
 	action.need_satisfaction_amount = 40.0
 	action.display_name = "Going to work at %s" % building_def["name"]
@@ -170,7 +175,7 @@ func _queue_haul_from_building(
 	pick_up.target_entity = source_id
 	pick_up.duration_ticks = 100
 	pick_up.resource_type = resource_type
-	pick_up.resource_amount = 30.0
+	pick_up.resource_amount = HAUL_AMOUNT
 	pick_up.display_name = "Loading %s from %s" % [resource_type, source_def["name"]]
 	action_comp.action_queue.push_back(pick_up)
 
@@ -181,7 +186,7 @@ func _queue_haul_from_building(
 	drop_off.source_entity = source_id
 	drop_off.duration_ticks = 100
 	drop_off.resource_type = resource_type
-	drop_off.resource_amount = 30.0
+	drop_off.resource_amount = HAUL_AMOUNT
 	drop_off.satisfies_need_id = purpose_need_id
 	drop_off.need_satisfaction_amount = 40.0
 	drop_off.display_name = "Delivering to %s" % dest_def["name"]
@@ -209,7 +214,7 @@ func _queue_haul_from_terrain(
 	pick_up.terrain_target_coord = terrain_coord
 	pick_up.duration_ticks = 1500
 	pick_up.resource_type = resource_type
-	pick_up.resource_amount = 30.0
+	pick_up.resource_amount = HAUL_AMOUNT
 	pick_up.display_name = "Harvesting %s" % dest_def.get("haulSourceTerrainKey", "")
 	action_comp.action_queue.push_back(pick_up)
 
@@ -219,7 +224,7 @@ func _queue_haul_from_terrain(
 	drop_off.target_entity = dest_id
 	drop_off.duration_ticks = 100
 	drop_off.resource_type = resource_type
-	drop_off.resource_amount = 30.0
+	drop_off.resource_amount = HAUL_AMOUNT
 	drop_off.satisfies_need_id = purpose_need_id
 	drop_off.need_satisfaction_amount = 40.0
 	drop_off.display_name = "Delivering to %s" % dest_def["name"]

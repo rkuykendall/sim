@@ -31,7 +31,7 @@ func test_direct_work() -> void:
 	sim.entities.resources[mine_entity_id].current_amount = 10.0  # below 0.8 of max -> eligible for work
 	var pawn_id := sim.find_pawn_by_name("Miner")
 
-	sim.run_ticks(2700)  # WORK duration is a fixed 2500 ticks (see AISystem._queue_direct_work)
+	sim.run_ticks(2300)  # WORK duration is AISystem.WORK_DURATION_TICKS (2000) + buffer
 
 	assert_gt(sim.get_need_value(pawn_id, purpose_id), 50.0, "Purpose should increase after working")
 	assert_gt(sim.entities.resources[mine_entity_id].current_amount, 10.0, "Working should replenish the mine's stock")
