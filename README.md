@@ -54,6 +54,16 @@ If `godot` isn't on your `PATH`, use the full binary path instead, e.g. on macOS
 /Applications/Godot.app/Contents/MacOS/Godot --headless --script tests/run_tests.gd
 ```
 
+## Dev Tools
+
+`tools/inspect_save.gd` prints a health report for a save file — need distribution (min/max/avg/critical/low counts against each need's real thresholds), mood distribution, and building resource levels. Useful when tuning economy balance:
+
+```bash
+godot --headless --path . --script tools/inspect_save.gd -- "Save 1"
+godot --headless --path . --script tools/inspect_save.gd -- 1       # numeric shorthand
+godot --headless --path . --script tools/inspect_save.gd            # defaults to the most recent save
+```
+
 ## Building for Release
 
 To build distributable executables for Windows, macOS, and Linux:
