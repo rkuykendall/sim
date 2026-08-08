@@ -9,6 +9,11 @@ const PAWN_SPAWN_INTERVAL: int = TimeService.TICKS_PER_DAY / 48
 const ATTACHMENT_DECAY_INTERVAL: int = TimeService.TICKS_PER_DAY
 const ATTACHMENT_DECAY_THRESHOLD: int = 5  # Only decay attachments at or below this
 
+# How much a single point of town attachment offsets mood when picking who emigrates —
+# tuned so a handful of strong ties (e.g. 10 attachment at one building) can outweigh a
+# moderately bad mood, but not a severely bad one.
+const EMIGRATION_ATTACHMENT_WEIGHT: float = 3.0
+
 var world: World
 var entities: EntityManager
 var content: ContentRegistry
@@ -22,6 +27,8 @@ var selected_palette_id: int = -1
 var palette: Array[Color] = []
 
 var _systems: SystemManager
+var _pawns_pending_removal: Array[int] = []
+var _emigrating_pawn_id: int = -1  # -1 = nobody currently mid-emigration
 
 
 func _init(
@@ -91,15 +98,121 @@ func tick() -> void:
 	_systems.tick_all(self)
 	time.advance_tick()
 
-	# Pawn spawning
+	# Pawns ActionSystem finished walking off the map edge this tick — destroyed here rather
+	# than from inside ActionSystem's own "for pawn_id in entities.pawns" loop, since erasing
+	# from that dictionary mid-iteration is unsafe.
+	for pawn_id in _pawns_pending_removal:
+		destroy_entity(pawn_id)
+	_pawns_pending_removal.clear()
+
+	# Pawn population — grows toward capacity, or sheds one pawn if over it (e.g. after a
+	# home was downgraded/destroyed below the current population). Emigration only applies
+	# once at least one home exists — a town with no homes yet (e.g. right at game start)
+	# shouldn't have pawns evicted just for lacking housing that was never built.
 	if time.tick % PAWN_SPAWN_INTERVAL == 0:
+		# The walk to the map edge can easily take longer than this interval, so re-validate
+		# rather than blindly re-checking — otherwise a still-walking emigrant looks like a
+		# fresh "over capacity" case every interval and gets retargeted to a new edge before
+		# ever arriving at the last one.
+		if not _is_pawn_emigrating(_emigrating_pawn_id):
+			_emigrating_pawn_id = -1
+
 		var pawn_count: int = entities.pawns.size()
-		if pawn_count < get_max_pawns():
+		var home_capacity: int = _total_home_capacity()
+		if pawn_count < maxi(1, home_capacity):
 			create_pawn()
+		elif home_capacity > 0 and pawn_count > home_capacity and _emigrating_pawn_id == -1:
+			_start_emigration()
 
 	# Attachment decay
 	if time.tick % ATTACHMENT_DECAY_INTERVAL == 0 and time.tick > 0:
 		_perform_attachment_decay()
+
+
+## Called by ActionSystem once a LEAVE_TOWN action reaches the map edge. Actual removal is
+## deferred to the start of the next tick() — see there for why.
+func mark_pawn_for_removal(pawn_id: int) -> void:
+	_pawns_pending_removal.append(pawn_id)
+
+
+# --- Emigration --------------------------------------------------------------
+
+## Picks the pawn with the lowest combined mood + town attachment and sends them walking to
+## the nearest map edge; ActionSystem removes them once they arrive (see mark_pawn_for_removal).
+func _start_emigration() -> void:
+	var pawn_id: int = _find_least_interesting_pawn()
+	if pawn_id == -1:
+		return
+	var edge: Vector2i = _get_random_walkable_edge_tile()
+	if edge == Vector2i(-1, -1):
+		return
+	var action_comp: Components.ActionComponent = entities.actions.get(pawn_id)
+	if action_comp == null:
+		return
+
+	var move := Definitions.ActionDef.new()
+	move.type = Definitions.ActionType.MOVE_TO
+	move.animation = Definitions.AnimationType.WALK
+	move.target_coord = edge
+	move.display_name = "Leaving town"
+
+	var leave := Definitions.ActionDef.new()
+	leave.type = Definitions.ActionType.LEAVE_TOWN
+	leave.display_name = "Leaving town"
+
+	action_comp.current_action = move
+	action_comp.action_start_tick = time.tick
+	action_comp.current_path.clear()
+	action_comp.path_index = 0
+	action_comp.action_queue.clear()
+	action_comp.action_queue.push_back(leave)
+
+	_emigrating_pawn_id = pawn_id
+
+
+## True if this pawn still has an active leave-town sequence (walking to the edge, or the
+## final LEAVE_TOWN step). False once they've arrived and been removed, or if the sequence
+## was abandoned (e.g. the edge tile turned out unreachable) — either way, safe to start a
+## new emigration afterward.
+func _is_pawn_emigrating(pawn_id: int) -> bool:
+	if pawn_id == -1:
+		return false
+	var action_comp: Components.ActionComponent = entities.actions.get(pawn_id)
+	if action_comp == null:
+		return false
+	if action_comp.current_action != null and action_comp.current_action.type == Definitions.ActionType.LEAVE_TOWN:
+		return true
+	if action_comp.current_action != null and action_comp.current_action.type == Definitions.ActionType.MOVE_TO:
+		for queued in action_comp.action_queue:
+			if queued.type == Definitions.ActionType.LEAVE_TOWN:
+				return true
+	return false
+
+
+func _find_least_interesting_pawn() -> int:
+	var worst_id: int = -1
+	var worst_score: float = INF
+	for pawn_id in entities.pawns:
+		var mood_comp: Components.MoodComponent = entities.moods.get(pawn_id)
+		var mood: float = mood_comp.mood if mood_comp != null else 0.0
+		var score: float = mood + _total_attachment(pawn_id) * EMIGRATION_ATTACHMENT_WEIGHT
+		if score < worst_score:
+			worst_score = score
+			worst_id = pawn_id
+	return worst_id
+
+
+## Sum of a pawn's attachment strength across every building and need — how "tied down" they
+## are to the town overall, regardless of which specific need or building it came from.
+func _total_attachment(pawn_id: int) -> int:
+	var total: int = 0
+	for building_id in entities.buildings:
+		var ac: Components.AttachmentComponent = entities.attachments.get(building_id)
+		if ac == null:
+			continue
+		for need_id in ac.need_attachments:
+			total += ac.need_attachments[need_id].get(pawn_id, 0)
+	return total
 
 
 # --- Pawn creation ---------------------------------------------------------
@@ -378,14 +491,19 @@ func cycle_palette() -> void:
 # --- Capacity / pawns ------------------------------------------------------
 
 func get_max_pawns() -> int:
+	return maxi(1, _total_home_capacity())
+
+
+## Raw sum of home building capacity, with no floor — 0 means no homes have been built at
+## all, which is treated differently from "over capacity" (see tick()'s emigration check).
+func _total_home_capacity() -> int:
 	var total: int = 0
 	for obj_id in entities.buildings:
 		var bc: Components.BuildingComponent = entities.buildings[obj_id]
 		var bdef: Dictionary = content.buildings.get(bc.building_def_id, {})
 		if bool(bdef.get("isHome", false)):
 			total += int(bdef.get("capacity", 1))
-
-	return maxi(1, total)
+	return total
 
 
 # --- Queries -----------------------------------------------------------------

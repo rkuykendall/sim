@@ -96,7 +96,8 @@ func define_building(
 	haul_source_resource_type: String = "",
 	haul_source_terrain_key: String = "",
 	can_sell_to_consumers: bool = true,
-	capacity: int = 1
+	capacity: int = 1,
+	is_home: bool = false
 ) -> int:
 	var haul_terrain_id: int = -1
 	if not haul_source_terrain_key.is_empty():
@@ -119,6 +120,7 @@ func define_building(
 		"haulSourceTerrainId":    haul_terrain_id,
 		"canSellToConsumers":     can_sell_to_consumers,
 		"capacity":               capacity,
+		"isHome":                 is_home,
 		"spriteKey":              "",
 		"spriteVariants":         1,
 	}

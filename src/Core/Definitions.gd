@@ -18,8 +18,9 @@ enum ActionType {
 	MOVE_TO,
 	USE_BUILDING,
 	WORK,
-	PICK_UP,   # Pick up resources from building or terrain
-	DROP_OFF,  # Drop off resources at destination building
+	PICK_UP,     # Pick up resources from building or terrain
+	DROP_OFF,    # Drop off resources at destination building
+	LEAVE_TOWN,  # Final step of emigration — removes the pawn once it reaches the map edge
 }
 
 enum AnimationType {

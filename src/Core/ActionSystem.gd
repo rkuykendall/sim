@@ -35,6 +35,8 @@ func tick(sim: Simulation) -> void:
 				_execute_pick_up(sim, pawn_id, action_comp)
 			Definitions.ActionType.DROP_OFF:
 				_execute_drop_off(sim, pawn_id, action_comp)
+			Definitions.ActionType.LEAVE_TOWN:
+				sim.mark_pawn_for_removal(pawn_id)
 			Definitions.ActionType.IDLE:
 				if sim.time.tick - action_comp.action_start_tick >= action.duration_ticks:
 					action_comp.current_action = null

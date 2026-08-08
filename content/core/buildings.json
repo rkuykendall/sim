@@ -19,7 +19,7 @@
         "spriteVariants": 2,
         "spriteColumn": 1,
         "isHome": true,
-        "capacity": 2
+        "capacity": 1
     },
     "Home3": {
         "satisfiesNeed": "Energy",
@@ -30,7 +30,7 @@
         "spriteVariants": 2,
         "spriteColumn": 2,
         "isHome": true,
-        "capacity": 4
+        "capacity": 2
     },
     "Home4": {
         "satisfiesNeed": "Energy",
@@ -41,7 +41,7 @@
         "spriteVariants": 2,
         "spriteColumn": 3,
         "isHome": true,
-        "capacity": 8
+        "capacity": 4
     },
     "Home5": {
         "satisfiesNeed": "Energy",
@@ -52,7 +52,7 @@
         "spriteVariants": 2,
         "spriteColumn": 4,
         "isHome": true,
-        "capacity": 16
+        "capacity": 8
     },
     "Well": {
         "satisfiesNeed": "Hygiene",
