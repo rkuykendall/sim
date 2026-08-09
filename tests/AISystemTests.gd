@@ -13,6 +13,8 @@ func run() -> void:
 	run_test("TrappedPawn_DoesNotRedecideEveryTick", test_trapped_pawn_does_not_redecide_every_tick)
 	run_test("ConsumerAttachment_DoesNotBiasWorkScoring", test_consumer_attachment_does_not_bias_work_scoring)
 	run_test("WorkScoring_PenalizesTotalCrowd_NotJustTheSingleMostAttachedPawn", test_work_scoring_sums_other_pawns_attachment)
+	run_test("WanderHomeVisit_HappensOverTime_WithoutTouchingEnergyOrAttachment", test_wander_home_visit_occurs_without_side_effects)
+	run_test("WanderHomeVisit_NeverHappens_ForVisitors", test_wander_home_visit_excludes_visitors)
 
 
 # A lone pawn with no needs wanders continuously; the cached diversity map must stay
@@ -207,6 +209,71 @@ func test_work_scoring_sums_other_pawns_attachment() -> void:
 		candidates[0], quiet_entity_id,
 		"A new worker should prefer the building with fewer total attached workers, not just a lower single strongest attachment"
 	)
+
+
+# A colonist with no urgent needs (so _wander_randomly always drives their decisions) should
+# eventually take AISystem's occasional cosmetic home detour — this is what actually lets a
+# house's skin_override (see Simulation.set_building_skin_override) reach colonists during
+# normal daytime play, since real Energy-driven visits only happen once Energy is genuinely
+# low. Must have zero side effects on the real Energy need or attachment (see
+# ActionSystem._execute_use_building's satisfies_need_id gating).
+func test_wander_home_visit_occurs_without_side_effects() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(20, 20)
+	var energy_id := builder.define_need("Energy", 0.0)  # zero decay: never becomes urgent
+	var home_id := builder.define_building(
+		"TestHome", energy_id, 50.0, 20, 20.0, 800, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
+	)
+	builder.add_building(home_id, 10, 10)
+	builder.add_pawn("Idle", 10, 8, {energy_id: 100.0})
+	var sim := builder.build()
+
+	var home_building_id := _get_building_by_def_id(sim, home_id)
+	var pawn_id := sim.find_pawn_by_name("Idle")
+	var action_comp = sim.entities.actions.get(pawn_id)
+
+	var visited := false
+	# Deterministic given TestSimulationBuilder's fixed seed — enough ticks for many dozen
+	# wander decisions at a 6% chance each.
+	for _i in 6000:
+		sim.tick()
+		if action_comp.current_action != null \
+				and action_comp.current_action.type == Definitions.ActionType.USE_BUILDING \
+				and action_comp.current_action.target_entity == home_building_id:
+			visited = true
+			break
+
+	assert_true(visited, "Colonist should eventually take a cosmetic home visit while idle")
+	assert_eq(sim.get_need_value(pawn_id, energy_id), 100.0, "A cosmetic visit must not touch the real Energy need")
+
+	var ac = sim.entities.attachments.get(home_building_id)
+	assert_eq(ac.get_strength(energy_id, pawn_id), 0, "A cosmetic visit must not build real Energy attachment")
+
+
+# Visitors (see Definitions.PawnMembership) only ever wander — a purely cosmetic home detour
+# would be exactly the kind of building-seeking behavior they're specifically excluded from.
+func test_wander_home_visit_excludes_visitors() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(20, 20)
+	var energy_id := builder.define_need("Energy", 0.0)
+	var home_id := builder.define_building(
+		"TestHome", energy_id, 50.0, 20, 20.0, 800, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
+	)
+	builder.add_building(home_id, 10, 10)
+	var sim := builder.build()
+
+	var home_building_id := _get_building_by_def_id(sim, home_id)
+	var visitor_id := sim.spawn_visitor_pawn("special_4_v2", {}, "Visitor")
+	var action_comp = sim.entities.actions.get(visitor_id)
+
+	for _i in 6000:
+		sim.tick()
+		assert_false(
+			action_comp.current_action != null
+				and action_comp.current_action.type == Definitions.ActionType.USE_BUILDING
+				and action_comp.current_action.target_entity == home_building_id,
+			"A visitor must never take the cosmetic home-visit detour"
+		)
 
 
 func _build_trapped_pawn_scenario() -> Simulation:

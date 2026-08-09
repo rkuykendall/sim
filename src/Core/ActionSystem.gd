@@ -149,8 +149,11 @@ func _execute_use_building(sim: Simulation, pawn_id: int, action_comp: Component
 				0.0, 100.0
 			)
 
-	# Grant buff
-	if has_resources and float(building_def.get("grantsBuff", 0.0)) != 0.0:
+	# Grant buff — gated on satisfies_need_id like need-satisfaction and attachment below, so a
+	# no-op visit (satisfies_need_id == -1, e.g. AISystem's purely cosmetic wander-home detour)
+	# doesn't also grant a free, repeatable mood buff decoupled from actually engaging the
+	# building for its real purpose.
+	if has_resources and action.satisfies_need_id != -1 and float(building_def.get("grantsBuff", 0.0)) != 0.0:
 		var buff_comp: Components.BuffComponent = sim.entities.buffs.get(pawn_id)
 		if buff_comp != null:
 			buff_comp.active_buffs = buff_comp.active_buffs.filter(func(b: Definitions.BuffInstance) -> bool:

@@ -12,6 +12,8 @@ func run() -> void:
 	run_test("MultipleBuffs_MoodIsSumClampedToNegative100", test_mood_sums_and_clamps_negative)
 	run_test("NeedBelowCriticalThreshold_AppliesSingleDebuff", test_need_critical_applies_debuff)
 	run_test("NeedRecoveringAboveThreshold_RemovesDebuff", test_need_recovery_removes_debuff)
+	run_test("UseBuilding_NoOpVisit_GrantsNoBuff", test_use_building_no_op_visit_grants_no_buff)
+	run_test("UseBuilding_RealVisit_StillGrantsBuff", test_use_building_real_visit_still_grants_buff)
 
 
 func test_active_buff_raises_mood() -> void:
@@ -112,6 +114,71 @@ func test_need_recovery_removes_debuff() -> void:
 
 	needs_system._update_need_debuffs(buff_comp, need_def, 100.0, sim.time.tick)
 	assert_eq(buff_comp.active_buffs.size(), 0, "Debuff should be cleared once the need recovers")
+
+
+# A USE_BUILDING visit with satisfies_need_id left at -1 (a purely cosmetic visit — see
+# AISystem's wander-home detour) must not also grant the building's mood buff. Before this
+# fix, grantsBuff was gated only on the building definition, not on whether a real need was
+# actually being satisfied — making a repeatable, free mood buff reachable just by wandering.
+func test_use_building_no_op_visit_grants_no_buff() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(6, 6)
+	var energy_id := builder.define_need("Energy", 0.0)
+	var home_id := builder.define_building(
+		"TestHome", energy_id, 50.0, 20, 20.0, 800, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
+	)
+	builder.add_building(home_id, 3, 3)
+	builder.add_pawn("Wanderer", 3, 2, {})
+	var sim := builder.build()
+
+	var home_building_id := _get_building_by_def_id(sim, home_id)
+	var pawn_id := _get_first_pawn(sim)
+	var action_comp = sim.entities.actions.get(pawn_id)
+
+	var no_op_visit := _Definitions.ActionDef.new()
+	no_op_visit.type = _Definitions.ActionType.USE_BUILDING
+	no_op_visit.target_entity = home_building_id
+	no_op_visit.duration_ticks = 5
+	# satisfies_need_id left at its default (-1) — a purely cosmetic visit.
+	action_comp.current_action = no_op_visit
+	action_comp.action_start_tick = sim.time.tick
+
+	sim.run_ticks(10)  # well past the 5-tick duration
+
+	var buff_comp = sim.entities.buffs.get(pawn_id)
+	assert_eq(buff_comp.active_buffs.size(), 0, "A no-op visit must not grant the building's mood buff")
+
+
+# Regression guard for the fix above: a REAL need-satisfying visit must still grant the
+# building's buff exactly as before.
+func test_use_building_real_visit_still_grants_buff() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(6, 6)
+	var energy_id := builder.define_need("Energy", 0.0)
+	var home_id := builder.define_building(
+		"TestHome", energy_id, 50.0, 20, 20.0, 800, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
+	)
+	builder.add_building(home_id, 3, 3)
+	builder.add_pawn("Sleeper", 3, 2, {energy_id: 50.0})
+	var sim := builder.build()
+
+	var home_building_id := _get_building_by_def_id(sim, home_id)
+	var pawn_id := _get_first_pawn(sim)
+	var action_comp = sim.entities.actions.get(pawn_id)
+
+	var real_visit := _Definitions.ActionDef.new()
+	real_visit.type = _Definitions.ActionType.USE_BUILDING
+	real_visit.target_entity = home_building_id
+	real_visit.duration_ticks = 5
+	real_visit.satisfies_need_id = energy_id
+	real_visit.need_satisfaction_amount = 50.0
+	action_comp.current_action = real_visit
+	action_comp.action_start_tick = sim.time.tick
+
+	sim.run_ticks(10)  # well past the 5-tick duration
+
+	var buff_comp = sim.entities.buffs.get(pawn_id)
+	assert_eq(buff_comp.active_buffs.size(), 1, "A real need-satisfying visit should still grant the building's mood buff")
 
 
 # -------------------------------------------------------------------------

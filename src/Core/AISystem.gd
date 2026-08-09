@@ -14,6 +14,13 @@ const WORK_DURATION_TICKS: int = 2000
 const HAUL_AMOUNT: float = 80.0
 const HARVEST_DURATION_TICKS: int = 750
 
+# Chance, per wander decision, that an idle colonist swings by home for a brief, purely
+# cosmetic visit instead of aimless wandering — see _wander_randomly. This is what actually
+# gets a house's skin_override (see Simulation.set_building_skin_override) onto colonists
+# during normal play, since real Energy-driven home visits only happen at night.
+const WANDER_HOME_VISIT_CHANCE: float = 0.06
+const WANDER_HOME_VISIT_DURATION_TICKS: int = 40
+
 # Cached per-tile diversity scores (see _compute_diversity_map). Recomputing this over the
 # full world grid is expensive, so it's cached here and only rebuilt when the world's terrain
 # actually changes — callers must invoke mark_world_dirty() after painting/clearing tiles.
@@ -239,6 +246,9 @@ func _queue_haul_from_terrain(
 # --- Wandering -------------------------------------------------------------
 
 func _wander_randomly(sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent) -> void:
+	if _try_queue_home_visit(sim, pawn_id, action_comp):
+		return
+
 	var pos: Components.PositionComponent = sim.entities.positions.get(pawn_id)
 	if pos == null:
 		return
@@ -322,6 +332,50 @@ func _wander_randomly(sim: Simulation, pawn_id: int, action_comp: Components.Act
 		idle.expression = expr_result[0] as Definitions.ExpressionType
 		idle.expression_icon_def_id = expr_result[1]
 	action_comp.action_queue.push_back(idle)
+
+
+# Rolls a chance for an idle colonist to detour home for a brief, purely cosmetic visit —
+# real Energy-driven home visits only happen once Energy is actually low (normally just at
+# night), which left most themes' skin overrides (see StrangeWorldsTheme) with no reliable way
+# to ever reach a colonist during normal daytime play. Reuses the same need-based building
+# search as a real Energy visit (so it respects capacity/crowding and prefers a pawn's own
+# established home the same way), but the queued visit itself satisfies no need, grants no
+# buff, and builds no attachment (see _queue_quick_home_visit) — it's just a walk there, a
+# short pause (long enough for PawnView.sync_house_sheet to catch the current look), and back
+# to normal life. Visitors (see Definitions.PawnMembership) are excluded — they only ever
+# wander, never seek out buildings of any kind.
+func _try_queue_home_visit(sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent) -> bool:
+	if sim.entities.pawns[pawn_id].membership != Definitions.PawnMembership.COLONIST:
+		return false
+	if randf() >= WANDER_HOME_VISIT_CHANCE:
+		return false
+
+	var energy_need_id: int = sim.content.get_need_id("Energy")
+	if energy_need_id == -1:
+		return false
+
+	var home_id: int = _find_building_for_need(sim, pawn_id, energy_need_id)
+	if home_id == -1:
+		return false
+
+	_queue_quick_home_visit(sim, action_comp, home_id)
+	return true
+
+
+## A brief USE_BUILDING visit with no need/buff/attachment side effects — see
+## _try_queue_home_visit. ActionSystem still handles the walk there and the capacity/use-area
+## checks exactly like a real visit; only the interaction itself is a no-op beyond its duration.
+func _queue_quick_home_visit(sim: Simulation, action_comp: Components.ActionComponent, target_id: int) -> void:
+	var building_comp: Components.BuildingComponent = sim.entities.buildings[target_id]
+	var building_def: Dictionary = sim.content.buildings[building_comp.building_def_id]
+
+	var action := Definitions.ActionDef.new()
+	action.type = Definitions.ActionType.USE_BUILDING
+	action.animation = Definitions.AnimationType.IDLE
+	action.target_entity = target_id
+	action.duration_ticks = WANDER_HOME_VISIT_DURATION_TICKS
+	action.display_name = "Stopping by %s" % building_def.get("name", "home")
+	action_comp.action_queue.push_back(action)
 
 
 # Queued when a pawn has no walkable wander candidate anywhere (fully boxed in) — see
