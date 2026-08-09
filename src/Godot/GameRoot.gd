@@ -842,6 +842,10 @@ func _sync_pawns(snapshot: Dictionary) -> void:
 			node.set_target_position(target_pos)
 			node.set_current_animation(pawn.get("animation", Definitions.AnimationType.IDLE))
 			node.set_carrying(pawn.get("carrying_resource_type", ""))
+			if not node.has_house_sheet():
+				var home_building_id: int = pawn.get("home_building_id", -1)
+				if home_building_id != -1:
+					node.assign_house_sheet(CharacterSheetPool.get_sheet_for_house(home_building_id))
 			node.set_mood(pawn.get("mood", 0.0))
 			node.set_selected(pawn_id == _selected_pawn_id)
 			node.set_expression(

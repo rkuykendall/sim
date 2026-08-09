@@ -21,6 +21,7 @@ const AXE_SWING_ANGLE: float = 0.785398  # 45 degrees, each direction (90 total 
 const AXE_SWING_DURATION: float = 0.5    # seconds for the downswing itself (or upswing)
 
 var _sprite: AnimatedSprite2D
+var _has_house_sheet: bool = false
 var _axe_sprite: Sprite2D
 var _axe_swing_timer: float = 0.0
 var _item_sprite: Sprite2D
@@ -147,6 +148,21 @@ func initialize_with_sprite(sheet_tex: Texture2D) -> void:
 	var frame_render_size: float = CHAR_FRAME_SIZE * RenderingConstants.SPRITE_SCALE
 	_sprite.position.y = (RenderingConstants.RENDERED_TILE_SIZE - frame_render_size) / 2.0
 	_sprite.play("idle")
+
+
+func has_house_sheet() -> bool:
+	return _has_house_sheet
+
+
+## Swaps to the sheet the pawn's house handed out, once — pawns keep the plain default look
+## until they've actually slept somewhere (see Simulation._build_pawn_snapshots' home_building_id).
+## A no-op once already assigned, so a pawn's look doesn't keep shifting as attachment scores
+## fluctuate between homes later.
+func assign_house_sheet(texture: Texture2D) -> void:
+	if _has_house_sheet or texture == null:
+		return
+	initialize_with_sprite(texture)
+	_has_house_sheet = true
 
 
 func _add_animation(

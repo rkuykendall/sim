@@ -717,6 +717,8 @@ func _build_pawn_snapshots() -> Array:
 				pawn_attachments[attached_pawn_id] = {}
 			pawn_attachments[attached_pawn_id][building_id] = breakdown[attached_pawn_id]
 
+	var energy_need_id: int = content.get_need_id("Energy")
+
 	var result: Array = []
 	for pawn_id in entities.pawns:
 		var pos: Components.PositionComponent = entities.positions.get(pawn_id)
@@ -725,6 +727,23 @@ func _build_pawn_snapshots() -> Array:
 
 		var mood_comp: Components.MoodComponent = entities.moods.get(pawn_id)
 		var inv_comp: Components.InventoryComponent = entities.inventory.get(pawn_id)
+
+		# "Home" isn't a stored assignment — it's whichever isHome building this pawn has the
+		# strongest Energy attachment to (i.e. slept at most/most recently). -1 if they haven't
+		# slept anywhere yet.
+		var home_building_id: int = -1
+		var home_best_strength: int = 0
+		for attached_building_id in pawn_attachments.get(pawn_id, {}):
+			var bc: Components.BuildingComponent = entities.buildings.get(attached_building_id)
+			if bc == null:
+				continue
+			var bdef: Dictionary = content.buildings.get(bc.building_def_id, {})
+			if not bool(bdef.get("isHome", false)):
+				continue
+			var strength: int = pawn_attachments[pawn_id][attached_building_id].get(energy_need_id, 0)
+			if strength > home_best_strength:
+				home_best_strength = strength
+				home_building_id = attached_building_id
 
 		var animation: int = Definitions.AnimationType.IDLE
 		var current_action_name: String = "Idle"
@@ -758,6 +777,7 @@ func _build_pawn_snapshots() -> Array:
 			"y": pos.coord.y,
 			"mood": mood_comp.mood if mood_comp != null else 0.0,
 			"carrying_resource_type": inv_comp.resource_type if inv_comp != null else "",
+			"home_building_id": home_building_id,
 			"animation": animation,
 			"current_action": current_action_name,
 			"current_action_type": current_action_type,
