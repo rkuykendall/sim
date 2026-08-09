@@ -12,6 +12,7 @@ const STUCK_RETRY_DELAY_TICKS: int = 30
 # ActionSystem.CONSUMER_DEPLETION_AMOUNT for the demand side of this).
 const WORK_DURATION_TICKS: int = 2000
 const HAUL_AMOUNT: float = 80.0
+const HARVEST_DURATION_TICKS: int = 750
 
 # Cached per-tile diversity scores (see _compute_diversity_map). Recomputing this over the
 # full world grid is expensive, so it's cached here and only rebuilt when the world's terrain
@@ -215,7 +216,7 @@ func _queue_haul_from_terrain(
 	pick_up.type = Definitions.ActionType.PICK_UP
 	pick_up.animation = Definitions.AnimationType.AXE
 	pick_up.terrain_target_coord = terrain_coord
-	pick_up.duration_ticks = 1500
+	pick_up.duration_ticks = HARVEST_DURATION_TICKS
 	pick_up.resource_type = resource_type
 	pick_up.resource_amount = HAUL_AMOUNT
 	pick_up.display_name = "Harvesting %s" % dest_def.get("haulSourceTerrainKey", "")

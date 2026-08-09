@@ -332,7 +332,7 @@ func _process(delta: float) -> void:
 	_update_info_panel(snapshot)
 	_update_building_info_panel(snapshot)
 	_update_time_display(snapshot)
-	_update_night_overlay(snapshot)
+	_update_theme_visuals(snapshot)
 	_update_shadow_rect_bounds()
 
 	var mouse_pos: Vector2 = get_local_mouse_position()
@@ -705,8 +705,8 @@ func _recompute_has_occluders() -> void:
 			break
 
 	_has_occluders = found
-	if _shadow_rect != null:
-		_shadow_rect.visible = _has_occluders
+	# Actual shadow_rect.visible assignment happens every frame in _update_theme_visuals,
+	# which also factors in has_shadows — no need to set it here too.
 
 
 func _prepare_autotile_batches() -> void:
@@ -978,21 +978,62 @@ func _update_speed_display() -> void:
 	_debug_panel.update_speed(speed_text)
 
 
-func _update_night_overlay(snapshot: Dictionary) -> void:
-	var time: Dictionary = snapshot.get("time", {})
-	var day_fraction: float = time.get("day_fraction", 0.0)
+# Fraction of a shadow theme's own playback spent glowing warm at each end (its "dawn"/"dusk").
+const THEME_SUNRISE_LEN: float = 0.15
+# Fraction of a no-shadow theme's (e.g. Gymnopédie) playback spent easing in/out of full dim,
+# rather than snapping abruptly when it starts/ends.
+const THEME_NIGHT_FADE: float = 0.05
 
+
+## Shadows and screen tint are driven by the CURRENT THEME's own playback progress (0 = just
+## started, 1 = about to end) instead of a real-world clock, so every theme's "day" (if it has
+## shadows) or "night" (if it doesn't) always aligns with its own song.
+func _update_theme_visuals(snapshot: Dictionary) -> void:
+	var theme: Dictionary = snapshot.get("theme", {})
+	var has_shadows: bool = theme.get("has_shadows", true)
+	var progress: float = _music_manager.get_playback_progress() if _music_manager != null else 0.0
+
+	var visuals: Dictionary = _compute_theme_visuals(progress, has_shadows)
 	if _crt_shader_controller != null:
-		_crt_shader_controller.set_time_of_day(day_fraction)
+		_crt_shader_controller.set_theme_visuals(visuals["warm"], visuals["night"])
 
 	if _shadow_shader_mat != null:
-		var sun_angle: float = (day_fraction - 0.5) * 180.0
-		_shadow_shader_mat.set_shader_parameter("sun_angle", sun_angle + 90.0)
-		var sun_elevation: float = maxf(0.0, cos(sun_angle * PI / 180.0))
-		var shadow_distance: float = 16.0 * (1.0 + (1.0 - sun_elevation) * 4.0)
-		_shadow_shader_mat.set_shader_parameter("max_shadow_distance", shadow_distance)
-		var shadow_alpha: float = 0.3 * sun_elevation * sun_elevation
-		_shadow_shader_mat.set_shader_parameter("shadow_color", Color(0, 0, 0, shadow_alpha))
+		if has_shadows:
+			# Compressed dawn (progress 0) -> noon (0.5) -> dusk (1) arc across this song.
+			var sun_angle: float = (progress - 0.5) * 180.0
+			_shadow_shader_mat.set_shader_parameter("sun_angle", sun_angle + 90.0)
+			var sun_elevation: float = maxf(0.0, cos(sun_angle * PI / 180.0))
+			var shadow_distance: float = 16.0 * (1.0 + (1.0 - sun_elevation) * 4.0)
+			_shadow_shader_mat.set_shader_parameter("max_shadow_distance", shadow_distance)
+			var shadow_alpha: float = 0.3 * sun_elevation * sun_elevation
+			_shadow_shader_mat.set_shader_parameter("shadow_color", Color(0, 0, 0, shadow_alpha))
+		else:
+			_shadow_shader_mat.set_shader_parameter("shadow_color", Color(0, 0, 0, 0.0))
+
+	if _shadow_rect != null:
+		_shadow_rect.visible = _has_occluders and has_shadows
+
+
+func _compute_theme_visuals(progress: float, has_shadows: bool) -> Dictionary:
+	if not has_shadows:
+		var ease_in: float = smoothstep(0.0, THEME_NIGHT_FADE, progress)
+		var ease_out: float = 1.0 - smoothstep(1.0 - THEME_NIGHT_FADE, 1.0, progress)
+		return {"warm": 0.0, "night": minf(ease_in, ease_out)}
+
+	var warm: float = _band_ease(progress, 0.0, THEME_SUNRISE_LEN) \
+		+ _band_ease(progress, 1.0 - THEME_SUNRISE_LEN, 1.0)
+	return {"warm": clampf(warm, 0.0, 1.0), "night": 0.0}
+
+
+## Ported from the old shaders/screen_effects.gdshader band_ease() — eases a value up then
+## back down across [start, end], now driving warm glow bands from theme progress instead of
+## a 24-hour clock.
+func _band_ease(t: float, start: float, end: float) -> float:
+	var band: float = end - start
+	var span: float = band * 0.45
+	var ease_in: float = smoothstep(start, start + span, t)
+	var ease_out: float = smoothstep(end - span, end, t)
+	return clampf(ease_in - ease_out, 0.0, 1.0)
 
 
 func _update_shadow_rect_bounds() -> void:

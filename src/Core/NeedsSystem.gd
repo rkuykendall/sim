@@ -2,10 +2,6 @@ class_name NeedsSystem
 
 
 func tick(sim: Simulation) -> void:
-	var is_night: bool = sim.time.is_night
-	var is_sleep_time: bool = sim.time.is_sleep_time
-	var energy_need_id: int = sim.content.get_need_id("Energy")
-
 	for pawn_id in sim.entities.pawns:
 		var need_comp: Components.NeedsComponent = sim.entities.needs.get(pawn_id)
 		if need_comp == null:
@@ -20,10 +16,6 @@ func tick(sim: Simulation) -> void:
 				continue
 
 			var decay: float = float(need_def["decayPerTick"])
-
-			# Energy decays faster at night
-			if need_id == energy_need_id and is_night:
-				decay *= 2.5 if is_sleep_time else 1.5
 
 			var old_value: float = need_comp.needs[need_id]
 			var new_value: float = clampf(old_value - decay, 0.0, 100.0)

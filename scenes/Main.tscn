@@ -60,6 +60,7 @@ home_screen_path = NodePath("../UI/HomeScreen")
 [node name="CRTShaderLayer" type="CanvasLayer" parent="."]
 layer = 128
 script = ExtResource("8")
+shader_rect_path = NodePath("CRTShaderRect")
 
 [node name="BackBufferCopy" type="BackBufferCopy" parent="CRTShaderLayer"]
 copy_mode = 2

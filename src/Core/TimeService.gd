@@ -26,12 +26,6 @@ var hour: int:
 var day: int:
 	get: return (tick / TICKS_PER_DAY) + 1
 
-var is_night: bool:
-	get: return hour < 6 or hour >= 22  # 10 PM – 6 AM
-
-var is_sleep_time: bool:
-	get: return hour < 6 or hour >= 23  # 11 PM – 6 AM
-
 var time_string: String:
 	get: return "Day %d, %02d:%02d" % [day, hour, minute]
 

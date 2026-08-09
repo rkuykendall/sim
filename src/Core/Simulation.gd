@@ -680,7 +680,6 @@ func create_render_snapshot() -> Dictionary:
 		"hour": time.hour,
 		"minute": time.minute,
 		"day": time.day,
-		"is_night": time.is_night,
 		"time_string": time.time_string,
 		"day_fraction": float(time.tick % TimeService.TICKS_PER_DAY) / float(TimeService.TICKS_PER_DAY),
 	}
@@ -692,6 +691,7 @@ func create_render_snapshot() -> Dictionary:
 		snap_theme["current_theme_name"] = ct.get_name() if ct != null else ""
 		snap_theme["current_music_file"] = ct.get_music_file() if ct != null else ""
 		snap_theme["queued_theme_name"] = qt.get_name() if qt != null else ""
+		snap_theme["has_shadows"] = ct.has_shadows() if ct != null else true
 
 	return {
 		"pawns": _build_pawn_snapshots(),

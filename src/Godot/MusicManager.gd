@@ -8,6 +8,7 @@ signal music_finished
 var _audio_player: AudioStreamPlayer = null
 var _current_music_file: String = ""
 var _current_theme_name: String = ""
+var _current_stream_length: float = 0.0
 
 
 func _ready() -> void:
@@ -53,4 +54,14 @@ func update_music_state(snapshot_theme: Dictionary) -> void:
 		return
 
 	_audio_player.stream = stream
+	_current_stream_length = stream.get_length()
 	_audio_player.play()
+
+
+## 0-1 fraction of the way through the current track (0 if nothing is playing, or the
+## stream has no known length). Drives theme-progress-based visuals (shadows, screen tint)
+## in GameRoot instead of a real-world clock, so they always align with the current song.
+func get_playback_progress() -> float:
+	if _audio_player == null or not _audio_player.playing or _current_stream_length <= 0.0:
+		return 0.0
+	return clampf(_audio_player.get_playback_position() / _current_stream_length, 0.0, 1.0)

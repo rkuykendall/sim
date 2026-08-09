@@ -1,6 +1,7 @@
 {
   "Home1": {
     "satisfiesNeed": "Energy",
+    "interactionDuration": 1600,
     "grantsBuff": 20,
     "buffDuration": 800,
     "spriteKey": "home",
@@ -12,6 +13,7 @@
   },
   "Home2": {
     "satisfiesNeed": "Energy",
+    "interactionDuration": 1600,
     "grantsBuff": 20,
     "buffDuration": 800,
     "spriteKey": "home",
@@ -23,6 +25,7 @@
   },
   "Home3": {
     "satisfiesNeed": "Energy",
+    "interactionDuration": 1600,
     "grantsBuff": 20,
     "buffDuration": 800,
     "spriteKey": "home",
@@ -34,6 +37,7 @@
   },
   "Home4": {
     "satisfiesNeed": "Energy",
+    "interactionDuration": 1600,
     "grantsBuff": 20,
     "buffDuration": 800,
     "spriteKey": "home",
@@ -45,6 +49,7 @@
   },
   "Home5": {
     "satisfiesNeed": "Energy",
+    "interactionDuration": 1600,
     "grantsBuff": 20,
     "buffDuration": 800,
     "spriteKey": "home",

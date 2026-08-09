@@ -123,7 +123,7 @@ func test_haul_from_terrain() -> void:
 	sim.entities.resources[dest_entity_id].current_amount = 10.0
 	var pawn_id := sim.find_pawn_by_name("Woodcutter")
 
-	sim.run_ticks(2200)  # PICK_UP duration is a fixed 1500 ticks (see AISystem._queue_haul_from_terrain)
+	sim.run_ticks(2200)  # PICK_UP duration is AISystem.HARVEST_DURATION_TICKS (750) + travel/buffer
 
 	assert_gt(sim.entities.resources[dest_entity_id].current_amount, 10.0, "Destination stock should increase after harvesting delivery")
 	assert_gt(sim.get_need_value(pawn_id, purpose_id), 50.0, "Purpose should increase after completing the harvest")
@@ -193,7 +193,7 @@ func test_haul_from_terrain_without_resource_component() -> void:
 	var candidates: Array = sim.ai_system._find_work_candidates(sim, pawn_id, purpose_id)
 	assert_true(candidates.has(mill_entity_id), "A haulFromTerrain building with no ResourceComponent should still be a work candidate")
 
-	sim.run_ticks(2200)  # PICK_UP duration is a fixed 1500 ticks (see AISystem._queue_haul_from_terrain)
+	sim.run_ticks(2200)  # PICK_UP duration is AISystem.HARVEST_DURATION_TICKS (750) + travel/buffer
 
 	assert_gt(sim.get_need_value(pawn_id, purpose_id), 50.0, "Purpose should increase after completing the harvest, even with nowhere to store the result")
 

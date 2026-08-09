@@ -2,9 +2,17 @@ class_name SimTheme
 
 # Base class for simulation themes. Subclass and override all methods.
 # Themes govern music and can modify simulation state on start/tick/end.
+#
+# Extension pattern for future themes:
+# - Simulation-layer effects (touching pawn/entity state, like GymnopedieTheme's Energy
+#   drain below): add a new SimTheme subclass and override on_start/on_tick/on_end.
+# - Godot-rendering-layer effects (particles, sprite swaps, extra shaders): GameRoot can
+#   branch on snapshot.theme.current_theme_name (a plain string match), the same way it
+#   already branches on has_shadows. Don't build a generic effect-request system until
+#   there are 3+ special-cased themes that would actually need one.
 
 
-## Display name for debugging.
+## Display name for debugging and UI.
 func get_name() -> String:
 	return "Theme"
 
@@ -14,11 +22,11 @@ func get_music_file() -> String:
 	return ""
 
 
-## Priority for this theme at the current simulation state.
-## 0 = should not run; higher = more preferred.
-## ThemeSystem selects the highest-priority theme.
-func get_priority(_sim: Simulation) -> int:
-	return 0
+## Whether this theme runs the shadow shader for its duration, progressing across the
+## theme's own playback (see GameRoot). Most themes do; a theme meant to represent "night"
+## (currently just GymnopedieTheme) should not.
+func has_shadows() -> bool:
+	return true
 
 
 ## Called once when the theme becomes active.
@@ -43,39 +51,31 @@ func on_end(_sim: Simulation) -> void:
 
 
 # ---------------------------------------------------------------------------
-# DayTheme — relaxing ambient music during daytime
+# SimpleTheme — a plain theme that just plays one track with no other effects.
+# Covers most of the roster; see ThemeSystem for the full theme list.
 # ---------------------------------------------------------------------------
 
-class DayTheme:
-	const DAY_TRACKS: Array[String] = [
-		"res://music/tracks/cuddle_clouds.ogg",
-		"res://music/tracks/drifting_memories.ogg",
-		"res://music/tracks/evening_harmony.ogg",
-		"res://music/tracks/floating_dream.ogg",
-		"res://music/tracks/forgotten_biomes.ogg",
-		"res://music/tracks/gentle_breeze.ogg",
-		"res://music/tracks/golden_gleam.ogg",
-		"res://music/tracks/polar_lights.ogg",
-		"res://music/tracks/strange_worlds.ogg",
-		"res://music/tracks/sunlight_through_leaves.ogg",
-		"res://music/tracks/wanderers_tale.ogg",
-		"res://music/tracks/whispering_woods.ogg",
-	]
+class SimpleTheme:
+	var _name: String
+	var _music_file: String
+	var _has_shadows: bool
 
-	var _selected_music_file: String = ""
+	func _init(theme_name: String, music_file: String, shadows: bool = true) -> void:
+		_name = theme_name
+		_music_file = music_file
+		_has_shadows = shadows
 
 	func get_name() -> String:
-		return "Day"
+		return _name
 
 	func get_music_file() -> String:
-		return _selected_music_file
+		return _music_file
 
-	# Priority 5 during day, 0 at night
-	func get_priority(sim: Simulation) -> int:
-		return 0 if sim.time.is_night else 5
+	func has_shadows() -> bool:
+		return _has_shadows
 
 	func on_start(_sim: Simulation) -> void:
-		_selected_music_file = DAY_TRACKS[randi() % DAY_TRACKS.size()]
+		pass
 
 	func on_tick(_sim: Simulation) -> void:
 		pass
@@ -83,38 +83,30 @@ class DayTheme:
 	func on_end(_sim: Simulation) -> void:
 		pass
 
-	# Day theme runs until music finishes (never self-completes)
 	func is_complete(_sim: Simulation, _theme_start_tick: int) -> bool:
 		return false
 
 
 # ---------------------------------------------------------------------------
-# NightTheme — calming Gymnopédie; drains pawn Energy on nightfall
+# GymnopedieTheme — calming Gymnopédie No. 1. No shadows, dims the screen (see GameRoot),
+# and drains everyone's Energy the moment it starts — this is what "night" means now,
+# rather than an hour-of-day check.
 # ---------------------------------------------------------------------------
 
-class NightTheme:
-	var _last_day_ran: int = -1
-
+class GymnopedieTheme:
 	func get_name() -> String:
-		return "Night"
+		return "Gymnopédie No. 1"
 
 	func get_music_file() -> String:
 		return "res://music/classics/gymnopedie_no_1.ogg"
 
-	# Priority 10 at night, 0 during day
-	func get_priority(sim: Simulation) -> int:
-		return 10 if sim.time.is_night else 0
+	func has_shadows() -> bool:
+		return false
 
 	func on_start(sim: Simulation) -> void:
-		# Drain all pawn Energy to 0 once per day when night begins
-		if _last_day_ran == sim.time.day:
-			return
-		_last_day_ran = sim.time.day
-
 		var energy_id: int = sim.content.get_need_id("Energy")
 		if energy_id == -1:
 			return
-
 		for pawn_id in sim.entities.pawns:
 			var need_comp: Components.NeedsComponent = sim.entities.needs.get(pawn_id)
 			if need_comp != null and need_comp.needs.has(energy_id):
@@ -126,6 +118,5 @@ class NightTheme:
 	func on_end(_sim: Simulation) -> void:
 		pass
 
-	# Night theme runs until music finishes (never self-completes)
 	func is_complete(_sim: Simulation, _theme_start_tick: int) -> bool:
 		return false
