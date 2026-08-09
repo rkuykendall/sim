@@ -31,7 +31,13 @@ static func get_sheet_for_house(house_id: int) -> Texture2D:
 	if house_id < 0 or SHEET_NAMES.is_empty():
 		return null
 	var sheet_name: String = SHEET_NAMES[house_id % SHEET_NAMES.size()]
-	return _load(sheet_name)
+	return get_sheet_by_name(sheet_name)
+
+
+## Looks up a sheet by its explicit name (e.g. "character_7_v2"), for theme-driven skin
+## overrides and forced-sheet visitor pawns — not tied to the house-id-modulo scheme at all.
+static func get_sheet_by_name(name: String) -> Texture2D:
+	return _load(name)
 
 
 static func _load(sheet_name: String) -> Texture2D:

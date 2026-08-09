@@ -827,7 +827,11 @@ func _sync_pawns(snapshot: Dictionary) -> void:
 			_pawns_root.get_parent().add_child(node)
 			_pawn_nodes[pawn_id] = node
 			if node is PawnView:
-				node.initialize_with_sprite(SpriteResourceManager.get_texture("character_sheet"))
+				var forced_sheet_key: String = pawn.get("forced_sheet_key", "")
+				if not forced_sheet_key.is_empty():
+					node.assign_forced_sheet(forced_sheet_key)
+				else:
+					node.initialize_with_sprite(SpriteResourceManager.get_texture("character_sheet"))
 
 		var target_pos := Vector2(
 			pawn.get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE + RenderingConstants.RENDERED_TILE_SIZE * 0.5,
@@ -842,10 +846,15 @@ func _sync_pawns(snapshot: Dictionary) -> void:
 			node.set_target_position(target_pos)
 			node.set_current_animation(pawn.get("animation", Definitions.AnimationType.IDLE))
 			node.set_carrying(pawn.get("carrying_resource_type", ""))
-			if not node.has_house_sheet():
-				var home_building_id: int = pawn.get("home_building_id", -1)
-				if home_building_id != -1:
-					node.assign_house_sheet(CharacterSheetPool.get_sheet_for_house(home_building_id))
+			var home_visit_building_id: int = pawn.get("home_visit_building_id", -1)
+			if home_visit_building_id != -1:
+				var home_visit_skin_override: String = pawn.get("home_visit_skin_override", "")
+				var house_tex: Texture2D
+				if not home_visit_skin_override.is_empty():
+					house_tex = CharacterSheetPool.get_sheet_by_name(home_visit_skin_override)
+				else:
+					house_tex = CharacterSheetPool.get_sheet_for_house(home_visit_building_id)
+				node.sync_house_sheet(house_tex)
 			node.set_mood(pawn.get("mood", 0.0))
 			node.set_selected(pawn_id == _selected_pawn_id)
 			node.set_expression(

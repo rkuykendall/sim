@@ -7,6 +7,8 @@ class PositionComponent:
 
 class PawnComponent:
 	var name: String = ""
+	var membership: Definitions.PawnMembership = Definitions.PawnMembership.COLONIST
+	var forced_sheet_key: String = ""  # "" = no per-pawn forced sheet (orthogonal to membership)
 
 
 class NeedsComponent:
@@ -33,6 +35,12 @@ class ActionComponent:
 class BuildingComponent:
 	var building_def_id: int = -1
 	var color_index: int = 0
+	# Sheet key (e.g. "character_7_v2") this building hands out to any colonist who calls it
+	# home, in place of the deterministic per-house default (see CharacterSheetPool.get_sheet_
+	# for_house) — "" means no override. Only meaningful on isHome buildings, but harmless
+	# otherwise. Set via Simulation.set_building_skin_override; themes are the expected caller
+	# (see Theme.gd's StrangeWorldsTheme), but any future system can drive it the same way.
+	var skin_override: String = ""
 
 	# Is any pawn currently targeting this building?
 	# Computed from pawn ActionComponents — not stored.

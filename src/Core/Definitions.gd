@@ -38,6 +38,11 @@ enum ExpressionType {
 	QUESTION,   # Question bubble — confused/waiting
 }
 
+enum PawnMembership {
+	COLONIST,  # Counts toward population/home-capacity, eligible for capacity-driven emigration
+	VISITOR,   # Theme-spawned, excluded from population accounting — see Simulation.spawn_visitor_pawn
+}
+
 
 class BuffInstance:
 	var source: Definitions.BuffSource

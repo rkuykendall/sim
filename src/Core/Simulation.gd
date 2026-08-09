@@ -116,7 +116,7 @@ func tick() -> void:
 		if not _is_pawn_emigrating(_emigrating_pawn_id):
 			_emigrating_pawn_id = -1
 
-		var pawn_count: int = entities.pawns.size()
+		var pawn_count: int = _colonist_count()
 		var home_capacity: int = _total_home_capacity()
 		if pawn_count < maxi(1, home_capacity):
 			create_pawn()
@@ -142,12 +142,21 @@ func _start_emigration() -> void:
 	var pawn_id: int = _find_least_interesting_pawn()
 	if pawn_id == -1:
 		return
+	if send_pawn_away(pawn_id):
+		_emigrating_pawn_id = pawn_id
+
+
+## Sends any pawn walking to a random map edge, then despawning once it arrives (see
+## mark_pawn_for_removal / ActionSystem's LEAVE_TOWN handling). Reusable by any caller —
+## capacity-driven colonist emigration and theme-driven visitor departure (remove_all_visitors)
+## are just two different reasons to invoke the same underlying mechanism.
+func send_pawn_away(pawn_id: int) -> bool:
 	var edge: Vector2i = _get_random_walkable_edge_tile()
 	if edge == Vector2i(-1, -1):
-		return
+		return false
 	var action_comp: Components.ActionComponent = entities.actions.get(pawn_id)
 	if action_comp == null:
-		return
+		return false
 
 	var move := Definitions.ActionDef.new()
 	move.type = Definitions.ActionType.MOVE_TO
@@ -165,8 +174,7 @@ func _start_emigration() -> void:
 	action_comp.path_index = 0
 	action_comp.action_queue.clear()
 	action_comp.action_queue.push_back(leave)
-
-	_emigrating_pawn_id = pawn_id
+	return true
 
 
 ## True if this pawn still has an active leave-town sequence (walking to the edge, or the
@@ -192,6 +200,11 @@ func _find_least_interesting_pawn() -> int:
 	var worst_id: int = -1
 	var worst_score: float = INF
 	for pawn_id in entities.pawns:
+		# Visitors always score exactly 0.0 (no needs -> no mood debuffs -> no attachment),
+		# which can look "safer" than a real colonist with positive mood — capacity-driven
+		# emigration must only ever pick real colonists. Visitors leave via remove_all_visitors.
+		if entities.pawns[pawn_id].membership != Definitions.PawnMembership.COLONIST:
+			continue
 		var mood_comp: Components.MoodComponent = entities.moods.get(pawn_id)
 		var mood: float = mood_comp.mood if mood_comp != null else 0.0
 		var score: float = mood + _total_attachment(pawn_id) * EMIGRATION_ATTACHMENT_WEIGHT
@@ -226,6 +239,43 @@ func create_pawn(name: String = "Pawn") -> int:
 func create_pawn_at(coord: Vector2i, name: String = "Pawn", needs: Dictionary = {}) -> int:
 	var use_needs: Dictionary = needs if not needs.is_empty() else _full_needs()
 	return entities.create_pawn(coord, name, use_needs)
+
+
+## Spawns a temporary theme-driven pawn (see SimTheme.on_start) at a random map edge, excluded
+## from population/home-capacity accounting (see _colonist_count) and from capacity-driven
+## emigration (see _find_least_interesting_pawn). needs defaults empty — a needs-less pawn
+## just wanders forever via AISystem's normal "nothing urgent -> wander" fallback, no new AI
+## logic required — but any needs dict can be passed for richer, still fully needs-driven
+## behavior (e.g. a visitor that seeks food like any colonist would). forced_sheet_key always
+## wins over any theme skin override or house-assigned sheet (see PawnView).
+func spawn_visitor_pawn(forced_sheet_key: String, needs: Dictionary = {}, pawn_name: String = "Visitor") -> int:
+	var position: Vector2i = _get_random_walkable_edge_tile()
+	if position == Vector2i(-1, -1):
+		return -1
+	var pawn_id: int = entities.create_pawn(position, pawn_name, needs)
+	var pawn_comp: Components.PawnComponent = entities.pawns[pawn_id]
+	pawn_comp.membership = Definitions.PawnMembership.VISITOR
+	pawn_comp.forced_sheet_key = forced_sheet_key
+	return pawn_id
+
+
+## Sends every current visitor pawn walking off the map (see spawn_visitor_pawn). Used by
+## SimTheme.on_end when a theme's visitor event is over. A clean no-op if none exist.
+func remove_all_visitors() -> void:
+	for pawn_id in entities.pawns:
+		if entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			send_pawn_away(pawn_id)
+
+
+## Real colonist headcount for population/home-capacity purposes — excludes visitors, who were
+## never part of the town's population to begin with (get_max_pawns/_total_home_capacity are
+## building-driven and unaffected either way).
+func _colonist_count() -> int:
+	var count: int = 0
+	for pawn_id in entities.pawns:
+		if entities.pawns[pawn_id].membership == Definitions.PawnMembership.COLONIST:
+			count += 1
+	return count
 
 
 func _full_needs() -> Dictionary:
@@ -515,6 +565,34 @@ func _total_home_capacity() -> int:
 	return total
 
 
+# --- Homes -------------------------------------------------------------------
+
+## All building ids whose def is marked isHome — the generic hook for any theme (or future
+## system) that wants to affect "every house" without hardcoding names. See
+## set_building_skin_override.
+func get_home_building_ids() -> Array[int]:
+	var result: Array[int] = []
+	for building_id in entities.buildings:
+		var bc: Components.BuildingComponent = entities.buildings[building_id]
+		var bdef: Dictionary = content.buildings.get(bc.building_def_id, {})
+		if bool(bdef.get("isHome", false)):
+			result.append(building_id)
+	return result
+
+
+## Sets (or clears, with "") the sheet key a home hands out to whichever colonist is actively
+## using it (see _build_pawn_snapshots' home_visit_skin_override) — in place of the
+## deterministic per-house default. Not instant for every colonist who's ever lived there: it
+## only reaches a pawn's rendered sheet on their NEXT visit (see PawnView.sync_house_sheet), so
+## a change naturally rolls out house-by-house, visit-by-visit, rather than town-wide. See
+## StrangeWorldsTheme for an example driving this across every home; a future theme could just
+## as easily target one.
+func set_building_skin_override(building_id: int, sheet_key: String) -> void:
+	var bc: Components.BuildingComponent = entities.buildings.get(building_id)
+	if bc != null:
+		bc.skin_override = sheet_key
+
+
 # --- Queries -----------------------------------------------------------------
 
 ## Finds a pawn entity id by its display name, or -1 if none match.
@@ -717,8 +795,6 @@ func _build_pawn_snapshots() -> Array:
 				pawn_attachments[attached_pawn_id] = {}
 			pawn_attachments[attached_pawn_id][building_id] = breakdown[attached_pawn_id]
 
-	var energy_need_id: int = content.get_need_id("Energy")
-
 	var result: Array = []
 	for pawn_id in entities.pawns:
 		var pos: Components.PositionComponent = entities.positions.get(pawn_id)
@@ -727,23 +803,7 @@ func _build_pawn_snapshots() -> Array:
 
 		var mood_comp: Components.MoodComponent = entities.moods.get(pawn_id)
 		var inv_comp: Components.InventoryComponent = entities.inventory.get(pawn_id)
-
-		# "Home" isn't a stored assignment — it's whichever isHome building this pawn has the
-		# strongest Energy attachment to (i.e. slept at most/most recently). -1 if they haven't
-		# slept anywhere yet.
-		var home_building_id: int = -1
-		var home_best_strength: int = 0
-		for attached_building_id in pawn_attachments.get(pawn_id, {}):
-			var bc: Components.BuildingComponent = entities.buildings.get(attached_building_id)
-			if bc == null:
-				continue
-			var bdef: Dictionary = content.buildings.get(bc.building_def_id, {})
-			if not bool(bdef.get("isHome", false)):
-				continue
-			var strength: int = pawn_attachments[pawn_id][attached_building_id].get(energy_need_id, 0)
-			if strength > home_best_strength:
-				home_best_strength = strength
-				home_building_id = attached_building_id
+		var pawn_comp: Components.PawnComponent = entities.pawns.get(pawn_id)
 
 		var animation: int = Definitions.AnimationType.IDLE
 		var current_action_name: String = "Idle"
@@ -757,6 +817,13 @@ func _build_pawn_snapshots() -> Array:
 		var has_building_target: bool = false
 
 		var action_comp: Components.ActionComponent = entities.actions.get(pawn_id)
+		# "Going home" in the literal sense — actively using an isHome building right now (i.e.
+		# sleeping there), not a stored assignment or an attachment-strength computation. This
+		# is what gates when a pawn's rendered sheet re-syncs to that house's current look (see
+		# PawnView.sync_house_sheet): a house's skin_override change only reaches a pawn on
+		# their NEXT visit, not instantly for everyone who's ever slept there.
+		var home_visit_building_id: int = -1
+		var home_visit_skin_override: String = ""
 		if action_comp != null and action_comp.current_action != null:
 			var act: Definitions.ActionDef = action_comp.current_action
 			animation = act.animation
@@ -771,13 +838,23 @@ func _build_pawn_snapshots() -> Array:
 			for coord in action_comp.current_path:
 				path_coords.append({"x": coord.x, "y": coord.y})
 
+			if act.type == Definitions.ActionType.USE_BUILDING and act.target_entity != -1:
+				var target_bc: Components.BuildingComponent = entities.buildings.get(act.target_entity)
+				if target_bc != null:
+					var target_bdef: Dictionary = content.buildings.get(target_bc.building_def_id, {})
+					if bool(target_bdef.get("isHome", false)):
+						home_visit_building_id = act.target_entity
+						home_visit_skin_override = target_bc.skin_override
+
 		result.append({
 			"id": pawn_id,
 			"x": pos.coord.x,
 			"y": pos.coord.y,
 			"mood": mood_comp.mood if mood_comp != null else 0.0,
 			"carrying_resource_type": inv_comp.resource_type if inv_comp != null else "",
-			"home_building_id": home_building_id,
+			"forced_sheet_key": pawn_comp.forced_sheet_key if pawn_comp != null else "",
+			"home_visit_building_id": home_visit_building_id,
+			"home_visit_skin_override": home_visit_skin_override,
 			"animation": animation,
 			"current_action": current_action_name,
 			"current_action_type": current_action_type,

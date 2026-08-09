@@ -32,6 +32,9 @@ func run() -> void:
 	run_test("Theme_ChangesToRosterMember_AfterMusicFinished", test_theme_changes_after_music_finished)
 	run_test("RandomSelection_NeverImmediatelyRepeatsSameTheme", test_avoid_immediate_repeat)
 	run_test("DisabledByDefault_NoCurrentThemeWithoutOptIn", test_disabled_by_default)
+	run_test("StrangeWorlds_SpawnsVisitorsOnStart_RemovesOnEnd", test_strange_worlds_visitor_lifecycle)
+	run_test("StrangeWorlds_SetsHomeSkinOverride_OnStart_ClearsOnEnd", test_strange_worlds_home_skin_override_lifecycle)
+	run_test("HomeSkinOverride_PlumbsToPawnSnapshot_WhenPawnIsHomeThere", test_home_skin_override_plumbs_to_pawn_snapshot)
 
 
 # Every music file in music/tracks/ and music/classics/ should have exactly one theme, and
@@ -144,6 +147,146 @@ func test_disabled_by_default() -> void:
 
 	sim.run_ticks(100)
 	assert_true(sim.theme_system.current_theme == null, "Themes should stay disabled unless explicitly enabled")
+
+
+# StrangeWorldsTheme should spawn as many visitor pawns as the colony's pawn goal (get_max_pawns,
+# capacity-4 home here) the moment it starts (each carrying its forced sheet key), and send them
+# all away the moment it ends.
+func test_strange_worlds_visitor_lifecycle() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	builder.with_world_bounds(10, 10)
+	var home_id := builder.define_building(
+		"TestHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 4, true
+	)
+	builder.add_building(home_id, 5, 5)
+	var sim := builder.build()
+
+	assert_eq(sim.get_max_pawns(), 4, "Setup should give a pawn goal of 4")
+
+	var theme = SimTheme.StrangeWorldsTheme.new()
+	sim.theme_system._start_theme(sim, theme)
+
+	var visitor_count := 0
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			visitor_count += 1
+			assert_eq(sim.entities.pawns[pawn_id].forced_sheet_key, "special_4_v2", "Spawned visitor should carry Strange Worlds' forced sheet key")
+	assert_eq(visitor_count, sim.get_max_pawns(), "Theme should spawn exactly get_max_pawns() visitors on start")
+
+	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Cuddle Clouds"))
+	sim.run_ticks(2000)
+
+	var remaining_visitors := 0
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			remaining_visitors += 1
+	assert_eq(remaining_visitors, 0, "All visitors should have left after the theme ended and enough time passed")
+
+
+# Strange Worlds is per-house, not global — on_start should stamp every isHome building's
+# skin_override, and on_end should clear every one of them back to "".
+func test_strange_worlds_home_skin_override_lifecycle() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	builder.with_world_bounds(10, 10)
+	var home_id := builder.define_building(
+		"TestHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
+	)
+	builder.add_building(home_id, 2, 2)
+	builder.add_building(home_id, 5, 5)
+	var sim := builder.build()
+
+	var home_ids: Array[int] = sim.get_home_building_ids()
+	assert_eq(home_ids.size(), 2, "Setup should have two home buildings")
+
+	var theme = SimTheme.StrangeWorldsTheme.new()
+	sim.theme_system._start_theme(sim, theme)
+
+	for building_id in home_ids:
+		assert_eq(
+			sim.entities.buildings[building_id].skin_override, "character_7_v2",
+			"Every home should receive Strange Worlds' skin override on start"
+		)
+
+	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Cuddle Clouds"))
+
+	for building_id in home_ids:
+		assert_eq(
+			sim.entities.buildings[building_id].skin_override, "",
+			"Every home's override should be cleared once the theme ends"
+		)
+
+
+# A pawn ACTIVELY using an isHome building right now (see Simulation._build_pawn_snapshots'
+# home_visit_building_id) should reflect that house's CURRENT skin_override in its own snapshot
+# entry — this is what lets PawnView.sync_house_sheet pick it up without Godot needing to
+# cross-reference buildings itself. Being merely attached to a home (having slept there before)
+# is NOT enough — only an in-progress visit counts, which is what actually gates the update.
+func test_home_skin_override_plumbs_to_pawn_snapshot() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(10, 10)
+	var energy_id := builder.define_need("Energy", 0.0)
+	var home_id := builder.define_building(
+		"TestHome", energy_id, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
+	)
+	builder.add_building(home_id, 2, 2)
+	builder.add_pawn("Sleeper", 2, 2, {})
+	var sim := builder.build()
+
+	var home_building_id := _get_building_by_def_id(sim, home_id)
+	var pawn_id := sim.find_pawn_by_name("Sleeper")
+
+	# Directly put the pawn mid-USE_BUILDING at their home (see PopulationTests/AttachmentTests
+	# for the same pattern) rather than running the full AI loop — this test is about snapshot
+	# plumbing, not pathing/AI decisions.
+	var use_action := Definitions.ActionDef.new()
+	use_action.type = Definitions.ActionType.USE_BUILDING
+	use_action.target_entity = home_building_id
+	use_action.satisfies_need_id = energy_id
+	var action_comp = sim.entities.actions.get(pawn_id)
+	action_comp.current_action = use_action
+
+	var snapshot_before: Dictionary = sim.create_render_snapshot()
+	var pawn_snap_before: Dictionary = _find_pawn_snapshot(snapshot_before, pawn_id)
+	assert_eq(pawn_snap_before.get("home_visit_building_id", -1), home_building_id, "Pawn should be resolved as visiting this house right now")
+	assert_eq(pawn_snap_before.get("home_visit_skin_override", ""), "", "No override set yet")
+
+	sim.set_building_skin_override(home_building_id, "character_7_v2")
+
+	var snapshot_after: Dictionary = sim.create_render_snapshot()
+	var pawn_snap_after: Dictionary = _find_pawn_snapshot(snapshot_after, pawn_id)
+	assert_eq(pawn_snap_after.get("home_visit_skin_override", ""), "character_7_v2", "Pawn snapshot should reflect the home's new override while still visiting")
+
+	# Once they're no longer actively using the building, the visit-gated fields should clear —
+	# even though they're still just as attached/"living" there as before.
+	action_comp.current_action = null
+	var snapshot_after_leaving: Dictionary = sim.create_render_snapshot()
+	var pawn_snap_after_leaving: Dictionary = _find_pawn_snapshot(snapshot_after_leaving, pawn_id)
+	assert_eq(pawn_snap_after_leaving.get("home_visit_building_id", -1), -1, "Once the visit ends, the pawn should no longer be resolved as home")
+
+	# Merely targeting the home building isn't enough either — it has to specifically be a
+	# USE_BUILDING action (the "sleeping there" action), not some other action type that happens
+	# to reference the same building id (e.g. a hypothetical WORK shift there).
+	var work_action := Definitions.ActionDef.new()
+	work_action.type = Definitions.ActionType.WORK
+	work_action.target_entity = home_building_id
+	action_comp.current_action = work_action
+	var snapshot_during_work: Dictionary = sim.create_render_snapshot()
+	var pawn_snap_during_work: Dictionary = _find_pawn_snapshot(snapshot_during_work, pawn_id)
+	assert_eq(pawn_snap_during_work.get("home_visit_building_id", -1), -1, "A non-USE_BUILDING action targeting the home building must not count as a home visit")
+
+
+func _find_pawn_snapshot(snapshot: Dictionary, pawn_id: int) -> Dictionary:
+	for p in snapshot.get("pawns", []):
+		if p.get("id", -1) == pawn_id:
+			return p
+	return {}
+
+
+func _get_building_by_def_id(sim, def_id: int) -> int:
+	for building_id in sim.entities.buildings:
+		if sim.entities.buildings[building_id].building_def_id == def_id:
+			return building_id
+	return -1
 
 
 func _find_theme_by_name(sim, theme_name: String):

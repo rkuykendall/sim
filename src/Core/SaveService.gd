@@ -126,6 +126,8 @@ static func _serialize_entities(sim: Simulation) -> Array:
 		var pawn: Components.PawnComponent = em.pawns.get(pawn_id)
 		if pawn != null:
 			e["name"] = pawn.name
+			e["membership"] = int(pawn.membership)
+			e["forced_sheet_key"] = pawn.forced_sheet_key
 
 		var need_comp: Components.NeedsComponent = em.needs.get(pawn_id)
 		if need_comp != null:
@@ -179,6 +181,7 @@ static func _serialize_entities(sim: Simulation) -> Array:
 			e["building_def_name"] = bdef.get("name", "")
 			e["building_def_id"]   = bc.building_def_id
 			e["building_color_index"] = bc.color_index
+			e["skin_override"] = bc.skin_override
 
 		# Only persist a resource block if the building's CURRENT content definition still
 		# calls for one. A stale ResourceComponent can linger in memory after a content change
@@ -309,6 +312,7 @@ static func _restore_building(sim: Simulation, e: Dictionary) -> void:
 	var bc := Components.BuildingComponent.new()
 	bc.building_def_id = building_def_id
 	bc.color_index = int(e.get("building_color_index", 0))
+	bc.skin_override = String(e.get("skin_override", ""))
 	sim.entities.buildings[entity_id] = bc
 
 	# Resource component
@@ -363,6 +367,9 @@ static func _restore_pawn(sim: Simulation, e: Dictionary) -> void:
 
 	var pawn := Components.PawnComponent.new()
 	pawn.name = e.get("name", "Pawn")
+	# Additive/optional — old saves never had visitors, so defaulting to COLONIST/"" is correct.
+	pawn.membership = int(e.get("membership", 0)) as Definitions.PawnMembership
+	pawn.forced_sheet_key = String(e.get("forced_sheet_key", ""))
 	sim.entities.pawns[entity_id] = pawn
 
 	var need_comp := Components.NeedsComponent.new()

@@ -19,6 +19,8 @@ func run() -> void:
 	run_test("RoundTrip_WithResources", test_roundtrip_resources)
 	run_test("RoundTrip_RestoredSimulationCanContinue", test_roundtrip_can_continue)
 	run_test("SaveData_DropsStaleResourceComponent_WhenContentNoLongerDeclaresOne", test_serialize_drops_stale_resource)
+	run_test("RoundTrip_VisitorPawn_PreservesMembershipAndForcedSheetKey", test_roundtrip_visitor_pawn)
+	run_test("RoundTrip_BuildingSkinOverride_Preserved", test_roundtrip_building_skin_override)
 
 
 func test_serialize_empty() -> void:
@@ -326,3 +328,54 @@ func test_roundtrip_can_continue() -> void:
 	if need_comp != null:
 		var hunger: float = need_comp.needs.get(hunger_id, 100.0)
 		assert_lt(hunger, 100.0, "Hunger should have decayed after running ticks")
+
+
+# Without persisting membership/forced_sheet_key, a save made mid-theme (visitors present)
+# would reload them as permanent needs-less "ghost" colonists — counted forever, never cleaned
+# up. Confirms both fields survive the round-trip and the visitor stays excluded afterward.
+func test_roundtrip_visitor_pawn() -> void:
+	var builder = _Builder.new()
+	builder.define_terrain("flat", true, "flat", false, true)
+	var home_id := builder.define_building(
+		"TinyHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
+	)
+	builder.add_building(home_id, 2, 2)
+	builder.add_pawn("Colonist", 1, 1, {})
+	var original = builder.build()
+
+	var visitor_id := original.spawn_visitor_pawn("special_4_v2", {}, "Visitor")
+
+	var data = _SaveService.to_dict(original, "test-save")
+	var restored = _SaveService.from_dict(data, original.content)
+
+	var restored_pawn = restored.entities.pawns.get(visitor_id)
+	assert_not_null(restored_pawn, "Visitor pawn should be restored")
+	assert_eq(restored_pawn.membership, Definitions.PawnMembership.VISITOR, "Membership should survive the round-trip")
+	assert_eq(restored_pawn.forced_sheet_key, "special_4_v2", "forced_sheet_key should survive the round-trip")
+
+	assert_eq(restored._colonist_count(), 1, "Restored visitor should still be excluded from the colonist count")
+
+	var restored_colonist = restored.entities.pawns.get(restored.find_pawn_by_name("Colonist"))
+	assert_eq(restored_colonist.membership, Definitions.PawnMembership.COLONIST, "The real colonist should round-trip as COLONIST")
+
+
+# Without persisting a building's skin_override, a save made mid-theme (e.g. Strange Worlds)
+# would lose track of which houses were overridden, silently reverting everyone's look on load.
+func test_roundtrip_building_skin_override() -> void:
+	var builder = _Builder.new()
+	builder.define_terrain("flat", true, "flat", false, true)
+	var home_id := builder.define_building(
+		"TinyHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
+	)
+	builder.add_building(home_id, 2, 2)
+	var original = builder.build()
+
+	var home_building_id = original.entities.all_buildings()[0]
+	original.set_building_skin_override(home_building_id, "character_7_v2")
+
+	var data = _SaveService.to_dict(original, "test-save")
+	var restored = _SaveService.from_dict(data, original.content)
+
+	var restored_bc = restored.entities.buildings.get(home_building_id)
+	assert_not_null(restored_bc, "Building should be restored")
+	assert_eq(restored_bc.skin_override, "character_7_v2", "skin_override should survive the round-trip")

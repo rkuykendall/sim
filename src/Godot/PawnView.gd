@@ -21,7 +21,8 @@ const AXE_SWING_ANGLE: float = 0.785398  # 45 degrees, each direction (90 total 
 const AXE_SWING_DURATION: float = 0.5    # seconds for the downswing itself (or upswing)
 
 var _sprite: AnimatedSprite2D
-var _has_house_sheet: bool = false
+var _forced_sheet_key: String = ""
+var _house_texture: Texture2D = null
 var _axe_sprite: Sprite2D
 var _axe_swing_timer: float = 0.0
 var _item_sprite: Sprite2D
@@ -150,19 +151,31 @@ func initialize_with_sprite(sheet_tex: Texture2D) -> void:
 	_sprite.play("idle")
 
 
-func has_house_sheet() -> bool:
-	return _has_house_sheet
-
-
-## Swaps to the sheet the pawn's house handed out, once — pawns keep the plain default look
-## until they've actually slept somewhere (see Simulation._build_pawn_snapshots' home_building_id).
-## A no-op once already assigned, so a pawn's look doesn't keep shifting as attachment scores
-## fluctuate between homes later.
-func assign_house_sheet(texture: Texture2D) -> void:
-	if _has_house_sheet or texture == null:
+## Syncs this pawn's rendered sheet to whatever house they're CURRENTLY using — either that
+## house's own deterministic default (CharacterSheetPool.get_sheet_for_house) or its
+## skin_override if one is set (see Simulation.set_building_skin_override). GameRoot only calls
+## this while the pawn's live snapshot reports home_visit_building_id != -1 — i.e. they're
+## actively using an isHome building right this tick (see Simulation._build_pawn_snapshots) —
+## so a house's look genuinely only reaches a pawn on their next visit, not instantly for
+## everyone who's ever slept there. No-op if the resolved texture is unchanged, and a permanent
+## forced sheet (visitor pawns, see assign_forced_sheet) always wins over this.
+func sync_house_sheet(texture: Texture2D) -> void:
+	if not _forced_sheet_key.is_empty():
 		return
+	if texture == null or texture == _house_texture:
+		return
+	_house_texture = texture
 	initialize_with_sprite(texture)
-	_has_house_sheet = true
+
+
+## Permanently locks this pawn to an explicit sheet (visitor pawns) — takes priority over
+## everything else, including a home's skin override, since visitors are meant to look distinct
+## from the regular colonist population. Called once at node creation.
+func assign_forced_sheet(sheet_key: String) -> void:
+	_forced_sheet_key = sheet_key
+	var tex: Texture2D = CharacterSheetPool.get_sheet_by_name(sheet_key)
+	if tex != null:
+		initialize_with_sprite(tex)
 
 
 func _add_animation(

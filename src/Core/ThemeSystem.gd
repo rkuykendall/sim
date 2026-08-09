@@ -1,31 +1,32 @@
 class_name ThemeSystem
 
 # One theme per available music track (music/tracks/ + music/classics/), picked randomly.
-# {display name, music file} — has_shadows defaults to true (see SimTheme); the one
-# exception (Gymnopédie No. 1) is its own SimTheme.GymnopedieTheme subclass, appended below.
+# has_shadows defaults to true (see SimTheme) unless overridden here. Themes needing their own
+# simulation-layer behavior (Gymnopédie No. 1's night/energy-drain, Strange Worlds' skin
+# override + visitors) are dedicated SimTheme.* subclasses instead of plain data entries here —
+# see Theme.gd — and get appended to the roster below.
 const ROSTER_DATA: Array = [
-	["Cuddle Clouds", "res://music/tracks/cuddle_clouds.ogg"],
-	["Drifting Memories", "res://music/tracks/drifting_memories.ogg"],
-	["Evening Harmony", "res://music/tracks/evening_harmony.ogg"],
-	["Floating Dream", "res://music/tracks/floating_dream.ogg"],
-	["Forgotten Biomes", "res://music/tracks/forgotten_biomes.ogg"],
-	["Gentle Breeze", "res://music/tracks/gentle_breeze.ogg"],
-	["Golden Gleam", "res://music/tracks/golden_gleam.ogg"],
-	["Polar Lights", "res://music/tracks/polar_lights.ogg"],
-	["Strange Worlds", "res://music/tracks/strange_worlds.ogg"],
-	["Sunlight Through Leaves", "res://music/tracks/sunlight_through_leaves.ogg"],
-	["Wanderer's Tale", "res://music/tracks/wanderers_tale.ogg"],
-	["Whispering Woods", "res://music/tracks/whispering_woods.ogg"],
-	["Minuet", "res://music/classics/minuet.ogg"],
-	["Minuet (Slower)", "res://music/classics/minuet_slower.ogg"],
-	["Tales From The Vienna Woods", "res://music/classics/tales_from_the_vienna_woods.ogg"],
+	{"name": "Cuddle Clouds", "file": "res://music/tracks/cuddle_clouds.ogg"},
+	# {"name": "Drifting Memories", "file": "res://music/tracks/drifting_memories.ogg"},
+	# {"name": "Evening Harmony", "file": "res://music/tracks/evening_harmony.ogg"},
+	# {"name": "Floating Dream", "file": "res://music/tracks/floating_dream.ogg"},
+	# {"name": "Forgotten Biomes", "file": "res://music/tracks/forgotten_biomes.ogg"},
+	# {"name": "Gentle Breeze", "file": "res://music/tracks/gentle_breeze.ogg"},
+	# {"name": "Golden Gleam", "file": "res://music/tracks/golden_gleam.ogg"},
+	# {"name": "Polar Lights", "file": "res://music/tracks/polar_lights.ogg"},
+	# {"name": "Sunlight Through Leaves", "file": "res://music/tracks/sunlight_through_leaves.ogg"},
+	# {"name": "Wanderer's Tale", "file": "res://music/tracks/wanderers_tale.ogg"},
+	# {"name": "Whispering Woods", "file": "res://music/tracks/whispering_woods.ogg"},
+	# {"name": "Minuet", "file": "res://music/classics/minuet.ogg"},
+	# {"name": "Minuet (Slower)", "file": "res://music/classics/minuet_slower.ogg"},
+	# {"name": "Tales From The Vienna Woods", "file": "res://music/classics/tales_from_the_vienna_woods.ogg"},
 ]
 
-var current_theme = null
-var queued_theme = null  # not set internally anymore; external callers may still force a pick
+var current_theme: SimTheme = null
+var queued_theme: SimTheme = null  # not set internally anymore; external callers may still force a pick
 
 var _current_theme_start_tick: int = 0
-var _available_themes: Array = []
+var _available_themes: Array[SimTheme] = []
 var _disabled: bool = false
 
 
@@ -33,8 +34,13 @@ func _init(disabled: bool = false) -> void:
 	_disabled = disabled
 	_available_themes = []
 	for entry in ROSTER_DATA:
-		_available_themes.append(SimTheme.SimpleTheme.new(entry[0], entry[1]))
+		_available_themes.append(SimTheme.SimpleTheme.new(
+			entry.get("name", ""),
+			entry.get("file", ""),
+			entry.get("shadows", true)
+		))
 	_available_themes.append(SimTheme.GymnopedieTheme.new())
+	_available_themes.append(SimTheme.StrangeWorldsTheme.new())
 
 
 func tick(sim: Simulation) -> void:
@@ -65,8 +71,8 @@ func on_music_finished(sim: Simulation) -> void:
 
 ## Uniform-random pick, excluding whichever theme just ended so the same song can't
 ## immediately repeat back-to-back.
-func _pick_random_theme():
-	var candidates: Array = _available_themes
+func _pick_random_theme() -> SimTheme:
+	var candidates: Array[SimTheme] = _available_themes
 	if current_theme != null:
 		var current_name: String = current_theme.get_name()
 		candidates = _available_themes.filter(func(t): return t.get_name() != current_name)
@@ -75,7 +81,7 @@ func _pick_random_theme():
 	return candidates[randi() % candidates.size()]
 
 
-func _start_theme(sim: Simulation, theme) -> void:
+func _start_theme(sim: Simulation, theme: SimTheme) -> void:
 	if current_theme != null:
 		current_theme.on_end(sim)
 
