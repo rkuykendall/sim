@@ -2,24 +2,17 @@ class_name ThemeSystem
 
 # One theme per available music track (music/tracks/ + music/classics/), picked randomly.
 # has_shadows defaults to true (see SimTheme) unless overridden here. Themes needing their own
-# simulation-layer behavior (Gymnopédie No. 1's night/energy-drain, Strange Worlds' skin
-# override + visitors) are dedicated SimTheme.* subclasses instead of plain data entries here —
-# see Theme.gd — and get appended to the roster below.
+# simulation-layer behavior are dedicated SimTheme.* subclasses instead of plain data entries
+# here — see Theme.gd — and get appended to the roster below.
 const ROSTER_DATA: Array = [
 	{"name": "Cuddle Clouds", "file": "res://music/tracks/cuddle_clouds.ogg"},
-	# {"name": "Drifting Memories", "file": "res://music/tracks/drifting_memories.ogg"},
-	# {"name": "Evening Harmony", "file": "res://music/tracks/evening_harmony.ogg"},
-	# {"name": "Floating Dream", "file": "res://music/tracks/floating_dream.ogg"},
-	# {"name": "Forgotten Biomes", "file": "res://music/tracks/forgotten_biomes.ogg"},
-	# {"name": "Gentle Breeze", "file": "res://music/tracks/gentle_breeze.ogg"},
-	# {"name": "Golden Gleam", "file": "res://music/tracks/golden_gleam.ogg"},
-	# {"name": "Polar Lights", "file": "res://music/tracks/polar_lights.ogg"},
-	# {"name": "Sunlight Through Leaves", "file": "res://music/tracks/sunlight_through_leaves.ogg"},
-	# {"name": "Wanderer's Tale", "file": "res://music/tracks/wanderers_tale.ogg"},
-	# {"name": "Whispering Woods", "file": "res://music/tracks/whispering_woods.ogg"},
-	# {"name": "Minuet", "file": "res://music/classics/minuet.ogg"},
-	# {"name": "Minuet (Slower)", "file": "res://music/classics/minuet_slower.ogg"},
-	# {"name": "Tales From The Vienna Woods", "file": "res://music/classics/tales_from_the_vienna_woods.ogg"},
+	{"name": "Evening Harmony", "file": "res://music/tracks/evening_harmony.ogg"},
+	{"name": "Floating Dream", "file": "res://music/tracks/floating_dream.ogg"},
+	{"name": "Sunlight Through Leaves", "file": "res://music/tracks/sunlight_through_leaves.ogg"},
+	{"name": "Wanderer's Tale", "file": "res://music/tracks/wanderers_tale.ogg"},
+	{"name": "Whispering Woods", "file": "res://music/tracks/whispering_woods.ogg"},
+	{"name": "Minuet", "file": "res://music/classics/minuet.ogg"},
+	{"name": "Minuet (Slower)", "file": "res://music/classics/minuet_slower.ogg"},
 ]
 
 var current_theme: SimTheme = null
@@ -41,6 +34,12 @@ func _init(disabled: bool = false) -> void:
 		))
 	_available_themes.append(SimTheme.GymnopedieTheme.new())
 	_available_themes.append(SimTheme.StrangeWorldsTheme.new())
+	_available_themes.append(SimTheme.ViennaWoodsTheme.new())
+	_available_themes.append(SimTheme.PolarLightsTheme.new())
+	_available_themes.append(SimTheme.GoldenGleamTheme.new())
+	_available_themes.append(SimTheme.DriftingMemoriesTheme.new())
+	_available_themes.append(SimTheme.GentleBreezeTheme.new())
+	_available_themes.append(SimTheme.ForgottenBiomesTheme.new())
 
 
 func tick(sim: Simulation) -> void:
@@ -84,6 +83,11 @@ func _pick_random_theme() -> SimTheme:
 func _start_theme(sim: Simulation, theme: SimTheme) -> void:
 	if current_theme != null:
 		current_theme.on_end(sim)
+		# Automatic, universal cleanup — themes don't need their own on_end just to revert a
+		# skin override or send their visitors away (see Simulation.clear_all_home_skin_overrides
+		# / remove_all_visitors). on_end above still exists for anything more theme-specific.
+		sim.clear_all_home_skin_overrides()
+		sim.remove_all_visitors()
 
 	current_theme = theme
 	_current_theme_start_tick = sim.time.tick

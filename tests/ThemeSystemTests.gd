@@ -35,6 +35,18 @@ func run() -> void:
 	run_test("StrangeWorlds_SpawnsVisitorsOnStart_RemovesOnEnd", test_strange_worlds_visitor_lifecycle)
 	run_test("StrangeWorlds_SetsHomeSkinOverride_OnStart_ClearsOnEnd", test_strange_worlds_home_skin_override_lifecycle)
 	run_test("HomeSkinOverride_PlumbsToPawnSnapshot_WhenPawnIsHomeThere", test_home_skin_override_plumbs_to_pawn_snapshot)
+	run_test("ViennaWoods_SpawnsTwoSplitVisitorGroups_RemovesOnEnd", test_vienna_woods_visitor_lifecycle)
+	run_test("ViennaWoods_SetsHomeSkinOverride_OnStart_ClearsOnEnd", test_vienna_woods_home_skin_override_lifecycle)
+	run_test("PolarLights_AlternatesHomeSkinOverride_OnStart_ClearsOnEnd", test_polar_lights_home_skin_override_alternates)
+	run_test("PolarLights_SpawnsMixedVisitorCrowd_RemovesOnEnd", test_polar_lights_visitor_lifecycle)
+	run_test("GoldenGleam_RotatesHomeSkinOverride_OnStart_ClearsOnEnd", test_golden_gleam_home_skin_override_rotates)
+	run_test("GoldenGleam_SpawnsSingleVisitor_RemovesOnEnd", test_golden_gleam_visitor_lifecycle)
+	run_test("DriftingMemories_SetsHomeSkinOverride_OnStart_ClearsOnEnd", test_drifting_memories_home_skin_override_lifecycle)
+	run_test("DriftingMemories_SpawnsVisitorsWithinRange_RemovesOnEnd", test_drifting_memories_visitor_lifecycle)
+	run_test("GentleBreeze_SpawnsDoubleVisitorCount_RemovesOnEnd_NoSkinOverride", test_gentle_breeze_visitor_lifecycle)
+	run_test("ForgottenBiomes_SpawnsMaxPawnsVisitorCount_RemovesOnEnd_NoSkinOverride", test_forgotten_biomes_visitor_lifecycle)
+	run_test("SimpleTheme_StrayCritters_TriggerRateIsRoughlyOneInFive", test_simple_theme_stray_trigger_rate)
+	run_test("SimpleTheme_StrayCritters_CombinationVariesAndCleansUp", test_simple_theme_stray_combination_varies)
 
 
 # Every music file in music/tracks/ and music/classics/ should have exactly one theme, and
@@ -173,7 +185,7 @@ func test_strange_worlds_visitor_lifecycle() -> void:
 			assert_eq(sim.entities.pawns[pawn_id].forced_sheet_key, "special_4_v2", "Spawned visitor should carry Strange Worlds' forced sheet key")
 	assert_eq(visitor_count, sim.get_max_pawns(), "Theme should spawn exactly get_max_pawns() visitors on start")
 
-	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Cuddle Clouds"))
+	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Gymnopédie No. 1"))
 	sim.run_ticks(2000)
 
 	var remaining_visitors := 0
@@ -207,7 +219,7 @@ func test_strange_worlds_home_skin_override_lifecycle() -> void:
 			"Every home should receive Strange Worlds' skin override on start"
 		)
 
-	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Cuddle Clouds"))
+	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Gymnopédie No. 1"))
 
 	for building_id in home_ids:
 		assert_eq(
@@ -273,6 +285,421 @@ func test_home_skin_override_plumbs_to_pawn_snapshot() -> void:
 	var snapshot_during_work: Dictionary = sim.create_render_snapshot()
 	var pawn_snap_during_work: Dictionary = _find_pawn_snapshot(snapshot_during_work, pawn_id)
 	assert_eq(pawn_snap_during_work.get("home_visit_building_id", -1), -1, "A non-USE_BUILDING action targeting the home building must not count as a home visit")
+
+
+# ViennaWoodsTheme should spawn TWO visitor groups on start, each sized get_max_pawns() / 2 —
+# spring_2_v2 and spring_3_v2 — and send everyone away once it ends.
+func test_vienna_woods_visitor_lifecycle() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	builder.with_world_bounds(10, 10)
+	var home_id := builder.define_building(
+		"TestHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 6, true
+	)
+	builder.add_building(home_id, 5, 5)
+	var sim := builder.build()
+
+	assert_eq(sim.get_max_pawns(), 6, "Setup should give a pawn goal of 6")
+
+	var theme = SimTheme.ViennaWoodsTheme.new()
+	sim.theme_system._start_theme(sim, theme)
+
+	var sheet_counts: Dictionary = {"spring_2_v2": 0, "spring_3_v2": 0}
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			var sheet: String = sim.entities.pawns[pawn_id].forced_sheet_key
+			assert_true(sheet_counts.has(sheet), "Visitor should carry one of Vienna Woods' two forced sheet keys")
+			sheet_counts[sheet] += 1
+
+	var expected_group_size: int = sim.get_max_pawns() / 2
+	assert_eq(sheet_counts["spring_2_v2"], expected_group_size, "spring_2_v2 group should be sized get_max_pawns() / 2")
+	assert_eq(sheet_counts["spring_3_v2"], expected_group_size, "spring_3_v2 group should be sized get_max_pawns() / 2")
+
+	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Gymnopédie No. 1"))
+	sim.run_ticks(2000)
+
+	var remaining_visitors := 0
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			remaining_visitors += 1
+	assert_eq(remaining_visitors, 0, "All visitors should have left after the theme ended and enough time passed")
+
+
+func test_vienna_woods_home_skin_override_lifecycle() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	builder.with_world_bounds(10, 10)
+	var home_id := builder.define_building(
+		"TestHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
+	)
+	builder.add_building(home_id, 2, 2)
+	var sim := builder.build()
+
+	var home_ids: Array[int] = sim.get_home_building_ids()
+
+	var theme = SimTheme.ViennaWoodsTheme.new()
+	sim.theme_system._start_theme(sim, theme)
+
+	for building_id in home_ids:
+		assert_eq(
+			sim.entities.buildings[building_id].skin_override, "spring_1_v2",
+			"Every home should receive Vienna Woods' skin override on start"
+		)
+
+	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Gymnopédie No. 1"))
+
+	for building_id in home_ids:
+		assert_eq(
+			sim.entities.buildings[building_id].skin_override, "",
+			"Every home's override should be cleared once the theme ends"
+		)
+
+
+# Polar Lights alternates by build order (winter_1_v2, winter_2_v2, winter_1_v2, ...) rather
+# than applying one override to every home like Strange Worlds/Vienna Woods.
+func test_polar_lights_home_skin_override_alternates() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	builder.with_world_bounds(10, 10)
+	var home_id := builder.define_building(
+		"TestHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
+	)
+	builder.add_building(home_id, 1, 1)
+	builder.add_building(home_id, 3, 3)
+	builder.add_building(home_id, 5, 5)
+	builder.add_building(home_id, 7, 7)
+	var sim := builder.build()
+
+	var home_ids: Array[int] = sim.get_home_building_ids()
+	assert_eq(home_ids.size(), 4, "Setup should have four home buildings")
+
+	var theme = SimTheme.PolarLightsTheme.new()
+	sim.theme_system._start_theme(sim, theme)
+
+	for i in home_ids.size():
+		var expected: String = "winter_1_v2" if i % 2 == 0 else "winter_2_v2"
+		assert_eq(
+			sim.entities.buildings[home_ids[i]].skin_override, expected,
+			"Home %d should alternate to %s" % [i, expected]
+		)
+
+	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Gymnopédie No. 1"))
+
+	for building_id in home_ids:
+		assert_eq(
+			sim.entities.buildings[building_id].skin_override, "",
+			"Every home's override should be cleared once the theme ends"
+		)
+
+
+# Unlike Vienna Woods' exact even split, Polar Lights' visitor crowd is a random per-visitor
+# mix of winter_3_v2/winter_4_v2 — only the total count and valid sheet membership are
+# deterministic invariants worth asserting.
+func test_polar_lights_visitor_lifecycle() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	builder.with_world_bounds(10, 10)
+	var home_id := builder.define_building(
+		"TestHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 6, true
+	)
+	builder.add_building(home_id, 5, 5)
+	var sim := builder.build()
+
+	assert_eq(sim.get_max_pawns(), 6, "Setup should give a pawn goal of 6")
+
+	var theme = SimTheme.PolarLightsTheme.new()
+	sim.theme_system._start_theme(sim, theme)
+
+	var visitor_count := 0
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			visitor_count += 1
+			var sheet: String = sim.entities.pawns[pawn_id].forced_sheet_key
+			assert_true(
+				sheet == "winter_3_v2" or sheet == "winter_4_v2",
+				"Visitor should carry one of Polar Lights' two forced sheet keys"
+			)
+	assert_eq(visitor_count, sim.get_max_pawns(), "Theme should spawn exactly get_max_pawns() visitors on start")
+
+	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Gymnopédie No. 1"))
+	sim.run_ticks(2000)
+
+	var remaining_visitors := 0
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			remaining_visitors += 1
+	assert_eq(remaining_visitors, 0, "All visitors should have left after the theme ended and enough time passed")
+
+
+# Golden Gleam rotates through all four dg_knight sheets by build order, wrapping via modulo
+# once there are more homes than sheets — the 5th home should cycle back to dg_knight_1_v2.
+func test_golden_gleam_home_skin_override_rotates() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	builder.with_world_bounds(10, 10)
+	var home_id := builder.define_building(
+		"TestHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
+	)
+	builder.add_building(home_id, 1, 1)
+	builder.add_building(home_id, 3, 3)
+	builder.add_building(home_id, 5, 5)
+	builder.add_building(home_id, 7, 7)
+	builder.add_building(home_id, 9, 9)
+	var sim := builder.build()
+
+	var home_ids: Array[int] = sim.get_home_building_ids()
+	assert_eq(home_ids.size(), 5, "Setup should have five home buildings")
+
+	var theme = SimTheme.GoldenGleamTheme.new()
+	sim.theme_system._start_theme(sim, theme)
+
+	var expected_skins: Array[String] = [
+		"dg_knight_1_v2", "dg_knight_2_v2", "dg_knight_3_v2", "dg_knight_4_v2", "dg_knight_1_v2",
+	]
+	for i in home_ids.size():
+		assert_eq(
+			sim.entities.buildings[home_ids[i]].skin_override, expected_skins[i],
+			"Home %d should rotate to %s (wrapping via modulo)" % [i, expected_skins[i]]
+		)
+
+	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Gymnopédie No. 1"))
+
+	for building_id in home_ids:
+		assert_eq(
+			sim.entities.buildings[building_id].skin_override, "",
+			"Every home's override should be cleared once the theme ends"
+		)
+
+
+# Unlike the other visitor-bearing themes, Golden Gleam brings in exactly one visitor,
+# regardless of colony size.
+func test_golden_gleam_visitor_lifecycle() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	builder.with_world_bounds(10, 10)
+	var home_id := builder.define_building(
+		"TestHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 6, true
+	)
+	builder.add_building(home_id, 5, 5)
+	var sim := builder.build()
+
+	assert_eq(sim.get_max_pawns(), 6, "Setup should give a pawn goal of 6 (unrelated to visitor count here)")
+
+	var theme = SimTheme.GoldenGleamTheme.new()
+	sim.theme_system._start_theme(sim, theme)
+
+	var visitor_count := 0
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			visitor_count += 1
+			assert_eq(sim.entities.pawns[pawn_id].forced_sheet_key, "character_15_v2", "The single visitor should carry Golden Gleam's forced sheet key")
+	assert_eq(visitor_count, 1, "Theme should spawn exactly one visitor regardless of colony size")
+
+	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Gymnopédie No. 1"))
+	sim.run_ticks(2000)
+
+	var remaining_visitors := 0
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			remaining_visitors += 1
+	assert_eq(remaining_visitors, 0, "The visitor should have left after the theme ended and enough time passed")
+
+
+func test_drifting_memories_home_skin_override_lifecycle() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	builder.with_world_bounds(10, 10)
+	var home_id := builder.define_building(
+		"TestHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
+	)
+	builder.add_building(home_id, 2, 2)
+	builder.add_building(home_id, 5, 5)
+	var sim := builder.build()
+
+	var home_ids: Array[int] = sim.get_home_building_ids()
+	assert_eq(home_ids.size(), 2, "Setup should have two home buildings")
+
+	var theme = SimTheme.DriftingMemoriesTheme.new()
+	sim.theme_system._start_theme(sim, theme)
+
+	for building_id in home_ids:
+		assert_eq(
+			sim.entities.buildings[building_id].skin_override, "character_17_v2",
+			"Every home should receive Drifting Memories' skin override on start"
+		)
+
+	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Gymnopédie No. 1"))
+
+	for building_id in home_ids:
+		assert_eq(
+			sim.entities.buildings[building_id].skin_override, "",
+			"Every home's override should be cleared once the theme ends"
+		)
+
+
+# Visitor count is randi_range(1, get_max_pawns() * 2), not a fixed number — only the range
+# bound, sheet membership, and cleanup are deterministic invariants worth asserting.
+func test_drifting_memories_visitor_lifecycle() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	builder.with_world_bounds(10, 10)
+	var home_id := builder.define_building(
+		"TestHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 4, true
+	)
+	builder.add_building(home_id, 5, 5)
+	var sim := builder.build()
+
+	assert_eq(sim.get_max_pawns(), 4, "Setup should give a pawn goal of 4")
+
+	var theme = SimTheme.DriftingMemoriesTheme.new()
+	sim.theme_system._start_theme(sim, theme)
+
+	var visitor_count := 0
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			visitor_count += 1
+			assert_eq(sim.entities.pawns[pawn_id].forced_sheet_key, "character_18_v2", "Spawned visitor should carry Drifting Memories' forced sheet key")
+	assert_ge(visitor_count, 1, "Should spawn at least one visitor")
+	assert_true(visitor_count <= sim.get_max_pawns() * 2, "Should never spawn more than get_max_pawns() * 2 visitors")
+
+	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Gymnopédie No. 1"))
+	sim.run_ticks(2000)
+
+	var remaining_visitors := 0
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			remaining_visitors += 1
+	assert_eq(remaining_visitors, 0, "All visitors should have left after the theme ended and enough time passed")
+
+
+# Gentle Breeze is visitor-only — no home skin override, unlike every other special theme so
+# far. Visitor count is a fixed get_max_pawns() * 2, not randomized or split.
+func test_gentle_breeze_visitor_lifecycle() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	builder.with_world_bounds(10, 10)
+	var home_id := builder.define_building(
+		"TestHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 3, true
+	)
+	builder.add_building(home_id, 5, 5)
+	var sim := builder.build()
+
+	assert_eq(sim.get_max_pawns(), 3, "Setup should give a pawn goal of 3")
+	var home_building_id := _get_building_by_def_id(sim, home_id)
+
+	var theme = SimTheme.GentleBreezeTheme.new()
+	sim.theme_system._start_theme(sim, theme)
+
+	assert_eq(sim.entities.buildings[home_building_id].skin_override, "", "Gentle Breeze should not touch any home's skin override")
+
+	var visitor_count := 0
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			visitor_count += 1
+			assert_eq(sim.entities.pawns[pawn_id].forced_sheet_key, "autumn_1_v2", "Spawned visitor should carry Gentle Breeze's forced sheet key")
+	assert_eq(visitor_count, sim.get_max_pawns() * 2, "Theme should spawn exactly get_max_pawns() * 2 visitors on start")
+
+	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Gymnopédie No. 1"))
+	sim.run_ticks(2000)
+
+	var remaining_visitors := 0
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			remaining_visitors += 1
+	assert_eq(remaining_visitors, 0, "All visitors should have left after the theme ended and enough time passed")
+
+
+# Forgotten Biomes is also visitor-only — no home skin override. Visitor count is a fixed
+# get_max_pawns() (not doubled like Gentle Breeze).
+func test_forgotten_biomes_visitor_lifecycle() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	builder.with_world_bounds(10, 10)
+	var home_id := builder.define_building(
+		"TestHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 3, true
+	)
+	builder.add_building(home_id, 5, 5)
+	var sim := builder.build()
+
+	assert_eq(sim.get_max_pawns(), 3, "Setup should give a pawn goal of 3")
+	var home_building_id := _get_building_by_def_id(sim, home_id)
+
+	var theme = SimTheme.ForgottenBiomesTheme.new()
+	sim.theme_system._start_theme(sim, theme)
+
+	assert_eq(sim.entities.buildings[home_building_id].skin_override, "", "Forgotten Biomes should not touch any home's skin override")
+
+	var visitor_count := 0
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			visitor_count += 1
+			assert_eq(sim.entities.pawns[pawn_id].forced_sheet_key, "special_3_v2", "Spawned visitor should carry Forgotten Biomes' forced sheet key")
+	assert_eq(visitor_count, sim.get_max_pawns(), "Theme should spawn exactly get_max_pawns() visitors on start")
+
+	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Gymnopédie No. 1"))
+	sim.run_ticks(2000)
+
+	var remaining_forgotten_visitors := 0
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			remaining_forgotten_visitors += 1
+	assert_eq(remaining_forgotten_visitors, 0, "All visitors should have left after the theme ended and enough time passed")
+
+
+# Statistical: over many independent trials, roughly 1-in-5 SimpleTheme starts should spawn
+# any stray critters at all — "should feel pretty rare". Wide tolerance since this is a real
+# random sample, not a fixed sequence; a fixed builder seed still makes the run reproducible.
+# Each trial destroys any spawned critters directly (bypassing remove_all_visitors' walk-to-edge
+# animation, which needs real ticks to resolve — irrelevant to what this test is measuring and
+# far too slow to run out 500 times) so trials stay independent and fast.
+func test_simple_theme_stray_trigger_rate() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	var sim := builder.build()
+
+	var trials := 500
+	var triggered := 0
+	for i in trials:
+		var theme = SimTheme.SimpleTheme.new("Trial", "res://music/tracks/cuddle_clouds.ogg")
+		theme.on_start(sim)
+		if _count_and_destroy_visitors(sim) > 0:
+			triggered += 1
+
+	var rate: float = float(triggered) / float(trials)
+	assert_true(rate > 0.1 and rate < 0.3, "Trigger rate %.2f should be roughly 1-in-5 (0.1–0.3 tolerance band)" % rate)
+
+
+# "Any combination is possible" — across enough trials, both small (single-critter) and
+# larger (multi-critter) results should occur, and every spawned sheet should come from the
+# stray pool. See test_simple_theme_stray_trigger_rate for why cleanup bypasses ticks.
+func test_simple_theme_stray_combination_varies() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	var sim := builder.build()
+
+	var saw_single := false
+	var saw_multiple := false
+	var stray_pool: Array[String] = SimTheme.SimpleTheme.STRAY_POOL
+
+	for i in 500:
+		var theme = SimTheme.SimpleTheme.new("Trial", "res://music/tracks/cuddle_clouds.ogg")
+		theme.on_start(sim)
+
+		for pawn_id in sim.entities.pawns:
+			if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+				var sheet: String = sim.entities.pawns[pawn_id].forced_sheet_key
+				assert_true(stray_pool.has(sheet), "Spawned critter sheet %s should come from STRAY_POOL" % sheet)
+
+		var visitor_count: int = _count_and_destroy_visitors(sim)
+		if visitor_count == 1:
+			saw_single = true
+		elif visitor_count > 1:
+			saw_multiple = true
+
+	assert_true(saw_single, "At least one trial should have spawned exactly one critter")
+	assert_true(saw_multiple, "At least one trial should have spawned more than one critter")
+
+
+## Directly destroys every current visitor pawn (bypassing remove_all_visitors' walk-to-edge
+## animation, which only resolves over real ticks) and returns how many there were —
+## deliberately not the theme's real on_end path, since these tests are about spawn
+## distribution, not despawn behavior (already covered by other tests).
+func _count_and_destroy_visitors(sim) -> int:
+	var visitor_ids: Array = []
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			visitor_ids.append(pawn_id)
+	for pawn_id in visitor_ids:
+		sim.destroy_entity(pawn_id)
+	return visitor_ids.size()
 
 
 func _find_pawn_snapshot(snapshot: Dictionary, pawn_id: int) -> Dictionary:

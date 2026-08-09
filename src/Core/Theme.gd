@@ -3,26 +3,9 @@ class_name SimTheme
 # Base class for simulation themes. Subclass and override whatever's relevant.
 # Themes govern music and can modify simulation state on start/tick/end.
 #
-# Extension pattern for future themes:
-# - Simulation-layer effects (touching pawn/entity state): add a new SimTheme subclass and
-#   override on_start/on_tick/on_end — see GymnopedieTheme's Energy drain and
-#   StrangeWorldsTheme's per-house skin override + visitor spawn/despawn below for two
-#   different shapes of this. Simulation.spawn_visitor_pawn/remove_all_visitors are the
-#   reusable primitives a visitor-spawning theme's on_start/on_end should call — no new AI or
-#   population code needed. Simulation.set_building_skin_override/get_home_building_ids are the
-#   reusable primitives for a theme that wants to change what colonists look like — scoped to
-#   individual homes rather than instantly affecting every colonist (see PawnView.sync_house_
-#   sheet): a colonist's rendered sheet only picks up a house's override once that pawn is next
-#   resolved as being home there. This is what makes "make one house the king's, another random
-#   knights" or "override just one house" naturally expressible without new plumbing.
-# - Godot-rendering-layer effects (particles, sprite swaps, extra shaders): GameRoot can
-#   branch on snapshot.theme.current_theme_name (a plain string match), the same way it
-#   already branches on has_shadows. Don't build a generic effect-request system until
-#   there are 3+ special-cased themes that would actually need one.
-#
-# SimpleTheme, GymnopedieTheme, and StrangeWorldsTheme below all `extends SimTheme`, so any
-# method they don't override falls back to the base's default here — no need to touch every
-# subclass just to add one new base method.
+# Every nested class below `extends SimTheme`, so any method a subclass doesn't override
+# falls back to the base's default here — no need to touch every subclass just to add one new
+# base method.
 
 
 ## Display name for debugging and UI.
@@ -58,7 +41,9 @@ func is_complete(_sim: Simulation, _theme_start_tick: int) -> bool:
 	return false
 
 
-## Called once when the theme ends.
+## Called once when the theme ends, before ThemeSystem clears every home's skin_override and
+## removes every visitor automatically (see Simulation.clear_all_home_skin_overrides/
+## remove_all_visitors) — only needed for something beyond that.
 func on_end(_sim: Simulation) -> void:
 	pass
 
@@ -69,6 +54,16 @@ func on_end(_sim: Simulation) -> void:
 # ---------------------------------------------------------------------------
 
 class SimpleTheme extends SimTheme:
+	# Rare stray-critter wanderers, shared across every plain track. STRAY_TRIGGER_CHANCE gates
+	# whether anything happens at all; STRAY_INCLUDE_CHANCE then independently decides each
+	# sheet, so any combination can show up. Forced to include at least one sheet if every
+	# independent roll misses, so a successful trigger always has something to show for it.
+	const STRAY_TRIGGER_CHANCE: float = 0.2
+	const STRAY_INCLUDE_CHANCE: float = 0.5
+	const STRAY_POOL: Array[String] = [
+		"gato_v2", "gato_2_v2", "gato_3_v2", "gato_4_v2", "gato_5_v2", "special_5_v2",
+	]
+
 	var _name: String
 	var _music_file: String
 	var _has_shadows: bool
@@ -87,11 +82,23 @@ class SimpleTheme extends SimTheme:
 	func has_shadows() -> bool:
 		return _has_shadows
 
+	func on_start(sim: Simulation) -> void:
+		if randf() >= STRAY_TRIGGER_CHANCE:
+			return
+
+		var chosen: Array[String] = []
+		for sheet in STRAY_POOL:
+			if randf() < STRAY_INCLUDE_CHANCE:
+				chosen.append(sheet)
+		if chosen.is_empty():
+			chosen.append(STRAY_POOL[randi() % STRAY_POOL.size()])
+
+		for i in chosen.size():
+			sim.spawn_visitor_pawn(chosen[i], {}, "Visitor %d" % (i + 1))
+
 
 # ---------------------------------------------------------------------------
-# GymnopedieTheme — calming Gymnopédie No. 1. No shadows, dims the screen (see GameRoot),
-# and drains everyone's Energy the moment it starts — this is what "night" means now,
-# rather than an hour-of-day check.
+# GymnopedieTheme — this is what "night" means now, rather than an hour-of-day check.
 # ---------------------------------------------------------------------------
 
 class GymnopedieTheme extends SimTheme:
@@ -115,10 +122,8 @@ class GymnopedieTheme extends SimTheme:
 
 
 # ---------------------------------------------------------------------------
-# StrangeWorldsTheme — sets every home's skin override to character_7_v2 (colonists pick it up
-# as they're next resolved as being home there — see PawnView.sync_house_sheet) and brings in
-# a wandering special_4_v2 visitor for every pawn the colony could ever hold (get_max_pawns())
-# — the town briefly looks twice as full. Both revert when the theme ends.
+# StrangeWorldsTheme — the skin override isn't instant: a colonist only picks it up next time
+# they're resolved as being home (see PawnView.sync_house_sheet).
 # ---------------------------------------------------------------------------
 
 class StrangeWorldsTheme extends SimTheme:
@@ -139,7 +144,140 @@ class StrangeWorldsTheme extends SimTheme:
 		for i in visitor_count:
 			sim.spawn_visitor_pawn(VISITOR_SHEET, {}, "Visitor %d" % (i + 1))
 
-	func on_end(sim: Simulation) -> void:
+
+# ---------------------------------------------------------------------------
+# ViennaWoodsTheme
+# ---------------------------------------------------------------------------
+
+class ViennaWoodsTheme extends SimTheme:
+	const SKIN_OVERRIDE: String = "spring_1_v2"
+	const VISITOR_SHEET_A: String = "spring_2_v2"
+	const VISITOR_SHEET_B: String = "spring_3_v2"
+
+	func get_name() -> String:
+		return "Tales From The Vienna Woods"
+
+	func get_music_file() -> String:
+		return "res://music/classics/tales_from_the_vienna_woods.ogg"
+
+	func on_start(sim: Simulation) -> void:
 		for building_id in sim.get_home_building_ids():
-			sim.set_building_skin_override(building_id, "")
-		sim.remove_all_visitors()
+			sim.set_building_skin_override(building_id, SKIN_OVERRIDE)
+
+		var group_count: int = sim.get_max_pawns() / 2
+		for i in group_count:
+			sim.spawn_visitor_pawn(VISITOR_SHEET_A, {}, "Visitor %d" % (i + 1))
+		for i in group_count:
+			sim.spawn_visitor_pawn(VISITOR_SHEET_B, {}, "Visitor %d" % (group_count + i + 1))
+
+
+# ---------------------------------------------------------------------------
+# PolarLightsTheme — visitors are a random per-visitor mix, unlike Vienna Woods' even split
+# into two fixed groups.
+# ---------------------------------------------------------------------------
+
+class PolarLightsTheme extends SimTheme:
+	const HOME_SKIN_A: String = "winter_1_v2"
+	const HOME_SKIN_B: String = "winter_2_v2"
+	const VISITOR_SHEET_A: String = "winter_3_v2"
+	const VISITOR_SHEET_B: String = "winter_4_v2"
+
+	func get_name() -> String:
+		return "Polar Lights"
+
+	func get_music_file() -> String:
+		return "res://music/tracks/polar_lights.ogg"
+
+	func on_start(sim: Simulation) -> void:
+		var home_ids: Array[int] = sim.get_home_building_ids()
+		for i in home_ids.size():
+			var skin: String = HOME_SKIN_A if i % 2 == 0 else HOME_SKIN_B
+			sim.set_building_skin_override(home_ids[i], skin)
+
+		var visitor_count: int = sim.get_max_pawns()
+		for i in visitor_count:
+			var sheet: String = VISITOR_SHEET_A if randf() < 0.5 else VISITOR_SHEET_B
+			sim.spawn_visitor_pawn(sheet, {}, "Visitor %d" % (i + 1))
+
+
+# ---------------------------------------------------------------------------
+# GoldenGleamTheme
+# ---------------------------------------------------------------------------
+
+class GoldenGleamTheme extends SimTheme:
+	const HOME_SKINS: Array[String] = ["dg_knight_1_v2", "dg_knight_2_v2", "dg_knight_3_v2", "dg_knight_4_v2"]
+	const VISITOR_SHEET: String = "character_15_v2"
+
+	func get_name() -> String:
+		return "Golden Gleam"
+
+	func get_music_file() -> String:
+		return "res://music/tracks/golden_gleam.ogg"
+
+	func on_start(sim: Simulation) -> void:
+		var home_ids: Array[int] = sim.get_home_building_ids()
+		for i in home_ids.size():
+			sim.set_building_skin_override(home_ids[i], HOME_SKINS[i % HOME_SKINS.size()])
+
+		sim.spawn_visitor_pawn(VISITOR_SHEET, {}, "Visitor")
+
+
+# ---------------------------------------------------------------------------
+# DriftingMemoriesTheme
+# ---------------------------------------------------------------------------
+
+class DriftingMemoriesTheme extends SimTheme:
+	const SKIN_OVERRIDE: String = "character_17_v2"
+	const VISITOR_SHEET: String = "character_18_v2"
+
+	func get_name() -> String:
+		return "Drifting Memories"
+
+	func get_music_file() -> String:
+		return "res://music/tracks/drifting_memories.ogg"
+
+	func on_start(sim: Simulation) -> void:
+		for building_id in sim.get_home_building_ids():
+			sim.set_building_skin_override(building_id, SKIN_OVERRIDE)
+
+		var visitor_count: int = randi_range(1, sim.get_max_pawns() * 2)
+		for i in visitor_count:
+			sim.spawn_visitor_pawn(VISITOR_SHEET, {}, "Visitor %d" % (i + 1))
+
+
+# ---------------------------------------------------------------------------
+# GentleBreezeTheme — no skin override, unlike the rest of the roster's special themes.
+# ---------------------------------------------------------------------------
+
+class GentleBreezeTheme extends SimTheme:
+	const VISITOR_SHEET: String = "autumn_1_v2"
+
+	func get_name() -> String:
+		return "Gentle Breeze"
+
+	func get_music_file() -> String:
+		return "res://music/tracks/gentle_breeze.ogg"
+
+	func on_start(sim: Simulation) -> void:
+		var visitor_count: int = sim.get_max_pawns() * 2
+		for i in visitor_count:
+			sim.spawn_visitor_pawn(VISITOR_SHEET, {}, "Visitor %d" % (i + 1))
+
+
+# ---------------------------------------------------------------------------
+# ForgottenBiomesTheme — also no skin override.
+# ---------------------------------------------------------------------------
+
+class ForgottenBiomesTheme extends SimTheme:
+	const VISITOR_SHEET: String = "special_3_v2"
+
+	func get_name() -> String:
+		return "Forgotten Biomes"
+
+	func get_music_file() -> String:
+		return "res://music/tracks/forgotten_biomes.ogg"
+
+	func on_start(sim: Simulation) -> void:
+		var visitor_count: int = sim.get_max_pawns()
+		for i in visitor_count:
+			sim.spawn_visitor_pawn(VISITOR_SHEET, {}, "Visitor %d" % (i + 1))

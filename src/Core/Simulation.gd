@@ -593,6 +593,14 @@ func set_building_skin_override(building_id: int, sheet_key: String) -> void:
 		bc.skin_override = sheet_key
 
 
+## Clears every home's skin_override back to "". Called automatically after every theme ends
+## (see ThemeSystem._start_theme), so individual themes don't need their own on_end just to
+## revert what they set in on_start.
+func clear_all_home_skin_overrides() -> void:
+	for building_id in get_home_building_ids():
+		set_building_skin_override(building_id, "")
+
+
 # --- Queries -----------------------------------------------------------------
 
 ## Finds a pawn entity id by its display name, or -1 if none match.

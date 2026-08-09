@@ -4,22 +4,22 @@ class_name CharacterSheetPool
 ## the default character_sheet.png) a house can hand out. Picked deterministically per house
 ## id — see get_sheet_for_house. Pawns who haven't slept in a house yet keep the plain default
 ## (character_sheet, loaded separately via SpriteResourceManager) instead of drawing from here.
+## Sheets a theme reserves for itself (see Theme.gd) are excluded so a house can't already be
+## wearing "special" clothes on an ordinary day. special_1_v2/special_2_v2 are commented out
+## for an unrelated reason — they just don't fit the rest of the pool; revisit later.
 const SHEET_NAMES: Array[String] = [
-	"autumn_1_v2", "autumn_2_v2", "autumn_3_v2", "autumn_4_v2",
+	"autumn_2_v2", "autumn_3_v2", "autumn_4_v2",
 	"basic_bunny_character_v2", "basic_character_v2",
 	"character_1_v2", "character_2_v2", "character_3_v2", "character_4_v2",
-	"character_5_v2", "character_6_v2", "character_7_v2", "character_8_v2",
+	"character_5_v2", "character_6_v2", "character_8_v2",
 	"character_9_v2", "character_10_v2", "character_11_v2", "character_12_v2",
-	"character_13_v2", "character_14_v2", "character_15_v2", "character_16_v2",
-	"character_17_v2", "character_18_v2", "character_19_v2", "character_20_v2",
+	"character_13_v2", "character_14_v2", "character_16_v2",
+	"character_19_v2", "character_20_v2",
 	"character_21_v2",
-	"dg_knight_1_v2", "dg_knight_2_v2", "dg_knight_3_v2", "dg_knight_4_v2",
-	"gato_v2", "gato_2_v2", "gato_3_v2", "gato_4_v2", "gato_5_v2",
 	"main_character_v2",
-	"special_1_v2", "special_2_v2", "special_3_v2", "special_4_v2", "special_5_v2",
-	"spring_1_v2", "spring_2_v2", "spring_3_v2", "spring_4_v2",
+	# "special_1_v2", "special_2_v2",
+	"spring_4_v2",
 	"summer_1_v2", "summer_2_v2", "summer_3_v2", "summer_4_v2",
-	"winter_1_v2", "winter_2_v2", "winter_3_v2", "winter_4_v2",
 ]
 
 static var _cache: Dictionary = {}
