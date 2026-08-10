@@ -2,15 +2,22 @@ shader_type canvas_item;
 uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_nearest;
 
 // ===== THEME VISUALS =====
-// warm/night are pre-computed by GameRoot from the current theme's own playback progress
-// (see CRTShaderController.set_theme_visuals) rather than a real-world clock, so every
-// theme's sunrise/sunset glow and any night-dimming always align with its own song.
+// warm/night/weather_tint are pre-computed by GameRoot from the current theme's own playback
+// progress (see CRTShaderController.set_theme_visuals) rather than a real-world clock, so
+// every theme's sunrise/sunset glow, night-dimming, or weather tint always aligns with its
+// own song.
 const float NIGHT_DIM = 0.5;
+// Only a mild dimming at full strength — nowhere near NIGHT_DIM's full darkness, since
+// weather_tint is meant to read as "overcast," not "night."
+const float WEATHER_TINT_DIM = 0.8;
 const vec3 WARM_TINT = vec3(1.0, 0.8, 0.50) * 1.3;
 const vec3 COOL_TINT = vec3(0.5, 0.6, 1.0) * 1.3;
 
 uniform float warm : hint_range(0.0, 1.0) = 0.0;
 uniform float night : hint_range(0.0, 1.0) = 0.0;
+// Independent of night: a theme (e.g. rain, or a future snow theme) can look cool/overcast
+// via this alone, with a much milder dim than night's — see SimTheme.get_weather_tint.
+uniform float weather_tint : hint_range(0.0, 1.0) = 0.0;
 
 // ===== CRT SETTINGS =====
 uniform bool enable_grain = true;
@@ -66,14 +73,17 @@ void fragment()
 	vec4 color = texture(screen_texture, xy);
 
 	// ===== APPLY THEME VISUALS FIRST =====
-	// warm/night arrive pre-computed from the current theme's own progress (see
+	// warm/night/weather_tint arrive pre-computed from the current theme's own progress (see
 	// CRTShaderController.set_theme_visuals) — this shader just applies the tint/dim.
-	float cool = night;
+	// weather_tint gets its own mild dim (WEATHER_TINT_DIM) independent of night's much
+	// stronger one, so an overcast rainy day reads as darker/bluer without going full-night.
+	float cool = max(night, weather_tint);
 
 	vec3 tint = mix(vec3(1.0), WARM_TINT, warm);
 	tint = mix(tint, COOL_TINT, cool);
 
 	float brightness = mix(1.0, NIGHT_DIM, night);
+	brightness *= mix(1.0, WEATHER_TINT_DIM, weather_tint);
 
 	color.rgb *= tint * brightness;
 

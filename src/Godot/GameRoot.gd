@@ -11,6 +11,7 @@ extends Node2D
 @export var tiles_root_path: NodePath = "."
 @export var shadow_rect_path: NodePath = ""
 @export var crt_shader_layer_path: NodePath = ""
+@export var weather_layer_path: NodePath = ""
 @export var camera_path: NodePath = ""
 @export var ui_layer_path: NodePath = ""
 @export var toolbar_path: NodePath = ""
@@ -67,6 +68,7 @@ var _shadow_rect: ColorRect = null
 var _shadow_shader_mat: ShaderMaterial = null
 var _has_occluders: bool = false
 var _crt_shader_controller: CRTShaderController = null
+var _weather_controller: WeatherEffectController = null
 var _camera: CameraController = null
 var _ui_layer: CanvasLayer = null
 var _toolbar: BuildToolbar = null
@@ -126,6 +128,8 @@ func _ready() -> void:
 
 	if not crt_shader_layer_path.is_empty():
 		_crt_shader_controller = get_node_or_null(crt_shader_layer_path)
+	if not weather_layer_path.is_empty():
+		_weather_controller = get_node_or_null(weather_layer_path)
 	if not camera_path.is_empty():
 		_camera = get_node_or_null(camera_path)
 	if not ui_layer_path.is_empty():
@@ -1000,11 +1004,15 @@ const THEME_NIGHT_FADE: float = 0.05
 func _update_theme_visuals(snapshot: Dictionary) -> void:
 	var theme: Dictionary = snapshot.get("theme", {})
 	var has_shadows: bool = theme.get("has_shadows", true)
+	var weather_tint: float = float(theme.get("weather_tint", 0.0))
 	var progress: float = _music_manager.get_playback_progress() if _music_manager != null else 0.0
 
-	var visuals: Dictionary = _compute_theme_visuals(progress, has_shadows)
+	var visuals: Dictionary = _compute_theme_visuals(progress, has_shadows, weather_tint)
 	if _crt_shader_controller != null:
-		_crt_shader_controller.set_theme_visuals(visuals["warm"], visuals["night"])
+		_crt_shader_controller.set_theme_visuals(visuals["warm"], visuals["night"], visuals["weather_tint"])
+
+	if _weather_controller != null:
+		_weather_controller.set_active_weather(theme.get("weather_effect_key", ""))
 
 	if _shadow_shader_mat != null:
 		if has_shadows:
@@ -1023,15 +1031,28 @@ func _update_theme_visuals(snapshot: Dictionary) -> void:
 		_shadow_rect.visible = _has_occluders and has_shadows
 
 
-func _compute_theme_visuals(progress: float, has_shadows: bool) -> Dictionary:
-	if not has_shadows:
+## A theme with no shadows AND no weather tint of its own (currently just Gymnopédie) means
+## actual night: dim the whole screen and cool it, easing in/out across its own playback. A
+## theme that supplies its own weather_tint (e.g. rain) skips night entirely — it tints
+## without darkening, easing in/out the same way, independent of has_shadows.
+func _compute_theme_visuals(progress: float, has_shadows: bool, weather_tint: float) -> Dictionary:
+	if not has_shadows and weather_tint <= 0.0:
 		var ease_in: float = smoothstep(0.0, THEME_NIGHT_FADE, progress)
 		var ease_out: float = 1.0 - smoothstep(1.0 - THEME_NIGHT_FADE, 1.0, progress)
-		return {"warm": 0.0, "night": minf(ease_in, ease_out)}
+		return {"warm": 0.0, "night": minf(ease_in, ease_out), "weather_tint": 0.0}
 
-	var warm: float = _band_ease(progress, 0.0, THEME_SUNRISE_LEN) \
-		+ _band_ease(progress, 1.0 - THEME_SUNRISE_LEN, 1.0)
-	return {"warm": clampf(warm, 0.0, 1.0), "night": 0.0}
+	var warm: float = 0.0
+	if has_shadows:
+		warm = clampf(
+			_band_ease(progress, 0.0, THEME_SUNRISE_LEN) + _band_ease(progress, 1.0 - THEME_SUNRISE_LEN, 1.0),
+			0.0, 1.0
+		)
+
+	var tint_ease: float = minf(
+		smoothstep(0.0, THEME_NIGHT_FADE, progress),
+		1.0 - smoothstep(1.0 - THEME_NIGHT_FADE, 1.0, progress)
+	)
+	return {"warm": warm, "night": 0.0, "weather_tint": weather_tint * tint_ease}
 
 
 ## Ported from the old shaders/screen_effects.gdshader band_ease() — eases a value up then

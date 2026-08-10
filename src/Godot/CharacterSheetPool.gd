@@ -5,8 +5,8 @@ class_name CharacterSheetPool
 ## id — see get_sheet_for_house. Pawns who haven't slept in a house yet keep the plain default
 ## (character_sheet, loaded separately via SpriteResourceManager) instead of drawing from here.
 ## Sheets a theme reserves for itself (see Theme.gd) are excluded so a house can't already be
-## wearing "special" clothes on an ordinary day. special_1_v2/special_2_v2 are commented out
-## for an unrelated reason — they just don't fit the rest of the pool; revisit later.
+## wearing "special" clothes on an ordinary day. special_2_v2 is commented out for an unrelated
+## reason — it just doesn't fit the rest of the pool; revisit later.
 const SHEET_NAMES: Array[String] = [
 	"autumn_2_v2", "autumn_3_v2", "autumn_4_v2",
 	"basic_bunny_character_v2", "basic_character_v2",
@@ -17,9 +17,9 @@ const SHEET_NAMES: Array[String] = [
 	"character_19_v2", "character_20_v2",
 	"character_21_v2",
 	"main_character_v2",
-	# "special_1_v2", "special_2_v2",
+	# "special_2_v2",
 	"spring_4_v2",
-	"summer_1_v2", "summer_2_v2", "summer_3_v2", "summer_4_v2",
+	"summer_2_v2", "summer_3_v2", "summer_4_v2",
 ]
 
 static var _cache: Dictionary = {}

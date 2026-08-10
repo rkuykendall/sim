@@ -20,9 +20,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				_shader_rect.visible = _enabled
 
 
-## warm/night are pre-computed by GameRoot from the current theme's playback progress and
-## has_shadows flag (see GameRoot._compute_theme_visuals) — this shader just applies them.
-func set_theme_visuals(warm: float, night: float) -> void:
+## warm/night/weather_tint are pre-computed by GameRoot from the current theme's playback
+## progress and has_shadows/weather_tint (see GameRoot._compute_theme_visuals) — this shader
+## just applies them.
+func set_theme_visuals(warm: float, night: float, weather_tint: float) -> void:
 	if _shader_rect == null:
 		return
 
@@ -30,3 +31,4 @@ func set_theme_visuals(warm: float, night: float) -> void:
 	if mat != null:
 		mat.set_shader_parameter("warm", warm)
 		mat.set_shader_parameter("night", night)
+		mat.set_shader_parameter("weather_tint", weather_tint)

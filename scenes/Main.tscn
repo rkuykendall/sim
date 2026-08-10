@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://src/Godot/MusicManager.gd" id="11"]
 [ext_resource type="PackedScene" uid="uid://homescreen" path="res://scenes/HomeScreen.tscn" id="12"]
 [ext_resource type="Script" path="res://src/Godot/SoundManager.gd" id="13"]
+[ext_resource type="Script" path="res://src/Godot/WeatherEffectController.gd" id="14"]
 
 [node name="Main" type="Node2D"]
 y_sort_enabled = true
@@ -35,6 +36,10 @@ color = Color(0, 0, 0, 0)
 
 [node name="Pawns" type="Node2D" parent="."]
 
+[node name="WeatherLayer" type="Node2D" parent="."]
+script = ExtResource("14")
+camera_path = NodePath("../Camera2D")
+
 [node name="GameRoot" type="Node2D" parent="."]
 script = ExtResource("1")
 pawn_scene = ExtResource("2")
@@ -44,6 +49,7 @@ buildings_root_path = NodePath("../Buildings")
 tiles_root_path = NodePath("../Tiles")
 shadow_rect_path = NodePath("../ShadowLayer/ShadowRect")
 crt_shader_layer_path = NodePath("../CRTShaderLayer")
+weather_layer_path = NodePath("../WeatherLayer")
 camera_path = NodePath("../Camera2D")
 ui_layer_path = NodePath("../UI")
 toolbar_path = NodePath("../UI/BuildToolbar")

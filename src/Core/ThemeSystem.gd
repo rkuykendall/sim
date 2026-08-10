@@ -6,13 +6,12 @@ class_name ThemeSystem
 # here — see Theme.gd — and get appended to the roster below.
 const ROSTER_DATA: Array = [
 	{"name": "Cuddle Clouds", "file": "res://music/tracks/cuddle_clouds.ogg"},
-	{"name": "Evening Harmony", "file": "res://music/tracks/evening_harmony.ogg"},
-	{"name": "Floating Dream", "file": "res://music/tracks/floating_dream.ogg"},
-	{"name": "Sunlight Through Leaves", "file": "res://music/tracks/sunlight_through_leaves.ogg"},
-	{"name": "Wanderer's Tale", "file": "res://music/tracks/wanderers_tale.ogg"},
-	{"name": "Whispering Woods", "file": "res://music/tracks/whispering_woods.ogg"},
-	{"name": "Minuet", "file": "res://music/classics/minuet.ogg"},
-	{"name": "Minuet (Slower)", "file": "res://music/classics/minuet_slower.ogg"},
+	# {"name": "Evening Harmony", "file": "res://music/tracks/evening_harmony.ogg"},
+	# {"name": "Sunlight Through Leaves", "file": "res://music/tracks/sunlight_through_leaves.ogg"},
+	# {"name": "Wanderer's Tale", "file": "res://music/tracks/wanderers_tale.ogg"},
+	# {"name": "Whispering Woods", "file": "res://music/tracks/whispering_woods.ogg"},
+	# {"name": "Minuet", "file": "res://music/classics/minuet.ogg"},
+	# {"name": "Minuet (Slower)", "file": "res://music/classics/minuet_slower.ogg"},
 ]
 
 var current_theme: SimTheme = null
@@ -32,14 +31,15 @@ func _init(disabled: bool = false) -> void:
 			entry.get("file", ""),
 			entry.get("shadows", true)
 		))
-	_available_themes.append(SimTheme.GymnopedieTheme.new())
-	_available_themes.append(SimTheme.StrangeWorldsTheme.new())
-	_available_themes.append(SimTheme.ViennaWoodsTheme.new())
-	_available_themes.append(SimTheme.PolarLightsTheme.new())
-	_available_themes.append(SimTheme.GoldenGleamTheme.new())
-	_available_themes.append(SimTheme.DriftingMemoriesTheme.new())
-	_available_themes.append(SimTheme.GentleBreezeTheme.new())
-	_available_themes.append(SimTheme.ForgottenBiomesTheme.new())
+	# _available_themes.append(SimTheme.GymnopedieTheme.new())
+	# _available_themes.append(SimTheme.StrangeWorldsTheme.new())
+	# _available_themes.append(SimTheme.ViennaWoodsTheme.new())
+	# _available_themes.append(SimTheme.PolarLightsTheme.new())
+	# _available_themes.append(SimTheme.GoldenGleamTheme.new())
+	# _available_themes.append(SimTheme.DriftingMemoriesTheme.new())
+	# _available_themes.append(SimTheme.GentleBreezeTheme.new())
+	# _available_themes.append(SimTheme.ForgottenBiomesTheme.new())
+	_available_themes.append(SimTheme.FloatingDreamTheme.new())
 
 
 func tick(sim: Simulation) -> void:

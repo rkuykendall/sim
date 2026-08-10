@@ -778,6 +778,8 @@ func create_render_snapshot() -> Dictionary:
 		snap_theme["current_music_file"] = ct.get_music_file() if ct != null else ""
 		snap_theme["queued_theme_name"] = qt.get_name() if qt != null else ""
 		snap_theme["has_shadows"] = ct.has_shadows() if ct != null else true
+		snap_theme["weather_tint"] = ct.get_weather_tint() if ct != null else 0.0
+		snap_theme["weather_effect_key"] = ct.get_weather_effect_key() if ct != null else ""
 
 	return {
 		"pawns": _build_pawn_snapshots(),

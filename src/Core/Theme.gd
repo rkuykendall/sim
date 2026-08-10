@@ -25,6 +25,21 @@ func has_shadows() -> bool:
 	return true
 
 
+## Strength (0.0-1.0) of a cool/blue screen tint applied for this theme's duration, independent
+## of has_shadows' night-dimming (see shaders/screen_effects.gdshader's "weather_tint" uniform)
+## — a rainy or wintry theme can look cool/overcast without going dark. 0.0 = no tint.
+func get_weather_tint() -> float:
+	return 0.0
+
+
+## Key identifying which ambient weather particle effect (see WeatherEffectController's
+## PROFILES) should run for this theme's duration, or "" for none. Reusable across any theme
+## wanting the same kind of falling-then-splashing/settling particle (e.g. a future snow
+## theme would just add a new profile and return its key here).
+func get_weather_effect_key() -> String:
+	return ""
+
+
 ## Called once when the theme becomes active.
 func on_start(_sim: Simulation) -> void:
 	pass
@@ -279,5 +294,38 @@ class ForgottenBiomesTheme extends SimTheme:
 
 	func on_start(sim: Simulation) -> void:
 		var visitor_count: int = sim.get_max_pawns()
+		for i in visitor_count:
+			sim.spawn_visitor_pawn(VISITOR_SHEET, {}, "Visitor %d" % (i + 1))
+
+
+# ---------------------------------------------------------------------------
+# FloatingDreamTheme — a rainy theme: no shadows, a cool screen tint, and falling rain (see
+# get_weather_tint/get_weather_effect_key).
+# ---------------------------------------------------------------------------
+
+class FloatingDreamTheme extends SimTheme:
+	const SKIN_OVERRIDE: String = "summer_1_v2"
+	const VISITOR_SHEET: String = "special_1_v2"
+
+	func get_name() -> String:
+		return "Floating Dream"
+
+	func get_music_file() -> String:
+		return "res://music/tracks/floating_dream.ogg"
+
+	func has_shadows() -> bool:
+		return false
+
+	func get_weather_tint() -> float:
+		return 0.5
+
+	func get_weather_effect_key() -> String:
+		return "rain"
+
+	func on_start(sim: Simulation) -> void:
+		for building_id in sim.get_home_building_ids():
+			sim.set_building_skin_override(building_id, SKIN_OVERRIDE)
+
+		var visitor_count: int = sim.get_max_pawns() / 2
 		for i in visitor_count:
 			sim.spawn_visitor_pawn(VISITOR_SHEET, {}, "Visitor %d" % (i + 1))

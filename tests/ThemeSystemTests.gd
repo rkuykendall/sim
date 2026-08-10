@@ -25,7 +25,7 @@ const EXPECTED_TRACK_FILES: Array[String] = [
 func run() -> void:
 	print("  [ThemeSystemTests]")
 	run_test("Roster_HasSixteenUniqueThemes_OneForEveryMusicFile", test_roster_completeness)
-	run_test("Roster_ExactlyOneThemeHasNoShadows", test_exactly_one_no_shadow_theme)
+	run_test("Roster_ExactlyTheExpectedThemesHaveNoShadows", test_exactly_one_no_shadow_theme)
 	run_test("Gymnopedie_DrainsAllPawnsEnergyOnStart", test_gymnopedie_drains_energy)
 	run_test("Gymnopedie_HasShadowsFalse_ReflectedInSnapshot", test_gymnopedie_snapshot_has_shadows_false)
 	run_test("Theme_DoesNotChange_WithoutMusicFinishedSignal", test_theme_persists_until_music_finished)
@@ -45,6 +45,8 @@ func run() -> void:
 	run_test("DriftingMemories_SpawnsVisitorsWithinRange_RemovesOnEnd", test_drifting_memories_visitor_lifecycle)
 	run_test("GentleBreeze_SpawnsDoubleVisitorCount_RemovesOnEnd_NoSkinOverride", test_gentle_breeze_visitor_lifecycle)
 	run_test("ForgottenBiomes_SpawnsMaxPawnsVisitorCount_RemovesOnEnd_NoSkinOverride", test_forgotten_biomes_visitor_lifecycle)
+	run_test("FloatingDream_SetsHomeSkinOverride_AndSpawnsHalfMaxPawnsVisitors_RemovesOnEnd", test_floating_dream_lifecycle)
+	run_test("FloatingDream_HasNoShadows_AndWeatherTintAndEffectKeySet", test_floating_dream_weather_properties)
 	run_test("SimpleTheme_StrayCritters_TriggerRateIsRoughlyOneInFive", test_simple_theme_stray_trigger_rate)
 	run_test("SimpleTheme_StrayCritters_CombinationVariesAndCleansUp", test_simple_theme_stray_combination_varies)
 
@@ -75,15 +77,16 @@ func test_exactly_one_no_shadow_theme() -> void:
 	var builder := _Builder.new().with_themes_enabled()
 	var sim := builder.build()
 
-	var no_shadow_count := 0
-	var no_shadow_name := ""
+	var no_shadow_names: Array[String] = []
 	for t in sim.theme_system._available_themes:
 		if not t.has_shadows():
-			no_shadow_count += 1
-			no_shadow_name = t.get_name()
+			no_shadow_names.append(t.get_name())
 
-	assert_eq(no_shadow_count, 1, "Exactly one theme should have no shadows")
-	assert_eq(no_shadow_name, "Gymnopédie No. 1", "The no-shadow theme should be Gymnopédie No. 1")
+	no_shadow_names.sort()
+	assert_eq(
+		no_shadow_names, ["Floating Dream", "Gymnopédie No. 1"],
+		"Only Gymnopédie No. 1 (night) and Floating Dream (rain) should have no shadows"
+	)
 
 
 func test_gymnopedie_drains_energy() -> void:
@@ -634,6 +637,62 @@ func test_forgotten_biomes_visitor_lifecycle() -> void:
 		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
 			remaining_forgotten_visitors += 1
 	assert_eq(remaining_forgotten_visitors, 0, "All visitors should have left after the theme ended and enough time passed")
+
+
+# Floating Dream sets a home skin override (like Strange Worlds) AND spawns visitors sized
+# get_max_pawns() / 2 (like Vienna Woods' per-group count, but a single sheet here).
+func test_floating_dream_lifecycle() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	builder.with_world_bounds(10, 10)
+	var home_id := builder.define_building(
+		"TestHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 6, true
+	)
+	builder.add_building(home_id, 5, 5)
+	var sim := builder.build()
+
+	assert_eq(sim.get_max_pawns(), 6, "Setup should give a pawn goal of 6")
+	var home_building_id := _get_building_by_def_id(sim, home_id)
+
+	var theme = SimTheme.FloatingDreamTheme.new()
+	sim.theme_system._start_theme(sim, theme)
+
+	assert_eq(sim.entities.buildings[home_building_id].skin_override, "summer_1_v2", "Home should receive Floating Dream's skin override on start")
+
+	var visitor_count := 0
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			visitor_count += 1
+			assert_eq(sim.entities.pawns[pawn_id].forced_sheet_key, "special_1_v2", "Spawned visitor should carry Floating Dream's forced sheet key")
+	assert_eq(visitor_count, sim.get_max_pawns() / 2, "Theme should spawn exactly get_max_pawns() / 2 visitors on start")
+
+	sim.theme_system._start_theme(sim, _find_theme_by_name(sim, "Gymnopédie No. 1"))
+	sim.run_ticks(2000)
+
+	assert_eq(sim.entities.buildings[home_building_id].skin_override, "", "Home's override should be cleared once the theme ends")
+	var remaining_dream_visitors := 0
+	for pawn_id in sim.entities.pawns:
+		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
+			remaining_dream_visitors += 1
+	assert_eq(remaining_dream_visitors, 0, "All visitors should have left after the theme ended and enough time passed")
+
+
+# has_shadows/weather_tint/weather_effect_key all plumb through to the render snapshot exactly
+# as the theme declares them — this is what GameRoot reads to drive the CRT shader tint and
+# the weather particle controller (see WeatherEffectController).
+func test_floating_dream_weather_properties() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	var sim := builder.build()
+
+	var theme = SimTheme.FloatingDreamTheme.new()
+	assert_false(theme.has_shadows(), "Floating Dream should have no shadows")
+	assert_gt(theme.get_weather_tint(), 0.0, "Floating Dream should have a non-zero weather tint")
+	assert_eq(theme.get_weather_effect_key(), "rain", "Floating Dream should declare the 'rain' weather effect")
+
+	sim.theme_system._start_theme(sim, theme)
+	var snapshot: Dictionary = sim.create_render_snapshot()
+	assert_false(snapshot.get("theme", {}).get("has_shadows", true), "Snapshot should reflect no shadows")
+	assert_gt(float(snapshot.get("theme", {}).get("weather_tint", 0.0)), 0.0, "Snapshot should carry a non-zero weather_tint")
+	assert_eq(snapshot.get("theme", {}).get("weather_effect_key", ""), "rain", "Snapshot should carry the 'rain' weather_effect_key")
 
 
 # Statistical: over many independent trials, roughly 1-in-5 SimpleTheme starts should spawn
