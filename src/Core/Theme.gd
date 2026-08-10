@@ -40,6 +40,20 @@ func get_weather_effect_key() -> String:
 	return ""
 
 
+## "Cooldown" counter driving ThemeSystem's weighted rotation (see _pick_random_theme) — not a
+## traditional priority. Starts at 0 (immediately eligible); jumps up by get_priority_gain()
+## each time this theme is picked, then decays by 1 every subsequent pick (floored at 0) until
+## it's back down to the lowest value again. Lower = more overdue = more likely to be picked.
+var priority: int = 0
+
+
+## How much priority (above) this theme gains each time it's picked — effectively how many
+## picks pass before it's eligible again. Higher = rarer. 6 is the default tier; override for
+## something rarer (e.g. 10) or more common (e.g. 3, see GymnopedieTheme).
+func get_priority_gain() -> int:
+	return 6
+
+
 ## Called once when the theme becomes active.
 func on_start(_sim: Simulation) -> void:
 	pass
@@ -126,6 +140,9 @@ class GymnopedieTheme extends SimTheme:
 	func has_shadows() -> bool:
 		return false
 
+	func get_priority_gain() -> int:
+		return 3  # common — this is the recurring "night" beat, it should come up often
+
 	func on_start(sim: Simulation) -> void:
 		var energy_id: int = sim.content.get_need_id("Energy")
 		if energy_id == -1:
@@ -151,6 +168,9 @@ class StrangeWorldsTheme extends SimTheme:
 	func get_music_file() -> String:
 		return "res://music/tracks/strange_worlds.ogg"
 
+	func get_priority_gain() -> int:
+		return 10  # rare — a special costume/visitor event, not everyday rotation
+
 	func on_start(sim: Simulation) -> void:
 		for building_id in sim.get_home_building_ids():
 			sim.set_building_skin_override(building_id, SKIN_OVERRIDE)
@@ -174,6 +194,9 @@ class ViennaWoodsTheme extends SimTheme:
 
 	func get_music_file() -> String:
 		return "res://music/classics/tales_from_the_vienna_woods.ogg"
+
+	func get_priority_gain() -> int:
+		return 10  # rare
 
 	func on_start(sim: Simulation) -> void:
 		for building_id in sim.get_home_building_ids():
@@ -203,6 +226,9 @@ class PolarLightsTheme extends SimTheme:
 	func get_music_file() -> String:
 		return "res://music/tracks/polar_lights.ogg"
 
+	func get_priority_gain() -> int:
+		return 10  # rare
+
 	func on_start(sim: Simulation) -> void:
 		var home_ids: Array[int] = sim.get_home_building_ids()
 		for i in home_ids.size():
@@ -229,6 +255,9 @@ class GoldenGleamTheme extends SimTheme:
 	func get_music_file() -> String:
 		return "res://music/tracks/golden_gleam.ogg"
 
+	func get_priority_gain() -> int:
+		return 10  # rare
+
 	func on_start(sim: Simulation) -> void:
 		var home_ids: Array[int] = sim.get_home_building_ids()
 		for i in home_ids.size():
@@ -250,6 +279,9 @@ class DriftingMemoriesTheme extends SimTheme:
 
 	func get_music_file() -> String:
 		return "res://music/tracks/drifting_memories.ogg"
+
+	func get_priority_gain() -> int:
+		return 10  # rare
 
 	func on_start(sim: Simulation) -> void:
 		for building_id in sim.get_home_building_ids():
@@ -273,6 +305,9 @@ class GentleBreezeTheme extends SimTheme:
 	func get_music_file() -> String:
 		return "res://music/tracks/gentle_breeze.ogg"
 
+	func get_priority_gain() -> int:
+		return 10  # rare
+
 	func on_start(sim: Simulation) -> void:
 		var visitor_count: int = sim.get_max_pawns() * 2
 		for i in visitor_count:
@@ -291,6 +326,9 @@ class ForgottenBiomesTheme extends SimTheme:
 
 	func get_music_file() -> String:
 		return "res://music/tracks/forgotten_biomes.ogg"
+
+	func get_priority_gain() -> int:
+		return 10  # rare
 
 	func on_start(sim: Simulation) -> void:
 		var visitor_count: int = sim.get_max_pawns()
@@ -321,6 +359,9 @@ class FloatingDreamTheme extends SimTheme:
 
 	func get_weather_effect_key() -> String:
 		return "rain"
+
+	func get_priority_gain() -> int:
+		return 10  # rare
 
 	func on_start(sim: Simulation) -> void:
 		for building_id in sim.get_home_building_ids():

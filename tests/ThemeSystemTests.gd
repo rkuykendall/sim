@@ -49,6 +49,11 @@ func run() -> void:
 	run_test("FloatingDream_HasNoShadows_AndWeatherTintAndEffectKeySet", test_floating_dream_weather_properties)
 	run_test("SimpleTheme_StrayCritters_TriggerRateIsRoughlyOneInFive", test_simple_theme_stray_trigger_rate)
 	run_test("SimpleTheme_StrayCritters_CombinationVariesAndCleansUp", test_simple_theme_stray_combination_varies)
+	run_test("Priority_FreshThemeStartsAtZero_TiersHaveExpectedGains", test_priority_defaults_and_tiers)
+	run_test("Priority_PickedThemeJumpsByGain_OthersDecayTowardFloor", test_priority_lifecycle)
+	run_test("Priority_NeverGoesNegative", test_priority_never_goes_negative)
+	run_test("Priority_PickAlwaysComesFromTheLowestPrioritySet", test_pick_random_theme_selects_lowest_priority)
+	run_test("Priority_CommonThemePickedMoreOftenThanRareTheme", test_common_theme_picked_more_often_than_rare)
 
 
 # Every music file in music/tracks/ and music/classics/ should have exactly one theme, and
@@ -143,6 +148,10 @@ func test_theme_changes_after_music_finished() -> void:
 	assert_true(found, "The new current theme should be a roster member")
 
 
+# No explicit "exclude the current theme" rule exists anymore — this now falls out of the
+# priority/cooldown selection in _pick_random_theme (see ThemeSystem.gd): a just-picked
+# theme's priority is always above 0 afterward, and since there are more themes (16) than the
+# largest gain (10, "rare"), some other theme is always sitting at 0 and wins instead.
 func test_avoid_immediate_repeat() -> void:
 	var builder := _Builder.new().with_themes_enabled()
 	var sim := builder.build()
@@ -162,6 +171,89 @@ func test_disabled_by_default() -> void:
 
 	sim.run_ticks(100)
 	assert_true(sim.theme_system.current_theme == null, "Themes should stay disabled unless explicitly enabled")
+
+
+func test_priority_defaults_and_tiers() -> void:
+	var simple = SimTheme.SimpleTheme.new("Trial", "res://music/tracks/cuddle_clouds.ogg")
+	assert_eq(simple.priority, 0, "A fresh theme should start at priority 0")
+	assert_eq(simple.get_priority_gain(), 6, "SimpleTheme should inherit the default tier's gain (6)")
+
+	assert_eq(SimTheme.GymnopedieTheme.new().get_priority_gain(), 3, "Gymnopédie should be the common tier (gain 3)")
+	assert_eq(SimTheme.StrangeWorldsTheme.new().get_priority_gain(), 10, "Strange Worlds should be the rare tier (gain 10)")
+
+
+# Isolates the mechanism directly: a picked theme's priority should jump to its own gain, every
+# other theme should be left untouched by that same pick (only decayed on the *next* pick), and
+# an un-picked theme should decay by exactly 1 per subsequent pick.
+func test_priority_lifecycle() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	var sim := builder.build()
+
+	var themes: Array = sim.theme_system._available_themes
+	for t in themes:
+		t.priority = 0
+
+	var picked_first = sim.theme_system._pick_random_theme()
+	assert_eq(picked_first.priority, picked_first.get_priority_gain(), "Picked theme's priority should jump to its own gain")
+
+	for t in themes:
+		if t != picked_first:
+			assert_eq(t.priority, 0, "Non-picked themes should be untouched by someone else's pick (still at the floor they started at)")
+
+	var priority_after_first_pick: int = picked_first.priority
+	sim.theme_system._pick_random_theme()  # a second, unrelated pick — decays everyone again
+	assert_eq(picked_first.priority, priority_after_first_pick - 1, "An un-picked theme should decay by exactly 1 on the next pick")
+
+
+func test_priority_never_goes_negative() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	var sim := builder.build()
+
+	for i in 20:
+		sim.theme_system._pick_random_theme()
+
+	for t in sim.theme_system._available_themes:
+		assert_ge(float(t.priority), 0.0, "Priority should never decay below 0")
+
+
+func test_pick_random_theme_selects_lowest_priority() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	var sim := builder.build()
+
+	var themes: Array = sim.theme_system._available_themes
+	for t in themes:
+		t.priority = 5
+	var target = themes[3]
+	target.priority = 0
+
+	var picked = sim.theme_system._pick_random_theme()
+	assert_eq(picked, target, "Should always pick the uniquely lowest-priority theme, even after this pick's own decay step")
+
+
+# Over many rounds, a common theme (gain 3, cools down fast) should come up noticeably more
+# often than a rare one (gain 10, cools down slowly) — this is the actual point of the tiers.
+func test_common_theme_picked_more_often_than_rare() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	var sim := builder.build()
+
+	var gymnopedie = _find_theme_by_name(sim, "Gymnopédie No. 1")
+	var strange_worlds = _find_theme_by_name(sim, "Strange Worlds")
+	assert_not_null(gymnopedie, "Roster should contain Gymnopédie No. 1")
+	assert_not_null(strange_worlds, "Roster should contain Strange Worlds")
+
+	var gymnopedie_count := 0
+	var strange_worlds_count := 0
+	for i in 500:
+		var picked = sim.theme_system._pick_random_theme()
+		if picked == gymnopedie:
+			gymnopedie_count += 1
+		elif picked == strange_worlds:
+			strange_worlds_count += 1
+
+	assert_gt(
+		float(gymnopedie_count), float(strange_worlds_count),
+		"Common theme (%d picks) should be picked more often than rare theme (%d picks) over many rounds" % [gymnopedie_count, strange_worlds_count]
+	)
 
 
 # StrangeWorldsTheme should spawn as many visitor pawns as the colony's pawn goal (get_max_pawns,

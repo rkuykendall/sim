@@ -6,12 +6,12 @@ class_name ThemeSystem
 # here — see Theme.gd — and get appended to the roster below.
 const ROSTER_DATA: Array = [
 	{"name": "Cuddle Clouds", "file": "res://music/tracks/cuddle_clouds.ogg"},
-	# {"name": "Evening Harmony", "file": "res://music/tracks/evening_harmony.ogg"},
-	# {"name": "Sunlight Through Leaves", "file": "res://music/tracks/sunlight_through_leaves.ogg"},
-	# {"name": "Wanderer's Tale", "file": "res://music/tracks/wanderers_tale.ogg"},
-	# {"name": "Whispering Woods", "file": "res://music/tracks/whispering_woods.ogg"},
-	# {"name": "Minuet", "file": "res://music/classics/minuet.ogg"},
-	# {"name": "Minuet (Slower)", "file": "res://music/classics/minuet_slower.ogg"},
+	{"name": "Evening Harmony", "file": "res://music/tracks/evening_harmony.ogg"},
+	{"name": "Sunlight Through Leaves", "file": "res://music/tracks/sunlight_through_leaves.ogg"},
+	{"name": "Wanderer's Tale", "file": "res://music/tracks/wanderers_tale.ogg"},
+	{"name": "Whispering Woods", "file": "res://music/tracks/whispering_woods.ogg"},
+	{"name": "Minuet", "file": "res://music/classics/minuet.ogg"},
+	{"name": "Minuet (Slower)", "file": "res://music/classics/minuet_slower.ogg"},
 ]
 
 var current_theme: SimTheme = null
@@ -31,14 +31,14 @@ func _init(disabled: bool = false) -> void:
 			entry.get("file", ""),
 			entry.get("shadows", true)
 		))
-	# _available_themes.append(SimTheme.GymnopedieTheme.new())
-	# _available_themes.append(SimTheme.StrangeWorldsTheme.new())
-	# _available_themes.append(SimTheme.ViennaWoodsTheme.new())
-	# _available_themes.append(SimTheme.PolarLightsTheme.new())
-	# _available_themes.append(SimTheme.GoldenGleamTheme.new())
-	# _available_themes.append(SimTheme.DriftingMemoriesTheme.new())
-	# _available_themes.append(SimTheme.GentleBreezeTheme.new())
-	# _available_themes.append(SimTheme.ForgottenBiomesTheme.new())
+	_available_themes.append(SimTheme.GymnopedieTheme.new())
+	_available_themes.append(SimTheme.StrangeWorldsTheme.new())
+	_available_themes.append(SimTheme.ViennaWoodsTheme.new())
+	_available_themes.append(SimTheme.PolarLightsTheme.new())
+	_available_themes.append(SimTheme.GoldenGleamTheme.new())
+	_available_themes.append(SimTheme.DriftingMemoriesTheme.new())
+	_available_themes.append(SimTheme.GentleBreezeTheme.new())
+	_available_themes.append(SimTheme.ForgottenBiomesTheme.new())
 	_available_themes.append(SimTheme.FloatingDreamTheme.new())
 
 
@@ -68,16 +68,26 @@ func on_music_finished(sim: Simulation) -> void:
 
 # --- Private ---------------------------------------------------------------
 
-## Uniform-random pick, excluding whichever theme just ended so the same song can't
-## immediately repeat back-to-back.
+## Weighted rotation via a "cooldown" priority (see SimTheme.priority/get_priority_gain):
+## every pick first decays every theme's priority by 1 (floored at 0), then picks uniformly
+## at random from whichever theme(s) currently have the lowest priority — the most "overdue."
+## The picked theme's priority then jumps up by its own get_priority_gain(), taking it out of
+## contention until enough later picks have decayed it back down — rarer themes (higher gain)
+## come up less often. This also naturally prevents immediate repeats without a separate rule:
+## a just-picked theme's priority is always above 0 afterward, and as long as there are more
+## themes than the largest gain in play, some other theme is always sitting at 0.
 func _pick_random_theme() -> SimTheme:
-	var candidates: Array[SimTheme] = _available_themes
-	if current_theme != null:
-		var current_name: String = current_theme.get_name()
-		candidates = _available_themes.filter(func(t): return t.get_name() != current_name)
-	if candidates.is_empty():
-		candidates = _available_themes
-	return candidates[randi() % candidates.size()]
+	for t in _available_themes:
+		t.priority = maxi(0, t.priority - 1)
+
+	var min_priority: int = _available_themes[0].priority
+	for t in _available_themes:
+		min_priority = mini(min_priority, t.priority)
+
+	var lowest: Array[SimTheme] = _available_themes.filter(func(t): return t.priority == min_priority)
+	var picked: SimTheme = lowest[randi() % lowest.size()]
+	picked.priority += picked.get_priority_gain()
+	return picked
 
 
 func _start_theme(sim: Simulation, theme: SimTheme) -> void:
