@@ -5,18 +5,40 @@ const _Builder = preload("res://tests/TestSimulationBuilder.gd")
 
 func run() -> void:
 	print("  [AISystemTests]")
-	run_test("DiversityMap_StableAcrossRepeatedWanderDecisions", test_diversity_map_stable_across_wandering)
+	run_test(
+		"DiversityMap_StableAcrossRepeatedWanderDecisions",
+		test_diversity_map_stable_across_wandering
+	)
 	run_test("DiversityMap_RebuildsAfterPaintTerrain", test_diversity_map_rebuilds_after_paint)
 	run_test("DiversityMap_RebuildsAfterDeleteAtTile", test_diversity_map_rebuilds_after_delete)
-	run_test("DiversityMap_ReusesSameArrayWhenWorldUnchanged", test_diversity_map_cached_reference_reused)
-	run_test("TrappedPawn_GetsFallbackAction_InsteadOfEmptyQueue", test_trapped_pawn_gets_fallback_action)
+	run_test(
+		"DiversityMap_ReusesSameArrayWhenWorldUnchanged", test_diversity_map_cached_reference_reused
+	)
+	run_test(
+		"TrappedPawn_GetsFallbackAction_InsteadOfEmptyQueue", test_trapped_pawn_gets_fallback_action
+	)
 	run_test("TrappedPawn_DoesNotRedecideEveryTick", test_trapped_pawn_does_not_redecide_every_tick)
-	run_test("ConsumerAttachment_DoesNotBiasWorkScoring", test_consumer_attachment_does_not_bias_work_scoring)
-	run_test("WorkScoring_PenalizesTotalCrowd_NotJustTheSingleMostAttachedPawn", test_work_scoring_sums_other_pawns_attachment)
-	run_test("WanderHomeVisit_HappensOverTime_WithoutTouchingEnergyOrAttachment", test_wander_home_visit_occurs_without_side_effects)
+	run_test(
+		"ConsumerAttachment_DoesNotBiasWorkScoring",
+		test_consumer_attachment_does_not_bias_work_scoring
+	)
+	run_test(
+		"WorkScoring_PenalizesTotalCrowd_NotJustTheSingleMostAttachedPawn",
+		test_work_scoring_sums_other_pawns_attachment
+	)
+	run_test(
+		"WanderHomeVisit_HappensOverTime_WithoutTouchingEnergyOrAttachment",
+		test_wander_home_visit_occurs_without_side_effects
+	)
 	run_test("WanderHomeVisit_NeverHappens_ForVisitors", test_wander_home_visit_excludes_visitors)
-	run_test("WanderExpression_ShowsUnsatisfiableNeed_RegardlessOfActionability", test_wander_expression_shows_unsatisfiable_need)
-	run_test("WanderExpression_ShowsBestNeed_WhenMoodIsPositive", test_wander_expression_shows_best_need_when_happy)
+	run_test(
+		"WanderExpression_ShowsUnsatisfiableNeed_RegardlessOfActionability",
+		test_wander_expression_shows_unsatisfiable_need
+	)
+	run_test(
+		"WanderExpression_ShowsBestNeed_WhenMoodIsPositive",
+		test_wander_expression_shows_best_need_when_happy
+	)
 
 
 # A lone pawn with no needs wanders continuously; the cached diversity map must stay
@@ -86,7 +108,10 @@ func test_diversity_map_cached_reference_reused() -> void:
 	var first: Array = sim.ai_system._get_diversity_map(sim.world)
 	var second: Array = sim.ai_system._get_diversity_map(sim.world)
 	assert_true(first == second, "Repeated reads with no world change should be equal")
-	assert_true(is_same(first, second), "Repeated reads with no world change should reuse the same Array instance")
+	assert_true(
+		is_same(first, second),
+		"Repeated reads with no world change should reuse the same Array instance"
+	)
 
 
 # A pawn fully boxed in by walls (no reachable buildings, no walkable wander candidate
@@ -115,7 +140,7 @@ func test_trapped_pawn_does_not_redecide_every_tick() -> void:
 	var action_comp = sim.entities.actions.get(pawn_id)
 
 	sim.tick()  # AISystem queues the fallback idle (current_action is still null this tick —
-	            # ActionSystem, which pops the queue into current_action, runs before AISystem)
+	# ActionSystem, which pops the queue into current_action, runs before AISystem)
 	sim.tick()  # ActionSystem pops it into current_action and sets action_start_tick
 
 	assert_not_null(action_comp.current_action, "Fallback idle should be the active action by now")
@@ -125,7 +150,8 @@ func test_trapped_pawn_does_not_redecide_every_tick() -> void:
 	sim.run_ticks(5)  # well within the fallback's retry-delay duration
 
 	assert_eq(
-		action_comp.action_start_tick, start_tick_ref,
+		action_comp.action_start_tick,
+		start_tick_ref,
 		"A fresh decision was made on a later tick — the fallback should persist instead of retrying every tick"
 	)
 	assert_true(
@@ -166,7 +192,8 @@ func test_consumer_attachment_does_not_bias_work_scoring() -> void:
 	var candidates := sim.ai_system._find_work_candidates(sim, pawn_id, purpose_id)
 
 	assert_eq(
-		candidates[0], near_entity_id,
+		candidates[0],
+		near_entity_id,
 		"Nearer building should win work scoring; Social attachment to the farther one must not leak into Purpose scoring"
 	)
 
@@ -201,14 +228,17 @@ func test_work_scoring_sums_other_pawns_attachment() -> void:
 	# Quiet: one other pawn at a higher strength 6 (sum 6, max 6).
 	# Under a max-only penalty, Quiet would look MORE claimed (6 > 4) and lose. Summing
 	# correctly identifies Crowded as the more contested building instead.
-	sim.entities.attachments[crowded_entity_id].need_attachments[purpose_id] = {8001: 4, 8002: 4, 8003: 4}
+	sim.entities.attachments[crowded_entity_id].need_attachments[purpose_id] = {
+		8001: 4, 8002: 4, 8003: 4
+	}
 	sim.entities.attachments[quiet_entity_id].need_attachments[purpose_id] = {9001: 6}
 
 	var pawn_id := sim.find_pawn_by_name("NewWorker")
 	var candidates := sim.ai_system._find_work_candidates(sim, pawn_id, purpose_id)
 
 	assert_eq(
-		candidates[0], quiet_entity_id,
+		candidates[0],
+		quiet_entity_id,
 		"A new worker should prefer the building with fewer total attached workers, not just a lower single strongest attachment"
 	)
 
@@ -224,7 +254,23 @@ func test_wander_home_visit_occurs_without_side_effects() -> void:
 	builder.with_world_bounds(20, 20)
 	var energy_id := builder.define_need("Energy", 0.0)  # zero decay: never becomes urgent
 	var home_id := builder.define_building(
-		"TestHome", energy_id, 50.0, 20, 20.0, 800, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
+		"TestHome",
+		energy_id,
+		50.0,
+		20,
+		20.0,
+		800,
+		[],
+		1,
+		false,
+		"",
+		100.0,
+		"direct",
+		"",
+		"",
+		true,
+		1,
+		true
 	)
 	builder.add_building(home_id, 10, 10)
 	builder.add_pawn("Idle", 10, 8, {energy_id: 100.0})
@@ -240,17 +286,27 @@ func test_wander_home_visit_occurs_without_side_effects() -> void:
 	# durations (up to 2500 ticks) make each wander cycle much longer on average than a plain idle.
 	for _i in 80000:
 		sim.tick()
-		if action_comp.current_action != null \
-				and action_comp.current_action.type == Definitions.ActionType.USE_BUILDING \
-				and action_comp.current_action.target_entity == home_building_id:
+		if (
+			action_comp.current_action != null
+			and action_comp.current_action.type == Definitions.ActionType.USE_BUILDING
+			and action_comp.current_action.target_entity == home_building_id
+		):
 			visited = true
 			break
 
 	assert_true(visited, "Colonist should eventually take a cosmetic home visit while idle")
-	assert_eq(sim.get_need_value(pawn_id, energy_id), 100.0, "A cosmetic visit must not touch the real Energy need")
+	assert_eq(
+		sim.get_need_value(pawn_id, energy_id),
+		100.0,
+		"A cosmetic visit must not touch the real Energy need"
+	)
 
 	var ac = sim.entities.attachments.get(home_building_id)
-	assert_eq(ac.get_strength(energy_id, pawn_id), 0, "A cosmetic visit must not build real Energy attachment")
+	assert_eq(
+		ac.get_strength(energy_id, pawn_id),
+		0,
+		"A cosmetic visit must not build real Energy attachment"
+	)
 
 
 # Visitors (see Definitions.PawnMembership) only ever wander — a purely cosmetic home detour
@@ -260,7 +316,23 @@ func test_wander_home_visit_excludes_visitors() -> void:
 	builder.with_world_bounds(20, 20)
 	var energy_id := builder.define_need("Energy", 0.0)
 	var home_id := builder.define_building(
-		"TestHome", energy_id, 50.0, 20, 20.0, 800, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
+		"TestHome",
+		energy_id,
+		50.0,
+		20,
+		20.0,
+		800,
+		[],
+		1,
+		false,
+		"",
+		100.0,
+		"direct",
+		"",
+		"",
+		true,
+		1,
+		true
 	)
 	builder.add_building(home_id, 10, 10)
 	var sim := builder.build()
@@ -272,9 +344,11 @@ func test_wander_home_visit_excludes_visitors() -> void:
 	for _i in 6000:
 		sim.tick()
 		assert_false(
-			action_comp.current_action != null
+			(
+				action_comp.current_action != null
 				and action_comp.current_action.type == Definitions.ActionType.USE_BUILDING
-				and action_comp.current_action.target_entity == home_building_id,
+				and action_comp.current_action.target_entity == home_building_id
+			),
 			"A visitor must never take the cosmetic home-visit detour"
 		)
 
@@ -301,9 +375,18 @@ func test_wander_expression_shows_unsatisfiable_need() -> void:
 
 	assert_not_null(sit_action, "Should eventually trigger the sit-and-observe emote")
 	assert_eq(sit_action.animation, Definitions.AnimationType.SIT, "Should play the sit animation")
-	assert_true(sit_action.has_expression, "Should show an expression even though nothing can satisfy Hygiene")
-	assert_eq(sit_action.expression, Definitions.ExpressionType.COMPLAINT, "Unhappy pawn should complain")
-	assert_eq(sit_action.expression_icon_def_id, hygiene_id, "Complaint should point at the pawn's actual worst need")
+	assert_true(
+		sit_action.has_expression,
+		"Should show an expression even though nothing can satisfy Hygiene"
+	)
+	assert_eq(
+		sit_action.expression, Definitions.ExpressionType.COMPLAINT, "Unhappy pawn should complain"
+	)
+	assert_eq(
+		sit_action.expression_icon_def_id,
+		hygiene_id,
+		"Complaint should point at the pawn's actual worst need"
+	)
 
 
 func test_wander_expression_shows_best_need_when_happy() -> void:
@@ -323,19 +406,31 @@ func test_wander_expression_shows_best_need_when_happy() -> void:
 	assert_not_null(sit_action, "Should eventually trigger the sit-and-observe emote")
 	assert_eq(sit_action.animation, Definitions.AnimationType.SIT, "Should play the sit animation")
 	assert_true(sit_action.has_expression, "A happy pawn should still show an expression")
-	assert_eq(sit_action.expression, Definitions.ExpressionType.HAPPY, "Positive mood should show a happy expression")
-	assert_eq(sit_action.expression_icon_def_id, purpose_id, "Happy expression should point at the pawn's actual best need")
+	assert_eq(
+		sit_action.expression,
+		Definitions.ExpressionType.HAPPY,
+		"Positive mood should show a happy expression"
+	)
+	assert_eq(
+		sit_action.expression_icon_def_id,
+		purpose_id,
+		"Happy expression should point at the pawn's actual best need"
+	)
 
 
 # Repeatedly calls _wander_randomly (clearing the queue each time) until it produces a sit
 # action, per AISystem.SIT_AND_EMOTE_CHANCE. Returns the sit ActionDef, or null if it never
 # triggered within the attempt budget.
-func _find_sit_action_by_wandering(sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent):
+func _find_sit_action_by_wandering(
+	sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent
+):
 	for _i in 200:
 		action_comp.action_queue.clear()
 		sim.ai_system._wander_randomly(sim, pawn_id, action_comp)
-		if action_comp.action_queue.size() == 2 \
-				and action_comp.action_queue[1].animation == Definitions.AnimationType.SIT:
+		if (
+			action_comp.action_queue.size() == 2
+			and action_comp.action_queue[1].animation == Definitions.AnimationType.SIT
+		):
 			return action_comp.action_queue[1]
 	return null
 

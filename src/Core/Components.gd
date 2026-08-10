@@ -45,7 +45,10 @@ class BuildingComponent:
 			var action_comp: Components.ActionComponent = entities.actions.get(pawn_id)
 			if action_comp == null:
 				continue
-			if action_comp.current_action != null and action_comp.current_action.target_entity == building_id:
+			if (
+				action_comp.current_action != null
+				and action_comp.current_action.target_entity == building_id
+			):
 				return true
 			for queued in action_comp.action_queue:
 				if queued.target_entity == building_id:
@@ -58,7 +61,10 @@ class BuildingComponent:
 			var action_comp: Components.ActionComponent = entities.actions.get(pawn_id)
 			if action_comp == null:
 				continue
-			if action_comp.current_action != null and action_comp.current_action.target_entity == building_id:
+			if (
+				action_comp.current_action != null
+				and action_comp.current_action.target_entity == building_id
+			):
 				return pawn_id
 			for queued in action_comp.action_queue:
 				if queued.target_entity == building_id:
@@ -102,6 +108,6 @@ class AttachmentComponent:
 
 
 class InventoryComponent:
-	var resource_type: String = ""   # "" = empty hands
+	var resource_type: String = ""  # "" = empty hands
 	var amount: float = 0.0
 	var max_amount: float = 50.0

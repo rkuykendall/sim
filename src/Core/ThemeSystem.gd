@@ -26,11 +26,11 @@ func _init(disabled: bool = false) -> void:
 	_disabled = disabled
 	_available_themes = []
 	for entry in ROSTER_DATA:
-		_available_themes.append(SimTheme.SimpleTheme.new(
-			entry.get("name", ""),
-			entry.get("file", ""),
-			entry.get("shadows", true)
-		))
+		_available_themes.append(
+			SimTheme.SimpleTheme.new(
+				entry.get("name", ""), entry.get("file", ""), entry.get("shadows", true)
+			)
+		)
 	_available_themes.append(SimTheme.GymnopedieTheme.new())
 	_available_themes.append(SimTheme.StrangeWorldsTheme.new())
 	_available_themes.append(SimTheme.ViennaWoodsTheme.new())
@@ -97,6 +97,7 @@ func get_current_theme_start_tick() -> int:
 
 # --- Private ---------------------------------------------------------------
 
+
 ## Weighted rotation via a "cooldown" priority (see SimTheme.priority/get_priority_gain):
 ## every pick first decays every theme's priority by 1 (floored at 0), then picks uniformly
 ## at random from whichever theme(s) currently have the lowest priority — the most "overdue."
@@ -113,7 +114,9 @@ func _pick_random_theme() -> SimTheme:
 	for t in _available_themes:
 		min_priority = mini(min_priority, t.priority)
 
-	var lowest: Array[SimTheme] = _available_themes.filter(func(t): return t.priority == min_priority)
+	var lowest: Array[SimTheme] = _available_themes.filter(
+		func(t): return t.priority == min_priority
+	)
 	var picked: SimTheme = lowest[randi() % lowest.size()]
 	picked.priority += picked.get_priority_gain()
 	return picked

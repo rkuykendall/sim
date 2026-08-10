@@ -6,12 +6,23 @@ const _Definitions = preload("res://src/Core/Definitions.gd")
 
 func run() -> void:
 	print("  [VisitorPawnTests]")
-	run_test("Visitor_WithEmptyNeeds_WandersForever_NeverSeeksBuilding", test_visitor_wanders_forever)
-	run_test("Visitor_ExcludedFromColonistCount_PopulationChecksIgnoreThem", test_visitor_excluded_from_population)
+	run_test(
+		"Visitor_WithEmptyNeeds_WandersForever_NeverSeeksBuilding", test_visitor_wanders_forever
+	)
+	run_test(
+		"Visitor_ExcludedFromColonistCount_PopulationChecksIgnoreThem",
+		test_visitor_excluded_from_population
+	)
 	run_test("RemoveAllVisitors_SendsEveryVisitorAway", test_remove_all_visitors_sends_them_away)
 	run_test("RemoveAllVisitors_NoOpsCleanly_WithZeroVisitors", test_remove_all_visitors_noop)
-	run_test("FindLeastInterestingPawn_NeverPicksAVisitor", test_find_least_interesting_pawn_skips_visitors)
-	run_test("WalkableEdgeTileCache_InvalidatesAfterBuildingBlocksATile", test_walkable_edge_tile_cache_invalidates_after_building)
+	run_test(
+		"FindLeastInterestingPawn_NeverPicksAVisitor",
+		test_find_least_interesting_pawn_skips_visitors
+	)
+	run_test(
+		"WalkableEdgeTileCache_InvalidatesAfterBuildingBlocksATile",
+		test_walkable_edge_tile_cache_invalidates_after_building
+	)
 
 
 # A needs-less visitor should never target the building that satisfies a real need — with no
@@ -21,7 +32,23 @@ func test_visitor_wanders_forever() -> void:
 	builder.with_world_bounds(20, 20)
 	var need_id := builder.define_need("Hunger", 0.02, 15.0, 35.0, -5.0, -1.0, "food")
 	var canteen_id := builder.define_building(
-		"Canteen", need_id, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 1, false
+		"Canteen",
+		need_id,
+		50.0,
+		20,
+		0.0,
+		0,
+		[],
+		1,
+		false,
+		"",
+		100.0,
+		"direct",
+		"",
+		"",
+		true,
+		1,
+		false
 	)
 	builder.add_building(canteen_id, 10, 10)
 	var sim := builder.build()
@@ -30,16 +57,26 @@ func test_visitor_wanders_forever() -> void:
 	assert_not_eq(visitor_id, -1, "Visitor should spawn on a walkable edge tile")
 
 	var needs_comp = sim.entities.needs.get(visitor_id)
-	assert_true(needs_comp.needs.is_empty(), "Visitor should start with a genuinely empty needs dict")
+	assert_true(
+		needs_comp.needs.is_empty(), "Visitor should start with a genuinely empty needs dict"
+	)
 
 	sim.run_ticks(600)
 
-	assert_true(needs_comp.needs.is_empty(), "Visitor's needs dict should stay empty — nothing should populate it")
+	assert_true(
+		needs_comp.needs.is_empty(),
+		"Visitor's needs dict should stay empty — nothing should populate it"
+	)
 	var action_comp = sim.entities.actions.get(visitor_id)
 	var targeted_canteen: bool = false
-	if action_comp.current_action != null and action_comp.current_action.type == _Definitions.ActionType.USE_BUILDING:
+	if (
+		action_comp.current_action != null
+		and action_comp.current_action.type == _Definitions.ActionType.USE_BUILDING
+	):
 		targeted_canteen = true
-	assert_false(targeted_canteen, "A needs-less visitor should never target a need-satisfying building")
+	assert_false(
+		targeted_canteen, "A needs-less visitor should never target a need-satisfying building"
+	)
 
 
 # Capacity-1 home already at capacity with one real colonist, plus several visitors — the
@@ -64,8 +101,14 @@ func test_visitor_excluded_from_population() -> void:
 
 	sim.run_ticks(Simulation.PAWN_SPAWN_INTERVAL + 10)
 
-	assert_eq(sim.entities.all_pawns().size(), 4, "Visitors present shouldn't trigger a spawn or an emigration")
-	assert_not_eq(sim.find_pawn_by_name("Colonist"), -1, "The real colonist should still be present")
+	assert_eq(
+		sim.entities.all_pawns().size(),
+		4,
+		"Visitors present shouldn't trigger a spawn or an emigration"
+	)
+	assert_not_eq(
+		sim.find_pawn_by_name("Colonist"), -1, "The real colonist should still be present"
+	)
 
 
 func test_remove_all_visitors_sends_them_away() -> void:
@@ -81,9 +124,12 @@ func test_remove_all_visitors_sends_them_away() -> void:
 
 	for visitor_id in visitor_ids:
 		var action_comp = sim.entities.actions.get(visitor_id)
-		assert_not_null(action_comp.current_action, "Each visitor should have an active leave-town action")
+		assert_not_null(
+			action_comp.current_action, "Each visitor should have an active leave-town action"
+		)
 		assert_eq(
-			action_comp.current_action.type, _Definitions.ActionType.MOVE_TO,
+			action_comp.current_action.type,
+			_Definitions.ActionType.MOVE_TO,
 			"Visitor should be walking toward the map edge"
 		)
 		var queued_leave: bool = false
@@ -94,7 +140,10 @@ func test_remove_all_visitors_sends_them_away() -> void:
 
 	sim.run_ticks(2000)
 	for visitor_id in visitor_ids:
-		assert_false(sim.entities.all_pawns().has(visitor_id), "Visitor should be gone after enough time to walk off")
+		assert_false(
+			sim.entities.all_pawns().has(visitor_id),
+			"Visitor should be gone after enough time to walk off"
+		)
 
 
 func test_remove_all_visitors_noop() -> void:
@@ -105,7 +154,11 @@ func test_remove_all_visitors_noop() -> void:
 
 	sim.remove_all_visitors()
 
-	assert_eq(sim.entities.all_pawns().size(), 1, "remove_all_visitors should no-op cleanly with zero visitors")
+	assert_eq(
+		sim.entities.all_pawns().size(),
+		1,
+		"remove_all_visitors should no-op cleanly with zero visitors"
+	)
 	assert_not_eq(sim.find_pawn_by_name("Colonist"), -1, "The lone colonist should be unaffected")
 
 
@@ -131,8 +184,16 @@ func test_find_least_interesting_pawn_skips_visitors() -> void:
 	var visitor_id := sim.spawn_visitor_pawn("special_4_v2", {}, "Visitor")
 
 	var worst_id: int = sim._find_least_interesting_pawn()
-	assert_eq(worst_id, happy_id, "With visitors excluded, the sole real colonist is the only eligible candidate")
-	assert_not_eq(worst_id, visitor_id, "A visitor's guaranteed-0 score must never make it eligible for capacity-driven emigration")
+	assert_eq(
+		worst_id,
+		happy_id,
+		"With visitors excluded, the sole real colonist is the only eligible candidate"
+	)
+	assert_not_eq(
+		worst_id,
+		visitor_id,
+		"A visitor's guaranteed-0 score must never make it eligible for capacity-driven emigration"
+	)
 
 
 # Regression test for Simulation._get_random_walkable_edge_tile's cache (added to fix theme-
@@ -162,6 +223,7 @@ func test_walkable_edge_tile_cache_invalidates_after_building() -> void:
 		assert_not_eq(visitor_id, -1, "The one remaining walkable tile should still be spawnable")
 		var pos = sim.entities.positions.get(visitor_id)
 		assert_eq(
-			pos.coord, Vector2i(1, 1),
+			pos.coord,
+			Vector2i(1, 1),
 			"Should always land on the sole remaining walkable edge tile — a stale cache would still offer the 3 now-blocked ones"
 		)

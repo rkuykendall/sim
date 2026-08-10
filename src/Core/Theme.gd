@@ -82,7 +82,9 @@ func on_end(_sim: Simulation) -> void:
 # Covers most of the roster; see ThemeSystem for the full theme list.
 # ---------------------------------------------------------------------------
 
-class SimpleTheme extends SimTheme:
+
+class SimpleTheme:
+	extends SimTheme
 	# Rare stray-critter wanderers, shared across every plain track. STRAY_TRIGGER_CHANCE gates
 	# whether anything happens at all; STRAY_INCLUDE_CHANCE then independently decides each
 	# sheet, so any combination can show up. Forced to include at least one sheet if every
@@ -90,7 +92,12 @@ class SimpleTheme extends SimTheme:
 	const STRAY_TRIGGER_CHANCE: float = 0.2
 	const STRAY_INCLUDE_CHANCE: float = 0.5
 	const STRAY_POOL: Array[String] = [
-		"gato_v2", "gato_2_v2", "gato_3_v2", "gato_4_v2", "gato_5_v2", "special_5_v2",
+		"gato_v2",
+		"gato_2_v2",
+		"gato_3_v2",
+		"gato_4_v2",
+		"gato_5_v2",
+		"special_5_v2",
 	]
 
 	var _name: String
@@ -130,7 +137,10 @@ class SimpleTheme extends SimTheme:
 # GymnopedieTheme — this is what "night" means now, rather than an hour-of-day check.
 # ---------------------------------------------------------------------------
 
-class GymnopedieTheme extends SimTheme:
+
+class GymnopedieTheme:
+	extends SimTheme
+
 	func get_name() -> String:
 		return "Gymnopédie No. 1"
 
@@ -155,7 +165,9 @@ class GymnopedieTheme extends SimTheme:
 # they're resolved as being home (see PawnView.sync_house_sheet).
 # ---------------------------------------------------------------------------
 
-class StrangeWorldsTheme extends SimTheme:
+
+class StrangeWorldsTheme:
+	extends SimTheme
 	const SKIN_OVERRIDE: String = "character_7_v2"
 	const VISITOR_SHEET: String = "special_4_v2"
 
@@ -181,7 +193,9 @@ class StrangeWorldsTheme extends SimTheme:
 # ViennaWoodsTheme
 # ---------------------------------------------------------------------------
 
-class ViennaWoodsTheme extends SimTheme:
+
+class ViennaWoodsTheme:
+	extends SimTheme
 	const SKIN_OVERRIDE: String = "spring_1_v2"
 	const VISITOR_SHEET_A: String = "spring_2_v2"
 	const VISITOR_SHEET_B: String = "spring_3_v2"
@@ -211,7 +225,9 @@ class ViennaWoodsTheme extends SimTheme:
 # into two fixed groups.
 # ---------------------------------------------------------------------------
 
-class PolarLightsTheme extends SimTheme:
+
+class PolarLightsTheme:
+	extends SimTheme
 	const HOME_SKIN_A: String = "winter_1_v2"
 	const HOME_SKIN_B: String = "winter_2_v2"
 	const VISITOR_SHEET_A: String = "winter_3_v2"
@@ -242,8 +258,12 @@ class PolarLightsTheme extends SimTheme:
 # GoldenGleamTheme
 # ---------------------------------------------------------------------------
 
-class GoldenGleamTheme extends SimTheme:
-	const HOME_SKINS: Array[String] = ["dg_knight_1_v2", "dg_knight_2_v2", "dg_knight_3_v2", "dg_knight_4_v2"]
+
+class GoldenGleamTheme:
+	extends SimTheme
+	const HOME_SKINS: Array[String] = [
+		"dg_knight_1_v2", "dg_knight_2_v2", "dg_knight_3_v2", "dg_knight_4_v2"
+	]
 	const VISITOR_SHEET: String = "character_15_v2"
 
 	func get_name() -> String:
@@ -267,7 +287,9 @@ class GoldenGleamTheme extends SimTheme:
 # DriftingMemoriesTheme
 # ---------------------------------------------------------------------------
 
-class DriftingMemoriesTheme extends SimTheme:
+
+class DriftingMemoriesTheme:
+	extends SimTheme
 	const SKIN_OVERRIDE: String = "character_17_v2"
 	const VISITOR_SHEET: String = "character_18_v2"
 
@@ -293,7 +315,9 @@ class DriftingMemoriesTheme extends SimTheme:
 # GentleBreezeTheme — no skin override, unlike the rest of the roster's special themes.
 # ---------------------------------------------------------------------------
 
-class GentleBreezeTheme extends SimTheme:
+
+class GentleBreezeTheme:
+	extends SimTheme
 	const VISITOR_SHEET: String = "autumn_1_v2"
 
 	func get_name() -> String:
@@ -315,7 +339,9 @@ class GentleBreezeTheme extends SimTheme:
 # ForgottenBiomesTheme — also no skin override.
 # ---------------------------------------------------------------------------
 
-class ForgottenBiomesTheme extends SimTheme:
+
+class ForgottenBiomesTheme:
+	extends SimTheme
 	const VISITOR_SHEET: String = "special_3_v2"
 
 	func get_name() -> String:
@@ -338,7 +364,9 @@ class ForgottenBiomesTheme extends SimTheme:
 # get_weather_tint/get_weather_effect_key).
 # ---------------------------------------------------------------------------
 
-class FloatingDreamTheme extends SimTheme:
+
+class FloatingDreamTheme:
+	extends SimTheme
 	const SKIN_OVERRIDE: String = "summer_1_v2"
 	const VISITOR_SHEET: String = "special_1_v2"
 

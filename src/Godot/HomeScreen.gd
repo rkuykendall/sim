@@ -64,14 +64,16 @@ func _create_new_game_item() -> Control:
 	center.add_child(label)
 	container.add_child(center)
 
-	container.gui_input.connect(func(event: InputEvent) -> void:
-		if event is InputEventMouseButton:
-			if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-				if _sound_manager != null: _sound_manager.play_select()
-				new_game_requested.emit()
+	container.gui_input.connect(
+		func(event: InputEvent) -> void:
+			if event is InputEventMouseButton:
+				if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+					if _sound_manager != null:
+						_sound_manager.play_select()
+					new_game_requested.emit()
 	)
 	container.mouse_entered.connect(func() -> void: style.bg_color = Color(0.2, 0.45, 0.2))
-	container.mouse_exited.connect(func() -> void:  style.bg_color = Color(0.15, 0.35, 0.15))
+	container.mouse_exited.connect(func() -> void: style.bg_color = Color(0.15, 0.35, 0.15))
 
 	return container
 
@@ -104,14 +106,16 @@ func _create_save_item(save_meta: Dictionary) -> Control:
 		center.add_child(label)
 		container.add_child(center)
 
-	container.gui_input.connect(func(event: InputEvent) -> void:
-		if event is InputEventMouseButton:
-			if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-				if _sound_manager != null: _sound_manager.play_select()
-				load_game_requested.emit(slot_name)
+	container.gui_input.connect(
+		func(event: InputEvent) -> void:
+			if event is InputEventMouseButton:
+				if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+					if _sound_manager != null:
+						_sound_manager.play_select()
+					load_game_requested.emit(slot_name)
 	)
 	container.mouse_entered.connect(func() -> void: style.bg_color = Color(0.2, 0.2, 0.2))
-	container.mouse_exited.connect(func() -> void:  style.bg_color = Color(0.1, 0.1, 0.1))
+	container.mouse_exited.connect(func() -> void: style.bg_color = Color(0.1, 0.1, 0.1))
 
 	return container
 
@@ -132,14 +136,16 @@ func _create_quit_item() -> Control:
 	center.add_child(label)
 	container.add_child(center)
 
-	container.gui_input.connect(func(event: InputEvent) -> void:
-		if event is InputEventMouseButton:
-			if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-				if _sound_manager != null: _sound_manager.play_select()
-				quit_requested.emit()
+	container.gui_input.connect(
+		func(event: InputEvent) -> void:
+			if event is InputEventMouseButton:
+				if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+					if _sound_manager != null:
+						_sound_manager.play_select()
+					quit_requested.emit()
 	)
 	container.mouse_entered.connect(func() -> void: style.bg_color = Color(0.45, 0.2, 0.2))
-	container.mouse_exited.connect(func() -> void:  style.bg_color = Color(0.35, 0.15, 0.15))
+	container.mouse_exited.connect(func() -> void: style.bg_color = Color(0.35, 0.15, 0.15))
 
 	return container
 
@@ -160,17 +166,21 @@ func _create_fullscreen_item() -> Control:
 	center.add_child(label)
 	container.add_child(center)
 
-	container.gui_input.connect(func(event: InputEvent) -> void:
-		if event is InputEventMouseButton:
-			if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-				if _sound_manager != null: _sound_manager.play_click()
-				var is_fullscreen := DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
-				if is_fullscreen:
-					DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-				else:
-					DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	container.gui_input.connect(
+		func(event: InputEvent) -> void:
+			if event is InputEventMouseButton:
+				if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+					if _sound_manager != null:
+						_sound_manager.play_click()
+					var is_fullscreen := (
+						DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
+					)
+					if is_fullscreen:
+						DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+					else:
+						DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	)
 	container.mouse_entered.connect(func() -> void: style.bg_color = Color(0.2, 0.2, 0.45))
-	container.mouse_exited.connect(func() -> void:  style.bg_color = Color(0.15, 0.15, 0.35))
+	container.mouse_exited.connect(func() -> void: style.bg_color = Color(0.15, 0.15, 0.35))
 
 	return container

@@ -27,7 +27,7 @@ var _pawn_action_label: Label
 var _pawn_needs_container: VBoxContainer
 var _pawn_mood_factors_container: VBoxContainer
 var _pawn_attachments_container: VBoxContainer
-var _need_bars: Dictionary = {}   # need_id -> ProgressBar
+var _need_bars: Dictionary = {}  # need_id -> ProgressBar
 var _mood_factor_labels: Array = []
 var _pawn_attachment_labels: Array = []
 
@@ -144,7 +144,9 @@ func show_pawn(pawn: Dictionary, sim: Simulation) -> void:
 
 	var mood: float = pawn.get("mood", 0.0)
 	_pawn_mood_label.text = "Mood: %+d" % int(mood)
-	_pawn_mood_label.modulate = Color.LIME if mood > 20 else (Color.RED if mood < -20 else Color.WHITE)
+	_pawn_mood_label.modulate = (
+		Color.LIME if mood > 20 else (Color.RED if mood < -20 else Color.WHITE)
+	)
 
 	_pawn_action_label.text = pawn.get("current_action", "Idle")
 
@@ -199,8 +201,8 @@ func _on_palette_button_pressed() -> void:
 
 
 func _update_container_visibility() -> void:
-	_time_container.visible     = _mode == _DisplayMode.TIME
-	_pawn_container.visible     = _mode == _DisplayMode.PAWN
+	_time_container.visible = _mode == _DisplayMode.TIME
+	_pawn_container.visible = _mode == _DisplayMode.PAWN
 	_building_container.visible = _mode == _DisplayMode.BUILDING
 
 
@@ -223,7 +225,7 @@ func _update_needs_display(pawn_id: int) -> void:
 		var value: float = need_comp.needs[need_id]
 		bar.value = value
 		var crit: float = float(ndef.get("criticalThreshold", 20.0))
-		var low: float  = float(ndef.get("lowThreshold", 40.0))
+		var low: float = float(ndef.get("lowThreshold", 40.0))
 		bar.modulate = Color.RED if value < crit else (Color.YELLOW if value < low else Color.LIME)
 
 
@@ -268,9 +270,13 @@ func _update_mood_factors_display(pawn_id: int) -> void:
 		var contribution: float = (value - 50.0) * 2.0
 
 		var lbl := _add_label(
-			_pawn_mood_factors_container, "%s (%+d)" % [ndef.get("name", str(need_id)), int(contribution)], 16
+			_pawn_mood_factors_container,
+			"%s (%+d)" % [ndef.get("name", str(need_id)), int(contribution)],
+			16
 		)
-		lbl.modulate = Color.LIME if contribution > 0 else (Color.ORANGE if contribution < 0 else Color.WHITE)
+		lbl.modulate = (
+			Color.LIME if contribution > 0 else (Color.ORANGE if contribution < 0 else Color.WHITE)
+		)
 		_mood_factor_labels.append(lbl)
 
 
@@ -287,13 +293,19 @@ func _update_pawn_attachments_display(pawn: Dictionary) -> void:
 		return
 
 	for building_id in attachments.keys():
-		var formatted_id: String = _sim.format_entity_id(building_id) if _sim != null else str(building_id)
+		var formatted_id: String = (
+			_sim.format_entity_id(building_id) if _sim != null else str(building_id)
+		)
 		var per_need: Dictionary = attachments[building_id]
 		for need_id in per_need.keys():
 			var strength: int = per_need[need_id]
 			var need_name: String = _need_name(need_id)
-			var lbl := _add_label(_pawn_attachments_container, "%s — %s: %d" % [formatted_id, need_name, strength], 14)
-			lbl.modulate = Color.LIME if strength >= 8 else (Color.YELLOW if strength >= 5 else Color.WHITE)
+			var lbl := _add_label(
+				_pawn_attachments_container, "%s — %s: %d" % [formatted_id, need_name, strength], 14
+			)
+			lbl.modulate = (
+				Color.LIME if strength >= 8 else (Color.YELLOW if strength >= 5 else Color.WHITE)
+			)
 			_pawn_attachment_labels.append(lbl)
 
 
@@ -304,16 +316,25 @@ func _update_building_debug_display(building: Dictionary) -> void:
 
 	var capacity: int = building.get("capacity", 1)
 	var current_users: int = building.get("current_users", 0)
-	var cap_lbl := _add_label(_building_debug_container, "Capacity: %d/%d" % [current_users, capacity], 14)
-	cap_lbl.modulate = Color.ORANGE if current_users >= capacity else (Color.YELLOW if current_users > 0 else Color.WHITE)
+	var cap_lbl := _add_label(
+		_building_debug_container, "Capacity: %d/%d" % [current_users, capacity], 14
+	)
+	cap_lbl.modulate = (
+		Color.ORANGE
+		if current_users >= capacity
+		else (Color.YELLOW if current_users > 0 else Color.WHITE)
+	)
 	_building_debug_labels.append(cap_lbl)
 
 	var resource_type: String = building.get("resource_type", "")
 	var current_res: float = building.get("current_resource", -1.0)
 	var max_res: float = building.get("max_resource", -1.0)
 	if not resource_type.is_empty() and current_res >= 0.0:
-		var res_lbl := _add_label(_building_debug_container,
-			"Resources: %.0f/%.0f %s" % [current_res, max_res, resource_type], 14)
+		var res_lbl := _add_label(
+			_building_debug_container,
+			"Resources: %.0f/%.0f %s" % [current_res, max_res, resource_type],
+			14
+		)
 		var pct: float = current_res / max_res if max_res > 0 else 0.0
 		res_lbl.modulate = Color.RED if pct < 0.2 else (Color.ORANGE if pct < 0.5 else Color.LIME)
 		_building_debug_labels.append(res_lbl)
@@ -329,8 +350,16 @@ func _update_building_debug_display(building: Dictionary) -> void:
 			for need_id in per_need.keys():
 				var strength: int = per_need[need_id]
 				var need_name: String = _need_name(need_id)
-				var lbl := _add_label(_building_debug_container, "  %s — %s: %d" % [formatted, need_name, strength], 14)
-				lbl.modulate = Color.LIME if strength >= 8 else (Color.YELLOW if strength >= 5 else Color.WHITE)
+				var lbl := _add_label(
+					_building_debug_container,
+					"  %s — %s: %d" % [formatted, need_name, strength],
+					14
+				)
+				lbl.modulate = (
+					Color.LIME
+					if strength >= 8
+					else (Color.YELLOW if strength >= 5 else Color.WHITE)
+				)
 				_building_debug_labels.append(lbl)
 
 

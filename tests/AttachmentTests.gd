@@ -7,7 +7,10 @@ func run() -> void:
 	print("  [AttachmentTests]")
 	run_test("Decay_ReducesStrongAttachment_NotJustWeakOnes", test_decay_reduces_strong_attachment)
 	run_test("Decay_RemovesAttachment_OnceItReachesZero", test_decay_removes_attachment_at_zero)
-	run_test("DestroyEntity_RemovesPawnsAttachmentEntries_FromEveryBuilding", test_destroy_entity_cleans_up_attachments)
+	run_test(
+		"DestroyEntity_RemovesPawnsAttachmentEntries_FromEveryBuilding",
+		test_destroy_entity_cleans_up_attachments
+	)
 
 
 # A "regular" (strength above the old decay threshold of 5) must still decay — otherwise
@@ -34,7 +37,11 @@ func test_decay_reduces_strong_attachment() -> void:
 
 	sim.run_ticks(Simulation.ATTACHMENT_DECAY_INTERVAL + 1)
 
-	assert_eq(ac.get_strength(need_id, pawn_id), 9, "A single decay interval should reduce even a maxed-out attachment by 1")
+	assert_eq(
+		ac.get_strength(need_id, pawn_id),
+		9,
+		"A single decay interval should reduce even a maxed-out attachment by 1"
+	)
 
 
 func test_decay_removes_attachment_at_zero() -> void:
@@ -50,12 +57,21 @@ func test_decay_removes_attachment_at_zero() -> void:
 	var pawn_id := sim.find_pawn_by_name("OneTimer")
 	var ac = sim.entities.attachments.get(tavern_id)
 	ac.increment(need_id, pawn_id)
-	assert_eq(ac.get_strength(need_id, pawn_id), 1, "Setup should have a single point of attachment")
+	assert_eq(
+		ac.get_strength(need_id, pawn_id), 1, "Setup should have a single point of attachment"
+	)
 
 	sim.run_ticks(Simulation.ATTACHMENT_DECAY_INTERVAL + 1)
 
-	assert_eq(ac.get_strength(need_id, pawn_id), 0, "A single point of attachment should fully decay away after one interval")
-	assert_false(ac.need_attachments.get(need_id, {}).has(pawn_id), "Decayed-to-zero entries should be erased, not left at 0")
+	assert_eq(
+		ac.get_strength(need_id, pawn_id),
+		0,
+		"A single point of attachment should fully decay away after one interval"
+	)
+	assert_false(
+		ac.need_attachments.get(need_id, {}).has(pawn_id),
+		"Decayed-to-zero entries should be erased, not left at 0"
+	)
 
 
 func test_destroy_entity_cleans_up_attachments() -> void:
@@ -75,4 +91,7 @@ func test_destroy_entity_cleans_up_attachments() -> void:
 
 	sim.destroy_entity(pawn_id)
 
-	assert_false(ac.need_attachments.get(need_id, {}).has(pawn_id), "Destroying a pawn should remove its attachment entries from buildings it visited")
+	assert_false(
+		ac.need_attachments.get(need_id, {}).has(pawn_id),
+		"Destroying a pawn should remove its attachment entries from buildings it visited"
+	)

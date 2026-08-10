@@ -25,7 +25,9 @@ func test_find_pawn_by_name() -> void:
 	assert_not_eq(alice_id, -1, "Should find Alice")
 	assert_not_eq(bob_id, -1, "Should find Bob")
 	assert_not_eq(alice_id, bob_id, "Alice and Bob should be different entities")
-	assert_eq(sim.entities.pawns.get(alice_id).name, "Alice", "Resolved id should map back to Alice")
+	assert_eq(
+		sim.entities.pawns.get(alice_id).name, "Alice", "Resolved id should map back to Alice"
+	)
 
 
 func test_find_pawn_by_name_missing() -> void:
@@ -43,7 +45,9 @@ func test_get_need_value_unknown() -> void:
 	var sim := builder.build()
 
 	var alice_id := sim.find_pawn_by_name("Alice")
-	assert_approx(sim.get_need_value(alice_id, hunger_id), 42.0, 0.01, "Should return the actual need value")
+	assert_approx(
+		sim.get_need_value(alice_id, hunger_id), 42.0, 0.01, "Should return the actual need value"
+	)
 	assert_eq(sim.get_need_value(alice_id, 999999), 0.0, "Unknown need id should return 0.0")
 	assert_eq(sim.get_need_value(999999, hunger_id), 0.0, "Unknown pawn id should return 0.0")
 
@@ -63,7 +67,9 @@ func test_run_ticks_exact() -> void:
 
 	sim.run_ticks(37)
 
-	assert_eq(sim.time.tick, start_tick + 37, "run_ticks should advance by exactly the requested count")
+	assert_eq(
+		sim.time.tick, start_tick + 37, "run_ticks should advance by exactly the requested count"
+	)
 
 
 # score_map_diversity() delegates to AISystem's cached diversity map — this guards against
@@ -81,4 +87,8 @@ func test_score_map_diversity_matches_cache() -> void:
 		expected_score += value
 	expected_score += sim.entities.all_buildings().size()
 
-	assert_eq(sim.score_map_diversity(), expected_score, "score_map_diversity should match the cached diversity map's sum")
+	assert_eq(
+		sim.score_map_diversity(),
+		expected_score,
+		"score_map_diversity should match the cached diversity map's sum"
+	)

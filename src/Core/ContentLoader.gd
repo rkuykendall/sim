@@ -3,6 +3,7 @@ class_name ContentLoader
 # Impassable sentinel — Lua used math.huge; JSON uses 1e9.
 const IMPASSABLE: float = 1e9
 
+
 static func load_all(mod_path: String = "") -> ContentRegistry:
 	var registry := ContentRegistry.new()
 
@@ -26,6 +27,7 @@ static func load_all(mod_path: String = "") -> ContentRegistry:
 
 # --- Mod loading -----------------------------------------------------------
 
+
 static func _load_mods(registry: ContentRegistry) -> void:
 	var mod_dir := DirAccess.open("user://mods")
 	if mod_dir == null:
@@ -47,7 +49,10 @@ static func _load_mods(registry: ContentRegistry) -> void:
 
 # --- File loading ----------------------------------------------------------
 
-static func _load_file(registry: ContentRegistry, path: String, parser: Callable, optional: bool = false) -> void:
+
+static func _load_file(
+	registry: ContentRegistry, path: String, parser: Callable, optional: bool = false
+) -> void:
 	if not FileAccess.file_exists(path):
 		if not optional:
 			push_warning("ContentLoader: file not found: %s" % path)
@@ -66,6 +71,7 @@ static func _load_file(registry: ContentRegistry, path: String, parser: Callable
 
 # --- Parsers ---------------------------------------------------------------
 
+
 static func _parse_palette(registry: ContentRegistry, key: String, value) -> void:
 	if not value is Array:
 		push_error("ContentLoader: palette '%s' must be an array of hex strings" % key)
@@ -75,28 +81,40 @@ static func _parse_palette(registry: ContentRegistry, key: String, value) -> voi
 	for hex in value:
 		colors.append(Color(hex))
 
-	registry.register_palette(key, { "colors": colors })
+	registry.register_palette(key, {"colors": colors})
 
 
 static func _parse_need(registry: ContentRegistry, key: String, value: Dictionary) -> void:
-	registry.register_need(key, {
-		"name":               value.get("name", key),
-		"decayPerTick":       float(value.get("decayPerTick", 0.05)),
-		"criticalThreshold":  float(value.get("criticalThreshold", 20.0)),
-		"lowThreshold":       float(value.get("lowThreshold", 40.0)),
-		"spriteKey":          value.get("spriteKey", ""),
-	})
+	(
+		registry
+		. register_need(
+			key,
+			{
+				"name": value.get("name", key),
+				"decayPerTick": float(value.get("decayPerTick", 0.05)),
+				"criticalThreshold": float(value.get("criticalThreshold", 20.0)),
+				"lowThreshold": float(value.get("lowThreshold", 40.0)),
+				"spriteKey": value.get("spriteKey", ""),
+			}
+		)
+	)
 
 
 static func _parse_terrain(registry: ContentRegistry, key: String, value: Dictionary) -> void:
-	registry.register_terrain(key, {
-		"walkabilityCost": float(value.get("walkabilityCost", 1.0)),
-		"blocksLight":     bool(value.get("blocksLight", false)),
-		"spriteKey":       value.get("spriteKey", ""),
-		"isAutotiling":    bool(value.get("isAutotiling", false)),
-		"paintsToBase":    bool(value.get("paintsToBase", false)),
-		"variantCount":    int(value.get("variantCount", 1)),
-	})
+	(
+		registry
+		. register_terrain(
+			key,
+			{
+				"walkabilityCost": float(value.get("walkabilityCost", 1.0)),
+				"blocksLight": bool(value.get("blocksLight", false)),
+				"spriteKey": value.get("spriteKey", ""),
+				"isAutotiling": bool(value.get("isAutotiling", false)),
+				"paintsToBase": bool(value.get("paintsToBase", false)),
+				"variantCount": int(value.get("variantCount", 1)),
+			}
+		)
+	)
 
 
 static func _parse_building(registry: ContentRegistry, key: String, value: Dictionary) -> void:
@@ -105,30 +123,41 @@ static func _parse_building(registry: ContentRegistry, key: String, value: Dicti
 	if value.has("satisfiesNeed"):
 		satisfies_need_id = registry.get_need_id(value["satisfiesNeed"])
 		if satisfies_need_id == -1:
-			push_error("ContentLoader: building '%s' references unknown need '%s'" % [key, value["satisfiesNeed"]])
+			push_error(
+				(
+					"ContentLoader: building '%s' references unknown need '%s'"
+					% [key, value["satisfiesNeed"]]
+				)
+			)
 
 	# Resolve haulSourceTerrainKey string -> terrain id
 	var haul_terrain_id: int = -1
 	if value.has("haulSourceTerrainKey"):
 		haul_terrain_id = registry.get_terrain_id(value["haulSourceTerrainKey"])
 
-	registry.register_building(key, {
-		"satisfiesNeedId":        satisfies_need_id,
-		"spriteKey":              value.get("spriteKey", ""),
-		"tileSize":               int(value.get("tileSize", 1)),
-		"spriteVariants":         int(value.get("spriteVariants", 1)),
-		"spriteColumn":           int(value.get("spriteColumn", 0)),
-		"isHome":                 bool(value.get("isHome", false)),
-		"capacity":               int(value.get("capacity", 1)),
-		"resourceType":           value.get("resourceType", ""),
-		"maxResourceAmount":      float(value.get("maxResourceAmount", 100.0)),
-		"depletionMult":          float(value.get("depletionMult", 1.0)),
-		"canBeWorkedAt":          bool(value.get("canBeWorkedAt", false)),
-		"workType":               value.get("workType", "direct"),
-		"haulSourceResourceType": value.get("haulSourceResourceType", ""),
-		"haulSourceTerrainKey":   value.get("haulSourceTerrainKey", ""),
-		"haulSourceTerrainId":    haul_terrain_id,
-		"canSellToConsumers":     bool(value.get("canSellToConsumers", true)),
-		"satisfactionAmount":     float(value.get("satisfactionAmount", 100.0)),
-		"interactionDuration":    int(value.get("interactionDuration", 100)),
-	})
+	(
+		registry
+		. register_building(
+			key,
+			{
+				"satisfiesNeedId": satisfies_need_id,
+				"spriteKey": value.get("spriteKey", ""),
+				"tileSize": int(value.get("tileSize", 1)),
+				"spriteVariants": int(value.get("spriteVariants", 1)),
+				"spriteColumn": int(value.get("spriteColumn", 0)),
+				"isHome": bool(value.get("isHome", false)),
+				"capacity": int(value.get("capacity", 1)),
+				"resourceType": value.get("resourceType", ""),
+				"maxResourceAmount": float(value.get("maxResourceAmount", 100.0)),
+				"depletionMult": float(value.get("depletionMult", 1.0)),
+				"canBeWorkedAt": bool(value.get("canBeWorkedAt", false)),
+				"workType": value.get("workType", "direct"),
+				"haulSourceResourceType": value.get("haulSourceResourceType", ""),
+				"haulSourceTerrainKey": value.get("haulSourceTerrainKey", ""),
+				"haulSourceTerrainId": haul_terrain_id,
+				"canSellToConsumers": bool(value.get("canSellToConsumers", true)),
+				"satisfactionAmount": float(value.get("satisfactionAmount", 100.0)),
+				"interactionDuration": int(value.get("interactionDuration", 100)),
+			}
+		)
+	)

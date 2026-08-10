@@ -18,11 +18,7 @@ func _ready() -> void:
 
 
 func initialize_with_sprite(
-	texture: Texture2D,
-	tile_size: int,
-	sprite_variants: int,
-	sprite_column: int,
-	entity_id: int
+	texture: Texture2D, tile_size: int, sprite_variants: int, sprite_column: int, entity_id: int
 ) -> void:
 	_tile_size = tile_size
 	_sprite_variants = sprite_variants
@@ -55,9 +51,4 @@ func set_building_info(name: String, in_use: bool, color_index: int, palette: Ar
 func _set_atlas_region(variant_row: int, phase_col: int) -> void:
 	var px: int = _tile_size * SOURCE_SIZE
 	_sprite.region_enabled = true
-	_sprite.region_rect = Rect2(
-		phase_col * px,
-		variant_row * px,
-		px,
-		px
-	)
+	_sprite.region_rect = Rect2(phase_col * px, variant_row * px, px, px)

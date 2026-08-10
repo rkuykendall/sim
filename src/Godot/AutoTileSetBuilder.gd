@@ -2,9 +2,7 @@ class_name AutoTileSetBuilder
 
 
 static func create_auto_tile_set(
-	texture: Texture2D,
-	terrain_name: String,
-	blocks_light: bool = false
+	texture: Texture2D, terrain_name: String, blocks_light: bool = false
 ) -> TileSet:
 	var tile_set := TileSet.new()
 	var atlas_source := TileSetAtlasSource.new()
@@ -28,7 +26,9 @@ static func create_auto_tile_set(
 
 	# Configure all 47 tile patterns
 	for pattern in AutoTileConfig.STANDARD_47_TILE_PATTERNS:
-		_configure_tile(tile_set, atlas_source, pattern[0], pattern[1], 0, 0, pattern[2], blocks_light)
+		_configure_tile(
+			tile_set, atlas_source, pattern[0], pattern[1], 0, 0, pattern[2], blocks_light
+		)
 
 	return tile_set
 
@@ -70,11 +70,13 @@ static func _configure_tile(
 
 	if blocks_light:
 		var occluder := OccluderPolygon2D.new()
-		occluder.polygon = PackedVector2Array([
-			Vector2(-8, -8),
-			Vector2(8, -8),
-			Vector2(8, 8),
-			Vector2(-8, 8),
-		])
+		occluder.polygon = PackedVector2Array(
+			[
+				Vector2(-8, -8),
+				Vector2(8, -8),
+				Vector2(8, 8),
+				Vector2(-8, 8),
+			]
+		)
 		tile_data.set_occluder_polygons_count(0, 1)
 		tile_data.set_occluder_polygon(0, 0, occluder)

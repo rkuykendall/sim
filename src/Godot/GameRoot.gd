@@ -80,14 +80,14 @@ var _loading_screen: Control = null
 var _debug_panel: DebugPanel = null
 
 # Entity nodes
-var _pawn_nodes: Dictionary = {}      # int -> Node2D
+var _pawn_nodes: Dictionary = {}  # int -> Node2D
 var _building_nodes: Dictionary = {}  # int -> Node2D
 
 # Autotile layers
-var _auto_tile_layers: Dictionary = {}     # int (terrain_id) -> ModulatableTileMapLayer
-var _tile_sprites: Dictionary = {}         # Vector2i -> [Sprite2D base, Sprite2D overlay]
-var _autotile_updates: Dictionary = {}     # int -> Array of [Vector2i, Color]
-var _autotile_clear_cells: Dictionary = {} # int -> Array of Vector2i
+var _auto_tile_layers: Dictionary = {}  # int (terrain_id) -> ModulatableTileMapLayer
+var _tile_sprites: Dictionary = {}  # Vector2i -> [Sprite2D base, Sprite2D overlay]
+var _autotile_updates: Dictionary = {}  # int -> Array of [Vector2i, Color]
+var _autotile_clear_cells: Dictionary = {}  # int -> Array of Vector2i
 
 # Reusable collections
 var _active_ids: Dictionary = {}
@@ -105,14 +105,18 @@ func _ready() -> void:
 	_content = ContentLoader.load_all(mod_path)
 	_tick_delta = 1.0 / Simulation.TICK_RATE
 
-	_pawns_root    = get_node(pawns_root_path)
+	_pawns_root = get_node(pawns_root_path)
 	_buildings_root = get_node(buildings_root_path)
-	_tiles_root    = get_node(tiles_root_path)
+	_tiles_root = get_node(tiles_root_path)
 
 	if not shadow_rect_path.is_empty():
 		_shadow_rect = get_node_or_null(shadow_rect_path)
 		if _shadow_rect != null:
-			var shader: Shader = load("res://shaders/sdf_shadows.gdshader") if ResourceLoader.exists("res://shaders/sdf_shadows.gdshader") else null
+			var shader: Shader = (
+				load("res://shaders/sdf_shadows.gdshader")
+				if ResourceLoader.exists("res://shaders/sdf_shadows.gdshader")
+				else null
+			)
 			if shader != null:
 				_shadow_shader_mat = ShaderMaterial.new()
 				_shadow_shader_mat.shader = shader
@@ -182,12 +186,18 @@ func _apply_fullscreen() -> void:
 
 func _show_home_screen() -> void:
 	_current_screen = _AppScreen.HOME
-	if _music_manager != null: _music_manager.stop()
-	if _toolbar != null: _toolbar.hide()
-	if _debug_panel != null: _debug_panel.set_debug_mode(false)
-	if _pawns_root != null: _pawns_root.hide()
-	if _buildings_root != null: _buildings_root.hide()
-	if _tiles_root != null: _tiles_root.hide()
+	if _music_manager != null:
+		_music_manager.stop()
+	if _toolbar != null:
+		_toolbar.hide()
+	if _debug_panel != null:
+		_debug_panel.set_debug_mode(false)
+	if _pawns_root != null:
+		_pawns_root.hide()
+	if _buildings_root != null:
+		_buildings_root.hide()
+	if _tiles_root != null:
+		_tiles_root.hide()
 	if _home_screen != null:
 		_home_screen.show()
 		_home_screen.refresh_saves_list()
@@ -195,11 +205,16 @@ func _show_home_screen() -> void:
 
 func _show_game() -> void:
 	_current_screen = _AppScreen.GAME
-	if _home_screen != null: _home_screen.hide()
-	if _toolbar != null: _toolbar.show()
-	if _pawns_root != null: _pawns_root.show()
-	if _buildings_root != null: _buildings_root.show()
-	if _tiles_root != null: _tiles_root.show()
+	if _home_screen != null:
+		_home_screen.hide()
+	if _toolbar != null:
+		_toolbar.show()
+	if _pawns_root != null:
+		_pawns_root.show()
+	if _buildings_root != null:
+		_buildings_root.show()
+	if _tiles_root != null:
+		_tiles_root.show()
 	_update_speed_display()
 
 
@@ -310,6 +325,7 @@ func _clear_all_nodes() -> void:
 # Main loop
 # ---------------------------------------------------------------------------
 
+
 func _process(delta: float) -> void:
 	if _current_screen != _AppScreen.GAME or _sim == null:
 		return
@@ -336,7 +352,8 @@ func _process(delta: float) -> void:
 	if _sim.selected_palette_id != _current_palette_id:
 		_current_palette = snapshot.get("palette", [])
 		_current_palette_id = _sim.selected_palette_id
-		if _toolbar != null: _toolbar.update_palette(_current_palette)
+		if _toolbar != null:
+			_toolbar.update_palette(_current_palette)
 		var all_tiles: Array[Vector2i] = []
 		for x in _sim.world.width:
 			for y in _sim.world.height:
@@ -379,6 +396,7 @@ func _perform_autosave() -> void:
 # Input
 # ---------------------------------------------------------------------------
 
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
 		# F11: Toggle fullscreen (any screen)
@@ -399,8 +417,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		match event.keycode:
 			KEY_F3:
 				_debug_mode = not _debug_mode
-				if _toolbar != null: _toolbar.set_debug_mode(_debug_mode)
-				if _debug_panel != null: _debug_panel.set_debug_mode(_debug_mode)
+				if _toolbar != null:
+					_toolbar.set_debug_mode(_debug_mode)
+				if _debug_panel != null:
+					_debug_panel.set_debug_mode(_debug_mode)
 				queue_redraw()
 			KEY_0:
 				_sim_speed = _SimSpeed.PAUSED
@@ -445,11 +465,17 @@ func _handle_left_press(tile_coord: Vector2i) -> void:
 		_last_painted_tile = tile_coord
 		var tiles_to_update: Array[Vector2i]
 		if BuildToolMode.selected_terrain_def_id != -1:
-			tiles_to_update = _sim.paint_terrain(tile_coord, BuildToolMode.selected_terrain_def_id, BuildToolMode.selected_color_index)
-			if _sound_manager != null: _sound_manager.play_paint()
+			tiles_to_update = _sim.paint_terrain(
+				tile_coord,
+				BuildToolMode.selected_terrain_def_id,
+				BuildToolMode.selected_color_index
+			)
+			if _sound_manager != null:
+				_sound_manager.play_paint()
 		else:
 			tiles_to_update = _sim.delete_at_tile(tile_coord)
-			if _sound_manager != null: _sound_manager.play_delete()
+			if _sound_manager != null:
+				_sound_manager.play_delete()
 		_sync_tiles(tiles_to_update)
 		return
 
@@ -462,18 +488,27 @@ func _handle_left_press(tile_coord: Vector2i) -> void:
 	if mode == BuildToolMode.Mode.FLOOD_FILL:
 		var tiles_to_update: Array[Vector2i]
 		if BuildToolMode.selected_terrain_def_id != -1:
-			tiles_to_update = _sim.flood_fill(tile_coord, BuildToolMode.selected_terrain_def_id, BuildToolMode.selected_color_index)
-			if _sound_manager != null: _sound_manager.play_paint()
+			tiles_to_update = _sim.flood_fill(
+				tile_coord,
+				BuildToolMode.selected_terrain_def_id,
+				BuildToolMode.selected_color_index
+			)
+			if _sound_manager != null:
+				_sound_manager.play_paint()
 		else:
 			tiles_to_update = _sim.flood_delete(tile_coord)
-			if _sound_manager != null: _sound_manager.play_delete()
+			if _sound_manager != null:
+				_sound_manager.play_delete()
 		_sync_tiles(tiles_to_update)
 		return
 
 	if mode == BuildToolMode.Mode.PLACE_BUILDING and BuildToolMode.selected_building_def_id != -1:
-		var result: int = _sim.create_building(BuildToolMode.selected_building_def_id, tile_coord, BuildToolMode.selected_color_index)
+		var result: int = _sim.create_building(
+			BuildToolMode.selected_building_def_id, tile_coord, BuildToolMode.selected_color_index
+		)
 		if result != -1:
-			if _sound_manager != null: _sound_manager.play_build()
+			if _sound_manager != null:
+				_sound_manager.play_build()
 		return
 
 	# Selection / click — check pawn or building
@@ -497,7 +532,8 @@ func _handle_left_press(tile_coord: Vector2i) -> void:
 	_deselect_pawn()
 	_selected_pawn_id = -1
 	_selected_building_id = -1
-	if _debug_panel != null: _debug_panel.clear_selection()
+	if _debug_panel != null:
+		_debug_panel.clear_selection()
 
 
 func _handle_left_release(tile_coord: Vector2i) -> void:
@@ -505,24 +541,40 @@ func _handle_left_release(tile_coord: Vector2i) -> void:
 	_last_painted_tile = Vector2i(-1, -1)
 
 	var mode: BuildToolMode.Mode = BuildToolMode.current_mode
-	if (mode == BuildToolMode.Mode.FILL_SQUARE or mode == BuildToolMode.Mode.OUTLINE_SQUARE) \
-			and _brush_drag_start != Vector2i(-1, -1):
+	if (
+		(mode == BuildToolMode.Mode.FILL_SQUARE or mode == BuildToolMode.Mode.OUTLINE_SQUARE)
+		and _brush_drag_start != Vector2i(-1, -1)
+	):
 		if mode == BuildToolMode.Mode.FILL_SQUARE:
 			if BuildToolMode.selected_terrain_def_id != -1:
-				var painted: Array[Vector2i] = _sim.paint_rectangle(_brush_drag_start, _brush_drag_current, BuildToolMode.selected_terrain_def_id, BuildToolMode.selected_color_index)
+				var painted: Array[Vector2i] = _sim.paint_rectangle(
+					_brush_drag_start,
+					_brush_drag_current,
+					BuildToolMode.selected_terrain_def_id,
+					BuildToolMode.selected_color_index
+				)
 				_sync_tiles(_sim.get_tiles_with_neighbors(painted))
-				if _sound_manager != null: _sound_manager.play_paint()
+				if _sound_manager != null:
+					_sound_manager.play_paint()
 			else:
 				_sync_tiles(_sim.delete_rectangle(_brush_drag_start, _brush_drag_current))
-				if _sound_manager != null: _sound_manager.play_delete()
+				if _sound_manager != null:
+					_sound_manager.play_delete()
 		else:
 			if BuildToolMode.selected_terrain_def_id != -1:
-				var painted: Array[Vector2i] = _sim.paint_rectangle_outline(_brush_drag_start, _brush_drag_current, BuildToolMode.selected_terrain_def_id, BuildToolMode.selected_color_index)
+				var painted: Array[Vector2i] = _sim.paint_rectangle_outline(
+					_brush_drag_start,
+					_brush_drag_current,
+					BuildToolMode.selected_terrain_def_id,
+					BuildToolMode.selected_color_index
+				)
 				_sync_tiles(_sim.get_tiles_with_neighbors(painted))
-				if _sound_manager != null: _sound_manager.play_paint()
+				if _sound_manager != null:
+					_sound_manager.play_paint()
 			else:
 				_sync_tiles(_sim.delete_rectangle_outline(_brush_drag_start, _brush_drag_current))
-				if _sound_manager != null: _sound_manager.play_delete()
+				if _sound_manager != null:
+					_sound_manager.play_delete()
 
 		_brush_drag_start = Vector2i(-1, -1)
 		_brush_drag_current = Vector2i(-1, -1)
@@ -537,17 +589,25 @@ func _handle_mouse_motion() -> void:
 		_last_painted_tile = tile_coord
 		var tiles_to_update: Array[Vector2i]
 		if BuildToolMode.selected_terrain_def_id != -1:
-			tiles_to_update = _sim.paint_terrain(tile_coord, BuildToolMode.selected_terrain_def_id, BuildToolMode.selected_color_index)
-			if _sound_manager != null: _sound_manager.play_paint_tick()
+			tiles_to_update = _sim.paint_terrain(
+				tile_coord,
+				BuildToolMode.selected_terrain_def_id,
+				BuildToolMode.selected_color_index
+			)
+			if _sound_manager != null:
+				_sound_manager.play_paint_tick()
 		else:
 			tiles_to_update = _sim.delete_at_tile(tile_coord)
-			if _sound_manager != null: _sound_manager.play_paint_tick()
+			if _sound_manager != null:
+				_sound_manager.play_paint_tick()
 		_sync_tiles(tiles_to_update)
 		return
 
 	var mode: BuildToolMode.Mode = BuildToolMode.current_mode
-	if (mode == BuildToolMode.Mode.FILL_SQUARE or mode == BuildToolMode.Mode.OUTLINE_SQUARE) \
-			and _brush_drag_start != Vector2i(-1, -1):
+	if (
+		(mode == BuildToolMode.Mode.FILL_SQUARE or mode == BuildToolMode.Mode.OUTLINE_SQUARE)
+		and _brush_drag_start != Vector2i(-1, -1)
+	):
 		_brush_drag_current = _screen_to_tile(get_local_mouse_position())
 		queue_redraw()
 
@@ -556,8 +616,12 @@ func _handle_mouse_motion() -> void:
 # Drawing
 # ---------------------------------------------------------------------------
 
+
 func _draw() -> void:
-	if _hovered_tile != Vector2i(-1, -1) and BuildToolMode.current_mode != BuildToolMode.Mode.SELECT:
+	if (
+		_hovered_tile != Vector2i(-1, -1)
+		and BuildToolMode.current_mode != BuildToolMode.Mode.SELECT
+	):
 		_draw_hover_preview(_hovered_tile)
 
 	if not _debug_mode:
@@ -565,7 +629,14 @@ func _draw() -> void:
 
 	var half: float = PAWN_HITBOX_SIZE * 0.5
 	for node in _pawn_nodes.values():
-		draw_rect(Rect2(node.position.x - half, node.position.y - half, PAWN_HITBOX_SIZE, PAWN_HITBOX_SIZE), Color.MAGENTA, false, 2.0)
+		draw_rect(
+			Rect2(
+				node.position.x - half, node.position.y - half, PAWN_HITBOX_SIZE, PAWN_HITBOX_SIZE
+			),
+			Color.MAGENTA,
+			false,
+			2.0
+		)
 
 	for building_id in _building_nodes.keys():
 		var b_snap: Dictionary = {}
@@ -577,30 +648,81 @@ func _draw() -> void:
 			var bdef: Dictionary = _sim.content.buildings.get(b_snap.get("building_def_id", -1), {})
 			if not bdef.is_empty():
 				var ts: int = int(bdef.get("tileSize", 1))
-				var occupied: Array[Vector2i] = BuildingUtilities.get_occupied_tiles(Vector2i(b_snap.get("x", 0), b_snap.get("y", 0)), ts)
+				var occupied: Array[Vector2i] = BuildingUtilities.get_occupied_tiles(
+					Vector2i(b_snap.get("x", 0), b_snap.get("y", 0)), ts
+				)
 				for tile in occupied:
-					draw_rect(Rect2(tile.x * RenderingConstants.RENDERED_TILE_SIZE, tile.y * RenderingConstants.RENDERED_TILE_SIZE, RenderingConstants.RENDERED_TILE_SIZE, RenderingConstants.RENDERED_TILE_SIZE), Color.CYAN, false, 2.0)
+					draw_rect(
+						Rect2(
+							tile.x * RenderingConstants.RENDERED_TILE_SIZE,
+							tile.y * RenderingConstants.RENDERED_TILE_SIZE,
+							RenderingConstants.RENDERED_TILE_SIZE,
+							RenderingConstants.RENDERED_TILE_SIZE
+						),
+						Color.CYAN,
+						false,
+						2.0
+					)
 
 	for pawn_snap in _last_snapshot.get("pawns", []):
 		var center := Vector2(
-			pawn_snap.get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE + RenderingConstants.RENDERED_TILE_SIZE * 0.5,
-			pawn_snap.get("y", 0) * RenderingConstants.RENDERED_TILE_SIZE + RenderingConstants.RENDERED_TILE_SIZE * 0.5
+			(
+				pawn_snap.get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE
+				+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
+			),
+			(
+				pawn_snap.get("y", 0) * RenderingConstants.RENDERED_TILE_SIZE
+				+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
+			)
 		)
 		var path: Array = pawn_snap.get("current_path", [])
 		var path_idx: int = pawn_snap.get("path_index", 0)
 		for i in range(path_idx, path.size() - 1):
-			var from_p := Vector2(path[i].get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE + RenderingConstants.RENDERED_TILE_SIZE * 0.5,
-				path[i].get("y", 0) * RenderingConstants.RENDERED_TILE_SIZE + RenderingConstants.RENDERED_TILE_SIZE * 0.5)
-			var to_p := Vector2(path[i+1].get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE + RenderingConstants.RENDERED_TILE_SIZE * 0.5,
-				path[i+1].get("y", 0) * RenderingConstants.RENDERED_TILE_SIZE + RenderingConstants.RENDERED_TILE_SIZE * 0.5)
+			var from_p := Vector2(
+				(
+					path[i].get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE
+					+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
+				),
+				(
+					path[i].get("y", 0) * RenderingConstants.RENDERED_TILE_SIZE
+					+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
+				)
+			)
+			var to_p := Vector2(
+				(
+					path[i + 1].get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE
+					+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
+				),
+				(
+					path[i + 1].get("y", 0) * RenderingConstants.RENDERED_TILE_SIZE
+					+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
+				)
+			)
 			draw_line(from_p, to_p, Color.ORANGE, 2.0)
 
 		var target: Vector2i = pawn_snap.get("target_tile", Vector2i(-1, -1))
 		if target != Vector2i(-1, -1):
-			draw_rect(Rect2(target.x * RenderingConstants.RENDERED_TILE_SIZE + 4, target.y * RenderingConstants.RENDERED_TILE_SIZE + 4,
-				RenderingConstants.RENDERED_TILE_SIZE - 8, RenderingConstants.RENDERED_TILE_SIZE - 8), Color(1, 0.5, 0, 0.3), true)
-			draw_rect(Rect2(target.x * RenderingConstants.RENDERED_TILE_SIZE + 4, target.y * RenderingConstants.RENDERED_TILE_SIZE + 4,
-				RenderingConstants.RENDERED_TILE_SIZE - 8, RenderingConstants.RENDERED_TILE_SIZE - 8), Color.ORANGE, false, 2.0)
+			draw_rect(
+				Rect2(
+					target.x * RenderingConstants.RENDERED_TILE_SIZE + 4,
+					target.y * RenderingConstants.RENDERED_TILE_SIZE + 4,
+					RenderingConstants.RENDERED_TILE_SIZE - 8,
+					RenderingConstants.RENDERED_TILE_SIZE - 8
+				),
+				Color(1, 0.5, 0, 0.3),
+				true
+			)
+			draw_rect(
+				Rect2(
+					target.x * RenderingConstants.RENDERED_TILE_SIZE + 4,
+					target.y * RenderingConstants.RENDERED_TILE_SIZE + 4,
+					RenderingConstants.RENDERED_TILE_SIZE - 8,
+					RenderingConstants.RENDERED_TILE_SIZE - 8
+				),
+				Color.ORANGE,
+				false,
+				2.0
+			)
 
 	draw_circle(get_local_mouse_position(), 5.0, Color.YELLOW)
 
@@ -612,22 +734,32 @@ func _draw_hover_preview(coord: Vector2i) -> void:
 
 	if mode == BuildToolMode.Mode.PLACE_TERRAIN or mode == BuildToolMode.Mode.FLOOD_FILL:
 		if BuildToolMode.selected_terrain_def_id != -1:
-			var color: Color = _current_palette[BuildToolMode.selected_color_index] if not _current_palette.is_empty() else Color.WHITE
+			var color: Color = (
+				_current_palette[BuildToolMode.selected_color_index]
+				if not _current_palette.is_empty()
+				else Color.WHITE
+			)
 			color.a = 0.5
 			draw_rect(rect, color, true)
 		else:
 			draw_rect(rect, Color(1, 0, 0, 0.3), true)
 		draw_rect(rect, Color.WHITE, false, 2.0)
 
-	elif (mode == BuildToolMode.Mode.FILL_SQUARE or mode == BuildToolMode.Mode.OUTLINE_SQUARE) \
-			and _brush_drag_start != Vector2i(-1, -1):
+	elif (
+		(mode == BuildToolMode.Mode.FILL_SQUARE or mode == BuildToolMode.Mode.OUTLINE_SQUARE)
+		and _brush_drag_start != Vector2i(-1, -1)
+	):
 		var x0: int = mini(_brush_drag_start.x, _brush_drag_current.x)
 		var x1: int = maxi(_brush_drag_start.x, _brush_drag_current.x)
 		var y0: int = mini(_brush_drag_start.y, _brush_drag_current.y)
 		var y1: int = maxi(_brush_drag_start.y, _brush_drag_current.y)
 		var color: Color
 		if BuildToolMode.selected_terrain_def_id != -1:
-			color = _current_palette[BuildToolMode.selected_color_index] if not _current_palette.is_empty() else Color.WHITE
+			color = (
+				_current_palette[BuildToolMode.selected_color_index]
+				if not _current_palette.is_empty()
+				else Color.WHITE
+			)
 			color.a = 0.3
 		else:
 			color = Color(1, 0, 0, 0.3)
@@ -636,12 +768,24 @@ func _draw_hover_preview(coord: Vector2i) -> void:
 			draw_rect(preview_rect, color, true)
 		draw_rect(preview_rect, Color.WHITE, false, 2.0)
 
-	elif mode == BuildToolMode.Mode.PLACE_BUILDING and BuildToolMode.selected_building_def_id != -1 and _sim != null:
-		var bdef: Dictionary = _sim.content.buildings.get(BuildToolMode.selected_building_def_id, {})
+	elif (
+		mode == BuildToolMode.Mode.PLACE_BUILDING
+		and BuildToolMode.selected_building_def_id != -1
+		and _sim != null
+	):
+		var bdef: Dictionary = _sim.content.buildings.get(
+			BuildToolMode.selected_building_def_id, {}
+		)
 		if not bdef.is_empty():
 			var building_tile_size: int = int(bdef.get("tileSize", 1))
-			var occupied: Array[Vector2i] = BuildingUtilities.get_occupied_tiles(coord, building_tile_size)
-			var color: Color = _current_palette[BuildToolMode.selected_color_index] if not _current_palette.is_empty() else Color.WHITE
+			var occupied: Array[Vector2i] = BuildingUtilities.get_occupied_tiles(
+				coord, building_tile_size
+			)
+			var color: Color = (
+				_current_palette[BuildToolMode.selected_color_index]
+				if not _current_palette.is_empty()
+				else Color.WHITE
+			)
 			color.a = 0.5
 			for tile in occupied:
 				var tile_rect := Rect2(tile.x * ts, tile.y * ts, ts, ts)
@@ -652,6 +796,7 @@ func _draw_hover_preview(coord: Vector2i) -> void:
 # ---------------------------------------------------------------------------
 # Tile rendering
 # ---------------------------------------------------------------------------
+
 
 func _initialize_auto_tile_layers() -> void:
 	if _sim == null:
@@ -667,7 +812,9 @@ func _initialize_auto_tile_layers() -> void:
 		var blocks_light: bool = bool(tdef.get("blocksLight", false))
 		var layer := ModulatableTileMapLayer.new()
 		layer.name = "%sTileMapLayer" % tdef.get("spriteKey", str(terrain_id))
-		layer.tile_set = AutoTileSetBuilder.create_auto_tile_set(texture, tdef.get("spriteKey", ""), blocks_light)
+		layer.tile_set = AutoTileSetBuilder.create_auto_tile_set(
+			texture, tdef.get("spriteKey", ""), blocks_light
+		)
 		layer.scale = Vector2(RenderingConstants.SPRITE_SCALE, RenderingConstants.SPRITE_SCALE)
 		if blocks_light:
 			layer.z_index = ZIndexConstants.TERRAIN_BLOCKING_AND_PAWNS
@@ -685,26 +832,38 @@ func _initialize_tile_nodes() -> void:
 		for y in _sim.world.height:
 			var coord := Vector2i(x, y)
 			var tile_node := Node2D.new()
-			tile_node.position = Vector2(x * RenderingConstants.RENDERED_TILE_SIZE, y * RenderingConstants.RENDERED_TILE_SIZE)
+			tile_node.position = Vector2(
+				x * RenderingConstants.RENDERED_TILE_SIZE, y * RenderingConstants.RENDERED_TILE_SIZE
+			)
 			tile_node.name = "Tile_%d_%d" % [x, y]
 			tile_node.z_index = ZIndexConstants.TILE_NODES
 			_tiles_root.add_child(tile_node)
 
 			var base_sprite := Sprite2D.new()
 			base_sprite.name = "BaseTileSprite"
-			base_sprite.position = Vector2(RenderingConstants.RENDERED_TILE_SIZE * 0.5, RenderingConstants.RENDERED_TILE_SIZE * 0.5)
+			base_sprite.position = Vector2(
+				RenderingConstants.RENDERED_TILE_SIZE * 0.5,
+				RenderingConstants.RENDERED_TILE_SIZE * 0.5
+			)
 			base_sprite.centered = true
 			base_sprite.visible = false
-			base_sprite.scale = Vector2(RenderingConstants.SPRITE_SCALE, RenderingConstants.SPRITE_SCALE)
+			base_sprite.scale = Vector2(
+				RenderingConstants.SPRITE_SCALE, RenderingConstants.SPRITE_SCALE
+			)
 			base_sprite.z_index = -1
 			tile_node.add_child(base_sprite)
 
 			var overlay_sprite := Sprite2D.new()
 			overlay_sprite.name = "OverlayTileSprite"
-			overlay_sprite.position = Vector2(RenderingConstants.RENDERED_TILE_SIZE * 0.5, RenderingConstants.RENDERED_TILE_SIZE * 0.5)
+			overlay_sprite.position = Vector2(
+				RenderingConstants.RENDERED_TILE_SIZE * 0.5,
+				RenderingConstants.RENDERED_TILE_SIZE * 0.5
+			)
 			overlay_sprite.centered = true
 			overlay_sprite.visible = false
-			overlay_sprite.scale = Vector2(RenderingConstants.SPRITE_SCALE, RenderingConstants.SPRITE_SCALE)
+			overlay_sprite.scale = Vector2(
+				RenderingConstants.SPRITE_SCALE, RenderingConstants.SPRITE_SCALE
+			)
 			overlay_sprite.z_index = 0
 			tile_node.add_child(overlay_sprite)
 
@@ -760,23 +919,41 @@ func _sync_single_tile(coord: Vector2i) -> void:
 
 	_process_autotile_layers(tile, base_tdef, overlay_tdef, map_coord)
 	_update_terrain_sprite(base_sprite, base_tdef, tile.color_index, tile.base_variant_index)
-	_update_terrain_sprite(overlay_sprite, overlay_tdef, tile.overlay_color_index, tile.overlay_variant_index)
+	_update_terrain_sprite(
+		overlay_sprite, overlay_tdef, tile.overlay_color_index, tile.overlay_variant_index
+	)
 
 
-func _process_autotile_layers(tile: World.Tile, base_tdef: Dictionary, overlay_tdef: Dictionary, map_coord: Vector2i) -> void:
+func _process_autotile_layers(
+	tile: World.Tile, base_tdef: Dictionary, overlay_tdef: Dictionary, map_coord: Vector2i
+) -> void:
 	if not base_tdef.is_empty() and bool(base_tdef.get("isAutotiling", false)):
-		var color: Color = _current_palette[tile.color_index] if tile.color_index < _current_palette.size() else Color.WHITE
+		var color: Color = (
+			_current_palette[tile.color_index]
+			if tile.color_index < _current_palette.size()
+			else Color.WHITE
+		)
 		_autotile_updates[tile.base_terrain_type_id].append([map_coord, color])
 
-	if not overlay_tdef.is_empty() and bool(overlay_tdef.get("isAutotiling", false)) and tile.overlay_terrain_type_id != -1:
-		var color: Color = _current_palette[tile.overlay_color_index] if tile.overlay_color_index < _current_palette.size() else Color.WHITE
+	if (
+		not overlay_tdef.is_empty()
+		and bool(overlay_tdef.get("isAutotiling", false))
+		and tile.overlay_terrain_type_id != -1
+	):
+		var color: Color = (
+			_current_palette[tile.overlay_color_index]
+			if tile.overlay_color_index < _current_palette.size()
+			else Color.WHITE
+		)
 		_autotile_updates[tile.overlay_terrain_type_id].append([map_coord, color])
 
 	for terrain_id in _auto_tile_layers.keys():
 		_autotile_clear_cells[terrain_id].append(map_coord)
 
 
-func _update_terrain_sprite(sprite: Sprite2D, tdef: Dictionary, color_index: int, variant_index: int) -> void:
+func _update_terrain_sprite(
+	sprite: Sprite2D, tdef: Dictionary, color_index: int, variant_index: int
+) -> void:
 	if tdef.is_empty() or bool(tdef.get("isAutotiling", false)):
 		sprite.visible = false
 		return
@@ -785,13 +962,26 @@ func _update_terrain_sprite(sprite: Sprite2D, tdef: Dictionary, color_index: int
 		sprite.visible = false
 		return
 	sprite.texture = texture
-	sprite.modulate = _current_palette[color_index] if color_index < _current_palette.size() else Color.WHITE
+	sprite.modulate = (
+		_current_palette[color_index] if color_index < _current_palette.size() else Color.WHITE
+	)
 	var variant_count: int = int(tdef.get("variantCount", 1))
 	if variant_count > 1:
-		var atlas_x: int = (variant_index % RenderingConstants.VARIANTS_PER_ROW) * RenderingConstants.SOURCE_TILE_SIZE
-		var atlas_y: int = (variant_index / RenderingConstants.VARIANTS_PER_ROW) * RenderingConstants.SOURCE_TILE_SIZE
+		var atlas_x: int = (
+			(variant_index % RenderingConstants.VARIANTS_PER_ROW)
+			* RenderingConstants.SOURCE_TILE_SIZE
+		)
+		var atlas_y: int = (
+			(variant_index / RenderingConstants.VARIANTS_PER_ROW)
+			* RenderingConstants.SOURCE_TILE_SIZE
+		)
 		sprite.region_enabled = true
-		sprite.region_rect = Rect2(atlas_x, atlas_y, RenderingConstants.SOURCE_TILE_SIZE, RenderingConstants.SOURCE_TILE_SIZE)
+		sprite.region_rect = Rect2(
+			atlas_x,
+			atlas_y,
+			RenderingConstants.SOURCE_TILE_SIZE,
+			RenderingConstants.SOURCE_TILE_SIZE
+		)
 	else:
 		sprite.region_enabled = false
 	sprite.visible = true
@@ -826,6 +1016,7 @@ func _apply_autotile_updates(layer: ModulatableTileMapLayer, terrain_id: int) ->
 # Entity sync
 # ---------------------------------------------------------------------------
 
+
 func _sync_pawns(snapshot: Dictionary) -> void:
 	_active_ids.clear()
 
@@ -834,7 +1025,9 @@ func _sync_pawns(snapshot: Dictionary) -> void:
 	var move_ticks_per_tile: int = snapshot.get("move_ticks_per_tile", 10)
 	var tick_rate: int = snapshot.get("tick_rate", 20)
 	var speed_multiplier: int = maxi(int(_sim_speed), 1)
-	var move_duration: float = (float(move_ticks_per_tile) / float(tick_rate)) / float(speed_multiplier)
+	var move_duration: float = (
+		(float(move_ticks_per_tile) / float(tick_rate)) / float(speed_multiplier)
+	)
 
 	for pawn in snapshot.get("pawns", []):
 		var pawn_id: int = pawn.get("id", -1)
@@ -856,16 +1049,26 @@ func _sync_pawns(snapshot: Dictionary) -> void:
 				if not forced_sheet_key.is_empty():
 					node.assign_forced_sheet(forced_sheet_key)
 				else:
-					node.initialize_with_sprite(SpriteResourceManager.get_texture("character_sheet"))
+					node.initialize_with_sprite(
+						SpriteResourceManager.get_texture("character_sheet")
+					)
 
 		var target_pos := Vector2(
-			pawn.get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE + RenderingConstants.RENDERED_TILE_SIZE * 0.5,
-			pawn.get("y", 0) * RenderingConstants.RENDERED_TILE_SIZE + RenderingConstants.RENDERED_TILE_SIZE * 0.5
+			(
+				pawn.get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE
+				+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
+			),
+			(
+				pawn.get("y", 0) * RenderingConstants.RENDERED_TILE_SIZE
+				+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
+			)
 		)
 		var node = _pawn_nodes[pawn_id]
 		if node is PawnView:
 			if is_new:
-				var entry_pos: Vector2 = _calculate_entry_position(pawn.get("x", 0), pawn.get("y", 0))
+				var entry_pos: Vector2 = _calculate_entry_position(
+					pawn.get("x", 0), pawn.get("y", 0)
+				)
 				node.set_initial_position(entry_pos)
 			node.set_move_duration(move_duration)
 			node.set_target_position(target_pos)
@@ -891,11 +1094,20 @@ func _sync_pawns(snapshot: Dictionary) -> void:
 			var action_type: int = pawn.get("current_action_type", Definitions.ActionType.IDLE)
 			# PICK_UP covers both hauling from a building (pawn is inside it) and harvesting
 			# from open terrain (e.g. chopping trees) — only the former should hide the pawn.
-			var at_building: bool = action_type in [
-				Definitions.ActionType.USE_BUILDING,
-				Definitions.ActionType.WORK,
-				Definitions.ActionType.DROP_OFF,
-			] or (action_type == Definitions.ActionType.PICK_UP and pawn.get("has_building_target", false))
+			var at_building: bool = (
+				(
+					action_type
+					in [
+						Definitions.ActionType.USE_BUILDING,
+						Definitions.ActionType.WORK,
+						Definitions.ActionType.DROP_OFF,
+					]
+				)
+				or (
+					action_type == Definitions.ActionType.PICK_UP
+					and pawn.get("has_building_target", false)
+				)
+			)
 			node.visible = not at_building
 
 	_ids_to_remove.clear()
@@ -907,7 +1119,8 @@ func _sync_pawns(snapshot: Dictionary) -> void:
 		_pawn_nodes.erase(id)
 		if _selected_pawn_id == id:
 			_selected_pawn_id = -1
-			if _debug_panel != null: _debug_panel.clear_selection()
+			if _debug_panel != null:
+				_debug_panel.clear_selection()
 
 
 func _sync_buildings(snapshot: Dictionary) -> void:
@@ -929,20 +1142,40 @@ func _sync_buildings(snapshot: Dictionary) -> void:
 			_building_nodes[obj_id] = node
 
 			if node is BuildingView:
-				var bdef: Dictionary = _sim.content.buildings.get(obj.get("building_def_id", -1), {})
+				var bdef: Dictionary = _sim.content.buildings.get(
+					obj.get("building_def_id", -1), {}
+				)
 				if not bdef.is_empty():
-					var texture: Texture2D = SpriteResourceManager.get_texture(bdef.get("spriteKey", ""))
+					var texture: Texture2D = SpriteResourceManager.get_texture(
+						bdef.get("spriteKey", "")
+					)
 					if texture != null:
-						node.initialize_with_sprite(texture, int(bdef.get("tileSize", 1)),
-							int(bdef.get("spriteVariants", 1)), int(bdef.get("spriteColumn", 0)), obj_id)
+						node.initialize_with_sprite(
+							texture,
+							int(bdef.get("tileSize", 1)),
+							int(bdef.get("spriteVariants", 1)),
+							int(bdef.get("spriteColumn", 0)),
+							obj_id
+						)
 
 		var node = _building_nodes[obj_id]
 		node.position = Vector2(
-			obj.get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE + RenderingConstants.RENDERED_TILE_SIZE * 0.5,
-			obj.get("y", 0) * RenderingConstants.RENDERED_TILE_SIZE + RenderingConstants.RENDERED_TILE_SIZE * 0.5
+			(
+				obj.get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE
+				+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
+			),
+			(
+				obj.get("y", 0) * RenderingConstants.RENDERED_TILE_SIZE
+				+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
+			)
 		)
 		if node is BuildingView:
-			node.set_building_info(obj.get("name", ""), obj.get("in_use", false), obj.get("color_index", 0), _current_palette)
+			node.set_building_info(
+				obj.get("name", ""),
+				obj.get("in_use", false),
+				obj.get("color_index", 0),
+				_current_palette
+			)
 
 	_ids_to_remove.clear()
 	for id in _building_nodes.keys():
@@ -953,12 +1186,14 @@ func _sync_buildings(snapshot: Dictionary) -> void:
 		_building_nodes.erase(id)
 		if _selected_building_id == id:
 			_selected_building_id = -1
-			if _debug_panel != null: _debug_panel.clear_selection()
+			if _debug_panel != null:
+				_debug_panel.clear_selection()
 
 
 # ---------------------------------------------------------------------------
 # Info panels
 # ---------------------------------------------------------------------------
+
 
 func _update_info_panel(snapshot: Dictionary) -> void:
 	if _debug_panel == null or _selected_pawn_id == -1:
@@ -1003,12 +1238,18 @@ func _update_speed_display() -> void:
 		return
 	var speed_text: String
 	match _sim_speed:
-		_SimSpeed.PAUSED:   speed_text = "PAUSED"
-		_SimSpeed.NORMAL:   speed_text = "1x"
-		_SimSpeed.FAST_4X:  speed_text = "4x"
-		_SimSpeed.FAST_16X: speed_text = "16x"
-		_SimSpeed.FAST_64X: speed_text = "64x"
-		_:                  speed_text = "1x"
+		_SimSpeed.PAUSED:
+			speed_text = "PAUSED"
+		_SimSpeed.NORMAL:
+			speed_text = "1x"
+		_SimSpeed.FAST_4X:
+			speed_text = "4x"
+		_SimSpeed.FAST_16X:
+			speed_text = "16x"
+		_SimSpeed.FAST_64X:
+			speed_text = "64x"
+		_:
+			speed_text = "1x"
 	_debug_panel.update_speed(speed_text)
 
 
@@ -1030,7 +1271,9 @@ func _update_theme_visuals(snapshot: Dictionary) -> void:
 
 	var visuals: Dictionary = _compute_theme_visuals(progress, has_shadows, weather_tint)
 	if _crt_shader_controller != null:
-		_crt_shader_controller.set_theme_visuals(visuals["warm"], visuals["night"], visuals["weather_tint"])
+		_crt_shader_controller.set_theme_visuals(
+			visuals["warm"], visuals["night"], visuals["weather_tint"]
+		)
 
 	if _weather_controller != null:
 		_weather_controller.set_active_weather(theme.get("weather_effect_key", ""))
@@ -1065,8 +1308,12 @@ func _compute_theme_visuals(progress: float, has_shadows: bool, weather_tint: fl
 	var warm: float = 0.0
 	if has_shadows:
 		warm = clampf(
-			_band_ease(progress, 0.0, THEME_SUNRISE_LEN) + _band_ease(progress, 1.0 - THEME_SUNRISE_LEN, 1.0),
-			0.0, 1.0
+			(
+				_band_ease(progress, 0.0, THEME_SUNRISE_LEN)
+				+ _band_ease(progress, 1.0 - THEME_SUNRISE_LEN, 1.0)
+			),
+			0.0,
+			1.0
 		)
 
 	var tint_ease: float = minf(
@@ -1100,6 +1347,7 @@ func _update_shadow_rect_bounds() -> void:
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 func _screen_to_tile(screen_pos: Vector2) -> Vector2i:
 	return Vector2i(
 		int(screen_pos.x / RenderingConstants.RENDERED_TILE_SIZE),
@@ -1111,7 +1359,12 @@ func _find_pawn_at(pos: Vector2) -> int:
 	var half: float = PAWN_HITBOX_SIZE * 0.5
 	for id in _pawn_nodes.keys():
 		var p: Vector2 = _pawn_nodes[id].position
-		if pos.x >= p.x - half and pos.x <= p.x + half and pos.y >= p.y - half and pos.y <= p.y + half:
+		if (
+			pos.x >= p.x - half
+			and pos.x <= p.x + half
+			and pos.y >= p.y - half
+			and pos.y <= p.y + half
+		):
 			return id
 	return -1
 
@@ -1132,7 +1385,12 @@ func _find_building_at(pos: Vector2) -> int:
 		var p: Vector2 = node.position
 		var right_expand: float = (ts - 1) * RenderingConstants.RENDERED_TILE_SIZE + half
 		var down_expand: float = (ts - 1) * RenderingConstants.RENDERED_TILE_SIZE + half
-		if pos.x >= p.x - half and pos.x <= p.x + right_expand and pos.y >= p.y - half and pos.y <= p.y + down_expand:
+		if (
+			pos.x >= p.x - half
+			and pos.x <= p.x + right_expand
+			and pos.y >= p.y - half
+			and pos.y <= p.y + down_expand
+		):
 			return id
 	return -1
 
@@ -1152,14 +1410,22 @@ func _calculate_entry_position(tile_x: int, tile_y: int) -> Vector2:
 	var on_right: bool = tile_x == _sim.world.width - 1
 	var on_top: bool = tile_y == 0
 	var on_bottom: bool = tile_y == _sim.world.height - 1
-	if on_left and on_top: return Vector2(cx - ts, cy - ts)
-	if on_right and on_top: return Vector2(cx + ts, cy - ts)
-	if on_left and on_bottom: return Vector2(cx - ts, cy + ts)
-	if on_right and on_bottom: return Vector2(cx + ts, cy + ts)
-	if on_left: return Vector2(cx - ts, cy)
-	if on_right: return Vector2(cx + ts, cy)
-	if on_top: return Vector2(cx, cy - ts)
-	if on_bottom: return Vector2(cx, cy + ts)
+	if on_left and on_top:
+		return Vector2(cx - ts, cy - ts)
+	if on_right and on_top:
+		return Vector2(cx + ts, cy - ts)
+	if on_left and on_bottom:
+		return Vector2(cx - ts, cy + ts)
+	if on_right and on_bottom:
+		return Vector2(cx + ts, cy + ts)
+	if on_left:
+		return Vector2(cx - ts, cy)
+	if on_right:
+		return Vector2(cx + ts, cy)
+	if on_top:
+		return Vector2(cx, cy - ts)
+	if on_bottom:
+		return Vector2(cx, cy + ts)
 	return Vector2(cx, cy)
 
 

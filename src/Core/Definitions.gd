@@ -1,9 +1,9 @@
 class_name Definitions
 
 enum BuildingWorkType {
-	DIRECT,              # Work creates resources at this building
+	DIRECT,  # Work creates resources at this building
 	HAUL_FROM_BUILDING,  # Work = haul resources from another building
-	HAUL_FROM_TERRAIN,   # Work = harvest resources from terrain tiles
+	HAUL_FROM_TERRAIN,  # Work = harvest resources from terrain tiles
 }
 
 enum ActionType {
@@ -11,8 +11,8 @@ enum ActionType {
 	MOVE_TO,
 	USE_BUILDING,
 	WORK,
-	PICK_UP,     # Pick up resources from building or terrain
-	DROP_OFF,    # Drop off resources at destination building
+	PICK_UP,  # Pick up resources from building or terrain
+	DROP_OFF,  # Drop off resources at destination building
 	LEAVE_TOWN,  # Final step of emigration — removes the pawn once it reaches the map edge
 }
 
@@ -25,26 +25,26 @@ enum AnimationType {
 }
 
 enum ExpressionType {
-	THOUGHT,    # Cloud bubble — wanting something
-	SPEECH,     # Speech bubble — neutral/talking
-	HAPPY,      # Heart bubble — satisfied/happy
+	THOUGHT,  # Cloud bubble — wanting something
+	SPEECH,  # Speech bubble — neutral/talking
+	HAPPY,  # Heart bubble — satisfied/happy
 	COMPLAINT,  # Jagged bubble — frustrated/angry
-	QUESTION,   # Question bubble — confused/waiting
+	QUESTION,  # Question bubble — confused/waiting
 }
 
 enum PawnMembership {
 	COLONIST,  # Counts toward population/home-capacity, eligible for capacity-driven emigration
-	VISITOR,   # Theme-spawned, excluded from population accounting — see Simulation.spawn_visitor_pawn
+	VISITOR,  # Theme-spawned, excluded from population accounting — see Simulation.spawn_visitor_pawn
 }
 
 
 class ActionDef:
 	var type: Definitions.ActionType
 	var animation: Definitions.AnimationType = Definitions.AnimationType.IDLE
-	var target_coord: Vector2i = Vector2i(-1, -1)   # (-1,-1) = unset
-	var target_entity: int = -1                      # -1 = unset
+	var target_coord: Vector2i = Vector2i(-1, -1)  # (-1,-1) = unset
+	var target_entity: int = -1  # -1 = unset
 	var duration_ticks: int = 0
-	var satisfies_need_id: int = -1                  # -1 = unset
+	var satisfies_need_id: int = -1  # -1 = unset
 	var need_satisfaction_amount: float = 0.0
 	var display_name: String = ""
 

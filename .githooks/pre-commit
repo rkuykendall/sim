@@ -1,0 +1,19 @@
+#!/bin/bash
+# Auto-formats staged GDScript files with gdformat (gdtoolkit) before commit.
+# Requires gdformat on PATH: pipx install "gdtoolkit==4.*"
+
+staged_gd_files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.gd$')
+
+if [ -z "$staged_gd_files" ]; then
+    exit 0
+fi
+
+if ! command -v gdformat &> /dev/null; then
+    echo "warning: gdformat not found on PATH, skipping GDScript formatting (install: pipx install \"gdtoolkit==4.*\")"
+    exit 0
+fi
+
+echo "$staged_gd_files" | xargs gdformat
+echo "$staged_gd_files" | xargs git add
+
+exit 0

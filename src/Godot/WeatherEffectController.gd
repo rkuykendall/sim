@@ -16,7 +16,8 @@ extends Node2D
 ## point before the particle is freed. To add a new weather type (e.g. snow), add a profile
 ## below with its own sheet/motion and have a theme return its key — no other code needed.
 const PROFILES: Dictionary = {
-	"rain": {
+	"rain":
+	{
 		"texture": "res://sprites/effects/rain_sheet.png",
 		"frame_size": 16,
 		"columns": 4,

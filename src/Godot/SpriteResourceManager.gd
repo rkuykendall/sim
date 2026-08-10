@@ -3,42 +3,42 @@ class_name SpriteResourceManager
 # Sprite path map: key -> res:// path
 const _SPRITE_PATH_MAP: Dictionary = {
 	# Tile sprites
-	"flat":               "res://sprites/tiles/flat.png",
-	"water":              "res://sprites/tiles/water.png",
-	"grass":              "res://sprites/tiles/grass.png",
-	"dirt":               "res://sprites/tiles/dirt.png",
-	"stone":              "res://sprites/tiles/stone.png",
-	"path":               "res://sprites/tiles/path.png",
-	"trees":              "res://sprites/tiles/trees.png",
-	"block":              "res://sprites/tiles/block.png",
-	"wall":               "res://sprites/tiles/wall.png",
-	"wood_floor":         "res://sprites/tiles/wood_floor.png",
-	"rock":               "res://sprites/tiles/rock.png",
-	"plant":              "res://sprites/tiles/plant.png",
+	"flat": "res://sprites/tiles/flat.png",
+	"water": "res://sprites/tiles/water.png",
+	"grass": "res://sprites/tiles/grass.png",
+	"dirt": "res://sprites/tiles/dirt.png",
+	"stone": "res://sprites/tiles/stone.png",
+	"path": "res://sprites/tiles/path.png",
+	"trees": "res://sprites/tiles/trees.png",
+	"block": "res://sprites/tiles/block.png",
+	"wall": "res://sprites/tiles/wall.png",
+	"wood_floor": "res://sprites/tiles/wood_floor.png",
+	"rock": "res://sprites/tiles/rock.png",
+	"plant": "res://sprites/tiles/plant.png",
 	# Building sprites
-	"home":               "res://sprites/buildings/home.png",
-	"well":               "res://sprites/buildings/well.png",
-	"farm":               "res://sprites/buildings/farm.png",
-	"lumber_mill":        "res://sprites/buildings/lumber_mill.png",
-	"tavern":             "res://sprites/buildings/tavern.png",
-	"market":             "res://sprites/buildings/market.png",
+	"home": "res://sprites/buildings/home.png",
+	"well": "res://sprites/buildings/well.png",
+	"farm": "res://sprites/buildings/farm.png",
+	"lumber_mill": "res://sprites/buildings/lumber_mill.png",
+	"tavern": "res://sprites/buildings/tavern.png",
+	"market": "res://sprites/buildings/market.png",
 	# Character sprites
-	"character_sheet":    "res://sprites/characters/character_sheet.png",
-	"axe":                "res://sprites/characters/axe.png",
-	"wood":               "res://sprites/characters/wood.png",
-	"food":               "res://sprites/characters/food.png",
+	"character_sheet": "res://sprites/characters/character_sheet.png",
+	"axe": "res://sprites/characters/axe.png",
+	"wood": "res://sprites/characters/wood.png",
+	"food": "res://sprites/characters/food.png",
 	# Bubble sprites
-	"bubble_thought":     "res://sprites/ui/bubbles/thought_bubble.png",
-	"bubble_happy":       "res://sprites/ui/bubbles/heart_bubble.png",
-	"bubble_complaint":   "res://sprites/ui/bubbles/complaint_bubble.png",
-	"bubble_speech":      "res://sprites/ui/bubbles/thought_bubble.png",
-	"bubble_question":    "res://sprites/ui/bubbles/thought_bubble.png",
+	"bubble_thought": "res://sprites/ui/bubbles/thought_bubble.png",
+	"bubble_happy": "res://sprites/ui/bubbles/heart_bubble.png",
+	"bubble_complaint": "res://sprites/ui/bubbles/complaint_bubble.png",
+	"bubble_speech": "res://sprites/ui/bubbles/thought_bubble.png",
+	"bubble_question": "res://sprites/ui/bubbles/thought_bubble.png",
 	# Need icon sprites
-	"hunger":             "res://sprites/ui/icons/hunger.png",
-	"energy":             "res://sprites/ui/icons/energy.png",
-	"social":             "res://sprites/ui/icons/social.png",
-	"hygiene":            "res://sprites/ui/icons/hygiene.png",
-	"purpose":            "res://sprites/ui/icons/purpose.png",
+	"hunger": "res://sprites/ui/icons/hunger.png",
+	"energy": "res://sprites/ui/icons/energy.png",
+	"social": "res://sprites/ui/icons/social.png",
+	"hygiene": "res://sprites/ui/icons/hygiene.png",
+	"purpose": "res://sprites/ui/icons/purpose.png",
 }
 
 static var _cache: Dictionary = {}
@@ -56,7 +56,9 @@ static func get_texture(sprite_key: String) -> Texture2D:
 		path = "res://sprites/" + sprite_key + ".png"
 
 	if not ResourceLoader.exists(path):
-		push_warning("SpriteResourceManager: texture not found for key '%s' at '%s'" % [sprite_key, path])
+		push_warning(
+			"SpriteResourceManager: texture not found for key '%s' at '%s'" % [sprite_key, path]
+		)
 		return null
 
 	var texture: Texture2D = load(path)
@@ -70,7 +72,9 @@ static func get_icon_texture(sprite_key: String, region: Rect2 = Rect2()) -> Tex
 	var tex: Texture2D = get_texture(sprite_key)
 	if tex == null:
 		return null
-	var r: Rect2 = region if region.size != Vector2.ZERO else Rect2(0, 0, tex.get_width(), tex.get_height())
+	var r: Rect2 = (
+		region if region.size != Vector2.ZERO else Rect2(0, 0, tex.get_width(), tex.get_height())
+	)
 	if r.size.x >= tex.get_width() and r.size.y >= tex.get_height():
 		return tex
 	var atlas := AtlasTexture.new()

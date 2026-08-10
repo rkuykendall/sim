@@ -25,15 +25,15 @@ func _ensure_texture_rect() -> void:
 
 func _init_border() -> void:
 	var style := _make_style(false)
-	add_theme_stylebox_override("normal",  style)
-	add_theme_stylebox_override("hover",   style)
+	add_theme_stylebox_override("normal", style)
+	add_theme_stylebox_override("hover", style)
 	add_theme_stylebox_override("pressed", style)
-	add_theme_stylebox_override("focus",   style)
+	add_theme_stylebox_override("focus", style)
 
 	if _texture_rect != null:
-		_texture_rect.offset_left   = 8
-		_texture_rect.offset_top    = 8
-		_texture_rect.offset_right  = -8
+		_texture_rect.offset_left = 8
+		_texture_rect.offset_top = 8
+		_texture_rect.offset_right = -8
 		_texture_rect.offset_bottom = -8
 
 
@@ -54,23 +54,23 @@ func update_color(modulation: Color) -> void:
 func set_selected(selected: bool) -> void:
 	_selected = selected
 	var style := _make_style(selected)
-	add_theme_stylebox_override("normal",  style)
-	add_theme_stylebox_override("hover",   style)
+	add_theme_stylebox_override("normal", style)
+	add_theme_stylebox_override("hover", style)
 	add_theme_stylebox_override("pressed", style)
-	add_theme_stylebox_override("focus",   style)
+	add_theme_stylebox_override("focus", style)
 
 
 func _make_style(selected: bool) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
-	s.bg_color        = Color.WHITE if selected else Color(0, 0, 0, 0)
-	s.border_color    = Color(1, 1, 1, 0)
-	s.border_width_left   = 4
-	s.border_width_right  = 4
-	s.border_width_top    = 4
+	s.bg_color = Color.WHITE if selected else Color(0, 0, 0, 0)
+	s.border_color = Color(1, 1, 1, 0)
+	s.border_width_left = 4
+	s.border_width_right = 4
+	s.border_width_top = 4
 	s.border_width_bottom = 4
-	s.content_margin_left   = 4
-	s.content_margin_right  = 4
-	s.content_margin_top    = 4
+	s.content_margin_left = 4
+	s.content_margin_right = 4
+	s.content_margin_top = 4
 	s.content_margin_bottom = 4
 	s.draw_center = true
 	return s

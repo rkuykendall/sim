@@ -42,7 +42,9 @@ func tick(sim: Simulation) -> void:
 					action_comp.current_action = null
 
 
-func _execute_move_to(sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent) -> void:
+func _execute_move_to(
+	sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent
+) -> void:
 	var action := action_comp.current_action
 	if action.target_coord == Vector2i(-1, -1):
 		action_comp.current_action = null
@@ -62,8 +64,7 @@ func _execute_move_to(sim: Simulation, pawn_id: int, action_comp: Components.Act
 
 	var ticks_in_action: int = sim.time.tick - action_comp.action_start_tick
 	var expected_index: int = mini(
-		ticks_in_action / MOVE_TICKS_PER_TILE,
-		action_comp.current_path.size() - 1
+		ticks_in_action / MOVE_TICKS_PER_TILE, action_comp.current_path.size() - 1
 	)
 
 	if expected_index > action_comp.path_index:
@@ -75,7 +76,9 @@ func _execute_move_to(sim: Simulation, pawn_id: int, action_comp: Components.Act
 		action_comp.current_path.clear()
 
 
-func _execute_use_building(sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent) -> void:
+func _execute_use_building(
+	sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent
+) -> void:
 	var action := action_comp.current_action
 	if action.target_entity == -1:
 		action_comp.current_action = null
@@ -135,7 +138,11 @@ func _execute_use_building(sim: Simulation, pawn_id: int, action_comp: Component
 	if resource_comp != null:
 		if resource_comp.current_amount > 0:
 			resource_comp.current_amount = maxf(
-				0.0, resource_comp.current_amount - CONSUMER_DEPLETION_AMOUNT * resource_comp.depletion_mult
+				0.0,
+				(
+					resource_comp.current_amount
+					- CONSUMER_DEPLETION_AMOUNT * resource_comp.depletion_mult
+				)
 			)
 		else:
 			has_resources = false
@@ -146,12 +153,15 @@ func _execute_use_building(sim: Simulation, pawn_id: int, action_comp: Component
 		if need_comp != null and need_comp.needs.has(action.satisfies_need_id):
 			need_comp.needs[action.satisfies_need_id] = clampf(
 				need_comp.needs[action.satisfies_need_id] + action.need_satisfaction_amount,
-				0.0, 100.0
+				0.0,
+				100.0
 			)
 
 	# Increment attachment
 	if has_resources and action.satisfies_need_id != -1:
-		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(target_id)
+		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(
+			target_id
+		)
 		if attachment_comp != null:
 			attachment_comp.increment(action.satisfies_need_id, pawn_id)
 
@@ -162,7 +172,11 @@ func _execute_use_building(sim: Simulation, pawn_id: int, action_comp: Component
 		idle.duration_ticks = 40
 		idle.display_name = "Satisfied" if has_resources else "Out of Resources"
 		idle.has_expression = true
-		idle.expression = Definitions.ExpressionType.HAPPY if has_resources else Definitions.ExpressionType.COMPLAINT
+		idle.expression = (
+			Definitions.ExpressionType.HAPPY
+			if has_resources
+			else Definitions.ExpressionType.COMPLAINT
+		)
 		idle.expression_icon_def_id = action.satisfies_need_id
 		action_comp.action_queue.push_front(idle)
 
@@ -225,7 +239,9 @@ func _execute_work(sim: Simulation, pawn_id: int, action_comp: Components.Action
 	var resource_comp: Components.ResourceComponent = sim.entities.resources.get(target_id)
 	if resource_comp != null:
 		var production_amount: float = float(obj_def.get("productionAmount", 30.0))
-		resource_comp.current_amount = minf(resource_comp.max_amount, resource_comp.current_amount + production_amount)
+		resource_comp.current_amount = minf(
+			resource_comp.max_amount, resource_comp.current_amount + production_amount
+		)
 
 	# Satisfy Purpose need
 	if action.satisfies_need_id != -1:
@@ -233,12 +249,15 @@ func _execute_work(sim: Simulation, pawn_id: int, action_comp: Components.Action
 		if need_comp != null and need_comp.needs.has(action.satisfies_need_id):
 			need_comp.needs[action.satisfies_need_id] = clampf(
 				need_comp.needs[action.satisfies_need_id] + action.need_satisfaction_amount,
-				0.0, 100.0
+				0.0,
+				100.0
 			)
 
 	# Increment attachment
 	if action.satisfies_need_id != -1:
-		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(target_id)
+		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(
+			target_id
+		)
 		if attachment_comp != null:
 			attachment_comp.increment(action.satisfies_need_id, pawn_id)
 
@@ -256,7 +275,9 @@ func _execute_work(sim: Simulation, pawn_id: int, action_comp: Components.Action
 	action_comp.current_action = null
 
 
-func _execute_pick_up(sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent) -> void:
+func _execute_pick_up(
+	sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent
+) -> void:
 	var action := action_comp.current_action
 	var inventory: Components.InventoryComponent = sim.entities.inventory.get(pawn_id)
 	if inventory == null:
@@ -277,7 +298,9 @@ func _execute_pick_up(sim: Simulation, pawn_id: int, action_comp: Components.Act
 		var building_def: Dictionary = sim.content.buildings[building_comp.building_def_id]
 
 		if not _is_in_use_area(pawn_pos.coord, obj_pos.coord, building_def):
-			var use_target := _find_valid_use_area(sim, obj_pos.coord, pawn_pos.coord, building_def, pawn_id)
+			var use_target := _find_valid_use_area(
+				sim, obj_pos.coord, pawn_pos.coord, building_def, pawn_id
+			)
 			if use_target == Vector2i(-1, -1):
 				action_comp.current_action = null
 				action_comp.action_queue.clear()
@@ -293,7 +316,9 @@ func _execute_pick_up(sim: Simulation, pawn_id: int, action_comp: Components.Act
 			return
 
 		if sim.time.tick - action_comp.action_start_tick >= action.duration_ticks:
-			var source_resource: Components.ResourceComponent = sim.entities.resources.get(source_id)
+			var source_resource: Components.ResourceComponent = sim.entities.resources.get(
+				source_id
+			)
 			if source_resource != null:
 				var amount: float = action.resource_amount if action.resource_amount > 0.0 else 30.0
 				var transfer: float = minf(amount, source_resource.current_amount)
@@ -309,7 +334,9 @@ func _execute_pick_up(sim: Simulation, pawn_id: int, action_comp: Components.Act
 		if pawn_pos == null:
 			return
 		var target_coord: Vector2i = action.terrain_target_coord
-		var dist: int = abs(pawn_pos.coord.x - target_coord.x) + abs(pawn_pos.coord.y - target_coord.y)
+		var dist: int = (
+			abs(pawn_pos.coord.x - target_coord.x) + abs(pawn_pos.coord.y - target_coord.y)
+		)
 
 		if dist > 1:
 			var adj := _find_adjacent_walkable(sim.world, target_coord, pawn_pos.coord)
@@ -335,7 +362,9 @@ func _execute_pick_up(sim: Simulation, pawn_id: int, action_comp: Components.Act
 		action_comp.current_action = null
 
 
-func _execute_drop_off(sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent) -> void:
+func _execute_drop_off(
+	sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent
+) -> void:
 	var action := action_comp.current_action
 	if action.target_entity == -1:
 		action_comp.current_action = null
@@ -357,7 +386,9 @@ func _execute_drop_off(sim: Simulation, pawn_id: int, action_comp: Components.Ac
 	var building_def: Dictionary = sim.content.buildings[building_comp.building_def_id]
 
 	if not _is_in_use_area(pawn_pos.coord, obj_pos.coord, building_def):
-		var use_target := _find_valid_use_area(sim, obj_pos.coord, pawn_pos.coord, building_def, pawn_id)
+		var use_target := _find_valid_use_area(
+			sim, obj_pos.coord, pawn_pos.coord, building_def, pawn_id
+		)
 		if use_target == Vector2i(-1, -1):
 			action_comp.current_action = null
 			action_comp.action_queue.clear()
@@ -378,8 +409,14 @@ func _execute_drop_off(sim: Simulation, pawn_id: int, action_comp: Components.Ac
 	# Transfer inventory to building, if it tracks stock of this resource at all (e.g.
 	# LumberMill doesn't — see buildings.json).
 	var dest_resource: Components.ResourceComponent = sim.entities.resources.get(target_id)
-	if dest_resource != null and inventory.resource_type == dest_resource.resource_type and inventory.amount > 0.0:
-		var transfer_amount: float = minf(inventory.amount, dest_resource.max_amount - dest_resource.current_amount)
+	if (
+		dest_resource != null
+		and inventory.resource_type == dest_resource.resource_type
+		and inventory.amount > 0.0
+	):
+		var transfer_amount: float = minf(
+			inventory.amount, dest_resource.max_amount - dest_resource.current_amount
+		)
 		dest_resource.current_amount += transfer_amount
 
 	# The delivery itself is complete regardless — the pawn's hands are empty now whether or
@@ -393,12 +430,15 @@ func _execute_drop_off(sim: Simulation, pawn_id: int, action_comp: Components.Ac
 		if need_comp != null and need_comp.needs.has(action.satisfies_need_id):
 			need_comp.needs[action.satisfies_need_id] = clampf(
 				need_comp.needs[action.satisfies_need_id] + action.need_satisfaction_amount,
-				0.0, 100.0
+				0.0,
+				100.0
 			)
 
 	# Increment attachment
 	if action.satisfies_need_id != -1:
-		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(target_id)
+		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(
+			target_id
+		)
 		if attachment_comp != null:
 			attachment_comp.increment(action.satisfies_need_id, pawn_id)
 
@@ -417,6 +457,7 @@ func _execute_drop_off(sim: Simulation, pawn_id: int, action_comp: Components.Ac
 
 
 # --- Helpers ---------------------------------------------------------------
+
 
 func _is_in_use_area(pawn_coord: Vector2i, obj_coord: Vector2i, building_def: Dictionary) -> bool:
 	var use_areas: Array = building_def.get("useAreas", [])

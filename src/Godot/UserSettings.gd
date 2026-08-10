@@ -19,7 +19,7 @@ static func load() -> UserSettings:
 
 
 func save() -> void:
-	var data: Dictionary = { "fullscreen": fullscreen }
+	var data: Dictionary = {"fullscreen": fullscreen}
 	var json: String = JSON.stringify(data)
 	var file := FileAccess.open(SETTINGS_PATH, FileAccess.WRITE)
 	if file == null:

@@ -21,7 +21,8 @@ func _create() -> int:
 
 
 var next_id: int:
-	get: return _next_id
+	get:
+		return _next_id
 
 
 func set_next_id(id: int) -> void:
@@ -29,9 +30,7 @@ func set_next_id(id: int) -> void:
 
 
 func create_pawn(
-	coord: Vector2i,
-	pawn_name: String = "Pawn",
-	starting_needs: Dictionary = {}
+	coord: Vector2i, pawn_name: String = "Pawn", starting_needs: Dictionary = {}
 ) -> int:
 	var id := _create()
 

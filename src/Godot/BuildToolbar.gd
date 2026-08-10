@@ -15,7 +15,7 @@ var _debug_mode: bool = false
 
 var _color_buttons: Array = []
 var _tool_buttons: Array = []
-var _tool_button_modes: Array = []   # Array of int (BuildToolMode.Mode) or -1 for home
+var _tool_button_modes: Array = []  # Array of int (BuildToolMode.Mode) or -1 for home
 var _option_buttons: Array[SpriteIconButton] = []
 
 
@@ -26,7 +26,9 @@ func _ready() -> void:
 		_options_container = get_node_or_null(options_container_path)
 
 
-func initialize(content: ContentRegistry, sound_manager: SoundManager, debug_mode: bool = false) -> void:
+func initialize(
+	content: ContentRegistry, sound_manager: SoundManager, debug_mode: bool = false
+) -> void:
 	_content = content
 	_sound_manager = sound_manager
 	_debug_mode = debug_mode
@@ -83,13 +85,45 @@ func _create_color_and_tool_buttons() -> void:
 	var tool_defs: Array = [
 		[func() -> Button: return _create_home_button(), -1],
 		[func() -> Button: return _create_paint_tool_button(), BuildToolMode.Mode.PLACE_TERRAIN],
-		[func() -> Button: return _create_icon_tool_button("res://sprites/tools/box.png", BuildToolMode.Mode.FILL_SQUARE), BuildToolMode.Mode.FILL_SQUARE],
-		[func() -> Button: return _create_icon_tool_button("res://sprites/tools/square.png", BuildToolMode.Mode.OUTLINE_SQUARE), BuildToolMode.Mode.OUTLINE_SQUARE],
-		[func() -> Button: return _create_icon_tool_button("res://sprites/tools/fill.png", BuildToolMode.Mode.FLOOD_FILL), BuildToolMode.Mode.FLOOD_FILL],
-		[func() -> Button: return _create_icon_tool_button("res://sprites/menu/build.png", BuildToolMode.Mode.PLACE_BUILDING), BuildToolMode.Mode.PLACE_BUILDING],
+		[
+			func() -> Button:
+				return _create_icon_tool_button(
+					"res://sprites/tools/box.png", BuildToolMode.Mode.FILL_SQUARE
+				),
+			BuildToolMode.Mode.FILL_SQUARE
+		],
+		[
+			func() -> Button:
+				return _create_icon_tool_button(
+					"res://sprites/tools/square.png", BuildToolMode.Mode.OUTLINE_SQUARE
+				),
+			BuildToolMode.Mode.OUTLINE_SQUARE
+		],
+		[
+			func() -> Button:
+				return _create_icon_tool_button(
+					"res://sprites/tools/fill.png", BuildToolMode.Mode.FLOOD_FILL
+				),
+			BuildToolMode.Mode.FLOOD_FILL
+		],
+		[
+			func() -> Button:
+				return _create_icon_tool_button(
+					"res://sprites/menu/build.png", BuildToolMode.Mode.PLACE_BUILDING
+				),
+			BuildToolMode.Mode.PLACE_BUILDING
+		],
 	]
 	if _debug_mode:
-		tool_defs.append([func() -> Button: return _create_icon_tool_button("res://sprites/tools/select.png", BuildToolMode.Mode.SELECT), BuildToolMode.Mode.SELECT])
+		tool_defs.append(
+			[
+				func() -> Button:
+					return _create_icon_tool_button(
+						"res://sprites/tools/select.png", BuildToolMode.Mode.SELECT
+					),
+				BuildToolMode.Mode.SELECT
+			]
+		)
 
 	var color_rows: int = _current_palette.size()
 	var tool_rows: int = tool_defs.size()
@@ -102,23 +136,27 @@ func _create_color_and_tool_buttons() -> void:
 			var color_btn := PreviewSquare.new()
 			color_btn.custom_minimum_size = Vector2(96, 96)
 			color_btn.pressed.connect(func() -> void: _on_color_selected(color_index))
-			if _tools_grid != null: _tools_grid.add_child(color_btn)
+			if _tools_grid != null:
+				_tools_grid.add_child(color_btn)
 			_color_buttons.append(color_btn)
 		else:
 			var spacer := Control.new()
 			spacer.custom_minimum_size = Vector2(96, 96)
-			if _tools_grid != null: _tools_grid.add_child(spacer)
+			if _tools_grid != null:
+				_tools_grid.add_child(spacer)
 
 		# Tool column
 		if row < tool_rows:
 			var btn: Button = tool_defs[row][0].call()
-			if _tools_grid != null: _tools_grid.add_child(btn)
+			if _tools_grid != null:
+				_tools_grid.add_child(btn)
 			_tool_buttons.append(btn)
 			_tool_button_modes.append(tool_defs[row][1])
 		else:
 			var spacer := Control.new()
 			spacer.custom_minimum_size = Vector2(96, 96)
-			if _tools_grid != null: _tools_grid.add_child(spacer)
+			if _tools_grid != null:
+				_tools_grid.add_child(spacer)
 
 	for i in _color_buttons.size():
 		_update_color_button(i)
@@ -150,7 +188,11 @@ func _create_icon_tool_button(sprite_path: String, mode: BuildToolMode.Mode) -> 
 	btn.custom_minimum_size = Vector2(96, 96)
 	if ResourceLoader.exists(sprite_path):
 		var tex: Texture2D = load(sprite_path)
-		var color: Color = _current_palette[BuildToolMode.selected_color_index] if not _current_palette.is_empty() else Color.WHITE
+		var color: Color = (
+			_current_palette[BuildToolMode.selected_color_index]
+			if not _current_palette.is_empty()
+			else Color.WHITE
+		)
 		btn.set_sprite(tex, color)
 	btn.pressed.connect(func() -> void: _on_tool_selected(mode))
 	return btn
@@ -170,29 +212,41 @@ func _rebuild_options() -> void:
 		var building_keys: Array = _content.buildings.keys()
 		building_keys.sort()
 		for id in building_keys:
-			var btn := _create_option_button(id, _content.buildings[id].get("spriteKey", ""), true, false)
+			var btn := _create_option_button(
+				id, _content.buildings[id].get("spriteKey", ""), true, false
+			)
 			_option_buttons.append(btn)
-			if _options_container != null: _options_container.add_child(btn)
-	elif BuildToolMode.current_mode in [
-		BuildToolMode.Mode.PLACE_TERRAIN,
-		BuildToolMode.Mode.FILL_SQUARE,
-		BuildToolMode.Mode.OUTLINE_SQUARE,
-		BuildToolMode.Mode.FLOOD_FILL,
-	]:
+			if _options_container != null:
+				_options_container.add_child(btn)
+	elif (
+		BuildToolMode.current_mode
+		in [
+			BuildToolMode.Mode.PLACE_TERRAIN,
+			BuildToolMode.Mode.FILL_SQUARE,
+			BuildToolMode.Mode.OUTLINE_SQUARE,
+			BuildToolMode.Mode.FLOOD_FILL,
+		]
+	):
 		# Delete option first
 		var del_btn := _create_option_button(-1, "res://sprites/tools/delete.png", false, true)
 		_option_buttons.append(del_btn)
-		if _options_container != null: _options_container.add_child(del_btn)
+		if _options_container != null:
+			_options_container.add_child(del_btn)
 
 		var terrain_keys: Array = _content.terrains.keys()
 		terrain_keys.sort()
 		for id in terrain_keys:
-			var btn := _create_option_button(id, _content.terrains[id].get("spriteKey", ""), false, false)
+			var btn := _create_option_button(
+				id, _content.terrains[id].get("spriteKey", ""), false, false
+			)
 			_option_buttons.append(btn)
-			if _options_container != null: _options_container.add_child(btn)
+			if _options_container != null:
+				_options_container.add_child(btn)
 
 
-func _create_option_button(id: int, sprite_key: String, is_building: bool, is_delete: bool) -> SpriteIconButton:
+func _create_option_button(
+	id: int, sprite_key: String, is_building: bool, is_delete: bool
+) -> SpriteIconButton:
 	var btn := SpriteIconButton.new()
 	btn.custom_minimum_size = Vector2(96, 96)
 
@@ -210,10 +264,16 @@ func _create_option_button(id: int, sprite_key: String, is_building: bool, is_de
 		var is_auto: bool = _content.terrains[id].get("isAutotiling", false)
 		# Autotile row 3 col 0 = isolated tile (bitmask 0x00) — best representative icon
 		var icon_y: int = 3 * tile_size if is_auto else 0
-		texture = SpriteResourceManager.get_icon_texture(sprite_key, Rect2(0, icon_y, tile_size, tile_size))
+		texture = SpriteResourceManager.get_icon_texture(
+			sprite_key, Rect2(0, icon_y, tile_size, tile_size)
+		)
 
 	if texture != null:
-		var color: Color = _current_palette[BuildToolMode.selected_color_index] if not _current_palette.is_empty() else Color.WHITE
+		var color: Color = (
+			_current_palette[BuildToolMode.selected_color_index]
+			if not _current_palette.is_empty()
+			else Color.WHITE
+		)
 		btn.set_sprite(texture, color)
 
 	if is_building:
@@ -236,39 +296,45 @@ func _update_color_button(color_index: int) -> void:
 
 
 func _on_color_selected(color_index: int) -> void:
-	if _sound_manager != null: _sound_manager.play_click()
+	if _sound_manager != null:
+		_sound_manager.play_click()
 	BuildToolMode.selected_color_index = color_index
 	_update_all_buttons()
 
 
 func _on_tool_selected(mode: BuildToolMode.Mode) -> void:
-	if _sound_manager != null: _sound_manager.play_click()
+	if _sound_manager != null:
+		_sound_manager.play_click()
 	BuildToolMode.current_mode = mode
 	_rebuild_options()
 	_update_all_buttons()
 
 
 func _on_building_option_selected(building_def_id: int) -> void:
-	if _sound_manager != null: _sound_manager.play_select()
+	if _sound_manager != null:
+		_sound_manager.play_select()
 	BuildToolMode.current_mode = BuildToolMode.Mode.PLACE_BUILDING
 	BuildToolMode.selected_building_def_id = building_def_id
 	_update_all_buttons()
 
 
 func _on_terrain_option_selected(terrain_def_id: int) -> void:
-	if _sound_manager != null: _sound_manager.play_select()
+	if _sound_manager != null:
+		_sound_manager.play_select()
 	BuildToolMode.selected_terrain_def_id = terrain_def_id
 	_update_all_buttons()
 
 
 func _on_delete_option_selected() -> void:
-	if _sound_manager != null: _sound_manager.play_select()
+	if _sound_manager != null:
+		_sound_manager.play_select()
 	BuildToolMode.selected_terrain_def_id = -1
 	_update_all_buttons()
 
 
 func _on_home_button_pressed() -> void:
-	if _sound_manager != null: _sound_manager.play_click()
+	if _sound_manager != null:
+		_sound_manager.play_click()
 	home_button_pressed.emit()
 
 
@@ -282,13 +348,26 @@ func _update_all_buttons() -> void:
 		var is_active: bool = mode != -1 and mode == BuildToolMode.current_mode
 
 		if btn is PreviewSquare:
-			btn.update_preview(BuildToolMode.selected_color_index, -1, -1, _content, _current_palette,
-				false, true, false, false)
+			btn.update_preview(
+				BuildToolMode.selected_color_index,
+				-1,
+				-1,
+				_content,
+				_current_palette,
+				false,
+				true,
+				false,
+				false
+			)
 			btn.set_selected(is_active)
 		elif btn is SpriteIconButton:
 			var tex_rect: TextureRect = btn.get_node_or_null("TextureRect")
 			if tex_rect != null and tex_rect.texture != null:
-				var color: Color = _current_palette[BuildToolMode.selected_color_index] if not _current_palette.is_empty() else Color.WHITE
+				var color: Color = (
+					_current_palette[BuildToolMode.selected_color_index]
+					if not _current_palette.is_empty()
+					else Color.WHITE
+				)
 				btn.set_sprite(tex_rect.texture, color)
 			btn.set_selected(is_active)
 
@@ -307,21 +386,30 @@ func _update_all_buttons() -> void:
 		if BuildToolMode.current_mode == BuildToolMode.Mode.PLACE_BUILDING:
 			if i < building_keys_sorted.size():
 				is_selected = building_keys_sorted[i] == BuildToolMode.selected_building_def_id
-		elif BuildToolMode.current_mode in [
-			BuildToolMode.Mode.PLACE_TERRAIN,
-			BuildToolMode.Mode.FILL_SQUARE,
-			BuildToolMode.Mode.OUTLINE_SQUARE,
-			BuildToolMode.Mode.FLOOD_FILL,
-		]:
+		elif (
+			BuildToolMode.current_mode
+			in [
+				BuildToolMode.Mode.PLACE_TERRAIN,
+				BuildToolMode.Mode.FILL_SQUARE,
+				BuildToolMode.Mode.OUTLINE_SQUARE,
+				BuildToolMode.Mode.FLOOD_FILL,
+			]
+		):
 			if i == 0:
 				is_selected = BuildToolMode.selected_terrain_def_id == -1
 			else:
 				var terrain_index: int = i - 1
 				if terrain_index < terrain_keys_sorted.size():
-					is_selected = terrain_keys_sorted[terrain_index] == BuildToolMode.selected_terrain_def_id
+					is_selected = (
+						terrain_keys_sorted[terrain_index] == BuildToolMode.selected_terrain_def_id
+					)
 
 		btn.set_selected(is_selected)
 		var tex_rect: TextureRect = btn.get_node_or_null("TextureRect")
 		if tex_rect != null and tex_rect.texture != null:
-			var color: Color = _current_palette[BuildToolMode.selected_color_index] if not _current_palette.is_empty() else Color.WHITE
+			var color: Color = (
+				_current_palette[BuildToolMode.selected_color_index]
+				if not _current_palette.is_empty()
+				else Color.WHITE
+			)
 			btn.set_sprite(tex_rect.texture, color)

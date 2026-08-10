@@ -8,7 +8,9 @@ func run() -> void:
 	print("  [MultiPawnTests]")
 	run_test("CapacityOne_NeverServesTwoPawnsSimultaneously", test_capacity_one_serializes_pawns)
 	run_test("CapacityTwo_BothPawnsEventuallyServed", test_capacity_two_serves_both)
-	run_test("SecondPawn_FallsBackToWander_WhenOnlyBuildingIsFull", test_second_pawn_wanders_when_full)
+	run_test(
+		"SecondPawn_FallsBackToWander_WhenOnlyBuildingIsFull", test_second_pawn_wanders_when_full
+	)
 
 
 # Two hungry pawns, one market with the default capacity of 1: at no point should both
@@ -33,7 +35,11 @@ func test_capacity_one_serializes_pawns() -> void:
 		var count := _count_targeting(sim, building_id)
 		max_simultaneous = maxi(max_simultaneous, count)
 
-	assert_eq(max_simultaneous, 1, "Capacity-1 building should never be targeted by more than 1 pawn at once")
+	assert_eq(
+		max_simultaneous,
+		1,
+		"Capacity-1 building should never be targeted by more than 1 pawn at once"
+	)
 
 
 # Same setup, but capacity 2 — both pawns should be able to get fed without waiting each
@@ -43,8 +49,22 @@ func test_capacity_two_serves_both() -> void:
 	builder.with_world_bounds(8, 8)
 	var hunger_id := builder.define_need("Hunger", 0.05, 15.0, 35.0, 0.0, -5.0)
 	var market_id := builder.define_building(
-		"Market", hunger_id, 50.0, 20, 0.0, 0, [Vector2i(-1, 0), Vector2i(1, 0)], 1, false,
-		"", 100.0, "direct", "", "", true, 2
+		"Market",
+		hunger_id,
+		50.0,
+		20,
+		0.0,
+		0,
+		[Vector2i(-1, 0), Vector2i(1, 0)],
+		1,
+		false,
+		"",
+		100.0,
+		"direct",
+		"",
+		"",
+		true,
+		2
 	)
 	builder.add_building(market_id, 4, 4)
 	builder.add_pawn("Alice", 0, 4, {hunger_id: 20.0})
@@ -84,17 +104,24 @@ func test_second_pawn_wanders_when_full() -> void:
 	var bob_action_comp = sim.entities.actions.get(bob_id)
 	var bob_targets_market := false
 	if bob_action_comp != null:
-		if bob_action_comp.current_action != null and bob_action_comp.current_action.target_entity == building_id:
+		if (
+			bob_action_comp.current_action != null
+			and bob_action_comp.current_action.target_entity == building_id
+		):
 			bob_targets_market = true
 		for queued in bob_action_comp.action_queue:
 			if queued.target_entity == building_id:
 				bob_targets_market = true
-	assert_false(bob_targets_market, "Second pawn should not queue behind a capacity-1 building already claimed")
+	assert_false(
+		bob_targets_market,
+		"Second pawn should not queue behind a capacity-1 building already claimed"
+	)
 
 
 # -------------------------------------------------------------------------
 # Helpers
 # -------------------------------------------------------------------------
+
 
 func _count_targeting(sim, building_id: int) -> int:
 	var count := 0
@@ -103,7 +130,10 @@ func _count_targeting(sim, building_id: int) -> int:
 		if action_comp == null:
 			continue
 		var targets := false
-		if action_comp.current_action != null and action_comp.current_action.target_entity == building_id:
+		if (
+			action_comp.current_action != null
+			and action_comp.current_action.target_entity == building_id
+		):
 			targets = true
 		for queued in action_comp.action_queue:
 			if queued.target_entity == building_id:

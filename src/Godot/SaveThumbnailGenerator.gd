@@ -71,7 +71,7 @@ static func generate_new_game_placeholder() -> ImageTexture:
 
 	for y in height:
 		for x in width:
-			var pattern: bool = ((x + y) % 8 < 4)
+			var pattern: bool = (x + y) % 8 < 4
 			var color: Color = base_color.lightened(0.1) if not pattern else base_color
 			image.set_pixel(x, y, color)
 

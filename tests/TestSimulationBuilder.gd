@@ -12,26 +12,34 @@ var _disable_themes: bool = true
 var _start_hour: int = TimeService.DEFAULT_START_HOUR
 
 var _content: ContentRegistry
-var _pending_pawns: Array = []    # [{name, x, y, needs}]
-var _pending_buildings: Array = [] # [{building_def_id, x, y}]
+var _pending_pawns: Array = []  # [{name, x, y, needs}]
+var _pending_buildings: Array = []  # [{building_def_id, x, y}]
 
 
 func _init() -> void:
 	_content = ContentRegistry.new()
 	# Register a single test palette so palette selection is deterministic.
-	_content.register_palette("test", {
-		"colors": [
-			Color(0.2, 0.6, 0.2),  # Green
-			Color(0.5, 0.3, 0.1),  # Brown
-			Color(0.7, 0.7, 0.7),  # Light Gray
-			Color(0.8, 0.6, 0.3),  # Tan
-		]
-	})
+	(
+		_content
+		. register_palette(
+			"test",
+			{
+				"colors":
+				[
+					Color(0.2, 0.6, 0.2),  # Green
+					Color(0.5, 0.3, 0.1),  # Brown
+					Color(0.7, 0.7, 0.7),  # Light Gray
+					Color(0.8, 0.6, 0.3),  # Tan
+				]
+			}
+		)
+	)
 
 
 # -------------------------------------------------------------------------
 # Configuration
 # -------------------------------------------------------------------------
+
 
 ## Set world size. C# equivalent: WithWorldBounds(maxX, maxY) where size = maxX+1.
 func with_world_size(width: int, height: int) -> TestSimulationBuilder:
@@ -61,6 +69,7 @@ func with_start_hour(hour: int) -> TestSimulationBuilder:
 # Content registration
 # -------------------------------------------------------------------------
 
+
 func define_need(
 	key: String = "",
 	decay_per_tick: float = 0.02,
@@ -70,14 +79,20 @@ func define_need(
 	low_debuff: float = 0.0,
 	sprite_key: String = "question"
 ) -> int:
-	return _content.register_need(key, {
-		"decayPerTick":       decay_per_tick,
-		"criticalThreshold":  critical_threshold,
-		"lowThreshold":       low_threshold,
-		"criticalDebuff":     critical_debuff,
-		"lowDebuff":          low_debuff,
-		"spriteKey":          sprite_key,
-	})
+	return (
+		_content
+		. register_need(
+			key,
+			{
+				"decayPerTick": decay_per_tick,
+				"criticalThreshold": critical_threshold,
+				"lowThreshold": low_threshold,
+				"criticalDebuff": critical_debuff,
+				"lowDebuff": low_debuff,
+				"spriteKey": sprite_key,
+			}
+		)
+	)
 
 
 func define_building(
@@ -87,7 +102,7 @@ func define_building(
 	interaction_duration: int = 20,
 	grants_buff: float = 0.0,
 	buff_duration: int = 0,
-	use_areas: Array = [],          # Array of Vector2i offsets; [] = use default adjacency
+	use_areas: Array = [],  # Array of Vector2i offsets; [] = use default adjacency
 	tile_size: int = 1,
 	can_be_worked_at: bool = false,
 	resource_type: String = "",
@@ -105,26 +120,26 @@ func define_building(
 		haul_terrain_id = _content.get_terrain_id(haul_source_terrain_key)
 
 	var def: Dictionary = {
-		"satisfiesNeedId":        satisfies_need_id,
-		"satisfactionAmount":     satisfaction_amount,
-		"interactionDuration":    interaction_duration,
-		"grantsBuff":             grants_buff,
-		"buffDuration":           buff_duration,
-		"tileSize":               tile_size,
-		"canBeWorkedAt":          can_be_worked_at,
-		"resourceType":           resource_type,
-		"maxResourceAmount":      max_resource_amount,
-		"depletionMult":          1.0,
-		"workType":               work_type,
-		"productionAmount":       production_amount,
+		"satisfiesNeedId": satisfies_need_id,
+		"satisfactionAmount": satisfaction_amount,
+		"interactionDuration": interaction_duration,
+		"grantsBuff": grants_buff,
+		"buffDuration": buff_duration,
+		"tileSize": tile_size,
+		"canBeWorkedAt": can_be_worked_at,
+		"resourceType": resource_type,
+		"maxResourceAmount": max_resource_amount,
+		"depletionMult": 1.0,
+		"workType": work_type,
+		"productionAmount": production_amount,
 		"haulSourceResourceType": haul_source_resource_type,
-		"haulSourceTerrainKey":   haul_source_terrain_key,
-		"haulSourceTerrainId":    haul_terrain_id,
-		"canSellToConsumers":     can_sell_to_consumers,
-		"capacity":               capacity,
-		"isHome":                 is_home,
-		"spriteKey":              "",
-		"spriteVariants":         1,
+		"haulSourceTerrainKey": haul_source_terrain_key,
+		"haulSourceTerrainId": haul_terrain_id,
+		"canSellToConsumers": can_sell_to_consumers,
+		"capacity": capacity,
+		"isHome": is_home,
+		"spriteKey": "",
+		"spriteVariants": 1,
 	}
 	# Explicit use areas override default adjacency logic in ActionSystem
 	if not use_areas.is_empty():
@@ -141,19 +156,26 @@ func define_terrain(
 ) -> int:
 	# Use World.IMPASSABLE (1e9) instead of INF so JSON serialization works.
 	var walk_cost: float = 1.0 if walkable else World.IMPASSABLE
-	return _content.register_terrain(key, {
-		"walkabilityCost": walk_cost,
-		"blocksLight":     not walkable,
-		"spriteKey":       sprite_key,
-		"isAutotiling":    is_autotiling,
-		"paintsToBase":    paints_to_base,
-		"variantCount":    1,
-	})
+	return (
+		_content
+		. register_terrain(
+			key,
+			{
+				"walkabilityCost": walk_cost,
+				"blocksLight": not walkable,
+				"spriteKey": sprite_key,
+				"isAutotiling": is_autotiling,
+				"paintsToBase": paints_to_base,
+				"variantCount": 1,
+			}
+		)
+	)
 
 
 # -------------------------------------------------------------------------
 # World entity setup (deferred until build())
 # -------------------------------------------------------------------------
+
 
 func add_pawn(name: String = "Pawn", x: int = 0, y: int = 0, needs: Dictionary = {}) -> void:
 	_pending_pawns.append({"name": name, "x": x, "y": y, "needs": needs})
@@ -167,14 +189,10 @@ func add_building(building_def_id: int, x: int = 0, y: int = 0) -> void:
 # Build
 # -------------------------------------------------------------------------
 
+
 func build() -> Simulation:
 	var sim := Simulation.new(
-		_content,
-		_seed,
-		_start_hour,
-		_world_width,
-		_world_height,
-		_disable_themes
+		_content, _seed, _start_hour, _world_width, _world_height, _disable_themes
 	)
 
 	for b in _pending_buildings:

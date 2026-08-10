@@ -65,7 +65,7 @@ class MinHeap:
 static func find_path(world: World, start: Vector2i, goal: Vector2i) -> Array[Vector2i]:
 	var open_set := MinHeap.new()
 	var came_from: Dictionary[Vector2i, Vector2i] = {}
-	var g_score: Dictionary[Vector2i, float] = { start: 0.0 }
+	var g_score: Dictionary[Vector2i, float] = {start: 0.0}
 
 	open_set.push(_heuristic(start, goal), start)
 
@@ -101,8 +101,7 @@ static func _heuristic(a: Vector2i, b: Vector2i) -> float:
 
 
 static func _reconstruct_path(
-	came_from: Dictionary[Vector2i, Vector2i],
-	current: Vector2i
+	came_from: Dictionary[Vector2i, Vector2i], current: Vector2i
 ) -> Array[Vector2i]:
 	var path: Array[Vector2i] = [current]
 	while came_from.has(current):

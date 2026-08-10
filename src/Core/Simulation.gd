@@ -99,6 +99,7 @@ func _initialize_world_terrain() -> void:
 
 # --- Tick ------------------------------------------------------------------
 
+
 func tick() -> void:
 	_systems.tick_all(self)
 	time.advance_tick()
@@ -141,6 +142,7 @@ func mark_pawn_for_removal(pawn_id: int) -> void:
 
 
 # --- Emigration --------------------------------------------------------------
+
 
 ## Picks the pawn with the lowest combined mood + town attachment and sends them walking to
 ## the nearest map edge; ActionSystem removes them once they arrive (see mark_pawn_for_removal).
@@ -193,9 +195,15 @@ func _is_pawn_emigrating(pawn_id: int) -> bool:
 	var action_comp: Components.ActionComponent = entities.actions.get(pawn_id)
 	if action_comp == null:
 		return false
-	if action_comp.current_action != null and action_comp.current_action.type == Definitions.ActionType.LEAVE_TOWN:
+	if (
+		action_comp.current_action != null
+		and action_comp.current_action.type == Definitions.ActionType.LEAVE_TOWN
+	):
 		return true
-	if action_comp.current_action != null and action_comp.current_action.type == Definitions.ActionType.MOVE_TO:
+	if (
+		action_comp.current_action != null
+		and action_comp.current_action.type == Definitions.ActionType.MOVE_TO
+	):
 		for queued in action_comp.action_queue:
 			if queued.type == Definitions.ActionType.LEAVE_TOWN:
 				return true
@@ -235,6 +243,7 @@ func _total_attachment(pawn_id: int) -> int:
 
 # --- Pawn creation ---------------------------------------------------------
 
+
 func create_pawn(name: String = "Pawn") -> int:
 	var position: Vector2i = _get_random_walkable_edge_tile()
 	if position == Vector2i(-1, -1):
@@ -254,7 +263,9 @@ func create_pawn_at(coord: Vector2i, name: String = "Pawn", needs: Dictionary = 
 ## logic required — but any needs dict can be passed for richer, still fully needs-driven
 ## behavior (e.g. a visitor that seeks food like any colonist would). forced_sheet_key always
 ## wins over any theme skin override or house-assigned sheet (see PawnView).
-func spawn_visitor_pawn(forced_sheet_key: String, needs: Dictionary = {}, pawn_name: String = "Visitor") -> int:
+func spawn_visitor_pawn(
+	forced_sheet_key: String, needs: Dictionary = {}, pawn_name: String = "Visitor"
+) -> int:
 	var position: Vector2i = _get_random_walkable_edge_tile()
 	if position == Vector2i(-1, -1):
 		return -1
@@ -296,7 +307,9 @@ func _get_random_walkable_edge_tile() -> Vector2i:
 		_walkable_edge_tiles_cache = []
 		for x in world.width:
 			for y in world.height:
-				var is_edge: bool = (x == 0 or x == world.width - 1 or y == 0 or y == world.height - 1)
+				var is_edge: bool = (
+					x == 0 or x == world.width - 1 or y == 0 or y == world.height - 1
+				)
 				if is_edge and world.is_walkable(Vector2i(x, y)):
 					_walkable_edge_tiles_cache.append(Vector2i(x, y))
 		_walkable_edge_tiles_dirty = false
@@ -307,6 +320,7 @@ func _get_random_walkable_edge_tile() -> Vector2i:
 
 
 # --- Building creation / destruction ---------------------------------------
+
 
 # Returns the new entity ID, or -1 on failure.
 func create_building(building_def_id: int, coord: Vector2i, color_index: int = 0) -> int:
@@ -362,7 +376,9 @@ func destroy_entity(entity_id: int) -> void:
 		if pos != null:
 			var building_def: Dictionary = content.buildings[building_comp.building_def_id]
 			var tile_size: int = int(building_def.get("tileSize", 1))
-			var occupied: Array[Vector2i] = BuildingUtilities.get_occupied_tiles(pos.coord, tile_size)
+			var occupied: Array[Vector2i] = BuildingUtilities.get_occupied_tiles(
+				pos.coord, tile_size
+			)
 			for tile_coord in occupied:
 				if world.is_in_bounds(tile_coord):
 					world.get_tile(tile_coord).building_blocks_movement = false
@@ -382,6 +398,7 @@ func destroy_entity(entity_id: int) -> void:
 
 
 # --- Terrain painting ------------------------------------------------------
+
 
 # Returns the painted tile coord + all 8 neighbors (for rendering updates).
 func paint_terrain(coord: Vector2i, terrain_def_id: int, color_index: int = 0) -> Array[Vector2i]:
@@ -426,7 +443,10 @@ func flood_fill(start: Vector2i, new_terrain_id: int, new_color_index: int) -> A
 		return []
 
 	# Skip if already this terrain + color
-	if first_tile.base_terrain_type_id == new_terrain_id and first_tile.color_index == new_color_index:
+	if (
+		first_tile.base_terrain_type_id == new_terrain_id
+		and first_tile.color_index == new_color_index
+	):
 		return []
 
 	var affected: Dictionary = {}  # Using dict as set for deduplication
@@ -440,7 +460,9 @@ func flood_fill(start: Vector2i, new_terrain_id: int, new_color_index: int) -> A
 	return result
 
 
-func paint_rectangle(start: Vector2i, end: Vector2i, terrain_def_id: int, color_index: int = 0) -> Array[Vector2i]:
+func paint_rectangle(
+	start: Vector2i, end: Vector2i, terrain_def_id: int, color_index: int = 0
+) -> Array[Vector2i]:
 	var affected: Dictionary = {}
 	for coord in _get_rectangle_tiles(start, end):
 		for affected_coord in paint_terrain(coord, terrain_def_id, color_index):
@@ -451,7 +473,9 @@ func paint_rectangle(start: Vector2i, end: Vector2i, terrain_def_id: int, color_
 	return result
 
 
-func paint_rectangle_outline(start: Vector2i, end: Vector2i, terrain_def_id: int, color_index: int = 0) -> Array[Vector2i]:
+func paint_rectangle_outline(
+	start: Vector2i, end: Vector2i, terrain_def_id: int, color_index: int = 0
+) -> Array[Vector2i]:
 	var affected: Dictionary = {}
 	for coord in _get_rectangle_outline_tiles(start, end):
 		for affected_coord in paint_terrain(coord, terrain_def_id, color_index):
@@ -463,6 +487,7 @@ func paint_rectangle_outline(start: Vector2i, end: Vector2i, terrain_def_id: int
 
 
 # --- Deletion tools --------------------------------------------------------
+
 
 # Smart delete: building > overlay > reset base to flat.
 func delete_at_tile(coord: Vector2i) -> Array[Vector2i]:
@@ -548,6 +573,7 @@ func delete_rectangle_outline(start: Vector2i, end: Vector2i) -> Array[Vector2i]
 
 # --- Palette ---------------------------------------------------------------
 
+
 func cycle_palette() -> void:
 	var palette_ids: Array = content.palettes.keys()
 	if palette_ids.is_empty():
@@ -561,6 +587,7 @@ func cycle_palette() -> void:
 
 
 # --- Capacity / pawns ------------------------------------------------------
+
 
 func get_max_pawns() -> int:
 	return maxi(1, _total_home_capacity())
@@ -579,6 +606,7 @@ func _total_home_capacity() -> int:
 
 
 # --- Homes -------------------------------------------------------------------
+
 
 ## All building ids whose def is marked isHome — the generic hook for any theme (or future
 ## system) that wants to affect "every house" without hardcoding names. See
@@ -616,6 +644,7 @@ func clear_all_home_skin_overrides() -> void:
 
 # --- Queries -----------------------------------------------------------------
 
+
 ## Finds a pawn entity id by its display name, or -1 if none match.
 func find_pawn_by_name(name: String) -> int:
 	for pawn_id in entities.pawns:
@@ -645,6 +674,7 @@ func run_ticks(count: int) -> void:
 
 
 # --- Map analysis ----------------------------------------------------------
+
 
 # Reuses AISystem's cached diversity map (see AISystem._get_diversity_map) rather than
 # recomputing the same per-tile scan independently.
@@ -679,12 +709,19 @@ func _perform_attachment_decay() -> void:
 
 # --- Tile geometry helpers -------------------------------------------------
 
+
 func get_tiles_with_neighbors(coords: Array) -> Array[Vector2i]:
 	var result: Dictionary = {}
 	var offsets := [
-		Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1),
-		Vector2i(-1, 0),  Vector2i(0, 0),  Vector2i(1, 0),
-		Vector2i(-1, 1),  Vector2i(0, 1),  Vector2i(1, 1),
+		Vector2i(-1, -1),
+		Vector2i(0, -1),
+		Vector2i(1, -1),
+		Vector2i(-1, 0),
+		Vector2i(0, 0),
+		Vector2i(1, 0),
+		Vector2i(-1, 1),
+		Vector2i(0, 1),
+		Vector2i(1, 1),
 	]
 	for coord in coords:
 		for offset in offsets:
@@ -753,6 +790,7 @@ func _get_rectangle_outline_tiles(start: Vector2i, end: Vector2i) -> Array[Vecto
 
 # --- Private helpers -------------------------------------------------------
 
+
 func _get_flat_terrain_id() -> int:
 	for id in content.terrains:
 		if content.terrains[id].get("spriteKey", "") == "flat":
@@ -761,6 +799,7 @@ func _get_flat_terrain_id() -> int:
 
 
 # --- Debug / display -------------------------------------------------------
+
 
 func format_entity_id(entity_id: int) -> String:
 	if entities.pawns.has(entity_id):
@@ -774,13 +813,15 @@ func format_entity_id(entity_id: int) -> String:
 
 # --- Rendering snapshot ----------------------------------------------------
 
+
 func create_render_snapshot() -> Dictionary:
 	var snap_time: Dictionary = {
 		"hour": time.hour,
 		"minute": time.minute,
 		"day": time.day,
 		"time_string": time.time_string,
-		"day_fraction": float(time.tick % TimeService.TICKS_PER_DAY) / float(TimeService.TICKS_PER_DAY),
+		"day_fraction":
+		float(time.tick % TimeService.TICKS_PER_DAY) / float(TimeService.TICKS_PER_DAY),
 	}
 
 	var snap_theme: Dictionary = {}
@@ -862,34 +903,43 @@ func _build_pawn_snapshots() -> Array:
 				path_coords.append({"x": coord.x, "y": coord.y})
 
 			if act.type == Definitions.ActionType.USE_BUILDING and act.target_entity != -1:
-				var target_bc: Components.BuildingComponent = entities.buildings.get(act.target_entity)
+				var target_bc: Components.BuildingComponent = entities.buildings.get(
+					act.target_entity
+				)
 				if target_bc != null:
-					var target_bdef: Dictionary = content.buildings.get(target_bc.building_def_id, {})
+					var target_bdef: Dictionary = content.buildings.get(
+						target_bc.building_def_id, {}
+					)
 					if bool(target_bdef.get("isHome", false)):
 						home_visit_building_id = act.target_entity
 						home_visit_skin_override = target_bc.skin_override
 
-		result.append({
-			"id": pawn_id,
-			"x": pos.coord.x,
-			"y": pos.coord.y,
-			"mood": mood_comp.mood if mood_comp != null else 0.0,
-			"carrying_resource_type": inv_comp.resource_type if inv_comp != null else "",
-			"forced_sheet_key": pawn_comp.forced_sheet_key if pawn_comp != null else "",
-			"home_visit_building_id": home_visit_building_id,
-			"home_visit_skin_override": home_visit_skin_override,
-			"animation": animation,
-			"current_action": current_action_name,
-			"current_action_type": current_action_type,
-			"has_building_target": has_building_target,
-			"has_expression": has_expression,
-			"expression": expression,
-			"expression_icon_def_id": expression_icon_def_id,
-			"current_path": path_coords,
-			"path_index": path_index,
-			"target_tile": target_tile,
-			"attachments": pawn_attachments.get(pawn_id, {}),
-		})
+		(
+			result
+			. append(
+				{
+					"id": pawn_id,
+					"x": pos.coord.x,
+					"y": pos.coord.y,
+					"mood": mood_comp.mood if mood_comp != null else 0.0,
+					"carrying_resource_type": inv_comp.resource_type if inv_comp != null else "",
+					"forced_sheet_key": pawn_comp.forced_sheet_key if pawn_comp != null else "",
+					"home_visit_building_id": home_visit_building_id,
+					"home_visit_skin_override": home_visit_skin_override,
+					"animation": animation,
+					"current_action": current_action_name,
+					"current_action_type": current_action_type,
+					"has_building_target": has_building_target,
+					"has_expression": has_expression,
+					"expression": expression,
+					"expression_icon_def_id": expression_icon_def_id,
+					"current_path": path_coords,
+					"path_index": path_index,
+					"target_tile": target_tile,
+					"attachments": pawn_attachments.get(pawn_id, {}),
+				}
+			)
+		)
 	return result
 
 
@@ -911,7 +961,10 @@ func _build_building_snapshots() -> Array:
 			var action_comp: Components.ActionComponent = entities.actions.get(pawn_id)
 			if action_comp == null:
 				continue
-			if action_comp.current_action != null and action_comp.current_action.target_entity == building_id:
+			if (
+				action_comp.current_action != null
+				and action_comp.current_action.target_entity == building_id
+			):
 				current_users += 1
 				in_use = true
 				if used_by_pawn_id == -1:
@@ -935,21 +988,26 @@ func _build_building_snapshots() -> Array:
 
 		var attachments: Dictionary = ac.per_pawn_breakdown() if ac != null else {}
 
-		result.append({
-			"id": building_id,
-			"x": pos.coord.x,
-			"y": pos.coord.y,
-			"building_def_id": bc.building_def_id,
-			"name": bdef.get("name", "Building"),
-			"in_use": in_use,
-			"used_by_name": used_by_name,
-			"color_index": bc.color_index,
-			"capacity": int(bdef.get("capacity", 1)),
-			"current_users": current_users,
-			"resource_type": rc.resource_type if rc != null else "",
-			"current_resource": rc.current_amount if rc != null else -1.0,
-			"max_resource": rc.max_amount if rc != null else -1.0,
-			"can_be_worked_at": bool(bdef.get("canBeWorkedAt", false)),
-			"attachments": attachments,
-		})
+		(
+			result
+			. append(
+				{
+					"id": building_id,
+					"x": pos.coord.x,
+					"y": pos.coord.y,
+					"building_def_id": bc.building_def_id,
+					"name": bdef.get("name", "Building"),
+					"in_use": in_use,
+					"used_by_name": used_by_name,
+					"color_index": bc.color_index,
+					"capacity": int(bdef.get("capacity", 1)),
+					"current_users": current_users,
+					"resource_type": rc.resource_type if rc != null else "",
+					"current_resource": rc.current_amount if rc != null else -1.0,
+					"max_resource": rc.max_amount if rc != null else -1.0,
+					"can_be_worked_at": bool(bdef.get("canBeWorkedAt", false)),
+					"attachments": attachments,
+				}
+			)
+		)
 	return result

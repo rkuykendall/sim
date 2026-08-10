@@ -18,11 +18,21 @@ func run() -> void:
 	run_test("RoundTrip_ComplexScenario", test_roundtrip_complex)
 	run_test("RoundTrip_WithResources", test_roundtrip_resources)
 	run_test("RoundTrip_RestoredSimulationCanContinue", test_roundtrip_can_continue)
-	run_test("SaveData_DropsStaleResourceComponent_WhenContentNoLongerDeclaresOne", test_serialize_drops_stale_resource)
-	run_test("RoundTrip_VisitorPawn_PreservesMembershipAndForcedSheetKey", test_roundtrip_visitor_pawn)
+	run_test(
+		"SaveData_DropsStaleResourceComponent_WhenContentNoLongerDeclaresOne",
+		test_serialize_drops_stale_resource
+	)
+	run_test(
+		"RoundTrip_VisitorPawn_PreservesMembershipAndForcedSheetKey", test_roundtrip_visitor_pawn
+	)
 	run_test("RoundTrip_BuildingSkinOverride_Preserved", test_roundtrip_building_skin_override)
-	run_test("RoundTrip_CurrentTheme_Preserved_WithoutReRunningOnStart", test_roundtrip_current_theme)
-	run_test("RoundTrip_CurrentTheme_MissingName_FallsBackToNull", test_roundtrip_missing_theme_name_falls_back)
+	run_test(
+		"RoundTrip_CurrentTheme_Preserved_WithoutReRunningOnStart", test_roundtrip_current_theme
+	)
+	run_test(
+		"RoundTrip_CurrentTheme_MissingName_FallsBackToNull",
+		test_roundtrip_missing_theme_name_falls_back
+	)
 	run_test("RoundTrip_CurrentThemeStartTick_Preserved", test_roundtrip_current_theme_start_tick)
 
 
@@ -166,8 +176,12 @@ func test_restore_world_tiles() -> void:
 	var data = _SaveService.to_dict(original, "test-save")
 	var restored = _SaveService.from_dict(data, original.content)
 
-	assert_false(restored.world.is_walkable(Vector2i(1, 1)), "(1,1) should remain a wall after restore")
-	assert_false(restored.world.is_walkable(Vector2i(2, 2)), "(2,2) should remain a wall after restore")
+	assert_false(
+		restored.world.is_walkable(Vector2i(1, 1)), "(1,1) should remain a wall after restore"
+	)
+	assert_false(
+		restored.world.is_walkable(Vector2i(2, 2)), "(2,2) should remain a wall after restore"
+	)
 	assert_true(restored.world.is_walkable(Vector2i(0, 0)), "(0,0) should be walkable")
 
 
@@ -234,9 +248,7 @@ func test_roundtrip_complex() -> void:
 	var wall_id := builder.define_terrain("wall", false)
 	var hunger_id := builder.define_need("hunger", 0.02, 30.0, 35.0, -20.0)
 	var energy_id := builder.define_need("energy", 0.01)
-	var farm_id := builder.define_building(
-		"farm", -1, 0.0, 100, 0.0, 0, [], 1, true, "food", 100.0
-	)
+	var farm_id := builder.define_building("farm", -1, 0.0, 100, 0.0, 0, [], 1, true, "food", 100.0)
 	var bed_id := builder.define_building("bed", energy_id)
 	builder.add_building(farm_id, 2, 2)
 	builder.add_building(bed_id, 5, 5)
@@ -253,8 +265,16 @@ func test_roundtrip_complex() -> void:
 	var restored = _SaveService.from_dict(data, original.content)
 
 	assert_eq(restored.time.tick, original.time.tick, "Tick should match")
-	assert_eq(restored.entities.all_pawns().size(), original.entities.all_pawns().size(), "Pawn count should match")
-	assert_eq(restored.entities.all_buildings().size(), original.entities.all_buildings().size(), "Building count should match")
+	assert_eq(
+		restored.entities.all_pawns().size(),
+		original.entities.all_pawns().size(),
+		"Pawn count should match"
+	)
+	assert_eq(
+		restored.entities.all_buildings().size(),
+		original.entities.all_buildings().size(),
+		"Building count should match"
+	)
 	assert_false(restored.world.is_walkable(Vector2i(4, 0)), "Wall at (4,0) should be preserved")
 	assert_false(restored.world.is_walkable(Vector2i(4, 1)), "Wall at (4,1) should be preserved")
 
@@ -262,9 +282,7 @@ func test_roundtrip_complex() -> void:
 func test_roundtrip_resources() -> void:
 	var builder = _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
-	var farm_id := builder.define_building(
-		"farm", -1, 0.0, 100, 0.0, 0, [], 1, true, "food", 100.0
-	)
+	var farm_id := builder.define_building("farm", -1, 0.0, 100, 0.0, 0, [], 1, true, "food", 100.0)
 	builder.add_building(farm_id, 2, 2)
 	var original = builder.build()
 
@@ -287,9 +305,7 @@ func test_serialize_drops_stale_resource() -> void:
 	var builder = _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
 	# No resource_type passed -> content declares no resourceType for this building.
-	var mill_id := builder.define_building(
-		"Mill", -1, 0.0, 100, 0.0, 0, [], 1, true, ""
-	)
+	var mill_id := builder.define_building("Mill", -1, 0.0, 100, 0.0, 0, [], 1, true, "")
 	builder.add_building(mill_id, 2, 2)
 	var sim = builder.build()
 
@@ -306,7 +322,10 @@ func test_serialize_drops_stale_resource() -> void:
 		if int(e.get("id", -1)) == building_id:
 			building_entry = e
 
-	assert_false(building_entry.has("resource"), "A stale resource component should not be persisted once content no longer declares a resourceType for this building")
+	assert_false(
+		building_entry.has("resource"),
+		"A stale resource component should not be persisted once content no longer declares a resourceType for this building"
+	)
 
 
 func test_roundtrip_can_continue() -> void:
@@ -353,13 +372,29 @@ func test_roundtrip_visitor_pawn() -> void:
 
 	var restored_pawn = restored.entities.pawns.get(visitor_id)
 	assert_not_null(restored_pawn, "Visitor pawn should be restored")
-	assert_eq(restored_pawn.membership, Definitions.PawnMembership.VISITOR, "Membership should survive the round-trip")
-	assert_eq(restored_pawn.forced_sheet_key, "special_4_v2", "forced_sheet_key should survive the round-trip")
+	assert_eq(
+		restored_pawn.membership,
+		Definitions.PawnMembership.VISITOR,
+		"Membership should survive the round-trip"
+	)
+	assert_eq(
+		restored_pawn.forced_sheet_key,
+		"special_4_v2",
+		"forced_sheet_key should survive the round-trip"
+	)
 
-	assert_eq(restored._colonist_count(), 1, "Restored visitor should still be excluded from the colonist count")
+	assert_eq(
+		restored._colonist_count(),
+		1,
+		"Restored visitor should still be excluded from the colonist count"
+	)
 
 	var restored_colonist = restored.entities.pawns.get(restored.find_pawn_by_name("Colonist"))
-	assert_eq(restored_colonist.membership, Definitions.PawnMembership.COLONIST, "The real colonist should round-trip as COLONIST")
+	assert_eq(
+		restored_colonist.membership,
+		Definitions.PawnMembership.COLONIST,
+		"The real colonist should round-trip as COLONIST"
+	)
 
 
 # Without persisting a building's skin_override, a save made mid-theme (e.g. Strange Worlds)
@@ -381,7 +416,9 @@ func test_roundtrip_building_skin_override() -> void:
 
 	var restored_bc = restored.entities.buildings.get(home_building_id)
 	assert_not_null(restored_bc, "Building should be restored")
-	assert_eq(restored_bc.skin_override, "character_7_v2", "skin_override should survive the round-trip")
+	assert_eq(
+		restored_bc.skin_override, "character_7_v2", "skin_override should survive the round-trip"
+	)
 
 
 # Without persisting current_theme, a save made mid-theme (e.g. Strange Worlds, with visitors
@@ -403,21 +440,31 @@ func test_roundtrip_current_theme() -> void:
 	var theme = SimTheme.StrangeWorldsTheme.new()
 	original.theme_system._start_theme(original, theme)
 	var original_visitor_count: int = original.entities.all_pawns().size()
-	assert_gt(float(original_visitor_count), 0.0, "Setup should have spawned Strange Worlds' visitors")
+	assert_gt(
+		float(original_visitor_count), 0.0, "Setup should have spawned Strange Worlds' visitors"
+	)
 
 	var data = _SaveService.to_dict(original, "test-save")
 	var restored = _SaveService.from_dict(data, original.content)
 
-	assert_not_null(restored.theme_system.current_theme, "current_theme should be restored, not left null")
-	assert_eq(restored.theme_system.current_theme.get_name(), "Strange Worlds", "The exact same theme should still be current after loading")
+	assert_not_null(
+		restored.theme_system.current_theme, "current_theme should be restored, not left null"
+	)
 	assert_eq(
-		restored.entities.all_pawns().size(), original_visitor_count,
+		restored.theme_system.current_theme.get_name(),
+		"Strange Worlds",
+		"The exact same theme should still be current after loading"
+	)
+	assert_eq(
+		restored.entities.all_pawns().size(),
+		original_visitor_count,
 		"Visitor count should match exactly — restore must not re-run on_start and double-spawn"
 	)
 
 	var home_building_id = restored.entities.all_buildings()[0]
 	assert_eq(
-		restored.entities.buildings[home_building_id].skin_override, "character_7_v2",
+		restored.entities.buildings[home_building_id].skin_override,
+		"character_7_v2",
 		"The home's skin_override (already restored as plain building data) should still make sense under the same restored theme"
 	)
 
@@ -434,7 +481,10 @@ func test_roundtrip_missing_theme_name_falls_back() -> void:
 	data.erase("current_theme_name")
 	var restored = _SaveService.from_dict(data, original.content)
 
-	assert_true(restored.theme_system.current_theme == null, "Missing theme name should fall back to null, same as a fresh game")
+	assert_true(
+		restored.theme_system.current_theme == null,
+		"Missing theme name should fall back to null, same as a fresh game"
+	)
 
 
 func test_roundtrip_current_theme_start_tick() -> void:
@@ -450,6 +500,7 @@ func test_roundtrip_current_theme_start_tick() -> void:
 	var restored = _SaveService.from_dict(data, original.content)
 
 	assert_eq(
-		restored.theme_system.get_current_theme_start_tick(), original.theme_system.get_current_theme_start_tick(),
+		restored.theme_system.get_current_theme_start_tick(),
+		original.theme_system.get_current_theme_start_tick(),
 		"current_theme_start_tick should survive the round-trip exactly"
 	)

@@ -5,12 +5,18 @@ const _Builder = preload("res://tests/TestSimulationBuilder.gd")
 
 func run() -> void:
 	print("  [MoodSystemTests]")
-	run_test("NeedBelowCriticalThreshold_AppliesCriticalPenalty", test_need_critical_applies_penalty)
+	run_test(
+		"NeedBelowCriticalThreshold_AppliesCriticalPenalty", test_need_critical_applies_penalty
+	)
 	run_test("NeedBelowLowThreshold_AppliesLowPenalty", test_need_low_applies_penalty)
 	run_test("NeedFullySatisfied_ContributesMaxBonus", test_need_satisfied_contributes_max_bonus)
 	run_test("NeedRightAtLowThreshold_ContributesZero", test_need_at_low_threshold_contributes_zero)
-	run_test("PenaltyCeiling_IsFarLargerThanBonusCeiling", test_penalty_ceiling_exceeds_bonus_ceiling)
-	run_test("NeedRecovering_MoodUpdatesImmediately_NoLag", test_need_recovery_updates_mood_immediately)
+	run_test(
+		"PenaltyCeiling_IsFarLargerThanBonusCeiling", test_penalty_ceiling_exceeds_bonus_ceiling
+	)
+	run_test(
+		"NeedRecovering_MoodUpdatesImmediately_NoLag", test_need_recovery_updates_mood_immediately
+	)
 	run_test("MultipleNeeds_MoodIsAverageAcrossThem", test_multiple_needs_average)
 	run_test("MultipleNeeds_MoodClampsAtExtremes", test_mood_clamps_at_extremes)
 
@@ -26,7 +32,12 @@ func test_need_critical_applies_penalty() -> void:
 
 	sim.tick()
 
-	assert_approx(sim.get_mood(pawn_id), MoodSystem.CRITICAL_PENALTY, 0.01, "A need below the shared critical threshold should apply exactly the shared critical penalty")
+	assert_approx(
+		sim.get_mood(pawn_id),
+		MoodSystem.CRITICAL_PENALTY,
+		0.01,
+		"A need below the shared critical threshold should apply exactly the shared critical penalty"
+	)
 
 
 func test_need_low_applies_penalty() -> void:
@@ -38,7 +49,12 @@ func test_need_low_applies_penalty() -> void:
 
 	sim.tick()
 
-	assert_approx(sim.get_mood(pawn_id), MoodSystem.LOW_PENALTY, 0.01, "A need below the shared low threshold (but not critical) should apply exactly the shared low penalty")
+	assert_approx(
+		sim.get_mood(pawn_id),
+		MoodSystem.LOW_PENALTY,
+		0.01,
+		"A need below the shared low threshold (but not critical) should apply exactly the shared low penalty"
+	)
 
 
 func test_need_satisfied_contributes_max_bonus() -> void:
@@ -50,7 +66,12 @@ func test_need_satisfied_contributes_max_bonus() -> void:
 
 	sim.tick()
 
-	assert_approx(sim.get_mood(pawn_id), MoodSystem.MAX_SATISFACTION_BONUS, 0.01, "A fully satisfied need should contribute exactly the max satisfaction bonus")
+	assert_approx(
+		sim.get_mood(pawn_id),
+		MoodSystem.MAX_SATISFACTION_BONUS,
+		0.01,
+		"A fully satisfied need should contribute exactly the max satisfaction bonus"
+	)
 
 
 func test_need_at_low_threshold_contributes_zero() -> void:
@@ -62,13 +83,22 @@ func test_need_at_low_threshold_contributes_zero() -> void:
 
 	sim.tick()
 
-	assert_approx(sim.get_mood(pawn_id), 0.0, 0.01, "A need sitting exactly at the shared low threshold should contribute neither a penalty nor a bonus")
+	assert_approx(
+		sim.get_mood(pawn_id),
+		0.0,
+		0.01,
+		"A need sitting exactly at the shared low threshold should contribute neither a penalty nor a bonus"
+	)
 
 
 # The whole point of bringing threshold/penalty shaping back: a handful of well-met needs
 # shouldn't be able to casually cancel out one need in real crisis (see MultipleNeeds_MoodIsAverageAcrossThem).
 func test_penalty_ceiling_exceeds_bonus_ceiling() -> void:
-	assert_lt(MoodSystem.CRITICAL_PENALTY, -MoodSystem.MAX_SATISFACTION_BONUS, "The critical penalty's magnitude should be larger than the max satisfaction bonus")
+	assert_lt(
+		MoodSystem.CRITICAL_PENALTY,
+		-MoodSystem.MAX_SATISFACTION_BONUS,
+		"The critical penalty's magnitude should be larger than the max satisfaction bonus"
+	)
 
 
 # Unlike a timed buff, mood is recomputed fresh from current need values every tick — no
@@ -85,7 +115,11 @@ func test_need_recovery_updates_mood_immediately() -> void:
 
 	sim.entities.needs[pawn_id].needs[hunger_id] = 100.0
 	sim.tick()
-	assert_gt(sim.get_mood(pawn_id), 0.0, "Mood should reflect the recovered need on the very next tick, with no lingering penalty")
+	assert_gt(
+		sim.get_mood(pawn_id),
+		0.0,
+		"Mood should reflect the recovered need on the very next tick, with no lingering penalty"
+	)
 
 
 func test_multiple_needs_average() -> void:
@@ -99,7 +133,12 @@ func test_multiple_needs_average() -> void:
 	sim.tick()
 
 	var expected: float = (MoodSystem.CRITICAL_PENALTY + MoodSystem.MAX_SATISFACTION_BONUS) / 2.0
-	assert_approx(sim.get_mood(pawn_id), expected, 0.01, "Mood should be the average of every need's contribution, not the sum")
+	assert_approx(
+		sim.get_mood(pawn_id),
+		expected,
+		0.01,
+		"Mood should be the average of every need's contribution, not the sum"
+	)
 
 
 func test_mood_clamps_at_extremes() -> void:
@@ -112,4 +151,9 @@ func test_mood_clamps_at_extremes() -> void:
 
 	sim.tick()
 
-	assert_approx(sim.get_mood(pawn_id), MoodSystem.MAX_SATISFACTION_BONUS, 0.01, "Two fully satisfied needs should average to the max bonus, well under the +100 clamp")
+	assert_approx(
+		sim.get_mood(pawn_id),
+		MoodSystem.MAX_SATISFACTION_BONUS,
+		0.01,
+		"Two fully satisfied needs should average to the max bonus, well under the +100 clamp"
+	)

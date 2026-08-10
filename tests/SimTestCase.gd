@@ -18,12 +18,16 @@ func assert_false(cond: bool, msg: String = "") -> void:
 
 func assert_eq(a: Variant, b: Variant, msg: String = "") -> void:
 	if a != b:
-		_fail_msgs.append("assert_eq: expected %s == %s%s" % [str(b), str(a), " — " + msg if msg else ""])
+		_fail_msgs.append(
+			"assert_eq: expected %s == %s%s" % [str(b), str(a), " — " + msg if msg else ""]
+		)
 
 
 func assert_not_eq(a: Variant, b: Variant, msg: String = "") -> void:
 	if a == b:
-		_fail_msgs.append("assert_not_eq: expected %s != %s%s" % [str(a), str(b), " — " + msg if msg else ""])
+		_fail_msgs.append(
+			"assert_not_eq: expected %s != %s%s" % [str(a), str(b), " — " + msg if msg else ""]
+		)
 
 
 func assert_gt(a: float, b: float, msg: String = "") -> void:
@@ -43,7 +47,9 @@ func assert_ge(a: float, b: float, msg: String = "") -> void:
 
 func assert_approx(a: float, b: float, eps: float = 0.01, msg: String = "") -> void:
 	if abs(a - b) > eps:
-		_fail_msgs.append("assert_approx: |%f - %f| > %f%s" % [a, b, eps, " — " + msg if msg else ""])
+		_fail_msgs.append(
+			"assert_approx: |%f - %f| > %f%s" % [a, b, eps, " — " + msg if msg else ""]
+		)
 
 
 func assert_not_null(val: Variant, msg: String = "") -> void:
@@ -74,6 +80,7 @@ func run_all() -> Dictionary:
 # reads generic simulation state — needs, mood, pawn lookup by name, ticking —
 # belongs on Simulation itself instead, see Simulation.gd's "Queries" section)
 # -------------------------------------------------------------------------
+
 
 ## Returns the first pawn entity id, or -1 if there are none. Useful for single-pawn tests.
 func _get_first_pawn(sim) -> int:

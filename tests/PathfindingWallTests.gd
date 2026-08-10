@@ -133,4 +133,6 @@ func test_pawn_blocked_diagonal() -> void:
 
 	# Need started at 0 and decays — should remain at 0 (cannot increase without building use)
 	var tiredness := sim.get_need_value(pawn_id, tiredness_id)
-	assert_approx(tiredness, 0.0, 5.0, "Pawn should not have reached building through diagonal wall")
+	assert_approx(
+		tiredness, 0.0, 5.0, "Pawn should not have reached building through diagonal wall"
+	)

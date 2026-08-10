@@ -41,7 +41,10 @@ func test_seeks_food_when_debuff() -> void:
 			var qname: String = queued.display_name
 			if "Market" in qname or "market" in qname:
 				is_going_to_market = true
-	assert_true(is_going_to_market, "Pawn with hunger=30 (below debuff threshold 35) should be going to Market")
+	assert_true(
+		is_going_to_market,
+		"Pawn with hunger=30 (below debuff threshold 35) should be going to Market"
+	)
 
 
 # Pawn with high hunger should wander, not seek market.
@@ -74,9 +77,7 @@ func test_lifecycle_eat_wander_return() -> void:
 	var builder := _Builder.new()
 	builder.with_world_bounds(9, 9)
 	var hunger_id := builder.define_need("Hunger", 0.5, 15.0, 35.0, 0.0, -5.0)
-	var market_id := builder.define_building(
-		"Market", hunger_id, 50.0, 20
-	)
+	var market_id := builder.define_building("Market", hunger_id, 50.0, 20)
 	builder.add_building(market_id, 5, 5)
 	builder.add_pawn("TestPawn", 0, 0, {hunger_id: 10.0})
 	var sim = builder.build()
@@ -103,7 +104,11 @@ func test_lifecycle_eat_wander_return() -> void:
 		# Detect wandering (high hunger + wander action)
 		if hunger > 50.0 and action_comp != null and action_comp.current_action != null:
 			var aname: String = action_comp.current_action.display_name
-			if "Wander" in aname or "wander" in aname or action_comp.current_action.type == _Definitions.ActionType.IDLE:
+			if (
+				"Wander" in aname
+				or "wander" in aname
+				or action_comp.current_action.type == _Definitions.ActionType.IDLE
+			):
 				was_wandering = true
 
 		last_hunger = hunger
@@ -122,9 +127,7 @@ func test_survives_long_term() -> void:
 	var builder := _Builder.new()
 	builder.with_world_bounds(9, 9)
 	var hunger_id := builder.define_need("Hunger", 0.3, 15.0, 35.0, 0.0, -5.0)
-	var market_id := builder.define_building(
-		"Market", hunger_id, 60.0, 20
-	)
+	var market_id := builder.define_building("Market", hunger_id, 60.0, 20)
 	builder.add_building(market_id, 5, 5)
 	builder.add_pawn("TestPawn", 0, 0, {hunger_id: 50.0})
 	var sim = builder.build()
@@ -147,6 +150,8 @@ func test_survives_long_term() -> void:
 
 	var final_hunger := sim.get_need_value(pawn_id, hunger_id)
 
-	assert_ge(float(times_used_market), 3.0, "Pawn should have eaten at least 3 times over 1000 ticks")
+	assert_ge(
+		float(times_used_market), 3.0, "Pawn should have eaten at least 3 times over 1000 ticks"
+	)
 	assert_gt(min_hunger, 0.0, "Pawn should never have starved (hunger never hit 0)")
 	assert_gt(final_hunger, 0.0, "Pawn should still be alive at end")

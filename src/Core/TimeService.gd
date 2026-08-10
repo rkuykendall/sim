@@ -15,19 +15,24 @@ func _init(start_hour: int = DEFAULT_START_HOUR) -> void:
 
 
 var total_minutes: int:
-	get: return tick / TICKS_PER_MINUTE
+	get:
+		return tick / TICKS_PER_MINUTE
 
 var minute: int:
-	get: return total_minutes % MINUTES_PER_HOUR
+	get:
+		return total_minutes % MINUTES_PER_HOUR
 
 var hour: int:
-	get: return (tick / TICKS_PER_HOUR) % HOURS_PER_DAY
+	get:
+		return (tick / TICKS_PER_HOUR) % HOURS_PER_DAY
 
 var day: int:
-	get: return (tick / TICKS_PER_DAY) + 1
+	get:
+		return (tick / TICKS_PER_DAY) + 1
 
 var time_string: String:
-	get: return "Day %d, %02d:%02d" % [day, hour, minute]
+	get:
+		return "Day %d, %02d:%02d" % [day, hour, minute]
 
 
 func advance_tick() -> void:

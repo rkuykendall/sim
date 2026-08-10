@@ -9,9 +9,7 @@ const LEGACY_PROJECT_NAME: String = "SimGame"
 
 
 static func ensure_save_directory() -> void:
-	DirAccess.make_dir_recursive_absolute(
-		ProjectSettings.globalize_path(SAVE_DIRECTORY)
-	)
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(SAVE_DIRECTORY))
 
 
 ## Returns an Array of metadata Dictionaries sorted newest first.
@@ -36,8 +34,9 @@ static func get_all_saves() -> Array:
 	dir.list_dir_end()
 
 	# Sort newest first by saved_at string (ISO format sorts lexicographically)
-	saves.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		return a.get("saved_at", "") > b.get("saved_at", "")
+	saves.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool:
+			return a.get("saved_at", "") > b.get("saved_at", "")
 	)
 	return saves
 
@@ -82,7 +81,12 @@ static func migrate_legacy_saves() -> void:
 	legacy_dir.list_dir_end()
 
 	if migrated > 0:
-		print("SaveFileManager: migrated %d legacy save(s) from '%s'" % [migrated, LEGACY_PROJECT_NAME])
+		print(
+			(
+				"SaveFileManager: migrated %d legacy save(s) from '%s'"
+				% [migrated, LEGACY_PROJECT_NAME]
+			)
+		)
 
 
 static func _has_any_save_file(directory: String) -> bool:

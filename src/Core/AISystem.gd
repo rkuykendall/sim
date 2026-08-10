@@ -81,10 +81,7 @@ func _decide_next_action(
 # queueable work — a candidate can pass the urgency/attachment scoring and still fail to
 # provide work (e.g. a haul job with no source currently in stock).
 func _try_queue_work(
-	sim: Simulation,
-	pawn_id: int,
-	action_comp: Components.ActionComponent,
-	purpose_need_id: int
+	sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent, purpose_need_id: int
 ) -> bool:
 	for candidate_id in _find_work_candidates(sim, pawn_id, purpose_need_id):
 		if _queue_work_at_building(sim, pawn_id, action_comp, candidate_id, purpose_need_id):
@@ -93,6 +90,7 @@ func _try_queue_work(
 
 
 # --- Need urgency ----------------------------------------------------------
+
 
 func _calculate_urgent_needs(sim: Simulation, need_comp: Components.NeedsComponent) -> Array:
 	var urgent: Array = []
@@ -107,10 +105,9 @@ func _calculate_urgent_needs(sim: Simulation, need_comp: Components.NeedsCompone
 
 # --- Action queuing --------------------------------------------------------
 
+
 func _queue_use_building(
-	sim: Simulation,
-	action_comp: Components.ActionComponent,
-	target_id: int
+	sim: Simulation, action_comp: Components.ActionComponent, target_id: int
 ) -> void:
 	var building_comp: Components.BuildingComponent = sim.entities.buildings[target_id]
 	var building_def: Dictionary = sim.content.buildings[building_comp.building_def_id]
@@ -142,9 +139,13 @@ func _queue_work_at_building(
 			_queue_direct_work(sim, action_comp, target_id, building_def, purpose_need_id)
 			return true
 		"haulFromBuilding":
-			return _queue_haul_from_building(sim, pawn_id, action_comp, target_id, building_def, purpose_need_id)
+			return _queue_haul_from_building(
+				sim, pawn_id, action_comp, target_id, building_def, purpose_need_id
+			)
 		"haulFromTerrain":
-			return _queue_haul_from_terrain(sim, action_comp, target_id, building_def, purpose_need_id)
+			return _queue_haul_from_terrain(
+				sim, action_comp, target_id, building_def, purpose_need_id
+			)
 	return false
 
 
@@ -250,7 +251,10 @@ func _queue_haul_from_terrain(
 
 # --- Wandering -------------------------------------------------------------
 
-func _wander_randomly(sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent) -> void:
+
+func _wander_randomly(
+	sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent
+) -> void:
 	if _try_queue_home_visit(sim, pawn_id, action_comp):
 		return
 
@@ -267,8 +271,14 @@ func _wander_randomly(sim: Simulation, pawn_id: int, action_comp: Components.Act
 		potential.append(Vector2i(randi() % sim.world.width, randi() % sim.world.height))
 
 	var dirs := [
-		Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0),
-		Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1),
+		Vector2i(0, 1),
+		Vector2i(0, -1),
+		Vector2i(1, 0),
+		Vector2i(-1, 0),
+		Vector2i(1, 1),
+		Vector2i(1, -1),
+		Vector2i(-1, 1),
+		Vector2i(-1, -1),
 	]
 	# Cap diversity for nearby tiles to avoid pawns getting stuck near low-variety areas.
 	# Tracked separately rather than written into diversity_map, since that's a shared cache
@@ -292,7 +302,7 @@ func _wander_randomly(sim: Simulation, pawn_id: int, action_comp: Components.Act
 		var diversity: int = diversity_map[idx]
 		if capped_nearby.has(idx):
 			diversity = mini(1, diversity)
-		candidates.append({ "coord": target, "diversity": diversity })
+		candidates.append({"coord": target, "diversity": diversity})
 
 	if candidates.is_empty():
 		_queue_stuck_idle(action_comp)
@@ -305,10 +315,11 @@ func _wander_randomly(sim: Simulation, pawn_id: int, action_comp: Components.Act
 	var all_zero: bool = candidates.all(func(c): return c["diversity"] == 0)
 	if all_zero:
 		# Prefer closer tiles when everything looks the same
-		candidates.sort_custom(func(a, b):
-			var da: int = abs(a["coord"].x - pos.coord.x) + abs(a["coord"].y - pos.coord.y)
-			var db: int = abs(b["coord"].x - pos.coord.x) + abs(b["coord"].y - pos.coord.y)
-			return da < db
+		candidates.sort_custom(
+			func(a, b):
+				var da: int = abs(a["coord"].x - pos.coord.x) + abs(a["coord"].y - pos.coord.y)
+				var db: int = abs(b["coord"].x - pos.coord.x) + abs(b["coord"].y - pos.coord.y)
+				return da < db
 		)
 	selected = candidates[0]
 
@@ -357,7 +368,9 @@ func _wander_randomly(sim: Simulation, pawn_id: int, action_comp: Components.Act
 # short pause (long enough for PawnView.sync_house_sheet to catch the current look), and back
 # to normal life. Visitors (see Definitions.PawnMembership) are excluded — they only ever
 # wander, never seek out buildings of any kind.
-func _try_queue_home_visit(sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent) -> bool:
+func _try_queue_home_visit(
+	sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent
+) -> bool:
 	if sim.entities.pawns[pawn_id].membership != Definitions.PawnMembership.COLONIST:
 		return false
 	if randf() >= WANDER_HOME_VISIT_CHANCE:
@@ -378,7 +391,9 @@ func _try_queue_home_visit(sim: Simulation, pawn_id: int, action_comp: Component
 ## A brief USE_BUILDING visit with no need/buff/attachment side effects — see
 ## _try_queue_home_visit. ActionSystem still handles the walk there and the capacity/use-area
 ## checks exactly like a real visit; only the interaction itself is a no-op beyond its duration.
-func _queue_quick_home_visit(sim: Simulation, action_comp: Components.ActionComponent, target_id: int) -> void:
+func _queue_quick_home_visit(
+	sim: Simulation, action_comp: Components.ActionComponent, target_id: int
+) -> void:
 	var building_comp: Components.BuildingComponent = sim.entities.buildings[target_id]
 	var building_def: Dictionary = sim.content.buildings[building_comp.building_def_id]
 
@@ -448,6 +463,7 @@ func _compute_diversity_map(world: World) -> Array:
 
 # --- Expression decisions --------------------------------------------------
 
+
 ## Picks a sit-and-observe bubble from the pawn's actual best/worst need value — deliberately
 ## not filtered by whether anything can currently be done about it (contrast the old buff-driven
 ## version this replaced, which only ever surfaced needs a pawn was actively acting on). A need
@@ -478,6 +494,7 @@ func _decide_need_expression(sim: Simulation, pawn_id: int) -> Array:
 
 
 # --- Building search -------------------------------------------------------
+
 
 func _find_building_for_need(sim: Simulation, pawn_id: int, need_id: int) -> int:
 	# Capture loop variable for use in filter lambda
@@ -528,10 +545,7 @@ func _find_work_candidates(sim: Simulation, pawn_id: int, purpose_need_id: int) 
 
 
 func _find_source_building(
-	sim: Simulation,
-	pawn_id: int,
-	resource_type: String,
-	exclude_id: int
+	sim: Simulation, pawn_id: int, resource_type: String, exclude_id: int
 ) -> int:
 	if resource_type.is_empty():
 		return -1
@@ -547,8 +561,7 @@ func _find_source_building(
 				return false
 			var res: Components.ResourceComponent = ctx["resource_comp"]
 			return res != null and res.resource_type == captured_type and res.current_amount >= 10.0,
-		func(ctx: Dictionary, _pid: int) -> float:
-			return ctx["resource_comp"].current_amount
+		func(ctx: Dictionary, _pid: int) -> float: return ctx["resource_comp"].current_amount
 	)
 
 
@@ -570,7 +583,10 @@ func _find_nearest_terrain(sim: Simulation, near_building_id: int, terrain_def_i
 			if not sim.world.is_in_bounds(coord):
 				continue
 			var tile: World.Tile = sim.world.get_tile(coord)
-			if tile.base_terrain_type_id != terrain_def_id and tile.overlay_terrain_type_id != terrain_def_id:
+			if (
+				tile.base_terrain_type_id != terrain_def_id
+				and tile.overlay_terrain_type_id != terrain_def_id
+			):
 				continue
 			if not _has_adjacent_walkable(sim.world, coord):
 				continue
@@ -594,10 +610,7 @@ func _has_adjacent_walkable(world: World, coord: Vector2i) -> bool:
 # ctx dict keys: obj_id, obj_comp, obj_def, obj_pos (Vector2i), distance,
 #                resource_comp, attachment_comp, other_pawns_targeting
 func _gather_reachable_candidates(
-	sim: Simulation,
-	pawn_id: int,
-	filter: Callable,
-	scorer: Callable
+	sim: Simulation, pawn_id: int, filter: Callable, scorer: Callable
 ) -> Array[int]:
 	var pawn_pos: Components.PositionComponent = sim.entities.positions.get(pawn_id)
 	if pawn_pos == null:
@@ -614,7 +627,10 @@ func _gather_reachable_candidates(
 		if obj_pos_comp == null:
 			continue
 
-		var dist: int = abs(pawn_pos.coord.x - obj_pos_comp.coord.x) + abs(pawn_pos.coord.y - obj_pos_comp.coord.y)
+		var dist: int = (
+			abs(pawn_pos.coord.x - obj_pos_comp.coord.x)
+			+ abs(pawn_pos.coord.y - obj_pos_comp.coord.y)
+		)
 		var resource_comp: Components.ResourceComponent = sim.entities.resources.get(obj_id)
 		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(obj_id)
 		var other_targeting: int = _count_pawns_targeting(sim, obj_id, pawn_id)
@@ -640,7 +656,7 @@ func _gather_reachable_candidates(
 
 		var base_score: float = -(dist * 0.5) - (other_targeting * 10.0)
 		var custom_score: float = scorer.call(ctx, pawn_id)
-		candidates.append({ "id": obj_id, "score": base_score + custom_score })
+		candidates.append({"id": obj_id, "score": base_score + custom_score})
 
 	candidates.sort_custom(func(a, b): return a["score"] > b["score"])
 
@@ -653,10 +669,7 @@ func _gather_reachable_candidates(
 
 # Convenience wrapper for callers that only want the single best match.
 func _find_best_reachable_building(
-	sim: Simulation,
-	pawn_id: int,
-	filter: Callable,
-	scorer: Callable
+	sim: Simulation, pawn_id: int, filter: Callable, scorer: Callable
 ) -> int:
 	var candidates := _gather_reachable_candidates(sim, pawn_id, filter, scorer)
 	return candidates[0] if not candidates.is_empty() else -1
@@ -690,6 +703,7 @@ func _is_building_reachable(sim: Simulation, pawn_id: int, obj_id: int) -> bool:
 
 
 # --- Helpers ---------------------------------------------------------------
+
 
 func _get_capacity(building_def: Dictionary) -> int:
 	return int(building_def.get("capacity", 1))

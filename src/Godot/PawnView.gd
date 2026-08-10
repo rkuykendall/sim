@@ -7,10 +7,10 @@ const DEFAULT_MOVE_DURATION: float = 0.5  # fallback, matches sim's default tile
 # [row, frame_count, fps, loop]
 const CHAR_FRAME_SIZE: int = 24
 const CHAR_ANIMS: Dictionary = {
-	"idle":     [0, 8, 8.0, true],
-	"walk":     [1, 4, 8.0, true],
+	"idle": [0, 8, 8.0, true],
+	"walk": [1, 4, 8.0, true],
 	"exertion": [3, 1, 1.0, false],
-	"sit":      [4, 2, 2.0, false],
+	"sit": [4, 2, 2.0, false],
 }
 
 # Overhead icons (same spot as the expression bubble) — axe swings during the AXE animation
@@ -88,11 +88,11 @@ func _ready() -> void:
 	_selection_rect = ColorRect.new()
 	_selection_rect.name = "SelectionRect"
 	_selection_rect.color = Color(1, 1, 1, 0.3)
-	_selection_rect.size = Vector2(RenderingConstants.RENDERED_TILE_SIZE,
-		RenderingConstants.RENDERED_TILE_SIZE)
+	_selection_rect.size = Vector2(
+		RenderingConstants.RENDERED_TILE_SIZE, RenderingConstants.RENDERED_TILE_SIZE
+	)
 	_selection_rect.position = Vector2(
-		-RenderingConstants.RENDERED_TILE_SIZE * 0.5,
-		-RenderingConstants.RENDERED_TILE_SIZE * 0.5
+		-RenderingConstants.RENDERED_TILE_SIZE * 0.5, -RenderingConstants.RENDERED_TILE_SIZE * 0.5
 	)
 	_selection_rect.visible = false
 	add_child(_selection_rect)
@@ -103,7 +103,9 @@ func _process(delta: float) -> void:
 	# sprite arrives exactly when the sim does.
 	if position != _target_position:
 		_move_elapsed += delta
-		var t: float = 1.0 if _move_duration <= 0.0 else clampf(_move_elapsed / _move_duration, 0.0, 1.0)
+		var t: float = (
+			1.0 if _move_duration <= 0.0 else clampf(_move_elapsed / _move_duration, 0.0, 1.0)
+		)
 		position = _move_start.lerp(_target_position, t)
 
 		# Flip based on the step's overall direction so it stays stable for the whole step.
@@ -129,10 +131,17 @@ func _process(delta: float) -> void:
 	if _axe_sprite.visible:
 		_axe_sprite.flip_h = _sprite.flip_h  # face the same way as the pawn's body
 		var facing_sign: float = -1.0 if _sprite.flip_h else 1.0
-		_axe_swing_timer = fmod(_axe_swing_timer + delta, AXE_DOWNSWING_DURATION + AXE_UPSWING_DURATION)
+		_axe_swing_timer = fmod(
+			_axe_swing_timer + delta, AXE_DOWNSWING_DURATION + AXE_UPSWING_DURATION
+		)
 		var is_downswing: bool = _axe_swing_timer < AXE_DOWNSWING_DURATION
 		if is_downswing:
-			_axe_sprite.rotation = facing_sign * lerpf(-AXE_SWING_ANGLE, AXE_SWING_ANGLE, _axe_swing_timer / AXE_DOWNSWING_DURATION)
+			_axe_sprite.rotation = (
+				facing_sign
+				* lerpf(
+					-AXE_SWING_ANGLE, AXE_SWING_ANGLE, _axe_swing_timer / AXE_DOWNSWING_DURATION
+				)
+			)
 		else:
 			var up_t: float = (_axe_swing_timer - AXE_DOWNSWING_DURATION) / AXE_UPSWING_DURATION
 			_axe_sprite.rotation = facing_sign * lerpf(AXE_SWING_ANGLE, -AXE_SWING_ANGLE, up_t)
@@ -202,7 +211,9 @@ func _add_animation(
 	for i in frame_count:
 		var atlas := AtlasTexture.new()
 		atlas.atlas = texture
-		atlas.region = Rect2(i * CHAR_FRAME_SIZE, row * CHAR_FRAME_SIZE, CHAR_FRAME_SIZE, CHAR_FRAME_SIZE)
+		atlas.region = Rect2(
+			i * CHAR_FRAME_SIZE, row * CHAR_FRAME_SIZE, CHAR_FRAME_SIZE, CHAR_FRAME_SIZE
+		)
 		frames.add_frame(anim_name, atlas)
 
 
@@ -242,10 +253,14 @@ func set_current_animation(animation: Definitions.AnimationType) -> void:
 
 	var anim_name: String
 	match animation:
-		Definitions.AnimationType.WALK:    anim_name = "walk"
-		Definitions.AnimationType.PICKAXE: anim_name = "exertion"
-		Definitions.AnimationType.SIT:     anim_name = "sit"
-		_:                                 anim_name = "idle"
+		Definitions.AnimationType.WALK:
+			anim_name = "walk"
+		Definitions.AnimationType.PICKAXE:
+			anim_name = "exertion"
+		Definitions.AnimationType.SIT:
+			anim_name = "sit"
+		_:
+			anim_name = "idle"
 
 	if _sprite.animation != anim_name:
 		_sprite.play(anim_name)
@@ -297,11 +312,16 @@ func set_expression(
 	# Select bubble wrapper texture based on expression type
 	var bubble_key: String
 	match expression:
-		Definitions.ExpressionType.HAPPY:     bubble_key = "bubble_happy"
-		Definitions.ExpressionType.COMPLAINT: bubble_key = "bubble_complaint"
-		Definitions.ExpressionType.SPEECH:    bubble_key = "bubble_speech"
-		Definitions.ExpressionType.QUESTION:  bubble_key = "bubble_question"
-		_:                                    bubble_key = "bubble_thought"
+		Definitions.ExpressionType.HAPPY:
+			bubble_key = "bubble_happy"
+		Definitions.ExpressionType.COMPLAINT:
+			bubble_key = "bubble_complaint"
+		Definitions.ExpressionType.SPEECH:
+			bubble_key = "bubble_speech"
+		Definitions.ExpressionType.QUESTION:
+			bubble_key = "bubble_question"
+		_:
+			bubble_key = "bubble_thought"
 
 	var bubble_tex: Texture2D = SpriteResourceManager.get_texture(bubble_key)
 	_bubble_wrapper.texture = bubble_tex

@@ -28,16 +28,16 @@ func _ready() -> void:
 
 func _init_border() -> void:
 	var style := _make_style(false)
-	add_theme_stylebox_override("normal",  style)
-	add_theme_stylebox_override("hover",   style)
+	add_theme_stylebox_override("normal", style)
+	add_theme_stylebox_override("hover", style)
 	add_theme_stylebox_override("pressed", style)
-	add_theme_stylebox_override("focus",   style)
+	add_theme_stylebox_override("focus", style)
 
 	for node in [_color_rect, _texture_rect]:
 		if node != null:
-			node.offset_left   = 8
-			node.offset_top    = 8
-			node.offset_right  = -8
+			node.offset_left = 8
+			node.offset_top = 8
+			node.offset_right = -8
 			node.offset_bottom = -8
 
 
@@ -57,7 +57,9 @@ func update_preview(
 	if _color_rect == null or _texture_rect == null:
 		return
 
-	var base_color: Color = palette[color_index] if color_index >= 0 and color_index < palette.size() else Color.WHITE
+	var base_color: Color = (
+		palette[color_index] if color_index >= 0 and color_index < palette.size() else Color.WHITE
+	)
 	var texture: Texture2D = null
 
 	if content != null:
@@ -67,7 +69,9 @@ func update_preview(
 				var ts: int = int(bdef.get("tileSize", 1))
 				var px: int = ts * RenderingConstants.SOURCE_TILE_SIZE
 				var col: int = int(bdef.get("spriteColumn", 0))
-				texture = SpriteResourceManager.get_icon_texture(bdef.get("spriteKey", ""), Rect2(col * px, 0, px, px))
+				texture = SpriteResourceManager.get_icon_texture(
+					bdef.get("spriteKey", ""), Rect2(col * px, 0, px, px)
+				)
 		elif terrain_def_id != -1:
 			var tdef: Dictionary = content.terrains.get(terrain_def_id, {})
 			if not tdef.is_empty():
@@ -75,7 +79,11 @@ func update_preview(
 
 	# Fallback to generic icons
 	if texture == null and (building_def_id != -1 or terrain_def_id != -1):
-		texture = load("res://sprites/placeholders/unknown.png") if ResourceLoader.exists("res://sprites/placeholders/unknown.png") else null
+		texture = (
+			load("res://sprites/placeholders/unknown.png")
+			if ResourceLoader.exists("res://sprites/placeholders/unknown.png")
+			else null
+		)
 
 	if texture == null:
 		if is_select_preview:
@@ -104,23 +112,23 @@ func update_preview(
 
 func set_selected(selected: bool) -> void:
 	var style := _make_style(selected)
-	add_theme_stylebox_override("normal",  style)
-	add_theme_stylebox_override("hover",   style)
+	add_theme_stylebox_override("normal", style)
+	add_theme_stylebox_override("hover", style)
 	add_theme_stylebox_override("pressed", style)
-	add_theme_stylebox_override("focus",   style)
+	add_theme_stylebox_override("focus", style)
 
 
 func _make_style(selected: bool) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
-	s.bg_color        = Color.WHITE if selected else Color(0, 0, 0, 0)
-	s.border_color    = Color(1, 1, 1, 0)
-	s.border_width_left   = 4
-	s.border_width_right  = 4
-	s.border_width_top    = 4
+	s.bg_color = Color.WHITE if selected else Color(0, 0, 0, 0)
+	s.border_color = Color(1, 1, 1, 0)
+	s.border_width_left = 4
+	s.border_width_right = 4
+	s.border_width_top = 4
 	s.border_width_bottom = 4
-	s.content_margin_left   = 4
-	s.content_margin_right  = 4
-	s.content_margin_top    = 4
+	s.content_margin_left = 4
+	s.content_margin_right = 4
+	s.content_margin_top = 4
 	s.content_margin_bottom = 4
 	s.draw_center = true
 	return s

@@ -6,17 +6,17 @@ class_name ContentRegistry
 
 var _next_id: int = 1
 
-var palettes: Dictionary = {}       # name -> { name, colors: Array }
-var palette_ids: Dictionary = {}    # name -> id  /  id -> name
+var palettes: Dictionary = {}  # name -> { name, colors: Array }
+var palette_ids: Dictionary = {}  # name -> id  /  id -> name
 
-var needs: Dictionary = {}          # id -> NeedDef dict
-var need_ids: Dictionary = {}       # name -> id
+var needs: Dictionary = {}  # id -> NeedDef dict
+var need_ids: Dictionary = {}  # name -> id
 
-var terrains: Dictionary = {}       # id -> TerrainDef dict
-var terrain_ids: Dictionary = {}    # name -> id
+var terrains: Dictionary = {}  # id -> TerrainDef dict
+var terrain_ids: Dictionary = {}  # name -> id
 
-var buildings: Dictionary = {}      # id -> BuildingDef dict
-var building_ids: Dictionary = {}   # name -> id
+var buildings: Dictionary = {}  # id -> BuildingDef dict
+var building_ids: Dictionary = {}  # name -> id
 
 
 func _alloc_id() -> int:

@@ -21,12 +21,23 @@ func test_paint_rectangle_inclusive() -> void:
 
 	for x in range(1, 4):
 		for y in range(1, 4):
-			assert_eq(sim.world.get_tile(Vector2i(x, y)).base_terrain_type_id, path_id,
-				"Tile (%d,%d) should be painted" % [x, y])
+			assert_eq(
+				sim.world.get_tile(Vector2i(x, y)).base_terrain_type_id,
+				path_id,
+				"Tile (%d,%d) should be painted" % [x, y]
+			)
 
 	# One step outside the rectangle on each side should be untouched.
-	assert_not_eq(sim.world.get_tile(Vector2i(0, 1)).base_terrain_type_id, path_id, "Tile outside rectangle should not be painted")
-	assert_not_eq(sim.world.get_tile(Vector2i(4, 3)).base_terrain_type_id, path_id, "Tile outside rectangle should not be painted")
+	assert_not_eq(
+		sim.world.get_tile(Vector2i(0, 1)).base_terrain_type_id,
+		path_id,
+		"Tile outside rectangle should not be painted"
+	)
+	assert_not_eq(
+		sim.world.get_tile(Vector2i(4, 3)).base_terrain_type_id,
+		path_id,
+		"Tile outside rectangle should not be painted"
+	)
 
 
 func test_paint_rectangle_corner_order() -> void:
@@ -40,8 +51,11 @@ func test_paint_rectangle_corner_order() -> void:
 
 	for x in range(1, 4):
 		for y in range(1, 4):
-			assert_eq(sim.world.get_tile(Vector2i(x, y)).base_terrain_type_id, path_id,
-				"Tile (%d,%d) should be painted regardless of corner order" % [x, y])
+			assert_eq(
+				sim.world.get_tile(Vector2i(x, y)).base_terrain_type_id,
+				path_id,
+				"Tile (%d,%d) should be painted regardless of corner order" % [x, y]
+			)
 
 
 func test_paint_rectangle_outline() -> void:
@@ -54,17 +68,36 @@ func test_paint_rectangle_outline() -> void:
 
 	# Border tiles painted.
 	for x in range(1, 6):
-		assert_eq(sim.world.get_tile(Vector2i(x, 1)).base_terrain_type_id, wall_id, "Top border should be painted")
-		assert_eq(sim.world.get_tile(Vector2i(x, 5)).base_terrain_type_id, wall_id, "Bottom border should be painted")
+		assert_eq(
+			sim.world.get_tile(Vector2i(x, 1)).base_terrain_type_id,
+			wall_id,
+			"Top border should be painted"
+		)
+		assert_eq(
+			sim.world.get_tile(Vector2i(x, 5)).base_terrain_type_id,
+			wall_id,
+			"Bottom border should be painted"
+		)
 	for y in range(1, 6):
-		assert_eq(sim.world.get_tile(Vector2i(1, y)).base_terrain_type_id, wall_id, "Left border should be painted")
-		assert_eq(sim.world.get_tile(Vector2i(5, y)).base_terrain_type_id, wall_id, "Right border should be painted")
+		assert_eq(
+			sim.world.get_tile(Vector2i(1, y)).base_terrain_type_id,
+			wall_id,
+			"Left border should be painted"
+		)
+		assert_eq(
+			sim.world.get_tile(Vector2i(5, y)).base_terrain_type_id,
+			wall_id,
+			"Right border should be painted"
+		)
 
 	# Interior tiles must remain untouched.
 	for x in range(2, 5):
 		for y in range(2, 5):
-			assert_not_eq(sim.world.get_tile(Vector2i(x, y)).base_terrain_type_id, wall_id,
-				"Interior tile (%d,%d) should not be painted by an outline" % [x, y])
+			assert_not_eq(
+				sim.world.get_tile(Vector2i(x, y)).base_terrain_type_id,
+				wall_id,
+				"Interior tile (%d,%d) should not be painted by an outline" % [x, y]
+			)
 
 
 func test_flood_fill_bounded() -> void:
@@ -82,9 +115,20 @@ func test_flood_fill_bounded() -> void:
 
 	for x in range(2, 5):
 		for y in range(2, 5):
-			assert_eq(sim.world.get_tile(Vector2i(x, y)).base_terrain_type_id, path_id,
-				"Interior tile (%d,%d) should be flood-filled" % [x, y])
+			assert_eq(
+				sim.world.get_tile(Vector2i(x, y)).base_terrain_type_id,
+				path_id,
+				"Interior tile (%d,%d) should be flood-filled" % [x, y]
+			)
 
 	# Outside the wall ring should be untouched by the flood fill.
-	assert_not_eq(sim.world.get_tile(Vector2i(0, 0)).base_terrain_type_id, path_id, "Flood fill should not cross the wall boundary")
-	assert_not_eq(sim.world.get_tile(Vector2i(7, 7)).base_terrain_type_id, path_id, "Flood fill should not cross the wall boundary")
+	assert_not_eq(
+		sim.world.get_tile(Vector2i(0, 0)).base_terrain_type_id,
+		path_id,
+		"Flood fill should not cross the wall boundary"
+	)
+	assert_not_eq(
+		sim.world.get_tile(Vector2i(7, 7)).base_terrain_type_id,
+		path_id,
+		"Flood fill should not cross the wall boundary"
+	)

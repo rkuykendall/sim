@@ -5,12 +5,19 @@ const _Builder = preload("res://tests/TestSimulationBuilder.gd")
 
 func run() -> void:
 	print("  [PopulationTests]")
-	run_test("Emigration_RemovesLeastInterestingPawn_WhenOverCapacity", test_emigration_removes_least_interesting_pawn)
+	run_test(
+		"Emigration_RemovesLeastInterestingPawn_WhenOverCapacity",
+		test_emigration_removes_least_interesting_pawn
+	)
 	run_test("Emigration_DoesNotTrigger_AtOrBelowCapacity", test_no_emigration_within_capacity)
 	run_test("Emigration_DoesNotTrigger_WhenNoHomesExist", test_no_emigration_without_homes)
 	run_test("Emigration_DoesNotRetargetPawn_MidWalk", test_emigration_does_not_retarget_mid_walk)
-	run_test("RealContent_HomeCapacitiesMatchExpectedHalvedValues", test_real_content_home_capacities)
-	run_test("RealContent_MaxPawnsMatchesActualHomeLayout", test_real_content_max_pawns_for_known_layout)
+	run_test(
+		"RealContent_HomeCapacitiesMatchExpectedHalvedValues", test_real_content_home_capacities
+	)
+	run_test(
+		"RealContent_MaxPawnsMatchesActualHomeLayout", test_real_content_max_pawns_for_known_layout
+	)
 
 
 # One capacity-1 home, two pawns already present (over capacity). The unhappier, unattached
@@ -73,7 +80,11 @@ func test_no_emigration_without_homes() -> void:
 
 	sim.run_ticks(Simulation.PAWN_SPAWN_INTERVAL + 300)
 
-	assert_eq(sim.entities.all_pawns().size(), 2, "Pawns should not be evicted when no homes have ever been built")
+	assert_eq(
+		sim.entities.all_pawns().size(),
+		2,
+		"Pawns should not be evicted when no homes have ever been built"
+	)
 
 
 # The map-edge walk (~40 tiles here, ~400 ticks) takes longer than the 300-tick interval
@@ -96,7 +107,9 @@ func test_emigration_does_not_retarget_mid_walk() -> void:
 
 	var emigrant_id := _find_emigrating_pawn(sim)
 	assert_not_eq(emigrant_id, -1, "One pawn should be mid-emigration by now")
-	var target_after_first_check: Vector2i = sim.entities.actions.get(emigrant_id).current_action.target_coord
+	var target_after_first_check: Vector2i = (
+		sim.entities.actions.get(emigrant_id).current_action.target_coord
+	)
 
 	# A second population check fires here (another PAWN_SPAWN_INTERVAL), while the same pawn
 	# is still walking — the ~400-tick walk isn't done yet.
@@ -104,9 +117,12 @@ func test_emigration_does_not_retarget_mid_walk() -> void:
 
 	assert_eq(sim.entities.all_pawns().size(), 2, "Pawn should still be en route, not yet removed")
 	var action_comp = sim.entities.actions.get(emigrant_id)
-	assert_not_null(action_comp.current_action, "Emigrating pawn should still have an active action")
+	assert_not_null(
+		action_comp.current_action, "Emigrating pawn should still have an active action"
+	)
 	assert_eq(
-		action_comp.current_action.target_coord, target_after_first_check,
+		action_comp.current_action.target_coord,
+		target_after_first_check,
 		"A second population check should not retarget a pawn already emigrating"
 	)
 
@@ -114,7 +130,11 @@ func test_emigration_does_not_retarget_mid_walk() -> void:
 func _find_emigrating_pawn(sim) -> int:
 	for pawn_id in sim.entities.all_pawns():
 		var action_comp = sim.entities.actions.get(pawn_id)
-		if action_comp != null and action_comp.current_action != null and action_comp.current_action.display_name == "Leaving town":
+		if (
+			action_comp != null
+			and action_comp.current_action != null
+			and action_comp.current_action.display_name == "Leaving town"
+		):
 			return pawn_id
 	return -1
 
@@ -131,7 +151,8 @@ func test_real_content_home_capacities() -> void:
 		var bdef: Dictionary = content.buildings.get(building_id, {})
 		assert_true(bool(bdef.get("isHome", false)), "%s should be marked isHome" % home_name)
 		assert_eq(
-			int(bdef.get("capacity", -1)), expected[home_name],
+			int(bdef.get("capacity", -1)),
+			expected[home_name],
 			"%s capacity should be %d" % [home_name, expected[home_name]]
 		)
 

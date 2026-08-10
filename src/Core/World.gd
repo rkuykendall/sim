@@ -19,15 +19,18 @@ class Tile:
 	var building_blocks_movement: bool = false
 
 	var walkable: bool:
-		get: return walkability_cost < IMPASSABLE and not building_blocks_movement
+		get:
+			return walkability_cost < IMPASSABLE and not building_blocks_movement
 
 	var tile_hash: int:
 		get:
 			return hash(
-				str(base_terrain_type_id)
-				+ str(color_index)
-				+ str(overlay_terrain_type_id)
-				+ str(overlay_color_index)
+				(
+					str(base_terrain_type_id)
+					+ str(color_index)
+					+ str(overlay_terrain_type_id)
+					+ str(overlay_color_index)
+				)
 			)
 
 

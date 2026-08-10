@@ -2,17 +2,22 @@ class_name SaveService
 
 const SAVE_VERSION: int = 3
 
-
 # ---------------------------------------------------------------------------
 # File I/O
 # ---------------------------------------------------------------------------
+
 
 static func save(sim: Simulation, path: String, save_name: String = "") -> void:
 	var data: Dictionary = to_dict(sim, save_name)
 	var json: String = JSON.stringify(data)
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	if file == null:
-		push_error("SaveService.save: cannot open '%s' for writing (error %d)" % [path, FileAccess.get_open_error()])
+		push_error(
+			(
+				"SaveService.save: cannot open '%s' for writing (error %d)"
+				% [path, FileAccess.get_open_error()]
+			)
+		)
 		return
 	file.store_string(json)
 
@@ -30,7 +35,12 @@ static func load_file(path: String, content: ContentRegistry) -> Simulation:
 		return null
 
 	if int(data.get("version", 0)) != SAVE_VERSION:
-		push_error("SaveService.load_file: incompatible save version in '%s' (expected %d)" % [path, SAVE_VERSION])
+		push_error(
+			(
+				"SaveService.load_file: incompatible save version in '%s' (expected %d)"
+				% [path, SAVE_VERSION]
+			)
+		)
 		return null
 
 	return from_dict(data, content)
@@ -54,11 +64,11 @@ static func read_metadata(path: String) -> Dictionary:
 			pawn_count += 1
 
 	return {
-		"version":      int(data.get("version", 0)),
+		"version": int(data.get("version", 0)),
 		"display_name": data.get("name", ""),
-		"saved_at":     data.get("saved_at", ""),
-		"day":          day,
-		"pawn_count":   pawn_count,
+		"saved_at": data.get("saved_at", ""),
+		"day": day,
+		"pawn_count": pawn_count,
 	}
 
 
@@ -66,19 +76,21 @@ static func read_metadata(path: String) -> Dictionary:
 # Serialization
 # ---------------------------------------------------------------------------
 
+
 static func to_dict(sim: Simulation, save_name: String = "") -> Dictionary:
 	return {
-		"version":            SAVE_VERSION,
-		"name":               save_name,
-		"saved_at":           Time.get_datetime_string_from_system(false, true),
-		"seed":               sim.sim_seed,
-		"current_tick":       sim.time.tick,
+		"version": SAVE_VERSION,
+		"name": save_name,
+		"saved_at": Time.get_datetime_string_from_system(false, true),
+		"seed": sim.sim_seed,
+		"current_tick": sim.time.tick,
 		"selected_palette_id": sim.selected_palette_id,
-		"palette":            sim.palette.map(func(c: Color) -> String: return "#" + c.to_html(false)),
-		"next_entity_id":     sim.entities.next_id,
-		"world":              _serialize_world(sim.world),
-		"entities":           _serialize_entities(sim),
-		"current_theme_name": sim.theme_system.current_theme.get_name() if sim.theme_system.current_theme != null else "",
+		"palette": sim.palette.map(func(c: Color) -> String: return "#" + c.to_html(false)),
+		"next_entity_id": sim.entities.next_id,
+		"world": _serialize_world(sim.world),
+		"entities": _serialize_entities(sim),
+		"current_theme_name":
+		sim.theme_system.current_theme.get_name() if sim.theme_system.current_theme != null else "",
 		"current_theme_start_tick": sim.theme_system.get_current_theme_start_tick(),
 	}
 
@@ -91,24 +103,24 @@ static func _serialize_world(world: World) -> Dictionary:
 			var t: Dictionary = {
 				"x": x,
 				"y": y,
-				"base_terrain_type_id":    tile.base_terrain_type_id,
-				"base_variant_index":      tile.base_variant_index,
-				"color_index":             tile.color_index,
-				"walkability_cost":        tile.walkability_cost,
-				"blocks_light":            tile.blocks_light,
+				"base_terrain_type_id": tile.base_terrain_type_id,
+				"base_variant_index": tile.base_variant_index,
+				"color_index": tile.color_index,
+				"walkability_cost": tile.walkability_cost,
+				"blocks_light": tile.blocks_light,
 				"building_blocks_movement": tile.building_blocks_movement,
 			}
 			# Only write overlay fields when set (saves space)
 			if tile.overlay_terrain_type_id != -1:
 				t["overlay_terrain_type_id"] = tile.overlay_terrain_type_id
-				t["overlay_variant_index"]   = tile.overlay_variant_index
-				t["overlay_color_index"]     = tile.overlay_color_index
+				t["overlay_variant_index"] = tile.overlay_variant_index
+				t["overlay_color_index"] = tile.overlay_color_index
 			tiles.append(t)
 
 	return {
-		"width":  world.width,
+		"width": world.width,
 		"height": world.height,
-		"tiles":  tiles,
+		"tiles": tiles,
 	}
 
 
@@ -118,7 +130,7 @@ static func _serialize_entities(sim: Simulation) -> Array:
 
 	# Pawns
 	for pawn_id in em.all_pawns():
-		var e: Dictionary = { "id": pawn_id, "type": "Pawn" }
+		var e: Dictionary = {"id": pawn_id, "type": "Pawn"}
 
 		var pos: Components.PositionComponent = em.positions.get(pawn_id)
 		if pos != null:
@@ -147,15 +159,15 @@ static func _serialize_entities(sim: Simulation) -> Array:
 		if inv != null:
 			e["inventory"] = {
 				"resource_type": inv.resource_type,
-				"amount":        inv.amount,
-				"max_amount":    inv.max_amount,
+				"amount": inv.amount,
+				"max_amount": inv.max_amount,
 			}
 
 		out.append(e)
 
 	# Buildings
 	for building_id in em.all_buildings():
-		var e: Dictionary = { "id": building_id, "type": "Building" }
+		var e: Dictionary = {"id": building_id, "type": "Building"}
 
 		var pos: Components.PositionComponent = em.positions.get(building_id)
 		if pos != null:
@@ -168,7 +180,7 @@ static func _serialize_entities(sim: Simulation) -> Array:
 			# Save name (stable) + id (backward compat)
 			bdef = sim.content.buildings.get(bc.building_def_id, {})
 			e["building_def_name"] = bdef.get("name", "")
-			e["building_def_id"]   = bc.building_def_id
+			e["building_def_id"] = bc.building_def_id
 			e["building_color_index"] = bc.color_index
 			e["skin_override"] = bc.skin_override
 
@@ -181,10 +193,10 @@ static func _serialize_entities(sim: Simulation) -> Array:
 		var res: Components.ResourceComponent = em.resources.get(building_id)
 		if res != null and not String(bdef.get("resourceType", "")).is_empty():
 			e["resource"] = {
-				"resource_type":   res.resource_type,
-				"current_amount":  res.current_amount,
-				"max_amount":      res.max_amount,
-				"depletion_mult":  res.depletion_mult,
+				"resource_type": res.resource_type,
+				"current_amount": res.current_amount,
+				"max_amount": res.max_amount,
+				"depletion_mult": res.depletion_mult,
 			}
 
 		var ac: Components.AttachmentComponent = em.attachments.get(building_id)
@@ -207,9 +219,10 @@ static func _serialize_entities(sim: Simulation) -> Array:
 # Deserialization
 # ---------------------------------------------------------------------------
 
+
 static func from_dict(data: Dictionary, content: ContentRegistry) -> Simulation:
 	var world_data: Dictionary = data.get("world", {})
-	var world_width: int  = int(world_data.get("width",  World.DEFAULT_WIDTH))
+	var world_width: int = int(world_data.get("width", World.DEFAULT_WIDTH))
 	var world_height: int = int(world_data.get("height", World.DEFAULT_HEIGHT))
 
 	var sim := Simulation.new(
@@ -218,7 +231,7 @@ static func from_dict(data: Dictionary, content: ContentRegistry) -> Simulation:
 		TimeService.DEFAULT_START_HOUR,
 		world_width,
 		world_height,
-		false   # themes enabled
+		false  # themes enabled
 	)
 
 	# Restore world tiles (overwrites auto-initialized terrain)
@@ -269,17 +282,17 @@ static func _restore_world(sim: Simulation, world_data: Dictionary) -> void:
 
 		var tile: World.Tile = sim.world.get_tile_xy(x, y)
 		tile.base_terrain_type_id = int(t.get("base_terrain_type_id", -1))
-		tile.base_variant_index   = int(t.get("base_variant_index", 0))
-		tile.color_index          = int(t.get("color_index", 0))
-		tile.walkability_cost     = float(t.get("walkability_cost", 1.0))
-		tile.blocks_light         = bool(t.get("blocks_light", false))
+		tile.base_variant_index = int(t.get("base_variant_index", 0))
+		tile.color_index = int(t.get("color_index", 0))
+		tile.walkability_cost = float(t.get("walkability_cost", 1.0))
+		tile.blocks_light = bool(t.get("blocks_light", false))
 		tile.building_blocks_movement = bool(t.get("building_blocks_movement", false))
 
 		# Overlay (optional)
 		if t.has("overlay_terrain_type_id"):
 			tile.overlay_terrain_type_id = int(t["overlay_terrain_type_id"])
-			tile.overlay_variant_index   = int(t.get("overlay_variant_index", 0))
-			tile.overlay_color_index     = int(t.get("overlay_color_index", 0))
+			tile.overlay_variant_index = int(t.get("overlay_variant_index", 0))
+			tile.overlay_color_index = int(t.get("overlay_color_index", 0))
 		else:
 			tile.overlay_terrain_type_id = -1
 
@@ -300,7 +313,12 @@ static func _restore_building(sim: Simulation, e: Dictionary) -> void:
 		building_def_id = int(e.get("building_def_id", -1))
 
 	if building_def_id == -1:
-		push_warning("SaveService: unknown building '%s' — skipping entity %d" % [building_def_name, entity_id])
+		push_warning(
+			(
+				"SaveService: unknown building '%s' — skipping entity %d"
+				% [building_def_name, entity_id]
+			)
+		)
 		return
 
 	var pos := Components.PositionComponent.new()
@@ -317,10 +335,10 @@ static func _restore_building(sim: Simulation, e: Dictionary) -> void:
 	if e.has("resource"):
 		var r: Dictionary = e["resource"]
 		var rc := Components.ResourceComponent.new()
-		rc.resource_type   = r.get("resource_type", "")
-		rc.current_amount  = float(r.get("current_amount", 0.0))
-		rc.max_amount      = float(r.get("max_amount", 100.0))
-		rc.depletion_mult  = float(r.get("depletion_mult", 1.0))
+		rc.resource_type = r.get("resource_type", "")
+		rc.current_amount = float(r.get("current_amount", 0.0))
+		rc.max_amount = float(r.get("max_amount", 100.0))
+		rc.depletion_mult = float(r.get("depletion_mult", 1.0))
 		sim.entities.resources[entity_id] = rc
 	else:
 		# Legacy save compat: init from building def if it has a resource type
@@ -329,9 +347,9 @@ static func _restore_building(sim: Simulation, e: Dictionary) -> void:
 		if not resource_type.is_empty():
 			var max_amount: float = float(bdef.get("maxResourceAmount", 100.0))
 			var rc := Components.ResourceComponent.new()
-			rc.resource_type  = resource_type
+			rc.resource_type = resource_type
 			rc.current_amount = max_amount
-			rc.max_amount     = max_amount
+			rc.max_amount = max_amount
 			rc.depletion_mult = float(bdef.get("depletionMult", 1.0))
 			sim.entities.resources[entity_id] = rc
 
@@ -388,6 +406,6 @@ static func _restore_pawn(sim: Simulation, e: Dictionary) -> void:
 	if e.has("inventory"):
 		var inv_data: Dictionary = e["inventory"]
 		inv.resource_type = inv_data.get("resource_type", "")
-		inv.amount        = float(inv_data.get("amount", 0.0))
-		inv.max_amount    = float(inv_data.get("max_amount", 0.0))
+		inv.amount = float(inv_data.get("amount", 0.0))
+		inv.max_amount = float(inv_data.get("max_amount", 0.0))
 	sim.entities.inventory[entity_id] = inv
