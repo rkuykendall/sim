@@ -58,6 +58,20 @@ func update_music_state(snapshot_theme: Dictionary) -> void:
 	_audio_player.play()
 
 
+## Stops playback and clears tracked theme/file state — without the reset, resuming a save whose
+## restored theme happens to match what was already loaded (see ThemeSystem.restore_current_theme)
+## would look like "no change" to update_music_state and silently never call play() again.
+func stop() -> void:
+	# GameRoot and MusicManager are siblings under Main, and GameRoot is declared earlier in the
+	# scene tree, so GameRoot._ready() (which calls this at boot, before any game has started) can
+	# run before this node's own _ready() has set up _audio_player.
+	if _audio_player == null:
+		return
+	_audio_player.stop()
+	_current_music_file = ""
+	_current_theme_name = ""
+
+
 ## 0-1 fraction of the way through the current track (0 if nothing is playing, or the
 ## stream has no known length). Drives theme-progress-based visuals (shadows, screen tint)
 ## in GameRoot instead of a real-world clock, so they always align with the current song.

@@ -177,6 +177,7 @@ func _apply_fullscreen() -> void:
 
 func _show_home_screen() -> void:
 	_current_screen = _AppScreen.HOME
+	if _music_manager != null: _music_manager.stop()
 	if _toolbar != null: _toolbar.hide()
 	if _debug_panel != null: _debug_panel.set_debug_mode(false)
 	if _pawns_root != null: _pawns_root.hide()
