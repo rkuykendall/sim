@@ -11,6 +11,7 @@ func run() -> void:
 	run_test("RemoveAllVisitors_SendsEveryVisitorAway", test_remove_all_visitors_sends_them_away)
 	run_test("RemoveAllVisitors_NoOpsCleanly_WithZeroVisitors", test_remove_all_visitors_noop)
 	run_test("FindLeastInterestingPawn_NeverPicksAVisitor", test_find_least_interesting_pawn_skips_visitors)
+	run_test("WalkableEdgeTileCache_InvalidatesAfterBuildingBlocksATile", test_walkable_edge_tile_cache_invalidates_after_building)
 
 
 # A needs-less visitor should never target the building that satisfies a real need — with no
@@ -139,3 +140,35 @@ func test_find_least_interesting_pawn_skips_visitors() -> void:
 	var worst_id: int = sim._find_least_interesting_pawn()
 	assert_eq(worst_id, happy_id, "With visitors excluded, the sole real colonist is the only eligible candidate")
 	assert_not_eq(worst_id, visitor_id, "A visitor's guaranteed-0 score must never make it eligible for capacity-driven emigration")
+
+
+# Regression test for Simulation._get_random_walkable_edge_tile's cache (added to fix theme-
+# transition lag — rebuilding the candidate list on every single spawn/despawn was a full
+# world.width * world.height scan each time). The risk with any cache is stale invalidation, so
+# this specifically proves a tile that becomes blocked after the cache was first warmed is
+# correctly excluded, not silently offered from a stale candidate list.
+func test_walkable_edge_tile_cache_invalidates_after_building() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(1, 1)  # 2x2 world — every one of the 4 tiles is an edge tile
+	var blocker_id := builder.define_building(
+		"Blocker", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 1, false
+	)
+	var sim := builder.build()
+
+	# Warm the cache while all 4 tiles are still walkable
+	var warm_up_visitor := sim.spawn_visitor_pawn("special_4_v2", {}, "WarmUp")
+	assert_not_eq(warm_up_visitor, -1, "Setup should be able to spawn onto one of the 4 edge tiles")
+
+	# Block 3 of the 4 tiles, leaving only (1, 1) walkable
+	sim.create_building(blocker_id, Vector2i(0, 0))
+	sim.create_building(blocker_id, Vector2i(1, 0))
+	sim.create_building(blocker_id, Vector2i(0, 1))
+
+	for i in 10:
+		var visitor_id := sim.spawn_visitor_pawn("special_4_v2", {}, "Visitor %d" % i)
+		assert_not_eq(visitor_id, -1, "The one remaining walkable tile should still be spawnable")
+		var pos = sim.entities.positions.get(visitor_id)
+		assert_eq(
+			pos.coord, Vector2i(1, 1),
+			"Should always land on the sole remaining walkable edge tile — a stale cache would still offer the 3 now-blocked ones"
+		)

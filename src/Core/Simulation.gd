@@ -29,6 +29,13 @@ var _systems: SystemManager
 var _pawns_pending_removal: Array[int] = []
 var _emigrating_pawn_id: int = -1  # -1 = nobody currently mid-emigration
 
+# Cached candidate list for _get_random_walkable_edge_tile (see below) — rebuilding it is a full
+# world.width * world.height scan, which is cheap for one pawn but adds up fast when many pawns
+# spawn/despawn in the same tick (e.g. a theme transition's visitor turnover). Only walkability-
+# mutating calls (building placement/destruction, terrain painting) need to invalidate this.
+var _walkable_edge_tiles_cache: Array[Vector2i] = []
+var _walkable_edge_tiles_dirty: bool = true
+
 
 func _init(
 	p_content: ContentRegistry,
@@ -286,15 +293,18 @@ func _full_needs() -> Dictionary:
 
 
 func _get_random_walkable_edge_tile() -> Vector2i:
-	var candidates: Array[Vector2i] = []
-	for x in world.width:
-		for y in world.height:
-			var is_edge: bool = (x == 0 or x == world.width - 1 or y == 0 or y == world.height - 1)
-			if is_edge and world.is_walkable(Vector2i(x, y)):
-				candidates.append(Vector2i(x, y))
-	if candidates.is_empty():
+	if _walkable_edge_tiles_dirty:
+		_walkable_edge_tiles_cache = []
+		for x in world.width:
+			for y in world.height:
+				var is_edge: bool = (x == 0 or x == world.width - 1 or y == 0 or y == world.height - 1)
+				if is_edge and world.is_walkable(Vector2i(x, y)):
+					_walkable_edge_tiles_cache.append(Vector2i(x, y))
+		_walkable_edge_tiles_dirty = false
+
+	if _walkable_edge_tiles_cache.is_empty():
 		return Vector2i(-1, -1)
-	return candidates[randi() % candidates.size()]
+	return _walkable_edge_tiles_cache[randi() % _walkable_edge_tiles_cache.size()]
 
 
 # --- Building creation / destruction ---------------------------------------
@@ -341,6 +351,7 @@ func create_building(building_def_id: int, coord: Vector2i, color_index: int = 0
 	# Block movement on all occupied tiles
 	for tile_coord in occupied:
 		world.get_tile(tile_coord).building_blocks_movement = true
+	_walkable_edge_tiles_dirty = true
 
 	return entity_id
 
@@ -356,6 +367,7 @@ func destroy_entity(entity_id: int) -> void:
 			for tile_coord in occupied:
 				if world.is_in_bounds(tile_coord):
 					world.get_tile(tile_coord).building_blocks_movement = false
+			_walkable_edge_tiles_dirty = true
 
 	# A pawn's attachment strength lives on the buildings it visited, not on the pawn itself —
 	# entities.destroy() only erases the destroyed entity's own component entries, so without
@@ -400,6 +412,7 @@ func paint_terrain(coord: Vector2i, terrain_def_id: int, color_index: int = 0) -
 	tile.blocks_light = bool(terrain_def.get("blocksLight", false))
 
 	ai_system.mark_world_dirty()
+	_walkable_edge_tiles_dirty = true
 	return get_tiles_with_neighbors([coord])
 
 
@@ -462,6 +475,7 @@ func delete_at_tile(coord: Vector2i) -> Array[Vector2i]:
 
 	var tile: World.Tile = world.get_tile(coord)
 	ai_system.mark_world_dirty()
+	_walkable_edge_tiles_dirty = true
 
 	# Clear overlay if present
 	if tile.overlay_terrain_type_id != -1:
