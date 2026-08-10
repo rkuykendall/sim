@@ -59,7 +59,8 @@ func test_direct_work() -> void:
 	var sim = builder.build()
 
 	var mine_entity_id := _get_building_by_def_id(sim, mine_id)
-	sim.entities.resources[mine_entity_id].current_amount = 10.0  # below 0.8 of max -> eligible for work
+	# below 0.8 of max -> eligible for work
+	sim.entities.resources[mine_entity_id].current_amount = 10.0
 	var pawn_id := sim.find_pawn_by_name("Miner")
 
 	sim.run_ticks(2300)  # WORK duration is AISystem.WORK_DURATION_TICKS (2000) + buffer
@@ -113,7 +114,7 @@ func test_direct_work_uses_custom_production_amount() -> void:
 		sim.entities.resources[mine_entity_id].current_amount,
 		15.0,
 		0.01,
-		"A custom productionAmount of 5.0 should add exactly 5 to the starting stock of 10, not the default 30"
+		"A custom productionAmount of 5.0 should add 5 to the starting stock of 10, not the default 30"
 	)
 
 
@@ -148,7 +149,8 @@ func test_haul_from_building() -> void:
 
 	var source_entity_id := _get_building_by_def_id(sim, source_id)
 	var dest_entity_id := _get_building_by_def_id(sim, dest_id)
-	sim.entities.resources[dest_entity_id].current_amount = 10.0  # below 0.8 of max -> eligible for work
+	# below 0.8 of max -> eligible for work
+	sim.entities.resources[dest_entity_id].current_amount = 10.0
 	var pawn_id := sim.find_pawn_by_name("Hauler")
 
 	var source_before: float = sim.entities.resources[source_entity_id].current_amount
@@ -404,7 +406,8 @@ func test_haul_from_building_no_source_falls_back() -> void:
 	var sim = builder.build()
 
 	var dest_entity_id := _get_building_by_def_id(sim, dest_id)
-	sim.entities.resources[dest_entity_id].current_amount = 10.0  # below 0.8 of max -> eligible for work
+	# below 0.8 of max -> eligible for work
+	sim.entities.resources[dest_entity_id].current_amount = 10.0
 	var pawn_id := sim.find_pawn_by_name("Hauler")
 	var action_comp = sim.entities.actions.get(pawn_id)
 
@@ -453,7 +456,7 @@ func test_haul_from_terrain_no_terrain_falls_back() -> void:
 
 	assert_true(
 		action_comp.current_action != null or not action_comp.action_queue.is_empty(),
-		"Pawn should fall back to wandering when no matching terrain exists, not be left with an empty queue"
+		"Pawn should fall back to wandering with no matching terrain, not be left with an empty queue"
 	)
 
 
@@ -498,7 +501,8 @@ func test_haul_from_building_no_source_spills_over() -> void:
 	sim.entities.resources[farm_entity_id].current_amount = 0.0  # equally eligible, and workable
 
 	var pawn_id := sim.find_pawn_by_name("Worker")
-	sim.entities.attachments[market_entity_id].need_attachments[purpose_id] = {pawn_id: 10}  # max attachment
+	# max attachment
+	sim.entities.attachments[market_entity_id].need_attachments[purpose_id] = {pawn_id: 10}
 
 	var action_comp = sim.entities.actions.get(pawn_id)
 

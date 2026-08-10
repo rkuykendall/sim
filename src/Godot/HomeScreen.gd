@@ -5,10 +5,10 @@ signal new_game_requested
 signal load_game_requested(slot_name: String)
 signal quit_requested
 
-@export var grid_container_path: NodePath = ""
-
 const THUMBNAIL_DISPLAY_WIDTH: int = 450
 const THUMBNAIL_DISPLAY_HEIGHT: int = 300
+
+@export var grid_container_path: NodePath = ""
 
 var _grid_container: HFlowContainer = null
 var _content: ContentRegistry = null

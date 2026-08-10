@@ -60,7 +60,7 @@ func _decide_next_action(
 	action_comp: Components.ActionComponent,
 	need_comp: Components.NeedsComponent
 ) -> void:
-	var urgent_needs := _calculate_urgent_needs(sim, need_comp)
+	var urgent_needs := _calculate_urgent_needs(need_comp)
 	var purpose_need_id: int = sim.content.get_need_id("Purpose")
 
 	for pair in urgent_needs:
@@ -92,7 +92,7 @@ func _try_queue_work(
 # --- Need urgency ----------------------------------------------------------
 
 
-func _calculate_urgent_needs(sim: Simulation, need_comp: Components.NeedsComponent) -> Array:
+func _calculate_urgent_needs(need_comp: Components.NeedsComponent) -> Array:
 	var urgent: Array = []
 	for need_id in need_comp.needs.keys():
 		var value: float = need_comp.needs[need_id]

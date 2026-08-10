@@ -41,7 +41,7 @@ func initialize_with_sprite(
 	_set_atlas_region(variant_row, sprite_column)
 
 
-func set_building_info(name: String, in_use: bool, color_index: int, palette: Array) -> void:
+func set_building_info(color_index: int, palette: Array) -> void:
 	if color_index >= 0 and color_index < palette.size():
 		_sprite.modulate = palette[color_index]
 	else:

@@ -24,6 +24,12 @@ const AXE_SWING_ANGLE: float = 0.785398  # 45 degrees, each direction (90 total 
 const AXE_DOWNSWING_DURATION: float = 0.25
 const AXE_UPSWING_DURATION: float = 0.5
 
+## Shows an overhead icon for what the pawn's inventory currently holds. Only resource types
+## listed here have an icon — every other haulSourceResourceType in buildings.json (add one as
+## its sprite is ready) is silently hidden rather than looked up, so an unmapped type never
+## spams a missing-texture warning every frame.
+const CARRY_ICON_RESOURCE_TYPES: Array[String] = ["wood", "food"]
+
 var _sprite: AnimatedSprite2D
 var _forced_sheet_key: String = ""
 var _house_texture: Texture2D = null
@@ -264,13 +270,6 @@ func set_current_animation(animation: Definitions.AnimationType) -> void:
 
 	if _sprite.animation != anim_name:
 		_sprite.play(anim_name)
-
-
-## Shows an overhead icon for what the pawn's inventory currently holds. Only resource types
-## listed here have an icon — every other haulSourceResourceType in buildings.json (add one as
-## its sprite is ready) is silently hidden rather than looked up, so an unmapped type never
-## spams a missing-texture warning every frame.
-const CARRY_ICON_RESOURCE_TYPES: Array[String] = ["wood", "food"]
 
 
 func set_carrying(resource_type: String) -> void:

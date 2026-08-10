@@ -15,7 +15,8 @@ const ROSTER_DATA: Array = [
 ]
 
 var current_theme: SimTheme = null
-var queued_theme: SimTheme = null  # not set internally anymore; external callers may still force a pick
+# not set internally anymore; external callers may still force a pick
+var queued_theme: SimTheme = null
 
 var _current_theme_start_tick: int = 0
 var _available_themes: Array[SimTheme] = []

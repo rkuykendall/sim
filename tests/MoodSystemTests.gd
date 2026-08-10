@@ -53,7 +53,7 @@ func test_need_low_applies_penalty() -> void:
 		sim.get_mood(pawn_id),
 		MoodSystem.LOW_PENALTY,
 		0.01,
-		"A need below the shared low threshold (but not critical) should apply exactly the shared low penalty"
+		"A need below the shared low threshold (but not critical) should apply the shared low penalty"
 	)
 
 
@@ -87,12 +87,12 @@ func test_need_at_low_threshold_contributes_zero() -> void:
 		sim.get_mood(pawn_id),
 		0.0,
 		0.01,
-		"A need sitting exactly at the shared low threshold should contribute neither a penalty nor a bonus"
+		"A need sitting exactly at the low threshold should contribute neither a penalty nor a bonus"
 	)
 
 
 # The whole point of bringing threshold/penalty shaping back: a handful of well-met needs
-# shouldn't be able to casually cancel out one need in real crisis (see MultipleNeeds_MoodIsAverageAcrossThem).
+# shouldn't casually cancel out one need in real crisis (see MultipleNeeds_MoodIsAverageAcrossThem).
 func test_penalty_ceiling_exceeds_bonus_ceiling() -> void:
 	assert_lt(
 		MoodSystem.CRITICAL_PENALTY,

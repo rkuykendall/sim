@@ -1,6 +1,6 @@
 #!/bin/bash
-# Auto-formats staged GDScript files with gdformat (gdtoolkit) before commit.
-# Requires gdformat on PATH: pipx install "gdtoolkit==4.*"
+# Auto-formats staged GDScript files with gdformat, then blocks the commit if gdlint still
+# finds problems (gdtoolkit). Requires both on PATH: pipx install "gdtoolkit==4.*"
 
 staged_gd_files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.gd$')
 
@@ -8,12 +8,18 @@ if [ -z "$staged_gd_files" ]; then
     exit 0
 fi
 
-if ! command -v gdformat &> /dev/null; then
-    echo "warning: gdformat not found on PATH, skipping GDScript formatting (install: pipx install \"gdtoolkit==4.*\")"
+if ! command -v gdformat &> /dev/null || ! command -v gdlint &> /dev/null; then
+    echo "warning: gdformat/gdlint not found on PATH, skipping GDScript checks (install: pipx install \"gdtoolkit==4.*\")"
     exit 0
 fi
 
 echo "$staged_gd_files" | xargs gdformat
 echo "$staged_gd_files" | xargs git add
+
+if ! echo "$staged_gd_files" | xargs gdlint; then
+    echo ""
+    echo "gdlint found problems in staged files (see above). Fix them, or adjust .gdlintrc, then commit again."
+    exit 1
+fi
 
 exit 0

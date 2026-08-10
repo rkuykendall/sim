@@ -7,6 +7,12 @@ class_name SimTheme
 # falls back to the base's default here — no need to touch every subclass just to add one new
 # base method.
 
+## "Cooldown" counter driving ThemeSystem's weighted rotation (see _pick_random_theme) — not a
+## traditional priority. Starts at 0 (immediately eligible); jumps up by get_priority_gain()
+## each time this theme is picked, then decays by 1 every subsequent pick (floored at 0) until
+## it's back down to the lowest value again. Lower = more overdue = more likely to be picked.
+var priority: int = 0
+
 
 ## Display name for debugging and UI.
 func get_name() -> String:
@@ -38,13 +44,6 @@ func get_weather_tint() -> float:
 ## theme would just add a new profile and return its key here).
 func get_weather_effect_key() -> String:
 	return ""
-
-
-## "Cooldown" counter driving ThemeSystem's weighted rotation (see _pick_random_theme) — not a
-## traditional priority. Starts at 0 (immediately eligible); jumps up by get_priority_gain()
-## each time this theme is picked, then decays by 1 every subsequent pick (floored at 0) until
-## it's back down to the lowest value again. Lower = more overdue = more likely to be picked.
-var priority: int = 0
 
 
 ## How much priority (above) this theme gains each time it's picked — effectively how many

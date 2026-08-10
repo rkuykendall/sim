@@ -324,7 +324,7 @@ func test_serialize_drops_stale_resource() -> void:
 
 	assert_false(
 		building_entry.has("resource"),
-		"A stale resource component should not be persisted once content no longer declares a resourceType for this building"
+		"A stale resource component shouldn't persist once content no longer declares a resourceType here"
 	)
 
 
@@ -465,7 +465,7 @@ func test_roundtrip_current_theme() -> void:
 	assert_eq(
 		restored.entities.buildings[home_building_id].skin_override,
 		"character_7_v2",
-		"The home's skin_override (already restored as plain building data) should still make sense under the same restored theme"
+		"The home's skin_override (restored as plain building data) should match the restored theme"
 	)
 
 

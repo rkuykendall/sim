@@ -98,7 +98,7 @@ func _execute_use_building(
 	var obj_def: Dictionary = sim.content.buildings[obj_comp.building_def_id]
 
 	if not _is_in_use_area(pawn_pos.coord, obj_pos.coord, obj_def):
-		var use_target := _find_valid_use_area(sim, obj_pos.coord, pawn_pos.coord, obj_def, pawn_id)
+		var use_target := _find_valid_use_area(sim, obj_pos.coord, pawn_pos.coord, obj_def)
 		if use_target == Vector2i(-1, -1):
 			action_comp.current_action = null
 			action_comp.action_queue.clear()
@@ -203,7 +203,7 @@ func _execute_work(sim: Simulation, pawn_id: int, action_comp: Components.Action
 	var obj_def: Dictionary = sim.content.buildings[obj_comp.building_def_id]
 
 	if not _is_in_use_area(pawn_pos.coord, obj_pos.coord, obj_def):
-		var use_target := _find_valid_use_area(sim, obj_pos.coord, pawn_pos.coord, obj_def, pawn_id)
+		var use_target := _find_valid_use_area(sim, obj_pos.coord, pawn_pos.coord, obj_def)
 		if use_target == Vector2i(-1, -1):
 			action_comp.current_action = null
 			action_comp.action_queue.clear()
@@ -298,9 +298,7 @@ func _execute_pick_up(
 		var building_def: Dictionary = sim.content.buildings[building_comp.building_def_id]
 
 		if not _is_in_use_area(pawn_pos.coord, obj_pos.coord, building_def):
-			var use_target := _find_valid_use_area(
-				sim, obj_pos.coord, pawn_pos.coord, building_def, pawn_id
-			)
+			var use_target := _find_valid_use_area(sim, obj_pos.coord, pawn_pos.coord, building_def)
 			if use_target == Vector2i(-1, -1):
 				action_comp.current_action = null
 				action_comp.action_queue.clear()
@@ -386,9 +384,7 @@ func _execute_drop_off(
 	var building_def: Dictionary = sim.content.buildings[building_comp.building_def_id]
 
 	if not _is_in_use_area(pawn_pos.coord, obj_pos.coord, building_def):
-		var use_target := _find_valid_use_area(
-			sim, obj_pos.coord, pawn_pos.coord, building_def, pawn_id
-		)
+		var use_target := _find_valid_use_area(sim, obj_pos.coord, pawn_pos.coord, building_def)
 		if use_target == Vector2i(-1, -1):
 			action_comp.current_action = null
 			action_comp.action_queue.clear()
@@ -472,11 +468,7 @@ func _is_in_use_area(pawn_coord: Vector2i, obj_coord: Vector2i, building_def: Di
 
 
 func _find_valid_use_area(
-	sim: Simulation,
-	obj_coord: Vector2i,
-	from_coord: Vector2i,
-	building_def: Dictionary,
-	exclude_pawn: int = -1
+	sim: Simulation, obj_coord: Vector2i, from_coord: Vector2i, building_def: Dictionary
 ) -> Vector2i:
 	var use_areas: Array = building_def.get("useAreas", [])
 	if use_areas.is_empty():

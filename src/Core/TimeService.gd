@@ -9,11 +9,6 @@ const DEFAULT_START_HOUR: int = 8
 
 var tick: int = 0
 
-
-func _init(start_hour: int = DEFAULT_START_HOUR) -> void:
-	tick = start_hour * TICKS_PER_HOUR
-
-
 var total_minutes: int:
 	get:
 		return tick / TICKS_PER_MINUTE
@@ -33,6 +28,10 @@ var day: int:
 var time_string: String:
 	get:
 		return "Day %d, %02d:%02d" % [day, hour, minute]
+
+
+func _init(start_hour: int = DEFAULT_START_HOUR) -> void:
+	tick = start_hour * TICKS_PER_HOUR
 
 
 func advance_tick() -> void:

@@ -17,8 +17,10 @@ func run() -> void:
 func test_low_hunger_uses_market() -> void:
 	var builder := _Builder.new()
 	var hunger_id := builder.define_need("Hunger", 0.02)
+	# args: satisfies_need_id, satisfaction_amount, interaction_duration, grants_buff,
+	# buff_duration, use_areas (pawn must be left of market)
 	var market_id := builder.define_building(
-		"Market", hunger_id, 50.0, 20, 15.0, 2400, [Vector2i(-1, 0)]  # satisfies_need_id  # satisfaction_amount  # interaction_duration  # grants_buff  # buff_duration  # use_areas: pawn must be left of market
+		"Market", hunger_id, 50.0, 20, 15.0, 2400, [Vector2i(-1, 0)]
 	)
 	builder.add_building(market_id, 4, 0)
 	builder.add_pawn("TestPawn", 0, 0, {hunger_id: 0.0})

@@ -1,6 +1,22 @@
 class_name GameRoot
 extends Node2D
 
+enum _SimSpeed { PAUSED = 0, NORMAL = 1, FAST_4X = 4, FAST_16X = 16, FAST_64X = 64 }
+enum _AppScreen { HOME, GAME }
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+const MAX_TICKS_PER_FRAME: int = 100
+const AUTOSAVE_INTERVAL: float = 60.0
+const PAWN_HITBOX_SIZE: float = 24.0
+const BUILDING_HITBOX_SIZE: float = 28.0
+# Fraction of a shadow theme's own playback spent glowing warm at each end (its "dawn"/"dusk").
+const THEME_SUNRISE_LEN: float = 0.15
+# Fraction of a no-shadow theme's (e.g. Gymnopédie) playback spent easing in/out of full dim,
+# rather than snapping abruptly when it starts/ends.
+const THEME_NIGHT_FADE: float = 0.05
+
 # ---------------------------------------------------------------------------
 # Exports
 # ---------------------------------------------------------------------------
@@ -19,17 +35,6 @@ extends Node2D
 @export var sound_manager_path: NodePath = ""
 @export var home_screen_path: NodePath = ""
 @export var loading_screen_path: NodePath = ""
-
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-const MAX_TICKS_PER_FRAME: int = 100
-const AUTOSAVE_INTERVAL: float = 60.0
-const PAWN_HITBOX_SIZE: float = 24.0
-const BUILDING_HITBOX_SIZE: float = 28.0
-
-enum _SimSpeed { PAUSED = 0, NORMAL = 1, FAST_4X = 4, FAST_16X = 16, FAST_64X = 64 }
-enum _AppScreen { HOME, GAME }
 
 # ---------------------------------------------------------------------------
 # State
@@ -450,7 +455,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			if event.pressed:
 				_handle_left_press(tile_coord)
 			else:
-				_handle_left_release(tile_coord)
+				_handle_left_release()
 			return
 
 	if event is InputEventMouseMotion:
@@ -536,7 +541,7 @@ func _handle_left_press(tile_coord: Vector2i) -> void:
 		_debug_panel.clear_selection()
 
 
-func _handle_left_release(tile_coord: Vector2i) -> void:
+func _handle_left_release() -> void:
 	_is_painting_terrain = false
 	_last_painted_tile = Vector2i(-1, -1)
 
@@ -1170,12 +1175,7 @@ func _sync_buildings(snapshot: Dictionary) -> void:
 			)
 		)
 		if node is BuildingView:
-			node.set_building_info(
-				obj.get("name", ""),
-				obj.get("in_use", false),
-				obj.get("color_index", 0),
-				_current_palette
-			)
+			node.set_building_info(obj.get("color_index", 0), _current_palette)
 
 	_ids_to_remove.clear()
 	for id in _building_nodes.keys():
@@ -1251,13 +1251,6 @@ func _update_speed_display() -> void:
 		_:
 			speed_text = "1x"
 	_debug_panel.update_speed(speed_text)
-
-
-# Fraction of a shadow theme's own playback spent glowing warm at each end (its "dawn"/"dusk").
-const THEME_SUNRISE_LEN: float = 0.15
-# Fraction of a no-shadow theme's (e.g. Gymnopédie) playback spent easing in/out of full dim,
-# rather than snapping abruptly when it starts/ends.
-const THEME_NIGHT_FADE: float = 0.05
 
 
 ## Shadows and screen tint are driven by the CURRENT THEME's own playback progress (0 = just

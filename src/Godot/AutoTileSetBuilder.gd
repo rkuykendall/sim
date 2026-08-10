@@ -26,15 +26,12 @@ static func create_auto_tile_set(
 
 	# Configure all 47 tile patterns
 	for pattern in AutoTileConfig.STANDARD_47_TILE_PATTERNS:
-		_configure_tile(
-			tile_set, atlas_source, pattern[0], pattern[1], 0, 0, pattern[2], blocks_light
-		)
+		_configure_tile(atlas_source, pattern[0], pattern[1], 0, 0, pattern[2], blocks_light)
 
 	return tile_set
 
 
 static func _configure_tile(
-	tile_set: TileSet,
 	atlas_source: TileSetAtlasSource,
 	atlas_x: int,
 	atlas_y: int,

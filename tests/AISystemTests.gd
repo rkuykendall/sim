@@ -152,7 +152,7 @@ func test_trapped_pawn_does_not_redecide_every_tick() -> void:
 	assert_eq(
 		action_comp.action_start_tick,
 		start_tick_ref,
-		"A fresh decision was made on a later tick — the fallback should persist instead of retrying every tick"
+		"A fresh decision was made too soon — the fallback should persist instead of retrying every tick"
 	)
 	assert_true(
 		is_same(action_comp.current_action, action_ref),
@@ -194,7 +194,7 @@ func test_consumer_attachment_does_not_bias_work_scoring() -> void:
 	assert_eq(
 		candidates[0],
 		near_entity_id,
-		"Nearer building should win work scoring; Social attachment to the farther one must not leak into Purpose scoring"
+		"Nearer building should win scoring; Social attachment elsewhere must not leak into Purpose"
 	)
 
 
@@ -239,7 +239,7 @@ func test_work_scoring_sums_other_pawns_attachment() -> void:
 	assert_eq(
 		candidates[0],
 		quiet_entity_id,
-		"A new worker should prefer the building with fewer total attached workers, not just a lower single strongest attachment"
+		"A new worker should prefer fewer total attached workers, not a lower single strongest attachment"
 	)
 
 
@@ -368,7 +368,9 @@ func test_wander_expression_shows_unsatisfiable_need() -> void:
 	var sim := builder.build()
 
 	var pawn_id := sim.find_pawn_by_name("Grimy")
-	sim.entities.moods[pawn_id].mood = -50.0  # deterministic "unhappy" — _wander_randomly is called directly below, without a sim.tick() that would let MoodSystem recompute this from needs
+	# deterministic "unhappy" — _wander_randomly is called directly below, without a sim.tick()
+	# that would let MoodSystem recompute this from needs
+	sim.entities.moods[pawn_id].mood = -50.0
 	var action_comp = sim.entities.actions.get(pawn_id)
 
 	var sit_action = _find_sit_action_by_wandering(sim, pawn_id, action_comp)

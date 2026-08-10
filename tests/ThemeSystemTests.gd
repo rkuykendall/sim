@@ -309,7 +309,7 @@ func test_priority_lifecycle() -> void:
 			assert_eq(
 				t.priority,
 				0,
-				"Non-picked themes should be untouched by someone else's pick (still at the floor they started at)"
+				"Non-picked themes should be untouched by someone else's pick (still at their starting floor)"
 			)
 
 	var priority_after_first_pick: int = picked_first.priority
@@ -416,7 +416,7 @@ func test_first_pick_is_always_common_tier() -> void:
 	assert_lt(
 		float(picked.get_priority_gain()),
 		10.0,
-		"The first pick should always come from the default tier (gain 6), never a rare theme (gain 10-20)"
+		"The first pick should come from the default tier (gain 6), never a rare theme (gain 10-20)"
 	)
 
 

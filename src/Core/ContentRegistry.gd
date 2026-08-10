@@ -4,8 +4,6 @@ class_name ContentRegistry
 #   name (String) -> id (int)
 #   id (int)      -> def (Dictionary)
 
-var _next_id: int = 1
-
 var palettes: Dictionary = {}  # name -> { name, colors: Array }
 var palette_ids: Dictionary = {}  # name -> id  /  id -> name
 
@@ -17,6 +15,8 @@ var terrain_ids: Dictionary = {}  # name -> id
 
 var buildings: Dictionary = {}  # id -> BuildingDef dict
 var building_ids: Dictionary = {}  # name -> id
+
+var _next_id: int = 1
 
 
 func _alloc_id() -> int:

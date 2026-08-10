@@ -225,5 +225,5 @@ func test_walkable_edge_tile_cache_invalidates_after_building() -> void:
 		assert_eq(
 			pos.coord,
 			Vector2i(1, 1),
-			"Should always land on the sole remaining walkable edge tile — a stale cache would still offer the 3 now-blocked ones"
+			"Should land on the sole walkable edge tile — a stale cache would still offer the 3 blocked ones"
 		)

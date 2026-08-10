@@ -1,7 +1,5 @@
 class_name EntityManager
 
-var _next_id: int = 1
-
 # Component tables — keyed by entity id (int)
 var positions: Dictionary[int, Components.PositionComponent] = {}
 var pawns: Dictionary[int, Components.PawnComponent] = {}
@@ -13,16 +11,17 @@ var resources: Dictionary[int, Components.ResourceComponent] = {}
 var attachments: Dictionary[int, Components.AttachmentComponent] = {}
 var inventory: Dictionary[int, Components.InventoryComponent] = {}
 
+var next_id: int:
+	get:
+		return _next_id
+
+var _next_id: int = 1
+
 
 func _create() -> int:
 	var id := _next_id
 	_next_id += 1
 	return id
-
-
-var next_id: int:
-	get:
-		return _next_id
 
 
 func set_next_id(id: int) -> void:
