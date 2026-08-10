@@ -41,6 +41,14 @@ func _init(disabled: bool = false) -> void:
 	_available_themes.append(SimTheme.ForgottenBiomesTheme.new())
 	_available_themes.append(SimTheme.FloatingDreamTheme.new())
 
+	# Seed every theme's priority to its own gain rather than leaving it at the SimTheme default
+	# of 0 — otherwise every theme, rare or common, ties for lowest on the very first pick (both
+	# on a new game and after every load, since priorities aren't persisted), making rare themes
+	# just as likely to open a game as common ones instead of needing to "earn" their rarity over
+	# time like they do for every pick after the first.
+	for t in _available_themes:
+		t.priority = t.get_priority_gain()
+
 
 func tick(sim: Simulation) -> void:
 	if _disabled:

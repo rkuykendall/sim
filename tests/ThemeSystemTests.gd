@@ -54,6 +54,8 @@ func run() -> void:
 	run_test("Priority_NeverGoesNegative", test_priority_never_goes_negative)
 	run_test("Priority_PickAlwaysComesFromTheLowestPrioritySet", test_pick_random_theme_selects_lowest_priority)
 	run_test("Priority_CommonThemePickedMoreOftenThanRareTheme", test_common_theme_picked_more_often_than_rare)
+	run_test("Priority_SeededToOwnGain_OnConstruction", test_priority_seeded_to_gain_on_construction)
+	run_test("Priority_FirstPickIsAlwaysTheSoleCommonTierTheme", test_first_pick_is_always_common_tier)
 
 
 # Every music file in music/tracks/ and music/classics/ should have exactly one theme, and
@@ -253,6 +255,38 @@ func test_common_theme_picked_more_often_than_rare() -> void:
 	assert_gt(
 		float(gymnopedie_count), float(strange_worlds_count),
 		"Common theme (%d picks) should be picked more often than rare theme (%d picks) over many rounds" % [gymnopedie_count, strange_worlds_count]
+	)
+
+
+# A freshly constructed ThemeSystem (new game, or every load — priorities aren't persisted) should
+# seed each theme's priority to its own gain rather than the SimTheme default of 0. Otherwise every
+# theme ties for lowest on the very first pick regardless of rarity, so a rare theme could open a
+# game just as easily as a common one.
+func test_priority_seeded_to_gain_on_construction() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	var sim := builder.build()
+
+	for t in sim.theme_system._available_themes:
+		assert_eq(
+			t.priority, t.get_priority_gain(),
+			"'%s' should start at its own gain (%d), not 0" % [t.get_name(), t.get_priority_gain()]
+		)
+
+
+# Direct consequence of the seeding above: with common=3, default=6, rare=10 all decaying by 1
+# before the first pick, the sole common-tier theme (Gymnopédie, gain 3) is deterministically the
+# only one at the new minimum (2) — it should always win the very first pick.
+func test_first_pick_is_always_common_tier() -> void:
+	var builder := _Builder.new().with_themes_enabled()
+	var sim := builder.build()
+
+	var gymnopedie = _find_theme_by_name(sim, "Gymnopédie No. 1")
+	assert_not_null(gymnopedie, "Roster should contain Gymnopédie No. 1")
+
+	var picked = sim.theme_system._pick_random_theme()
+	assert_eq(
+		picked, gymnopedie,
+		"The sole common-tier theme should deterministically win the very first pick"
 	)
 
 
