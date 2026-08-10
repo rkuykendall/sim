@@ -18,7 +18,10 @@ const CHAR_ANIMS: Dictionary = {
 # not the (smaller, unscaled) bubble convention.
 const OVERHEAD_ICON_OFFSET: Vector2 = Vector2(0, -40)
 const AXE_SWING_ANGLE: float = 0.785398  # 45 degrees, each direction (90 total sweep)
-const AXE_SWING_DURATION: float = 0.5    # seconds for the downswing itself (or upswing)
+# The strike (downswing) is a sharp, fast motion; the recovery (upswing) is slower and more
+# deliberate — downswing is twice as fast as upswing, not a symmetric back-and-forth.
+const AXE_DOWNSWING_DURATION: float = 0.25
+const AXE_UPSWING_DURATION: float = 0.5
 
 var _sprite: AnimatedSprite2D
 var _forced_sheet_key: String = ""
@@ -115,21 +118,22 @@ func _process(delta: float) -> void:
 		_bubble_time += delta * _bubble_float_speed
 		_bubble_node.position = Vector2(0, -40.0 + sin(_bubble_time) * _bubble_float_amount)
 
-	# Axe swing — a full back-and-forth: eased downswing from raised to struck, then an
-	# equally-animated upswing back to raised. The character's own body pose follows which
-	# leg we're on — "exertion" for the strike, "idle" for the raise. flip_h mirrors the axe's
-	# texture but NOT the screen-space direction its rotation turns — the same rotation sign
-	# reads as "swinging forward" for a right-facing pawn and "swinging backward" for a
-	# mirrored, left-facing one, so the sweep direction has to invert with facing too.
+	# Axe swing — a fast downswing (the strike) followed by a slower upswing (the recovery),
+	# not a symmetric back-and-forth; see AXE_DOWNSWING_DURATION/AXE_UPSWING_DURATION. The
+	# character's own body pose follows which leg we're on — "exertion" for the strike, "idle"
+	# for the raise. flip_h mirrors the axe's texture but NOT the screen-space direction its
+	# rotation turns — the same rotation sign reads as "swinging forward" for a right-facing
+	# pawn and "swinging backward" for a mirrored, left-facing one, so the sweep direction has
+	# to invert with facing too.
 	if _axe_sprite.visible:
 		_axe_sprite.flip_h = _sprite.flip_h  # face the same way as the pawn's body
 		var facing_sign: float = -1.0 if _sprite.flip_h else 1.0
-		_axe_swing_timer = fmod(_axe_swing_timer + delta, AXE_SWING_DURATION * 2.0)
-		var is_downswing: bool = _axe_swing_timer < AXE_SWING_DURATION
+		_axe_swing_timer = fmod(_axe_swing_timer + delta, AXE_DOWNSWING_DURATION + AXE_UPSWING_DURATION)
+		var is_downswing: bool = _axe_swing_timer < AXE_DOWNSWING_DURATION
 		if is_downswing:
-			_axe_sprite.rotation = facing_sign * lerpf(-AXE_SWING_ANGLE, AXE_SWING_ANGLE, _axe_swing_timer / AXE_SWING_DURATION)
+			_axe_sprite.rotation = facing_sign * lerpf(-AXE_SWING_ANGLE, AXE_SWING_ANGLE, _axe_swing_timer / AXE_DOWNSWING_DURATION)
 		else:
-			var up_t: float = (_axe_swing_timer - AXE_SWING_DURATION) / AXE_SWING_DURATION
+			var up_t: float = (_axe_swing_timer - AXE_DOWNSWING_DURATION) / AXE_UPSWING_DURATION
 			_axe_sprite.rotation = facing_sign * lerpf(AXE_SWING_ANGLE, -AXE_SWING_ANGLE, up_t)
 
 		var body_anim: String = "exertion" if is_downswing else "idle"
