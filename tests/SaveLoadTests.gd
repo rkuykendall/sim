@@ -21,6 +21,9 @@ func run() -> void:
 	run_test("SaveData_DropsStaleResourceComponent_WhenContentNoLongerDeclaresOne", test_serialize_drops_stale_resource)
 	run_test("RoundTrip_VisitorPawn_PreservesMembershipAndForcedSheetKey", test_roundtrip_visitor_pawn)
 	run_test("RoundTrip_BuildingSkinOverride_Preserved", test_roundtrip_building_skin_override)
+	run_test("RoundTrip_CurrentTheme_Preserved_WithoutReRunningOnStart", test_roundtrip_current_theme)
+	run_test("RoundTrip_CurrentTheme_MissingName_FallsBackToNull", test_roundtrip_missing_theme_name_falls_back)
+	run_test("RoundTrip_CurrentThemeStartTick_Preserved", test_roundtrip_current_theme_start_tick)
 
 
 func test_serialize_empty() -> void:
@@ -379,3 +382,74 @@ func test_roundtrip_building_skin_override() -> void:
 	var restored_bc = restored.entities.buildings.get(home_building_id)
 	assert_not_null(restored_bc, "Building should be restored")
 	assert_eq(restored_bc.skin_override, "character_7_v2", "skin_override should survive the round-trip")
+
+
+# Without persisting current_theme, a save made mid-theme (e.g. Strange Worlds, with visitors
+# and a home skin_override already correctly restored as plain pawn/building data above) would
+# reload with a random new theme instead — orphaning visitors/overrides that no longer belong
+# to whatever theme is now "current" (the literal bug report: aliens wandering during a save
+# that reloaded into the night theme). Also confirms on_start does NOT get re-run on restore —
+# it would double-spawn visitors, since they're already present as restored pawn data.
+func test_roundtrip_current_theme() -> void:
+	var builder = _Builder.new().with_themes_enabled()
+	builder.define_terrain("flat", true, "flat", false, true)
+	builder.with_world_bounds(10, 10)
+	var home_id := builder.define_building(
+		"TestHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 4, true
+	)
+	builder.add_building(home_id, 5, 5)
+	var original = builder.build()
+
+	var theme = SimTheme.StrangeWorldsTheme.new()
+	original.theme_system._start_theme(original, theme)
+	var original_visitor_count: int = original.entities.all_pawns().size()
+	assert_gt(float(original_visitor_count), 0.0, "Setup should have spawned Strange Worlds' visitors")
+
+	var data = _SaveService.to_dict(original, "test-save")
+	var restored = _SaveService.from_dict(data, original.content)
+
+	assert_not_null(restored.theme_system.current_theme, "current_theme should be restored, not left null")
+	assert_eq(restored.theme_system.current_theme.get_name(), "Strange Worlds", "The exact same theme should still be current after loading")
+	assert_eq(
+		restored.entities.all_pawns().size(), original_visitor_count,
+		"Visitor count should match exactly — restore must not re-run on_start and double-spawn"
+	)
+
+	var home_building_id = restored.entities.all_buildings()[0]
+	assert_eq(
+		restored.entities.buildings[home_building_id].skin_override, "character_7_v2",
+		"The home's skin_override (already restored as plain building data) should still make sense under the same restored theme"
+	)
+
+
+# Older saves (or any save with an empty/unrecognized theme name) should fall back gracefully
+# to current_theme == null — the exact same starting state as a brand-new game, which already
+# picks a fresh theme on the next tick.
+func test_roundtrip_missing_theme_name_falls_back() -> void:
+	var builder = _Builder.new().with_themes_enabled()
+	builder.define_terrain("flat", true, "flat", false, true)
+	var original = builder.build()
+
+	var data = _SaveService.to_dict(original, "test-save")
+	data.erase("current_theme_name")
+	var restored = _SaveService.from_dict(data, original.content)
+
+	assert_true(restored.theme_system.current_theme == null, "Missing theme name should fall back to null, same as a fresh game")
+
+
+func test_roundtrip_current_theme_start_tick() -> void:
+	var builder = _Builder.new().with_themes_enabled()
+	builder.define_terrain("flat", true, "flat", false, true)
+	var original = builder.build()
+
+	var theme = SimTheme.GymnopedieTheme.new()
+	original.run_ticks(37)
+	original.theme_system._start_theme(original, theme)
+
+	var data = _SaveService.to_dict(original, "test-save")
+	var restored = _SaveService.from_dict(data, original.content)
+
+	assert_eq(
+		restored.theme_system.get_current_theme_start_tick(), original.theme_system.get_current_theme_start_tick(),
+		"current_theme_start_tick should survive the round-trip exactly"
+	)

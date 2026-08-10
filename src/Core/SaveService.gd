@@ -78,6 +78,8 @@ static func to_dict(sim: Simulation, save_name: String = "") -> Dictionary:
 		"next_entity_id":     sim.entities.next_id,
 		"world":              _serialize_world(sim.world),
 		"entities":           _serialize_entities(sim),
+		"current_theme_name": sim.theme_system.current_theme.get_name() if sim.theme_system.current_theme != null else "",
+		"current_theme_start_tick": sim.theme_system.get_current_theme_start_tick(),
 	}
 
 
@@ -248,6 +250,15 @@ static func from_dict(data: Dictionary, content: ContentRegistry) -> Simulation:
 	sim.entities.set_next_id(int(data.get("next_entity_id", 1)))
 	sim.time.set_tick(int(data.get("current_tick", 0)))
 	sim.selected_palette_id = int(data.get("selected_palette_id", -1))
+
+	# Additive/optional — older saves without this just fall through to picking a fresh theme
+	# on the next tick, same as any new game. Without this, a theme's visitors/skin overrides
+	# (already correctly restored above as plain pawn/building data) would be orphaned under
+	# whatever unrelated theme gets randomly picked next.
+	sim.theme_system.restore_current_theme(
+		String(data.get("current_theme_name", "")),
+		int(data.get("current_theme_start_tick", sim.time.tick))
+	)
 
 	var palette_hexes: Array = data.get("palette", [])
 	if not palette_hexes.is_empty():

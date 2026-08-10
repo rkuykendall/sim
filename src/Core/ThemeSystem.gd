@@ -66,6 +66,27 @@ func on_music_finished(sim: Simulation) -> void:
 	_transition_to_next(sim)
 
 
+## Restores current_theme by name (see SaveService) — deliberately bypasses on_start/on_end:
+## a save already correctly persists everything a theme's on_start would otherwise (re-)create
+## (visitor pawns, home skin_override), so re-running it would double-spawn/re-touch state that's
+## already right. No-op (current_theme stays null, a fresh theme gets picked on the next tick,
+## same as any other new game) if theme_name doesn't match anything in the current roster — e.g.
+## an older save from before a theme was added/renamed.
+func restore_current_theme(theme_name: String, start_tick: int) -> void:
+	if theme_name.is_empty():
+		return
+	for t in _available_themes:
+		if t.get_name() == theme_name:
+			current_theme = t
+			_current_theme_start_tick = start_tick
+			return
+
+
+## See restore_current_theme — the read-side counterpart, for SaveService.
+func get_current_theme_start_tick() -> int:
+	return _current_theme_start_tick
+
+
 # --- Private ---------------------------------------------------------------
 
 ## Weighted rotation via a "cooldown" priority (see SimTheme.priority/get_priority_gain):
