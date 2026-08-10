@@ -21,6 +21,11 @@ const HARVEST_DURATION_TICKS: int = 750
 const WANDER_HOME_VISIT_CHANCE: float = 0.06
 const WANDER_HOME_VISIT_DURATION_TICKS: int = 40
 
+# Chance, per wander decision, that the pawn sits down for a long, deliberate observe/emote
+# moment about their best/worst need (see _decide_need_expression) instead of a brief plain
+# idle — roughly every few wander cycles on average, not every single one.
+const SIT_AND_EMOTE_CHANCE: float = 0.3
+
 # Cached per-tile diversity scores (see _compute_diversity_map). Recomputing this over the
 # full world grid is expensive, so it's cached here and only rebuilt when the world's terrain
 # actually changes — callers must invoke mark_world_dirty() after painting/clearing tiles.
@@ -315,22 +320,30 @@ func _wander_randomly(sim: Simulation, pawn_id: int, action_comp: Components.Act
 	walk.display_name = "Wandering"
 	action_comp.action_queue.push_back(walk)
 
-	# Queue idle with optional expression bubble
-	var base_idle: int = randi_range(20, 40)
-	var diversity_bonus: int = selected["diversity"] * 3
-	var idle_duration: int = mini(50, base_idle + diversity_bonus)
-
-	var expr_result: Array = _decide_expression(sim, pawn_id)
-
 	var idle := Definitions.ActionDef.new()
 	idle.type = Definitions.ActionType.IDLE
-	idle.animation = Definitions.AnimationType.IDLE
-	idle.duration_ticks = idle_duration
-	idle.display_name = "Idle"
-	if expr_result[0] != -1:
-		idle.has_expression = true
-		idle.expression = expr_result[0] as Definitions.ExpressionType
-		idle.expression_icon_def_id = expr_result[1]
+
+	if randf() < SIT_AND_EMOTE_CHANCE:
+		# Long, deliberate sit-and-observe with an expression bubble about the pawn's best/worst
+		# need — this is the one moment a need gets communicated regardless of whether anything
+		# can currently be done about it (see _decide_need_expression).
+		var base_sit: int = randi_range(1000, 2000)
+		var diversity_bonus: int = selected["diversity"] * 150
+		idle.animation = Definitions.AnimationType.SIT
+		idle.duration_ticks = mini(2500, base_sit + diversity_bonus)
+		idle.display_name = "Sitting"
+		var expr_result: Array = _decide_need_expression(sim, pawn_id)
+		if expr_result[0] != -1:
+			idle.has_expression = true
+			idle.expression = expr_result[0] as Definitions.ExpressionType
+			idle.expression_icon_def_id = expr_result[1]
+	else:
+		# Most wander cycles are just a brief pause — no sit, no expression.
+		var base_idle: int = randi_range(20, 40)
+		var diversity_bonus: int = selected["diversity"] * 3
+		idle.duration_ticks = mini(50, base_idle + diversity_bonus)
+		idle.display_name = "Idle"
+
 	action_comp.action_queue.push_back(idle)
 
 
@@ -435,60 +448,33 @@ func _compute_diversity_map(world: World) -> Array:
 
 # --- Expression decisions --------------------------------------------------
 
-func _decide_expression(sim: Simulation, pawn_id: int) -> Array:
-	# Returns [ExpressionType, icon_def_id] or [-1, -1] if no expression.
-	var buff_comp: Components.BuffComponent = sim.entities.buffs.get(pawn_id)
-	if buff_comp != null:
-		# Strongest positive buff
-		var best_pos: Definitions.BuffInstance = null
-		for b in buff_comp.active_buffs:
-			if b.mood_offset > 0 and (best_pos == null or b.mood_offset > best_pos.mood_offset):
-				best_pos = b
-		if best_pos != null:
-			var icon_id: int = _get_buff_icon_id(sim, best_pos)
-			if icon_id != -1:
-				return [Definitions.ExpressionType.HAPPY, icon_id]
-
-		# Strongest negative buff
-		var best_neg: Definitions.BuffInstance = null
-		for b in buff_comp.active_buffs:
-			if b.mood_offset < 0 and (best_neg == null or b.mood_offset < best_neg.mood_offset):
-				best_neg = b
-		if best_neg != null:
-			var icon_id: int = _get_buff_icon_id(sim, best_neg)
-			if icon_id != -1:
-				return [Definitions.ExpressionType.COMPLAINT, icon_id]
-
-	# Lowest need below low threshold
+## Picks a sit-and-observe bubble from the pawn's actual best/worst need value — deliberately
+## not filtered by whether anything can currently be done about it (contrast the old buff-driven
+## version this replaced, which only ever surfaced needs a pawn was actively acting on). A need
+## with no building anywhere to satisfy it — e.g. Hygiene with no Well built — previously never
+## showed up at all, since _decide_next_action always finds something else actionable to do
+## first. Returns [ExpressionType, need_id] or [-1, -1] if the pawn has no needs at all.
+func _decide_need_expression(sim: Simulation, pawn_id: int) -> Array:
 	var need_comp: Components.NeedsComponent = sim.entities.needs.get(pawn_id)
-	if need_comp != null:
-		var lowest_need_id: int = -1
-		var lowest_value: float = 100.0
-		for need_id in need_comp.needs.keys():
-			var value: float = need_comp.needs[need_id]
-			var need_def: Dictionary = sim.content.needs.get(need_id, {})
-			if need_def.is_empty():
-				continue
-			if value < float(need_def["lowThreshold"]) and value < lowest_value:
-				lowest_value = value
-				lowest_need_id = need_id
-		if lowest_need_id != -1:
-			return [Definitions.ExpressionType.THOUGHT, lowest_need_id]
+	if need_comp == null or need_comp.needs.is_empty():
+		return [-1, -1]
 
-	return [-1, -1]
+	var worst_id: int = -1
+	var worst_value: float = INF
+	var best_id: int = -1
+	var best_value: float = -INF
+	for need_id in need_comp.needs:
+		var value: float = need_comp.needs[need_id]
+		if value < worst_value:
+			worst_value = value
+			worst_id = need_id
+		if value > best_value:
+			best_value = value
+			best_id = need_id
 
-
-func _get_buff_icon_id(sim: Simulation, buff: Definitions.BuffInstance) -> int:
-	match buff.source:
-		Definitions.BuffSource.BUILDING, Definitions.BuffSource.WORK:
-			var building_def: Dictionary = sim.content.buildings.get(buff.source_id, {})
-			if not building_def.is_empty():
-				return int(building_def.get("satisfiesNeedId", -1))
-			return -1
-		Definitions.BuffSource.NEED_CRITICAL, Definitions.BuffSource.NEED_LOW:
-			return buff.source_id
-		_:
-			return -1
+	if sim.get_mood(pawn_id) >= 0.0:
+		return [Definitions.ExpressionType.HAPPY, best_id]
+	return [Definitions.ExpressionType.COMPLAINT, worst_id]
 
 
 # --- Building search -------------------------------------------------------

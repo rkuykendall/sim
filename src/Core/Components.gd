@@ -20,10 +20,6 @@ class MoodComponent:
 	var mood: float = 0.0  # -100..100
 
 
-class BuffComponent:
-	var active_buffs: Array[Definitions.BuffInstance] = []
-
-
 class ActionComponent:
 	var current_action: Definitions.ActionDef = null
 	var action_start_tick: int = 0

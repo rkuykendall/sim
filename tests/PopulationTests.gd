@@ -1,7 +1,6 @@
 extends "res://tests/SimTestCase.gd"
 
 const _Builder = preload("res://tests/TestSimulationBuilder.gd")
-const _Definitions = preload("res://src/Core/Definitions.gd")
 
 
 func run() -> void:
@@ -24,17 +23,13 @@ func test_emigration_removes_least_interesting_pawn() -> void:
 		"TinyHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
 	)
 	builder.add_building(home_id, 5, 5)
-	builder.add_pawn("Happy", 5, 4, {})
-	builder.add_pawn("Sad", 5, 6, {})
+	var mood_need_id := builder.define_need("Contentment", 0.0, 15.0, 35.0, -50.0, -20.0)
+	builder.add_pawn("Happy", 5, 4, {mood_need_id: 100.0})
+	builder.add_pawn("Sad", 5, 6, {mood_need_id: 0.0})
 	var sim := builder.build()
 
 	assert_eq(sim.get_max_pawns(), 1, "Capacity-1 home should cap population at 1")
 	assert_eq(sim.entities.all_pawns().size(), 2, "Test setup should start over capacity")
-
-	var happy_id := sim.find_pawn_by_name("Happy")
-	var sad_id := sim.find_pawn_by_name("Sad")
-	_give_permanent_mood_buff(sim, happy_id, 50.0)
-	_give_permanent_mood_buff(sim, sad_id, -50.0)
 
 	# Long enough for the population check (every Simulation.PAWN_SPAWN_INTERVAL ticks) to
 	# fire, the chosen pawn to walk to the map edge, and the pending removal to be processed.
@@ -153,14 +148,3 @@ func test_real_content_max_pawns_for_known_layout() -> void:
 		sim.create_building(building_id, Vector2i(i * 3, 0))
 
 	assert_eq(sim.get_max_pawns(), 11, "1+1+1+1+1+2+4 across this layout should total 11")
-
-
-func _give_permanent_mood_buff(sim, pawn_id: int, mood_offset: float) -> void:
-	var buff_comp = sim.entities.buffs.get(pawn_id)
-	var b := _Definitions.BuffInstance.new()
-	b.source = _Definitions.BuffSource.BUILDING
-	b.source_id = -1
-	b.mood_offset = mood_offset
-	b.start_tick = sim.time.tick
-	b.end_tick = -1
-	buff_comp.active_buffs.append(b)

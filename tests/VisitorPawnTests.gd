@@ -121,19 +121,12 @@ func test_find_least_interesting_pawn_skips_visitors() -> void:
 		"TinyHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
 	)
 	builder.add_building(home_id, 10, 10)
-	builder.add_pawn("Happy", 10, 9, {})
+	var mood_need_id := builder.define_need("Contentment", 0.0, 15.0, 35.0, -30.0, -20.0)
+	builder.add_pawn("Happy", 10, 9, {mood_need_id: 100.0})
 	var sim := builder.build()
 
 	var happy_id := sim.find_pawn_by_name("Happy")
-	var buff_comp = sim.entities.buffs.get(happy_id)
-	var b := _Definitions.BuffInstance.new()
-	b.source = _Definitions.BuffSource.BUILDING
-	b.source_id = -1
-	b.mood_offset = 80.0
-	b.start_tick = sim.time.tick
-	b.end_tick = -1
-	buff_comp.active_buffs.append(b)
-	sim.run_ticks(1)  # MoodSystem only applies active_buffs into MoodComponent.mood on tick
+	sim.run_ticks(1)  # MoodSystem computes mood from current need values on tick
 
 	var visitor_id := sim.spawn_visitor_pawn("special_4_v2", {}, "Visitor")
 

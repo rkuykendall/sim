@@ -140,9 +140,6 @@ class GymnopedieTheme extends SimTheme:
 	func has_shadows() -> bool:
 		return false
 
-	func get_priority_gain() -> int:
-		return 3  # common — this is the recurring "night" beat, it should come up often
-
 	func on_start(sim: Simulation) -> void:
 		var energy_id: int = sim.content.get_need_id("Energy")
 		if energy_id == -1:
@@ -169,7 +166,7 @@ class StrangeWorldsTheme extends SimTheme:
 		return "res://music/tracks/strange_worlds.ogg"
 
 	func get_priority_gain() -> int:
-		return 10  # rare — a special costume/visitor event, not everyday rotation
+		return randi_range(10, 20)  # rare
 
 	func on_start(sim: Simulation) -> void:
 		for building_id in sim.get_home_building_ids():
@@ -196,7 +193,7 @@ class ViennaWoodsTheme extends SimTheme:
 		return "res://music/classics/tales_from_the_vienna_woods.ogg"
 
 	func get_priority_gain() -> int:
-		return 10  # rare
+		return randi_range(10, 20)  # rare
 
 	func on_start(sim: Simulation) -> void:
 		for building_id in sim.get_home_building_ids():
@@ -227,7 +224,7 @@ class PolarLightsTheme extends SimTheme:
 		return "res://music/tracks/polar_lights.ogg"
 
 	func get_priority_gain() -> int:
-		return 10  # rare
+		return randi_range(10, 20)  # rare
 
 	func on_start(sim: Simulation) -> void:
 		var home_ids: Array[int] = sim.get_home_building_ids()
@@ -256,7 +253,7 @@ class GoldenGleamTheme extends SimTheme:
 		return "res://music/tracks/golden_gleam.ogg"
 
 	func get_priority_gain() -> int:
-		return 10  # rare
+		return randi_range(10, 20)  # rare
 
 	func on_start(sim: Simulation) -> void:
 		var home_ids: Array[int] = sim.get_home_building_ids()
@@ -281,7 +278,7 @@ class DriftingMemoriesTheme extends SimTheme:
 		return "res://music/tracks/drifting_memories.ogg"
 
 	func get_priority_gain() -> int:
-		return 10  # rare
+		return randi_range(10, 20)  # rare
 
 	func on_start(sim: Simulation) -> void:
 		for building_id in sim.get_home_building_ids():
@@ -306,7 +303,7 @@ class GentleBreezeTheme extends SimTheme:
 		return "res://music/tracks/gentle_breeze.ogg"
 
 	func get_priority_gain() -> int:
-		return 10  # rare
+		return randi_range(10, 20)  # rare
 
 	func on_start(sim: Simulation) -> void:
 		var visitor_count: int = sim.get_max_pawns() * 2
@@ -328,7 +325,7 @@ class ForgottenBiomesTheme extends SimTheme:
 		return "res://music/tracks/forgotten_biomes.ogg"
 
 	func get_priority_gain() -> int:
-		return 10  # rare
+		return randi_range(10, 20)  # rare
 
 	func on_start(sim: Simulation) -> void:
 		var visitor_count: int = sim.get_max_pawns()
@@ -361,7 +358,7 @@ class FloatingDreamTheme extends SimTheme:
 		return "rain"
 
 	func get_priority_gain() -> int:
-		return 10  # rare
+		return randi_range(10, 20)  # rare
 
 	func on_start(sim: Simulation) -> void:
 		for building_id in sim.get_home_building_ids():

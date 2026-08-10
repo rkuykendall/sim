@@ -149,24 +149,6 @@ func _execute_use_building(sim: Simulation, pawn_id: int, action_comp: Component
 				0.0, 100.0
 			)
 
-	# Grant buff — gated on satisfies_need_id like need-satisfaction and attachment below, so a
-	# no-op visit (satisfies_need_id == -1, e.g. AISystem's purely cosmetic wander-home detour)
-	# doesn't also grant a free, repeatable mood buff decoupled from actually engaging the
-	# building for its real purpose.
-	if has_resources and action.satisfies_need_id != -1 and float(building_def.get("grantsBuff", 0.0)) != 0.0:
-		var buff_comp: Components.BuffComponent = sim.entities.buffs.get(pawn_id)
-		if buff_comp != null:
-			buff_comp.active_buffs = buff_comp.active_buffs.filter(func(b: Definitions.BuffInstance) -> bool:
-				return not (b.source == Definitions.BuffSource.BUILDING and b.source_id == building_def["id"])
-			)
-			var b := Definitions.BuffInstance.new()
-			b.source = Definitions.BuffSource.BUILDING
-			b.source_id = building_def["id"]
-			b.mood_offset = float(building_def["grantsBuff"])
-			b.start_tick = sim.time.tick
-			b.end_tick = sim.time.tick + int(building_def["buffDuration"])
-			buff_comp.active_buffs.append(b)
-
 	# Increment attachment
 	if has_resources and action.satisfies_need_id != -1:
 		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(target_id)
@@ -177,7 +159,7 @@ func _execute_use_building(sim: Simulation, pawn_id: int, action_comp: Component
 	if action.satisfies_need_id != -1:
 		var idle := Definitions.ActionDef.new()
 		idle.type = Definitions.ActionType.IDLE
-		idle.duration_ticks = 10
+		idle.duration_ticks = 40
 		idle.display_name = "Satisfied" if has_resources else "Out of Resources"
 		idle.has_expression = true
 		idle.expression = Definitions.ExpressionType.HAPPY if has_resources else Definitions.ExpressionType.COMPLAINT
@@ -254,20 +236,6 @@ func _execute_work(sim: Simulation, pawn_id: int, action_comp: Components.Action
 				0.0, 100.0
 			)
 
-	# Grant work buff
-	var buff_comp: Components.BuffComponent = sim.entities.buffs.get(pawn_id)
-	if buff_comp != null:
-		buff_comp.active_buffs = buff_comp.active_buffs.filter(func(b: Definitions.BuffInstance) -> bool:
-			return not (b.source == Definitions.BuffSource.WORK and b.source_id == obj_def["id"])
-		)
-		var b := Definitions.BuffInstance.new()
-		b.source = Definitions.BuffSource.WORK
-		b.source_id = obj_def["id"]
-		b.mood_offset = 15.0
-		b.start_tick = sim.time.tick
-		b.end_tick = sim.time.tick + 1200
-		buff_comp.active_buffs.append(b)
-
 	# Increment attachment
 	if action.satisfies_need_id != -1:
 		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(target_id)
@@ -278,7 +246,7 @@ func _execute_work(sim: Simulation, pawn_id: int, action_comp: Components.Action
 	if action.satisfies_need_id != -1:
 		var idle := Definitions.ActionDef.new()
 		idle.type = Definitions.ActionType.IDLE
-		idle.duration_ticks = 10
+		idle.duration_ticks = 40
 		idle.display_name = "Feeling Productive"
 		idle.has_expression = true
 		idle.expression = Definitions.ExpressionType.HAPPY
@@ -428,20 +396,6 @@ func _execute_drop_off(sim: Simulation, pawn_id: int, action_comp: Components.Ac
 				0.0, 100.0
 			)
 
-	# Grant work buff
-	var buff_comp: Components.BuffComponent = sim.entities.buffs.get(pawn_id)
-	if buff_comp != null:
-		buff_comp.active_buffs = buff_comp.active_buffs.filter(func(b: Definitions.BuffInstance) -> bool:
-			return not (b.source == Definitions.BuffSource.WORK and b.source_id == building_def["id"])
-		)
-		var b := Definitions.BuffInstance.new()
-		b.source = Definitions.BuffSource.WORK
-		b.source_id = building_def["id"]
-		b.mood_offset = 15.0
-		b.start_tick = sim.time.tick
-		b.end_tick = sim.time.tick + 1200
-		buff_comp.active_buffs.append(b)
-
 	# Increment attachment
 	if action.satisfies_need_id != -1:
 		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(target_id)
@@ -452,7 +406,7 @@ func _execute_drop_off(sim: Simulation, pawn_id: int, action_comp: Components.Ac
 	if action.satisfies_need_id != -1:
 		var idle := Definitions.ActionDef.new()
 		idle.type = Definitions.ActionType.IDLE
-		idle.duration_ticks = 10
+		idle.duration_ticks = 40
 		idle.display_name = "Feeling Productive"
 		idle.has_expression = true
 		idle.expression = Definitions.ExpressionType.HAPPY

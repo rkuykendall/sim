@@ -67,7 +67,6 @@ func _init(
 
 	_systems = SystemManager.new()
 	_systems.add(NeedsSystem.new())
-	_systems.add(BuffSystem.new())
 	_systems.add(MoodSystem.new())
 	if not disable_themes:
 		_systems.add(theme_system)

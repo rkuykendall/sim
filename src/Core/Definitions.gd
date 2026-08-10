@@ -1,12 +1,5 @@
 class_name Definitions
 
-enum BuffSource {
-	NEED_CRITICAL,  # Applied when need below critical threshold
-	NEED_LOW,       # Applied when need below low threshold
-	BUILDING,       # Applied by building use
-	WORK,           # Applied by working at a building
-}
-
 enum BuildingWorkType {
 	DIRECT,              # Work creates resources at this building
 	HAUL_FROM_BUILDING,  # Work = haul resources from another building
@@ -28,6 +21,7 @@ enum AnimationType {
 	WALK,
 	AXE,
 	PICKAXE,
+	SIT,
 }
 
 enum ExpressionType {
@@ -42,14 +36,6 @@ enum PawnMembership {
 	COLONIST,  # Counts toward population/home-capacity, eligible for capacity-driven emigration
 	VISITOR,   # Theme-spawned, excluded from population accounting — see Simulation.spawn_visitor_pawn
 }
-
-
-class BuffInstance:
-	var source: Definitions.BuffSource
-	var source_id: int       # NeedDef id or BuildingDef id depending on source
-	var mood_offset: float
-	var start_tick: int
-	var end_tick: int = -1   # -1 = permanent until removed
 
 
 class ActionDef:

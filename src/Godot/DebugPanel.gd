@@ -25,10 +25,10 @@ var _pawn_name_label: Label
 var _pawn_mood_label: Label
 var _pawn_action_label: Label
 var _pawn_needs_container: VBoxContainer
-var _pawn_buffs_container: VBoxContainer
+var _pawn_mood_factors_container: VBoxContainer
 var _pawn_attachments_container: VBoxContainer
 var _need_bars: Dictionary = {}   # need_id -> ProgressBar
-var _buff_labels: Array = []
+var _mood_factor_labels: Array = []
 var _pawn_attachment_labels: Array = []
 
 var _building_name_label: Label
@@ -89,9 +89,9 @@ func _build_pawn_ui() -> void:
 	_pawn_needs_container = VBoxContainer.new()
 	_pawn_container.add_child(_pawn_needs_container)
 
-	_add_header(_pawn_container, "Buffs:")
-	_pawn_buffs_container = VBoxContainer.new()
-	_pawn_container.add_child(_pawn_buffs_container)
+	_add_header(_pawn_container, "Mood Factors:")
+	_pawn_mood_factors_container = VBoxContainer.new()
+	_pawn_container.add_child(_pawn_mood_factors_container)
 
 	_add_header(_pawn_container, "Attachments:")
 	_pawn_attachments_container = VBoxContainer.new()
@@ -149,7 +149,7 @@ func show_pawn(pawn: Dictionary, sim: Simulation) -> void:
 	_pawn_action_label.text = pawn.get("current_action", "Idle")
 
 	_update_needs_display(pawn_id)
-	_update_buffs_display(pawn_id)
+	_update_mood_factors_display(pawn_id)
 	_update_pawn_attachments_display(pawn)
 
 
@@ -243,39 +243,35 @@ func _create_need_bar(need_name: String) -> ProgressBar:
 	return bar
 
 
-func _update_buffs_display(pawn_id: int) -> void:
-	for lbl in _buff_labels:
+## Shows each need's contribution to mood — see MoodSystem.tick. Mood is just the average of
+## every need's (value - 50) * 2 (0..100 need range rescaled to -100..100, 50 = neutral), so
+## each need's own score on that same scale is shown individually to explain the average.
+func _update_mood_factors_display(pawn_id: int) -> void:
+	for lbl in _mood_factor_labels:
 		lbl.queue_free()
-	_buff_labels.clear()
+	_mood_factor_labels.clear()
 
 	if _content == null or _sim == null:
 		return
-	var buff_comp: Components.BuffComponent = _sim.entities.buffs.get(pawn_id)
-	if buff_comp == null or buff_comp.active_buffs.is_empty():
-		var lbl := _add_label(_pawn_buffs_container, "(none)", 16)
+	var need_comp: Components.NeedsComponent = _sim.entities.needs.get(pawn_id)
+	if need_comp == null or need_comp.needs.is_empty():
+		var lbl := _add_label(_pawn_mood_factors_container, "(none)", 16)
 		lbl.modulate = Color.GRAY
-		_buff_labels.append(lbl)
+		_mood_factor_labels.append(lbl)
 		return
 
-	for inst in buff_comp.active_buffs:
-		var buff_name: String
-		match inst.source:
-			Definitions.BuffSource.BUILDING:
-				var bdef: Dictionary = _content.buildings.get(inst.source_id, {})
-				buff_name = bdef.get("name", "Building")
-			Definitions.BuffSource.WORK:
-				buff_name = "Productive"
-			Definitions.BuffSource.NEED_CRITICAL:
-				var ndef: Dictionary = _content.needs.get(inst.source_id, {})
-				buff_name = "%s (Critical)" % ndef.get("name", "Critical Need")
-			Definitions.BuffSource.NEED_LOW:
-				var ndef: Dictionary = _content.needs.get(inst.source_id, {})
-				buff_name = "%s (Low)" % ndef.get("name", "Low Need")
-			_:
-				buff_name = "Unknown"
-		var lbl := _add_label(_pawn_buffs_container, "%s (%+d)" % [buff_name, int(inst.mood_offset)], 16)
-		lbl.modulate = Color.LIME if inst.mood_offset > 0 else (Color.ORANGE if inst.mood_offset < 0 else Color.WHITE)
-		_buff_labels.append(lbl)
+	for need_id in need_comp.needs:
+		var ndef: Dictionary = _content.needs.get(need_id, {})
+		if ndef.is_empty():
+			continue
+		var value: float = need_comp.needs[need_id]
+		var contribution: float = (value - 50.0) * 2.0
+
+		var lbl := _add_label(
+			_pawn_mood_factors_container, "%s (%+d)" % [ndef.get("name", str(need_id)), int(contribution)], 16
+		)
+		lbl.modulate = Color.LIME if contribution > 0 else (Color.ORANGE if contribution < 0 else Color.WHITE)
+		_mood_factor_labels.append(lbl)
 
 
 func _update_pawn_attachments_display(pawn: Dictionary) -> void:

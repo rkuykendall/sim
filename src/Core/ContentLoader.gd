@@ -84,8 +84,6 @@ static func _parse_need(registry: ContentRegistry, key: String, value: Dictionar
 		"decayPerTick":       float(value.get("decayPerTick", 0.05)),
 		"criticalThreshold":  float(value.get("criticalThreshold", 20.0)),
 		"lowThreshold":       float(value.get("lowThreshold", 40.0)),
-		"criticalDebuff":     float(value.get("criticalDebuff", 0.0)),
-		"lowDebuff":          float(value.get("lowDebuff", 0.0)),
 		"spriteKey":          value.get("spriteKey", ""),
 	})
 
@@ -116,8 +114,6 @@ static func _parse_building(registry: ContentRegistry, key: String, value: Dicti
 
 	registry.register_building(key, {
 		"satisfiesNeedId":        satisfies_need_id,
-		"grantsBuff":             float(value.get("grantsBuff", 0.0)),
-		"buffDuration":           int(value.get("buffDuration", 0)),
 		"spriteKey":              value.get("spriteKey", ""),
 		"tileSize":               int(value.get("tileSize", 1)),
 		"spriteVariants":         int(value.get("spriteVariants", 1)),

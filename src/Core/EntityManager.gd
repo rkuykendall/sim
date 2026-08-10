@@ -7,7 +7,6 @@ var positions: Dictionary[int, Components.PositionComponent] = {}
 var pawns: Dictionary[int, Components.PawnComponent] = {}
 var needs: Dictionary[int, Components.NeedsComponent] = {}
 var moods: Dictionary[int, Components.MoodComponent] = {}
-var buffs: Dictionary[int, Components.BuffComponent] = {}
 var actions: Dictionary[int, Components.ActionComponent] = {}
 var buildings: Dictionary[int, Components.BuildingComponent] = {}
 var resources: Dictionary[int, Components.ResourceComponent] = {}
@@ -52,7 +51,6 @@ func create_pawn(
 		need_comp.needs[k] = float(starting_needs[k])
 	needs[id] = need_comp
 
-	buffs[id] = Components.BuffComponent.new()
 	actions[id] = Components.ActionComponent.new()
 
 	inventory[id] = Components.InventoryComponent.new()
@@ -80,7 +78,6 @@ func destroy(id: int) -> void:
 	pawns.erase(id)
 	needs.erase(id)
 	moods.erase(id)
-	buffs.erase(id)
 	actions.erase(id)
 	buildings.erase(id)
 	resources.erase(id)

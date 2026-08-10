@@ -10,6 +10,7 @@ const CHAR_ANIMS: Dictionary = {
 	"idle":     [0, 8, 8.0, true],
 	"walk":     [1, 4, 8.0, true],
 	"exertion": [3, 1, 1.0, false],
+	"sit":      [4, 2, 2.0, false],
 }
 
 # Overhead icons (same spot as the expression bubble) — axe swings during the AXE animation
@@ -243,6 +244,7 @@ func set_current_animation(animation: Definitions.AnimationType) -> void:
 	match animation:
 		Definitions.AnimationType.WALK:    anim_name = "walk"
 		Definitions.AnimationType.PICKAXE: anim_name = "exertion"
+		Definitions.AnimationType.SIT:     anim_name = "sit"
 		_:                                 anim_name = "idle"
 
 	if _sprite.animation != anim_name:

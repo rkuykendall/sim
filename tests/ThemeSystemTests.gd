@@ -180,8 +180,10 @@ func test_priority_defaults_and_tiers() -> void:
 	assert_eq(simple.priority, 0, "A fresh theme should start at priority 0")
 	assert_eq(simple.get_priority_gain(), 6, "SimpleTheme should inherit the default tier's gain (6)")
 
-	assert_eq(SimTheme.GymnopedieTheme.new().get_priority_gain(), 3, "Gymnopédie should be the common tier (gain 3)")
-	assert_eq(SimTheme.StrangeWorldsTheme.new().get_priority_gain(), 10, "Strange Worlds should be the rare tier (gain 10)")
+	assert_eq(SimTheme.GymnopedieTheme.new().get_priority_gain(), 6, "Gymnopédie has no override — inherits the default tier's gain (6)")
+	var strange_worlds_gain: int = SimTheme.StrangeWorldsTheme.new().get_priority_gain()
+	assert_ge(float(strange_worlds_gain), 10.0, "Strange Worlds should be the rare tier (gain 10-20, randomized per call)")
+	assert_true(strange_worlds_gain <= 20, "Strange Worlds should be the rare tier (gain 10-20, randomized per call)")
 
 
 # Isolates the mechanism directly: a picked theme's priority should jump to its own gain, every
@@ -196,7 +198,11 @@ func test_priority_lifecycle() -> void:
 		t.priority = 0
 
 	var picked_first = sim.theme_system._pick_random_theme()
-	assert_eq(picked_first.priority, picked_first.get_priority_gain(), "Picked theme's priority should jump to its own gain")
+	# Can't compare against a second live get_priority_gain() call — rare themes roll a fresh
+	# random value (10-20) every call, so it won't necessarily match what was actually added
+	# during the pick. Check the result landed in a valid tier's range instead.
+	var jumped_to_valid_tier: bool = picked_first.priority == 6 or (picked_first.priority >= 10 and picked_first.priority <= 20)
+	assert_true(jumped_to_valid_tier, "Picked theme's priority (%d) should jump to a valid tier's gain" % picked_first.priority)
 
 	for t in themes:
 		if t != picked_first:
@@ -261,32 +267,36 @@ func test_common_theme_picked_more_often_than_rare() -> void:
 # A freshly constructed ThemeSystem (new game, or every load — priorities aren't persisted) should
 # seed each theme's priority to its own gain rather than the SimTheme default of 0. Otherwise every
 # theme ties for lowest on the very first pick regardless of rarity, so a rare theme could open a
-# game just as easily as a common one.
+# game just as easily as a common one. Rare themes now roll a fresh random gain (10-20) on every
+# call to get_priority_gain(), so this can't compare priority against a second live call — instead
+# it checks priority landed in a valid tier's range (6 for default, 10-20 for rare).
 func test_priority_seeded_to_gain_on_construction() -> void:
 	var builder := _Builder.new().with_themes_enabled()
 	var sim := builder.build()
 
 	for t in sim.theme_system._available_themes:
-		assert_eq(
-			t.priority, t.get_priority_gain(),
-			"'%s' should start at its own gain (%d), not 0" % [t.get_name(), t.get_priority_gain()]
+		var valid: bool = t.priority == 6 or (t.priority >= 10 and t.priority <= 20)
+		assert_true(
+			valid,
+			"'%s' should start within a valid tier's range (6, or 10-20), not %d" % [t.get_name(), t.priority]
 		)
 
 
-# Direct consequence of the seeding above: with common=3, default=6, rare=10 all decaying by 1
-# before the first pick, the sole common-tier theme (Gymnopédie, gain 3) is deterministically the
-# only one at the new minimum (2) — it should always win the very first pick.
+# Direct consequence of the seeding above: default-tier themes (gain 6) always start lower than
+# rare-tier ones (gain 10-20), so the very first pick should never be a rare theme — even though,
+# unlike before, there's no longer a single deterministic winner (several themes now share the
+# default gain of 6).
 func test_first_pick_is_always_common_tier() -> void:
 	var builder := _Builder.new().with_themes_enabled()
 	var sim := builder.build()
 
-	var gymnopedie = _find_theme_by_name(sim, "Gymnopédie No. 1")
-	assert_not_null(gymnopedie, "Roster should contain Gymnopédie No. 1")
-
 	var picked = sim.theme_system._pick_random_theme()
-	assert_eq(
-		picked, gymnopedie,
-		"The sole common-tier theme should deterministically win the very first pick"
+	# get_priority_gain() is deterministic (always 6) for default-tier themes regardless of when
+	# it's called, so a fresh call here still reliably identifies the tier even though priority
+	# itself was already bumped by the pick.
+	assert_lt(
+		float(picked.get_priority_gain()), 10.0,
+		"The first pick should always come from the default tier (gain 6), never a rare theme (gain 10-20)"
 	)
 
 

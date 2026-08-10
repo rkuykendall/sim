@@ -15,6 +15,8 @@ func run() -> void:
 	run_test("WorkScoring_PenalizesTotalCrowd_NotJustTheSingleMostAttachedPawn", test_work_scoring_sums_other_pawns_attachment)
 	run_test("WanderHomeVisit_HappensOverTime_WithoutTouchingEnergyOrAttachment", test_wander_home_visit_occurs_without_side_effects)
 	run_test("WanderHomeVisit_NeverHappens_ForVisitors", test_wander_home_visit_excludes_visitors)
+	run_test("WanderExpression_ShowsUnsatisfiableNeed_RegardlessOfActionability", test_wander_expression_shows_unsatisfiable_need)
+	run_test("WanderExpression_ShowsBestNeed_WhenMoodIsPositive", test_wander_expression_shows_best_need_when_happy)
 
 
 # A lone pawn with no needs wanders continuously; the cached diversity map must stay
@@ -233,9 +235,10 @@ func test_wander_home_visit_occurs_without_side_effects() -> void:
 	var action_comp = sim.entities.actions.get(pawn_id)
 
 	var visited := false
-	# Deterministic given TestSimulationBuilder's fixed seed — enough ticks for many dozen
-	# wander decisions at a 6% chance each.
-	for _i in 6000:
+	# Deterministic given TestSimulationBuilder's fixed seed — enough ticks for a hundred-plus
+	# wander decisions at a 6% chance each. Budget is large because SIT_AND_EMOTE_CHANCE sit
+	# durations (up to 2500 ticks) make each wander cycle much longer on average than a plain idle.
+	for _i in 80000:
 		sim.tick()
 		if action_comp.current_action != null \
 				and action_comp.current_action.type == Definitions.ActionType.USE_BUILDING \
@@ -274,6 +277,67 @@ func test_wander_home_visit_excludes_visitors() -> void:
 				and action_comp.current_action.target_entity == home_building_id,
 			"A visitor must never take the cosmetic home-visit detour"
 		)
+
+
+# Regression test for the real bug this fixes: a need with no building anywhere to satisfy it
+# (e.g. Hygiene with no Well built) used to never surface a complaint, since _decide_next_action
+# always finds something else actionable to go do first, and the old buff-driven expression only
+# ever reflected needs the pawn was actively acting on. No "Energy" need is registered at all, so
+# _try_queue_home_visit's random detour can never trigger. The sit-and-emote itself is now gated
+# behind SIT_AND_EMOTE_CHANCE (most wanders are just a brief plain idle) rather than guaranteed
+# on every wander, so this retries until that branch is hit — deterministic given the fixed seed.
+func test_wander_expression_shows_unsatisfiable_need() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(20, 20)
+	var hygiene_id := builder.define_need("Hygiene", 0.0)  # zero decay — value set directly below
+	builder.add_pawn("Grimy", 10, 10, {hygiene_id: 0.0})
+	var sim := builder.build()
+
+	var pawn_id := sim.find_pawn_by_name("Grimy")
+	sim.entities.moods[pawn_id].mood = -50.0  # deterministic "unhappy" — _wander_randomly is called directly below, without a sim.tick() that would let MoodSystem recompute this from needs
+	var action_comp = sim.entities.actions.get(pawn_id)
+
+	var sit_action = _find_sit_action_by_wandering(sim, pawn_id, action_comp)
+
+	assert_not_null(sit_action, "Should eventually trigger the sit-and-observe emote")
+	assert_eq(sit_action.animation, Definitions.AnimationType.SIT, "Should play the sit animation")
+	assert_true(sit_action.has_expression, "Should show an expression even though nothing can satisfy Hygiene")
+	assert_eq(sit_action.expression, Definitions.ExpressionType.COMPLAINT, "Unhappy pawn should complain")
+	assert_eq(sit_action.expression_icon_def_id, hygiene_id, "Complaint should point at the pawn's actual worst need")
+
+
+func test_wander_expression_shows_best_need_when_happy() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(20, 20)
+	var hygiene_id := builder.define_need("Hygiene", 0.0)
+	var purpose_id := builder.define_need("Purpose", 0.0)
+	builder.add_pawn("Content", 10, 10, {hygiene_id: 40.0, purpose_id: 90.0})
+	var sim := builder.build()
+
+	var pawn_id := sim.find_pawn_by_name("Content")
+	sim.entities.moods[pawn_id].mood = 50.0  # deterministic "happy"
+	var action_comp = sim.entities.actions.get(pawn_id)
+
+	var sit_action = _find_sit_action_by_wandering(sim, pawn_id, action_comp)
+
+	assert_not_null(sit_action, "Should eventually trigger the sit-and-observe emote")
+	assert_eq(sit_action.animation, Definitions.AnimationType.SIT, "Should play the sit animation")
+	assert_true(sit_action.has_expression, "A happy pawn should still show an expression")
+	assert_eq(sit_action.expression, Definitions.ExpressionType.HAPPY, "Positive mood should show a happy expression")
+	assert_eq(sit_action.expression_icon_def_id, purpose_id, "Happy expression should point at the pawn's actual best need")
+
+
+# Repeatedly calls _wander_randomly (clearing the queue each time) until it produces a sit
+# action, per AISystem.SIT_AND_EMOTE_CHANCE. Returns the sit ActionDef, or null if it never
+# triggered within the attempt budget.
+func _find_sit_action_by_wandering(sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent):
+	for _i in 200:
+		action_comp.action_queue.clear()
+		sim.ai_system._wander_randomly(sim, pawn_id, action_comp)
+		if action_comp.action_queue.size() == 2 \
+				and action_comp.action_queue[1].animation == Definitions.AnimationType.SIT:
+			return action_comp.action_queue[1]
+	return null
 
 
 func _build_trapped_pawn_scenario() -> Simulation:

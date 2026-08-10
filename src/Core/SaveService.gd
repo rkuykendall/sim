@@ -143,19 +143,6 @@ static func _serialize_entities(sim: Simulation) -> Array:
 		if mood != null:
 			e["mood"] = mood.mood
 
-		var buff_comp: Components.BuffComponent = em.buffs.get(pawn_id)
-		if buff_comp != null:
-			var buffs: Array = []
-			for b in buff_comp.active_buffs:
-				buffs.append({
-					"source":      int(b.source),
-					"source_id":   b.source_id,
-					"mood_offset": b.mood_offset,
-					"start_tick":  b.start_tick,
-					"end_tick":    b.end_tick,
-				})
-			e["buffs"] = buffs
-
 		var inv: Components.InventoryComponent = em.inventory.get(pawn_id)
 		if inv != null:
 			e["inventory"] = {
@@ -393,20 +380,6 @@ static func _restore_pawn(sim: Simulation, e: Dictionary) -> void:
 	var mood := Components.MoodComponent.new()
 	mood.mood = float(e.get("mood", 0.0))
 	sim.entities.moods[entity_id] = mood
-
-	var buff_comp := Components.BuffComponent.new()
-	if e.has("buffs"):
-		for bdata in e["buffs"]:
-			if not bdata is Dictionary:
-				continue
-			var b := Definitions.BuffInstance.new()
-			b.source      = int(bdata.get("source", 0)) as Definitions.BuffSource
-			b.source_id   = int(bdata.get("source_id", 0))
-			b.mood_offset = float(bdata.get("mood_offset", 0.0))
-			b.start_tick  = int(bdata.get("start_tick", 0))
-			b.end_tick    = int(bdata.get("end_tick", -1))
-			buff_comp.active_buffs.append(b)
-	sim.entities.buffs[entity_id] = buff_comp
 
 	# Clear action state — pawn will re-decide on next tick
 	sim.entities.actions[entity_id] = Components.ActionComponent.new()

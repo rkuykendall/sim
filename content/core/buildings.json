@@ -126,6 +126,6 @@
     "haulSourceTerrainKey": "Trees",
     "haulSourceResourceType": "wood",
     "canSellToConsumers": false,
-    "capacity": 3
+    "capacity": 1
   }
 }
