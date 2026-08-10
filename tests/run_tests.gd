@@ -18,7 +18,7 @@ const _VisitorPawnTests  = preload("res://tests/VisitorPawnTests.gd")
 
 
 func _init() -> void:
-	print("=== SimGame Test Runner ===")
+	print("=== Paint Town Test Runner ===")
 	print("")
 
 	var total_pass := 0

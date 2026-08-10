@@ -155,6 +155,8 @@ func _ready() -> void:
 	if not sound_manager_path.is_empty():
 		_sound_manager = get_node_or_null(sound_manager_path)
 
+	SaveFileManager.migrate_legacy_saves()
+
 	if not home_screen_path.is_empty():
 		_home_screen = get_node_or_null(home_screen_path)
 		if _home_screen != null:

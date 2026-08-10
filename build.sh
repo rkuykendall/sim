@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Build script for SimGame
+# Build script for Paint Town
 # Builds for Windows, macOS, and Linux
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -13,7 +13,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${YELLOW}Paint Down Build Script${NC}"
+echo -e "${YELLOW}Paint Town Build Script${NC}"
 echo "========================"
 
 # Check for Godot
@@ -50,19 +50,19 @@ echo ""
 
 # Export for each platform
 echo -e "${YELLOW}Exporting for Windows...${NC}"
-"$GODOT" --headless --export-release "Windows" builds/paint-town-windows/SimGame.exe || {
+"$GODOT" --headless --export-release "Windows" builds/paint-town-windows/PaintTown.exe || {
     echo -e "${RED}Windows export failed. Make sure Windows export templates are installed.${NC}"
 }
 
 echo ""
 echo -e "${YELLOW}Exporting for macOS...${NC}"
-"$GODOT" --headless --export-release "macOS" builds/paint-town-macos/SimGame.app || {
+"$GODOT" --headless --export-release "macOS" builds/paint-town-macos/PaintTown.app || {
     echo -e "${RED}macOS export failed. Make sure macOS export templates are installed.${NC}"
 }
 
 echo ""
 echo -e "${YELLOW}Exporting for Linux...${NC}"
-"$GODOT" --headless --export-release "Linux" builds/paint-town-linux/SimGame.x86_64 || {
+"$GODOT" --headless --export-release "Linux" builds/paint-town-linux/PaintTown.x86_64 || {
     echo -e "${RED}Linux export failed. Make sure Linux export templates are installed.${NC}"
 }
 
@@ -83,9 +83,9 @@ mkdir -p builds/paint-town-windows/content
 cp -r example_content/. builds/paint-town-windows/content/
 echo "  Copied to builds/paint-town-windows/content/"
 
-mkdir -p "builds/paint-town-macos/SimGame.app/Contents/Resources/content"
-cp -r example_content/. "builds/paint-town-macos/SimGame.app/Contents/Resources/content/"
-echo "  Copied to builds/paint-town-macos/SimGame.app/Contents/Resources/content/"
+mkdir -p "builds/paint-town-macos/PaintTown.app/Contents/Resources/content"
+cp -r example_content/. "builds/paint-town-macos/PaintTown.app/Contents/Resources/content/"
+echo "  Copied to builds/paint-town-macos/PaintTown.app/Contents/Resources/content/"
 
 mkdir -p builds/paint-town-linux/content
 cp -r example_content/. builds/paint-town-linux/content/
@@ -113,9 +113,9 @@ echo "========================"
 echo -e "${GREEN}Build complete!${NC}"
 echo ""
 echo "Output locations:"
-echo "  Windows: builds/paint-town-windows/SimGame.exe"
-echo "  macOS:   builds/paint-town-macos/SimGame.app"
-echo "  Linux:   builds/paint-town-linux/SimGame.x86_64"
+echo "  Windows: builds/paint-town-windows/PaintTown.exe"
+echo "  macOS:   builds/paint-town-macos/PaintTown.app"
+echo "  Linux:   builds/paint-town-linux/PaintTown.x86_64"
 echo "  Web:     builds/paint-town-web/index.html"
 echo ""
 echo "Zip archives:"
