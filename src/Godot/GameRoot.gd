@@ -18,6 +18,7 @@ extends Node2D
 @export var music_manager_path: NodePath = ""
 @export var sound_manager_path: NodePath = ""
 @export var home_screen_path: NodePath = ""
+@export var loading_screen_path: NodePath = ""
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -75,6 +76,7 @@ var _toolbar: BuildToolbar = null
 var _music_manager: MusicManager = null
 var _sound_manager: SoundManager = null
 var _home_screen: HomeScreen = null
+var _loading_screen: Control = null
 var _debug_panel: DebugPanel = null
 
 # Entity nodes
@@ -165,6 +167,9 @@ func _ready() -> void:
 			_home_screen.quit_requested.connect(_on_quit_requested)
 			_home_screen.initialize(_content, _sound_manager)
 
+	if not loading_screen_path.is_empty():
+		_loading_screen = get_node_or_null(loading_screen_path)
+
 	_show_home_screen()
 
 
@@ -207,14 +212,27 @@ func _on_new_game_requested() -> void:
 
 
 func _on_load_game_requested(slot_name: String) -> void:
+	# Loading (JSON parse of a multi-MB save + rebuilding every tile/pawn/building node) is
+	# synchronous and can take a few seconds — not worth the complexity of threading it, but
+	# without yielding a couple of frames first, the loading screen would never actually get
+	# drawn before the freeze starts, making the whole app look hung instead of "loading."
+	if _loading_screen != null:
+		_loading_screen.show()
+	await get_tree().process_frame
+	await get_tree().process_frame
+
 	var loaded_sim: Simulation = SaveFileManager.load_save(slot_name, _content)
 	if loaded_sim == null:
 		push_error("[GameRoot] Failed to load save: %s" % slot_name)
+		if _loading_screen != null:
+			_loading_screen.hide()
 		return
 	_current_save_slot = slot_name
 	_sim = loaded_sim
 	_initialize_game_world()
 	_show_game()
+	if _loading_screen != null:
+		_loading_screen.hide()
 	print("[GameRoot] Loaded game: %s" % slot_name)
 
 

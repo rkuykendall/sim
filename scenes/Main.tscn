@@ -9,6 +9,7 @@
 [ext_resource type="Material" path="res://shaders/screen_effects_material.tres" id="9"]
 [ext_resource type="Script" path="res://src/Godot/MusicManager.gd" id="11"]
 [ext_resource type="PackedScene" uid="uid://homescreen" path="res://scenes/HomeScreen.tscn" id="12"]
+[ext_resource type="PackedScene" uid="uid://loadingscreen" path="res://scenes/LoadingScreen.tscn" id="15"]
 [ext_resource type="Script" path="res://src/Godot/SoundManager.gd" id="13"]
 [ext_resource type="Script" path="res://src/Godot/WeatherEffectController.gd" id="14"]
 
@@ -56,12 +57,15 @@ toolbar_path = NodePath("../UI/BuildToolbar")
 music_manager_path = NodePath("../MusicManager")
 sound_manager_path = NodePath("../SoundManager")
 home_screen_path = NodePath("../UI/HomeScreen")
+loading_screen_path = NodePath("../UI/LoadingScreen")
 
 [node name="UI" type="CanvasLayer" parent="."]
 
 [node name="BuildToolbar" parent="UI" instance=ExtResource("7")]
 
 [node name="HomeScreen" parent="UI" instance=ExtResource("12")]
+
+[node name="LoadingScreen" parent="UI" instance=ExtResource("15")]
 
 [node name="CRTShaderLayer" type="CanvasLayer" parent="."]
 layer = 128
