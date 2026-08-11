@@ -12,8 +12,6 @@ const CREDITS: Array[Dictionary] = [
 	{"label": "Characters", "text": "Pixel Plains by SnowHex"},
 	{"label": "Music", "text": "Cozy Tunes by Pizza Doggy"},
 	{"label": "Sound effects", "text": "Universal UI Soundpack by Nathan Gibson"},
-	{"label": "Inspiration", "text": "RimWorld by Tynan Sylvester"},
-	{"label": "Inspiration", "text": "KidPix by Craig Hickman"},
 	{"label": "Pixels", "text": "Tileset Templates by Patrik"},
 	{"label": "Pixels", "text": "Puny World by Shade"},
 	{"label": "Pixels", "text": "Tinyworld by Fliegevogel"},
@@ -23,6 +21,8 @@ const CREDITS: Array[Dictionary] = [
 		"text": "Pixel Simple Human Character 16x16 px by Brysia"
 	},
 	{"label": "Font", "text": "BoldPixels by YukiPixels"},
+	{"label": "Inspiration", "text": "RimWorld by Tynan Sylvester"},
+	{"label": "Inspiration", "text": "KidPix by Craig Hickman"},
 	{
 		"label":
 		(
