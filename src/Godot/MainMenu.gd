@@ -20,6 +20,10 @@ var _content: ContentRegistry = null
 var _sound_manager: SoundManager = null
 var _buttons: Array[Button] = []
 var _current_background_color: Color = Color(0.9, 0.9, 0.85)
+# Browsers require a user gesture before fullscreen requests are honored, and starting a web
+# player in a tiny embedded frame makes every other button hard to read/hit — so on web, gate
+# everything but Fullscreen until it's been pressed once.
+var _web_fullscreen_unlocked: bool = false
 
 
 func _ready() -> void:
@@ -61,33 +65,41 @@ func _build_buttons() -> void:
 		child.queue_free()
 	_buttons.clear()
 
-	var most_recent_slot: String = _get_most_recent_save_slot()
-	if not most_recent_slot.is_empty():
-		var resume_btn := _create_button(
-			"RESUME", 64, func() -> void: _on_resume_pressed(most_recent_slot)
+	var is_web: bool = OS.has_feature("web")
+	var show_other_buttons: bool = not is_web or _web_fullscreen_unlocked
+
+	if show_other_buttons:
+		var most_recent_slot: String = _get_most_recent_save_slot()
+		if not most_recent_slot.is_empty():
+			var resume_btn := _create_button(
+				"RESUME", 64, func() -> void: _on_resume_pressed(most_recent_slot)
+			)
+			_button_container.add_child(resume_btn)
+			_buttons.append(resume_btn)
+
+		var new_town_btn := _create_button(
+			"NEW TOWN", 64, func() -> void: _on_action(new_game_requested)
 		)
-		_button_container.add_child(resume_btn)
-		_buttons.append(resume_btn)
+		_button_container.add_child(new_town_btn)
+		_buttons.append(new_town_btn)
 
-	var new_town_btn := _create_button(
-		"NEW TOWN", 64, func() -> void: _on_action(new_game_requested)
-	)
-	_button_container.add_child(new_town_btn)
-	_buttons.append(new_town_btn)
+		var gallery_btn := _create_button(
+			"GALLERY", 44, func() -> void: _on_action(gallery_requested)
+		)
+		_button_container.add_child(gallery_btn)
+		_buttons.append(gallery_btn)
 
-	var gallery_btn := _create_button("GALLERY", 44, func() -> void: _on_action(gallery_requested))
-	_button_container.add_child(gallery_btn)
-	_buttons.append(gallery_btn)
+		var credits_btn := _create_button(
+			"CREDITS", 44, func() -> void: _on_action(credits_requested)
+		)
+		_button_container.add_child(credits_btn)
+		_buttons.append(credits_btn)
 
-	var credits_btn := _create_button("CREDITS", 44, func() -> void: _on_action(credits_requested))
-	_button_container.add_child(credits_btn)
-	_buttons.append(credits_btn)
-
-	if OS.has_feature("web"):
+	if is_web:
 		var fullscreen_btn := _create_button("FULLSCREEN", 44, _on_fullscreen_pressed)
 		_button_container.add_child(fullscreen_btn)
 		_buttons.append(fullscreen_btn)
-	else:
+	elif show_other_buttons:
 		var quit_btn := _create_button("QUIT", 44, func() -> void: _on_action(quit_requested))
 		_button_container.add_child(quit_btn)
 		_buttons.append(quit_btn)
@@ -132,6 +144,11 @@ func _on_fullscreen_pressed() -> void:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 	else:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+
+	if not _web_fullscreen_unlocked:
+		_web_fullscreen_unlocked = true
+		_build_buttons()
+		apply_random_palette()
 
 
 ## Picks a random content palette and washes the menu in it: a heavily lightened background
