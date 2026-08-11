@@ -83,32 +83,45 @@ func _create_color_and_tool_buttons() -> void:
 	# Tool definitions: [create_callable, mode_or_-1]
 	var tool_defs: Array[Array] = [
 		[func() -> Button: return _create_home_button(), -1],
-		[func() -> Button: return _create_paint_tool_button(), BuildToolMode.Mode.PLACE_TERRAIN],
 		[
 			func() -> Button:
 				return _create_icon_tool_button(
-					"res://sprites/tools/spray.png", BuildToolMode.Mode.SPRAY_PAINT
+					"res://sprites/menu/pencil.png", BuildToolMode.Mode.PLACE_TERRAIN
+				),
+			BuildToolMode.Mode.PLACE_TERRAIN
+		],
+		[
+			func() -> Button:
+				return _create_icon_tool_button(
+					"res://sprites/menu/paint.png", BuildToolMode.Mode.BIG_BRUSH
+				),
+			BuildToolMode.Mode.BIG_BRUSH
+		],
+		[
+			func() -> Button:
+				return _create_icon_tool_button(
+					"res://sprites/menu/spray.png", BuildToolMode.Mode.SPRAY_PAINT
 				),
 			BuildToolMode.Mode.SPRAY_PAINT
 		],
 		[
 			func() -> Button:
 				return _create_icon_tool_button(
-					"res://sprites/tools/box.png", BuildToolMode.Mode.FILL_SQUARE
+					"res://sprites/menu/box.png", BuildToolMode.Mode.FILL_SQUARE
 				),
 			BuildToolMode.Mode.FILL_SQUARE
 		],
 		[
 			func() -> Button:
 				return _create_icon_tool_button(
-					"res://sprites/tools/square.png", BuildToolMode.Mode.OUTLINE_SQUARE
+					"res://sprites/menu/square.png", BuildToolMode.Mode.OUTLINE_SQUARE
 				),
 			BuildToolMode.Mode.OUTLINE_SQUARE
 		],
 		[
 			func() -> Button:
 				return _create_icon_tool_button(
-					"res://sprites/tools/fill.png", BuildToolMode.Mode.FLOOD_FILL
+					"res://sprites/menu/fill.png", BuildToolMode.Mode.FLOOD_FILL
 				),
 			BuildToolMode.Mode.FLOOD_FILL
 		],
@@ -125,7 +138,7 @@ func _create_color_and_tool_buttons() -> void:
 			[
 				func() -> Button:
 					return _create_icon_tool_button(
-						"res://sprites/tools/select.png", BuildToolMode.Mode.SELECT
+						"res://sprites/menu/select.png", BuildToolMode.Mode.SELECT
 					),
 				BuildToolMode.Mode.SELECT
 			]
@@ -186,13 +199,6 @@ func _create_home_button() -> Button:
 	return btn
 
 
-func _create_paint_tool_button() -> Button:
-	var btn := PreviewSquare.new()
-	btn.custom_minimum_size = Vector2(96, 96)
-	btn.pressed.connect(func() -> void: _on_tool_selected(BuildToolMode.Mode.PLACE_TERRAIN))
-	return btn
-
-
 func _create_icon_tool_button(sprite_path: String, mode: BuildToolMode.Mode) -> Button:
 	var btn := SpriteIconButton.new()
 	btn.custom_minimum_size = Vector2(96, 96)
@@ -232,6 +238,7 @@ func _rebuild_options() -> void:
 		BuildToolMode.current_mode
 		in [
 			BuildToolMode.Mode.PLACE_TERRAIN,
+			BuildToolMode.Mode.BIG_BRUSH,
 			BuildToolMode.Mode.SPRAY_PAINT,
 			BuildToolMode.Mode.FILL_SQUARE,
 			BuildToolMode.Mode.OUTLINE_SQUARE,
@@ -239,7 +246,7 @@ func _rebuild_options() -> void:
 		]
 	):
 		# Delete option first
-		var del_btn := _create_option_button(-1, "res://sprites/tools/delete.png", false, true)
+		var del_btn := _create_option_button(-1, "res://sprites/menu/delete.png", false, true)
 		_option_buttons.append(del_btn)
 		if _options_container != null:
 			_options_container.add_child(del_btn)
@@ -359,21 +366,7 @@ func _update_all_buttons() -> void:
 		var mode: int = _tool_button_modes[i]
 		var is_active: bool = mode != -1 and mode == BuildToolMode.current_mode
 
-		if btn is PreviewSquare:
-			var preview_btn: PreviewSquare = btn
-			preview_btn.update_preview(
-				BuildToolMode.selected_color_index,
-				-1,
-				-1,
-				_content,
-				_current_palette,
-				false,
-				true,
-				false,
-				false
-			)
-			preview_btn.set_selected(is_active)
-		elif btn is SpriteIconButton:
+		if btn is SpriteIconButton:
 			var icon_btn: SpriteIconButton = btn
 			var tex_rect: TextureRect = icon_btn.get_node_or_null("TextureRect")
 			if tex_rect != null and tex_rect.texture != null:

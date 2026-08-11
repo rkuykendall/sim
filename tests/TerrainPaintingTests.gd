@@ -9,6 +9,8 @@ func run() -> void:
 	run_test("PaintRectangle_OrderOfCornersDoesNotMatter", test_paint_rectangle_corner_order)
 	run_test("PaintRectangleOutline_OnlyPaintsBorderTiles", test_paint_rectangle_outline)
 	run_test("FloodFill_StopsAtDifferentTerrain", test_flood_fill_bounded)
+	run_test("PaintCircle_PaintsWithinRadiusOnly", test_paint_circle_radius)
+	run_test("DeleteCircle_ResetsBaseWithinRadiusOnly", test_delete_circle_radius)
 
 
 func test_paint_rectangle_inclusive() -> void:
@@ -98,6 +100,67 @@ func test_paint_rectangle_outline() -> void:
 				wall_id,
 				"Interior tile (%d,%d) should not be painted by an outline" % [x, y]
 			)
+
+
+func test_paint_circle_radius() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(11, 11)
+	var path_id := builder.define_terrain("Path", true)
+	var sim := builder.build()
+
+	sim.paint_circle(Vector2i(5, 5), 2.0, path_id)
+
+	for coord: Vector2i in [Vector2i(5, 5), Vector2i(5, 7), Vector2i(7, 5), Vector2i(3, 5)]:
+		assert_eq(
+			sim.world.get_tile(coord).base_terrain_type_id,
+			path_id,
+			"Tile %s within the radius should be painted" % coord
+		)
+
+	# A corner like (7,7) is within the bounding square but outside the actual circle
+	# (dx=2, dy=2 -> squared distance 8 > radius^2 4) — proves this is round, not a square fill.
+	assert_not_eq(
+		sim.world.get_tile(Vector2i(7, 7)).base_terrain_type_id,
+		path_id,
+		"Corner of the bounding square should be excluded from a circular paint"
+	)
+	assert_not_eq(
+		sim.world.get_tile(Vector2i(5, 8)).base_terrain_type_id,
+		path_id,
+		"Tile beyond the radius should not be painted"
+	)
+
+
+func test_delete_circle_radius() -> void:
+	var builder := _Builder.new()
+	builder.with_world_bounds(11, 11)
+	builder.define_terrain("Flat", true, "flat")
+	var wall_id := builder.define_terrain("Wall", false)
+	var sim := builder.build()
+
+	sim.paint_rectangle(Vector2i(2, 2), Vector2i(8, 8), wall_id)
+	sim.delete_circle(Vector2i(5, 5), 2.0)
+
+	assert_not_eq(
+		sim.world.get_tile(Vector2i(5, 5)).base_terrain_type_id,
+		wall_id,
+		"Tile at the center should be cleared"
+	)
+	assert_not_eq(
+		sim.world.get_tile(Vector2i(5, 7)).base_terrain_type_id,
+		wall_id,
+		"Tile within the radius should be cleared"
+	)
+	assert_eq(
+		sim.world.get_tile(Vector2i(7, 7)).base_terrain_type_id,
+		wall_id,
+		"Corner of the bounding square should survive a circular delete"
+	)
+	assert_eq(
+		sim.world.get_tile(Vector2i(2, 2)).base_terrain_type_id,
+		wall_id,
+		"Tile beyond the radius should survive"
+	)
 
 
 func test_flood_fill_bounded() -> void:

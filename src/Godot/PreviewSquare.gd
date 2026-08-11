@@ -88,8 +88,8 @@ func update_preview(
 
 	if texture == null:
 		if is_select_preview:
-			if ResourceLoader.exists("res://sprites/tools/select.png"):
-				texture = load("res://sprites/tools/select.png")
+			if ResourceLoader.exists("res://sprites/menu/select.png"):
+				texture = load("res://sprites/menu/select.png")
 		elif is_building_preview:
 			if ResourceLoader.exists("res://sprites/menu/build.png"):
 				texture = load("res://sprites/menu/build.png")
@@ -97,8 +97,8 @@ func update_preview(
 			if ResourceLoader.exists("res://sprites/menu/paint.png"):
 				texture = load("res://sprites/menu/paint.png")
 		elif is_delete_preview:
-			if ResourceLoader.exists("res://sprites/tools/delete.png"):
-				texture = load("res://sprites/tools/delete.png")
+			if ResourceLoader.exists("res://sprites/menu/delete.png"):
+				texture = load("res://sprites/menu/delete.png")
 
 	if texture != null:
 		_texture_rect.texture = texture

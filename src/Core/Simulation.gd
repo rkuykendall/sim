@@ -468,6 +468,19 @@ func paint_rectangle(
 	return result
 
 
+func paint_circle(
+	center: Vector2i, radius: float, terrain_def_id: int, color_index: int = 0
+) -> Array[Vector2i]:
+	var affected: Dictionary[Vector2i, bool] = {}
+	for coord in _get_circle_tiles(center, radius):
+		for affected_coord in paint_terrain(coord, terrain_def_id, color_index):
+			affected[affected_coord] = true
+	var result: Array[Vector2i] = []
+	for coord: Vector2i in affected.keys():
+		result.append(coord)
+	return result
+
+
 func paint_rectangle_outline(
 	start: Vector2i, end: Vector2i, terrain_def_id: int, color_index: int = 0
 ) -> Array[Vector2i]:
@@ -555,6 +568,17 @@ func delete_rectangle(start: Vector2i, end: Vector2i) -> Array[Vector2i]:
 func delete_rectangle_outline(start: Vector2i, end: Vector2i) -> Array[Vector2i]:
 	var affected: Dictionary[Vector2i, bool] = {}
 	for coord in _get_rectangle_outline_tiles(start, end):
+		for affected_coord in delete_at_tile(coord):
+			affected[affected_coord] = true
+	var result: Array[Vector2i] = []
+	for coord: Vector2i in affected.keys():
+		result.append(coord)
+	return result
+
+
+func delete_circle(center: Vector2i, radius: float) -> Array[Vector2i]:
+	var affected: Dictionary[Vector2i, bool] = {}
+	for coord in _get_circle_tiles(center, radius):
 		for affected_coord in delete_at_tile(coord):
 			affected[affected_coord] = true
 	var result: Array[Vector2i] = []
@@ -759,6 +783,17 @@ func _get_rectangle_tiles(start: Vector2i, end: Vector2i) -> Array[Vector2i]:
 	for x in range(min_x, max_x + 1):
 		for y in range(min_y, max_y + 1):
 			result.append(Vector2i(x, y))
+	return result
+
+
+func _get_circle_tiles(center: Vector2i, radius: float) -> Array[Vector2i]:
+	var r: int = ceili(radius)
+	var radius_sq: float = radius * radius
+	var result: Array[Vector2i] = []
+	for x in range(-r, r + 1):
+		for y in range(-r, r + 1):
+			if x * x + y * y <= radius_sq:
+				result.append(center + Vector2i(x, y))
 	return result
 
 

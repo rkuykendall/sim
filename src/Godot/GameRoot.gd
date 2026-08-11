@@ -567,6 +567,17 @@ func _handle_left_press(tile_coord: Vector2i) -> void:
 		_sync_edited_tiles(tiles_to_update)
 		return
 
+	if mode == BuildToolMode.Mode.BIG_BRUSH:
+		_is_painting_terrain = true
+		_last_painted_tile = tile_coord
+		_sync_edited_tiles(_paint_or_delete_circle(tile_coord))
+		if _sound_manager != null:
+			if BuildToolMode.selected_terrain_def_id != -1:
+				_sound_manager.play_paint()
+			else:
+				_sound_manager.play_delete()
+		return
+
 	if mode == BuildToolMode.Mode.SPRAY_PAINT:
 		_is_spray_painting = true
 		_spray_accumulator = 0.0
@@ -702,6 +713,16 @@ func _handle_mouse_motion() -> void:
 		_sync_edited_tiles(tiles_to_update)
 		return
 
+	if _is_painting_terrain and BuildToolMode.current_mode == BuildToolMode.Mode.BIG_BRUSH:
+		var tile_coord: Vector2i = _screen_to_tile(get_local_mouse_position())
+		if tile_coord == _last_painted_tile:
+			return
+		_last_painted_tile = tile_coord
+		_sync_edited_tiles(_paint_or_delete_circle(tile_coord))
+		if _sound_manager != null:
+			_sound_manager.play_paint_tick()
+		return
+
 	var mode: BuildToolMode.Mode = BuildToolMode.current_mode
 	if (
 		(mode == BuildToolMode.Mode.FILL_SQUARE or mode == BuildToolMode.Mode.OUTLINE_SQUARE)
@@ -709,6 +730,17 @@ func _handle_mouse_motion() -> void:
 	):
 		_brush_drag_current = _screen_to_tile(get_local_mouse_position())
 		queue_redraw()
+
+
+func _paint_or_delete_circle(coord: Vector2i) -> Array[Vector2i]:
+	if BuildToolMode.selected_terrain_def_id != -1:
+		return _sim.paint_circle(
+			coord,
+			SPRAY_RADIUS,
+			BuildToolMode.selected_terrain_def_id,
+			BuildToolMode.selected_color_index
+		)
+	return _sim.delete_circle(coord, SPRAY_RADIUS)
 
 
 ## Scatters a few tiles within SPRAY_RADIUS of center, biased toward the middle (uniform-disc
@@ -865,7 +897,7 @@ func _draw_hover_preview(coord: Vector2i) -> void:
 			draw_rect(rect, Color(1, 0, 0, 0.3), true)
 		draw_rect(rect, Color.WHITE, false, 2.0)
 
-	elif mode == BuildToolMode.Mode.SPRAY_PAINT:
+	elif mode == BuildToolMode.Mode.BIG_BRUSH or mode == BuildToolMode.Mode.SPRAY_PAINT:
 		var color: Color
 		if BuildToolMode.selected_terrain_def_id != -1:
 			color = (
