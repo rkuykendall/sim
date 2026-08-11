@@ -177,7 +177,7 @@ class StrangeWorldsTheme:
 		return "res://music/tracks/strange_worlds.ogg"
 
 	func get_priority_gain() -> int:
-		return randi_range(10, 20)  # rare
+		return randi_range(10, 20)
 
 	func on_start(sim: Simulation) -> void:
 		for building_id in sim.get_home_building_ids():
@@ -206,7 +206,7 @@ class ViennaWoodsTheme:
 		return "res://music/classics/tales_from_the_vienna_woods.ogg"
 
 	func get_priority_gain() -> int:
-		return randi_range(10, 20)  # rare
+		return randi_range(10, 20)
 
 	func on_start(sim: Simulation) -> void:
 		for building_id in sim.get_home_building_ids():
@@ -239,7 +239,7 @@ class PolarLightsTheme:
 		return "res://music/tracks/polar_lights.ogg"
 
 	func get_priority_gain() -> int:
-		return randi_range(10, 20)  # rare
+		return randi_range(10, 20)
 
 	func on_start(sim: Simulation) -> void:
 		var home_ids: Array[int] = sim.get_home_building_ids()
@@ -272,7 +272,7 @@ class GoldenGleamTheme:
 		return "res://music/tracks/golden_gleam.ogg"
 
 	func get_priority_gain() -> int:
-		return randi_range(10, 20)  # rare
+		return randi_range(10, 20)
 
 	func on_start(sim: Simulation) -> void:
 		var home_ids: Array[int] = sim.get_home_building_ids()
@@ -299,7 +299,7 @@ class DriftingMemoriesTheme:
 		return "res://music/tracks/drifting_memories.ogg"
 
 	func get_priority_gain() -> int:
-		return randi_range(10, 20)  # rare
+		return randi_range(10, 20)
 
 	func on_start(sim: Simulation) -> void:
 		for building_id in sim.get_home_building_ids():
@@ -326,7 +326,7 @@ class GentleBreezeTheme:
 		return "res://music/tracks/gentle_breeze.ogg"
 
 	func get_priority_gain() -> int:
-		return randi_range(10, 20)  # rare
+		return randi_range(10, 20)
 
 	func on_start(sim: Simulation) -> void:
 		var visitor_count: int = sim.get_max_pawns() * 2
@@ -350,7 +350,7 @@ class ForgottenBiomesTheme:
 		return "res://music/tracks/forgotten_biomes.ogg"
 
 	func get_priority_gain() -> int:
-		return randi_range(10, 20)  # rare
+		return randi_range(10, 20)
 
 	func on_start(sim: Simulation) -> void:
 		var visitor_count: int = sim.get_max_pawns()
@@ -385,7 +385,7 @@ class FloatingDreamTheme:
 		return "rain"
 
 	func get_priority_gain() -> int:
-		return randi_range(10, 20)  # rare
+		return randi_range(10, 20)
 
 	func on_start(sim: Simulation) -> void:
 		for building_id in sim.get_home_building_ids():

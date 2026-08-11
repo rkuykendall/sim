@@ -132,7 +132,6 @@ func _execute_use_building(
 	if elapsed < action.duration_ticks:
 		return
 
-	# Check resources
 	var has_resources: bool = true
 	var resource_comp: Components.ResourceComponent = sim.entities.resources.get(target_id)
 	if resource_comp != null:
@@ -147,7 +146,6 @@ func _execute_use_building(
 		else:
 			has_resources = false
 
-	# Satisfy need
 	if has_resources and action.satisfies_need_id != -1:
 		var need_comp: Components.NeedsComponent = sim.entities.needs.get(pawn_id)
 		if need_comp != null and need_comp.needs.has(action.satisfies_need_id):
@@ -157,7 +155,6 @@ func _execute_use_building(
 				100.0
 			)
 
-	# Increment attachment
 	if has_resources and action.satisfies_need_id != -1:
 		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(
 			target_id
@@ -165,7 +162,6 @@ func _execute_use_building(
 		if attachment_comp != null:
 			attachment_comp.increment(action.satisfies_need_id, pawn_id)
 
-	# Brief idle reaction
 	if action.satisfies_need_id != -1:
 		var idle := Definitions.ActionDef.new()
 		idle.type = Definitions.ActionType.IDLE
@@ -235,7 +231,6 @@ func _execute_work(sim: Simulation, pawn_id: int, action_comp: Components.Action
 	if elapsed < action.duration_ticks:
 		return
 
-	# Replenish building resources
 	var resource_comp: Components.ResourceComponent = sim.entities.resources.get(target_id)
 	if resource_comp != null:
 		var production_amount: float = DefUtils.get_float(obj_def, "productionAmount", 30.0)
@@ -243,7 +238,6 @@ func _execute_work(sim: Simulation, pawn_id: int, action_comp: Components.Action
 			resource_comp.max_amount, resource_comp.current_amount + production_amount
 		)
 
-	# Satisfy Purpose need
 	if action.satisfies_need_id != -1:
 		var need_comp: Components.NeedsComponent = sim.entities.needs.get(pawn_id)
 		if need_comp != null and need_comp.needs.has(action.satisfies_need_id):
@@ -253,7 +247,6 @@ func _execute_work(sim: Simulation, pawn_id: int, action_comp: Components.Action
 				100.0
 			)
 
-	# Increment attachment
 	if action.satisfies_need_id != -1:
 		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(
 			target_id
@@ -261,7 +254,6 @@ func _execute_work(sim: Simulation, pawn_id: int, action_comp: Components.Action
 		if attachment_comp != null:
 			attachment_comp.increment(action.satisfies_need_id, pawn_id)
 
-	# Brief idle
 	if action.satisfies_need_id != -1:
 		var idle := Definitions.ActionDef.new()
 		idle.type = Definitions.ActionType.IDLE
@@ -420,7 +412,6 @@ func _execute_drop_off(
 	inventory.resource_type = ""
 	inventory.amount = 0.0
 
-	# Satisfy Purpose need
 	if action.satisfies_need_id != -1:
 		var need_comp: Components.NeedsComponent = sim.entities.needs.get(pawn_id)
 		if need_comp != null and need_comp.needs.has(action.satisfies_need_id):
@@ -430,7 +421,6 @@ func _execute_drop_off(
 				100.0
 			)
 
-	# Increment attachment
 	if action.satisfies_need_id != -1:
 		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(
 			target_id
@@ -438,7 +428,6 @@ func _execute_drop_off(
 		if attachment_comp != null:
 			attachment_comp.increment(action.satisfies_need_id, pawn_id)
 
-	# Brief idle
 	if action.satisfies_need_id != -1:
 		var idle := Definitions.ActionDef.new()
 		idle.type = Definitions.ActionType.IDLE

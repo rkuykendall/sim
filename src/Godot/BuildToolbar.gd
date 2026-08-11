@@ -42,7 +42,6 @@ func initialize(
 		push_error("BuildToolbar: required containers not found")
 		return
 
-	# Select first terrain/building by default
 	var terrain_keys: Array = content.terrains.keys()
 	terrain_keys.sort()
 	if not terrain_keys.is_empty():

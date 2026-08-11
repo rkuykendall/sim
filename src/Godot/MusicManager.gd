@@ -32,7 +32,6 @@ func update_music_state(snapshot_theme: Dictionary) -> void:
 	var theme_name: String = snapshot_theme.get("current_theme_name", "")
 	var music_file: String = snapshot_theme.get("current_music_file", "")
 
-	# No change — do nothing
 	if theme_name == _current_theme_name and music_file == _current_music_file:
 		return
 

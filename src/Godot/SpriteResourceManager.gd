@@ -1,6 +1,5 @@
 class_name SpriteResourceManager
 
-# Sprite path map: key -> res:// path
 const _SPRITE_PATH_MAP: Dictionary = {
 	# Tile sprites
 	"flat": "res://sprites/tiles/flat.png",

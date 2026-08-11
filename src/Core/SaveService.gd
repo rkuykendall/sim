@@ -47,7 +47,8 @@ static func load_file(path: String, content: ContentRegistry) -> Simulation:
 	return from_dict(data, content)
 
 
-# Lightweight metadata read (no full parse needed, just top-level keys).
+# Parses the save but skips from_dict's entity/world reconstruction — just pulls out a few
+# top-level fields for display.
 static func read_metadata(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
 		return {}
@@ -257,7 +258,6 @@ static func from_dict(data: Dictionary, content: ContentRegistry) -> Simulation:
 		if DefUtils.get_string(ed, "type", "") == "Pawn":
 			_restore_pawn(sim, ed)
 
-	# Restore simulation-level state
 	sim.entities.set_next_id(DefUtils.get_int(data, "next_entity_id", 1))
 	sim.time.set_tick(DefUtils.get_int(data, "current_tick", 0))
 	sim.selected_palette_id = DefUtils.get_int(data, "selected_palette_id", -1)
@@ -300,7 +300,6 @@ static func _restore_world(sim: Simulation, world_data: Dictionary) -> void:
 		tile.blocks_light = DefUtils.get_bool(td, "blocks_light", false)
 		tile.building_blocks_movement = DefUtils.get_bool(td, "building_blocks_movement", false)
 
-		# Overlay (optional)
 		if td.has("overlay_terrain_type_id"):
 			tile.overlay_terrain_type_id = DefUtils.get_int(td, "overlay_terrain_type_id", -1)
 			tile.overlay_variant_index = DefUtils.get_int(td, "overlay_variant_index", 0)
@@ -343,7 +342,6 @@ static func _restore_building(sim: Simulation, e: Dictionary) -> void:
 	bc.skin_override = DefUtils.get_string(e, "skin_override", "")
 	sim.entities.buildings[entity_id] = bc
 
-	# Resource component
 	if e.has("resource"):
 		var r: Dictionary = DefUtils.get_dict(e, "resource", {})
 		var rc := Components.ResourceComponent.new()

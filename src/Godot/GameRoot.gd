@@ -156,7 +156,6 @@ func _ready() -> void:
 	if not ui_layer_path.is_empty():
 		_ui_layer = get_node_or_null(ui_layer_path)
 
-	# Debug panel
 	_debug_panel = DebugPanel.new()
 	_debug_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	_debug_panel.position = Vector2(-260, 10)
@@ -415,7 +414,6 @@ func _process(delta: float) -> void:
 	var snapshot: Dictionary = _sim.create_render_snapshot()
 	_last_snapshot = snapshot
 
-	# Palette change
 	if _sim.selected_palette_id != _current_palette_id:
 		_current_palette = snapshot.get("palette", [])
 		_current_palette_id = _sim.selected_palette_id
@@ -427,11 +425,9 @@ func _process(delta: float) -> void:
 				all_tiles.append(Vector2i(x, y))
 		_sync_tiles(all_tiles)
 
-	# Music
 	if _music_manager != null:
 		_music_manager.update_music_state(DefUtils.get_dict(snapshot, "theme", {}))
 
-	# Autosave
 	_time_since_autosave += delta
 	if _time_since_autosave >= AUTOSAVE_INTERVAL:
 		_perform_autosave()

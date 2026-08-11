@@ -1,8 +1,5 @@
 class_name ContentLoader
 
-# Impassable sentinel — Lua used math.huge; JSON uses 1e9.
-const IMPASSABLE: float = 1e9
-
 
 static func load_all(mod_path: String = "") -> ContentRegistry:
 	var registry := ContentRegistry.new()

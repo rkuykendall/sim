@@ -122,7 +122,6 @@ func _process(delta: float) -> void:
 			elif dx > 0.1:
 				_sprite.flip_h = false
 
-	# Floating bubble animation
 	if _bubble_node.visible:
 		_bubble_time += delta * _bubble_float_speed
 		_bubble_node.position = Vector2(0, -40.0 + sin(_bubble_time) * _bubble_float_amount)
@@ -135,7 +134,7 @@ func _process(delta: float) -> void:
 	# pawn and "swinging backward" for a mirrored, left-facing one, so the sweep direction has
 	# to invert with facing too.
 	if _axe_sprite.visible:
-		_axe_sprite.flip_h = _sprite.flip_h  # face the same way as the pawn's body
+		_axe_sprite.flip_h = _sprite.flip_h
 		var facing_sign: float = -1.0 if _sprite.flip_h else 1.0
 		_axe_swing_timer = fmod(
 			_axe_swing_timer + delta, AXE_DOWNSWING_DURATION + AXE_UPSWING_DURATION
@@ -312,7 +311,6 @@ func set_expression(
 		_bubble_node.visible = false
 		return
 
-	# Select bubble wrapper texture based on expression type
 	var bubble_key: String
 	match expression:
 		Definitions.ExpressionType.HAPPY:
@@ -329,7 +327,6 @@ func set_expression(
 	var bubble_tex: Texture2D = SpriteResourceManager.get_texture(bubble_key)
 	_bubble_wrapper.texture = bubble_tex
 
-	# Load need icon if we have one
 	if expression_icon_def_id != -1 and content != null:
 		var need_def: Dictionary = content.needs.get(expression_icon_def_id, {})
 		var icon_key: String = need_def.get("spriteKey", "")

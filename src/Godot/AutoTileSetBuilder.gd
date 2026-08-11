@@ -14,7 +14,6 @@ static func create_auto_tile_set(
 		tile_set.add_occlusion_layer()
 		tile_set.set_occlusion_layer_sdf_collision(0, true)
 
-	# Create terrain set and terrain
 	tile_set.add_terrain_set()
 	tile_set.set_terrain_set_mode(0, TileSet.TERRAIN_MODE_MATCH_CORNERS_AND_SIDES)
 	tile_set.add_terrain(0)

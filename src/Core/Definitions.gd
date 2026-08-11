@@ -57,4 +57,4 @@ class ActionDef:
 	var terrain_target_coord: Vector2i = Vector2i(-1, -1)
 	var resource_type: String = ""
 	var resource_amount: float = 0.0
-	var source_entity: int = -1  # Source building for wholesale payment
+	var source_entity: int = -1  # Building a hauled resource was picked up from

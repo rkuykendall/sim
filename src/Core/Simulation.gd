@@ -75,7 +75,6 @@ func _init(
 	_systems.add(ai_system)
 
 
-# Initialize all world tiles with Flat terrain.
 func _initialize_world_terrain() -> void:
 	var flat_id: int = -1
 	for id: int in content.terrains:
@@ -130,7 +129,6 @@ func tick() -> void:
 		elif home_capacity > 0 and pawn_count > home_capacity and _emigrating_pawn_id == -1:
 			_start_emigration()
 
-	# Attachment decay
 	if time.tick % ATTACHMENT_DECAY_INTERVAL == 0 and time.tick > 0:
 		_perform_attachment_decay()
 
@@ -347,7 +345,6 @@ func create_building(building_def_id: int, coord: Vector2i, color_index: int = 0
 
 	var entity_id: int = entities.create_building(coord, building_def_id, safe_color)
 
-	# Resource component
 	var resource_type: String = building_def.get("resourceType", "")
 	if not resource_type.is_empty():
 		var max_amount: float = DefUtils.get_float(building_def, "maxResourceAmount", 100.0)
@@ -358,10 +355,8 @@ func create_building(building_def_id: int, coord: Vector2i, color_index: int = 0
 		rc.depletion_mult = DefUtils.get_float(building_def, "depletionMult", 1.0)
 		entities.resources[entity_id] = rc
 
-	# Attachment component (all buildings track which pawns use them)
 	entities.attachments[entity_id] = Components.AttachmentComponent.new()
 
-	# Block movement on all occupied tiles
 	for tile_coord in occupied:
 		world.get_tile(tile_coord).building_blocks_movement = true
 	_walkable_edge_tiles_dirty = true
@@ -501,17 +496,14 @@ func delete_at_tile(coord: Vector2i) -> Array[Vector2i]:
 	ai_system.mark_world_dirty()
 	_walkable_edge_tiles_dirty = true
 
-	# Clear overlay if present
 	if tile.overlay_terrain_type_id != -1:
 		tile.overlay_terrain_type_id = -1
-		# Restore walkability from base terrain
 		var base_def: Dictionary = content.terrains.get(tile.base_terrain_type_id, {})
 		if not base_def.is_empty():
 			tile.walkability_cost = DefUtils.get_float(base_def, "walkabilityCost", 1.0)
 			tile.blocks_light = DefUtils.get_bool(base_def, "blocksLight", false)
 		return get_tiles_with_neighbors([coord])
 
-	# Reset base to flat
 	var flat_id: int = _get_flat_terrain_id()
 	if flat_id != -1:
 		var flat_def: Dictionary = content.terrains[flat_id]

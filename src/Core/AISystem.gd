@@ -291,7 +291,6 @@ func _wander_randomly(
 			if sim.world.is_in_bounds(nearby):
 				capped_nearby[nearby.x + nearby.y * sim.world.width] = true
 
-	# Filter to valid walkable candidates (not current position)
 	var candidates: Array[Dictionary] = []
 	for target in potential:
 		if target == pos.coord:
@@ -325,7 +324,6 @@ func _wander_randomly(
 		)
 	selected = candidates[0]
 
-	# Queue walk action
 	var walk := Definitions.ActionDef.new()
 	walk.type = Definitions.ActionType.MOVE_TO
 	walk.animation = Definitions.AnimationType.WALK
@@ -500,7 +498,6 @@ func _decide_need_expression(sim: Simulation, pawn_id: int) -> Array:
 
 
 func _find_building_for_need(sim: Simulation, pawn_id: int, need_id: int) -> int:
-	# Capture loop variable for use in filter lambda
 	var captured_need_id: int = need_id
 
 	return _find_best_reachable_building(
@@ -640,7 +637,6 @@ func _gather_reachable_candidates(
 		var attachment_comp: Components.AttachmentComponent = sim.entities.attachments.get(obj_id)
 		var other_targeting: int = _count_pawns_targeting(sim, obj_id, pawn_id)
 
-		# Capacity check
 		var capacity: int = _get_capacity(obj_def)
 		if other_targeting + 1 > capacity:
 			continue

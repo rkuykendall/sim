@@ -15,7 +15,7 @@ const ROSTER_DATA: Array[Dictionary] = [
 ]
 
 var current_theme: SimTheme = null
-# not set internally anymore; external callers may still force a pick
+# External callers can assign this to force a specific next theme, bypassing weighted rotation.
 var queued_theme: SimTheme = null
 
 var _current_theme_start_tick: int = 0

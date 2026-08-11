@@ -79,7 +79,6 @@ func update_preview(
 					DefUtils.get_string(tdef, "spriteKey", "")
 				)
 
-	# Fallback to generic icons
 	if texture == null and (building_def_id != -1 or terrain_def_id != -1):
 		texture = (
 			load("res://sprites/placeholders/unknown.png")
