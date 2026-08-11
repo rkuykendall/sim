@@ -8,10 +8,12 @@ signal back_requested
 ## project owner). Every entry is a plain label/text pair, no special-casing — the closing joke
 ## is just this credit's "label", the same way "Characters" is Pixel Plains's.
 const CREDITS: Array[Dictionary] = [
+	{"label": "Engine", "text": "Godot"},
 	{"label": "Characters", "text": "Pixel Plains by SnowHex"},
 	{"label": "Music", "text": "Cozy Tunes by Pizza Doggy"},
 	{"label": "Sound effects", "text": "Universal UI Soundpack by Nathan Gibson"},
-	{"label": "Inspiration", "text": "KidPix 1.0 by Craig Hickman"},
+	{"label": "Inspiration", "text": "RimWorld by Tynan Sylvester"},
+	{"label": "Inspiration", "text": "KidPix by Craig Hickman"},
 	{"label": "Pixels", "text": "Tileset Templates by Patrik"},
 	{"label": "Pixels", "text": "Puny World by Shade"},
 	{"label": "Pixels", "text": "Tinyworld by Fliegevogel"},
@@ -20,6 +22,7 @@ const CREDITS: Array[Dictionary] = [
 		"label": "Characters (early version)",
 		"text": "Pixel Simple Human Character 16x16 px by Brysia"
 	},
+	{"label": "Font", "text": "BoldPixels by YukiPixels"},
 	{
 		"label":
 		(

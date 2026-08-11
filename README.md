@@ -8,10 +8,6 @@
 
 > Paint Town is a pixel simulation painter. Think KidPix mixed with a Colony Sim but for 4-year-olds. Pick up a tool, paint some terrain, drop a few buildings, and tiny pixel people show up and start living their lives. Flood-fill a forest. Outline a town square. Stamp down a farm and a tavern.
 
-# SimGame
-
-A top-down, grid-based life simulation sandbox.
-
 ## Requirements
 
 - [Godot 4.5+](https://godotengine.org/download) — pure GDScript, no .NET/C# toolchain needed
@@ -116,15 +112,18 @@ The simulation runs independently of rendering at 20 ticks/second. Godot receive
 
 ## Credits
 
+- Engine: [Godot](https://godotengine.org)
 - Characters: [Pixel Plains by SnowHex](https://snowhex.itch.io/pixel-plains)
 - Music: [Cozy Tunes by Pizza Doggy](https://pizzadoggy.itch.io/cozy-tunes)
 - Sound effects: [Universal UI Soundpack by Nathan Gibson](https://nathangibson.myportfolio.com) (CC BY 4.0)
-- Inspiration: [KidPix 1.0 by Craig Hickman](https://en.wikipedia.org/wiki/Kid_Pix)
+- Inspiration: [RimWorld by Tynan Sylvester](https://rimworldgame.com)
+- Inspiration: [KidPix by Craig Hickman](https://en.wikipedia.org/wiki/Kid_Pix)
 - Pixels: [Tileset Templates by Patrik](https://patrik-arts.itch.io/tileset-templates)
 - Pixels: [Puny World by Shade](https://merchant-shade.itch.io/16x16-puny-world)
 - Pixels: [Tinyworld by Fliegevogel](https://fliegevogel.itch.io/)
 - Thanks to: [Webtyler by Alexander Nadeau](https://wareya.github.io/webtyler/)
 - Characters (early version): [Pixel Simple Human Character 16x16 px by Brysia](https://brysiaa.itch.io/pixel-simple-human-character-16x16-px)
+- Font: [BoldPixels by YukiPixels](https://yukipixels.itch.io/boldpixels) (CC BY-SA 4.0)
 - Building a bad Rimworld clone for kids then removing the mechanics one-by-one until you get KidPix with Sims: Robert Kuykendall
 
 ## Art guide
