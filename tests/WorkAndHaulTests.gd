@@ -234,7 +234,7 @@ func test_haul_from_terrain_stays_eligible_when_full() -> void:
 	builder.with_world_bounds(9, 9)
 	var purpose_id := builder.define_need("Purpose", 0.01)
 	builder.define_terrain("Floor", true, "flat")
-	var trees_id := builder.define_terrain("Trees", true)
+	builder.define_terrain("Trees", true)
 	var sawmill_id := builder.define_building(
 		"Sawmill",
 		purpose_id,

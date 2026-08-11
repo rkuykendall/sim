@@ -681,16 +681,6 @@ func _draw() -> void:
 
 	var pawns_snap: Array = DefUtils.get_array(_last_snapshot, "pawns", [])
 	for pawn_snap: Dictionary in pawns_snap:
-		var center := Vector2(
-			(
-				DefUtils.get_int(pawn_snap, "x", 0) * RenderingConstants.RENDERED_TILE_SIZE
-				+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
-			),
-			(
-				DefUtils.get_int(pawn_snap, "y", 0) * RenderingConstants.RENDERED_TILE_SIZE
-				+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
-			)
-		)
 		var path: Array[Dictionary] = []
 		path.assign(DefUtils.get_array(pawn_snap, "current_path", []))
 		var path_idx: int = DefUtils.get_int(pawn_snap, "path_index", 0)
