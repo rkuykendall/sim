@@ -87,6 +87,13 @@ func _create_color_and_tool_buttons() -> void:
 		[
 			func() -> Button:
 				return _create_icon_tool_button(
+					"res://sprites/tools/spray.png", BuildToolMode.Mode.SPRAY_PAINT
+				),
+			BuildToolMode.Mode.SPRAY_PAINT
+		],
+		[
+			func() -> Button:
+				return _create_icon_tool_button(
 					"res://sprites/tools/box.png", BuildToolMode.Mode.FILL_SQUARE
 				),
 			BuildToolMode.Mode.FILL_SQUARE
@@ -225,6 +232,7 @@ func _rebuild_options() -> void:
 		BuildToolMode.current_mode
 		in [
 			BuildToolMode.Mode.PLACE_TERRAIN,
+			BuildToolMode.Mode.SPRAY_PAINT,
 			BuildToolMode.Mode.FILL_SQUARE,
 			BuildToolMode.Mode.OUTLINE_SQUARE,
 			BuildToolMode.Mode.FLOOD_FILL,
@@ -396,6 +404,7 @@ func _update_all_buttons() -> void:
 			BuildToolMode.current_mode
 			in [
 				BuildToolMode.Mode.PLACE_TERRAIN,
+				BuildToolMode.Mode.SPRAY_PAINT,
 				BuildToolMode.Mode.FILL_SQUARE,
 				BuildToolMode.Mode.OUTLINE_SQUARE,
 				BuildToolMode.Mode.FLOOD_FILL,

@@ -18,6 +18,9 @@ const THEME_SUNRISE_LEN: float = 0.15
 const THEME_NIGHT_FADE: float = 0.05
 const MENU_MUSIC_PATH: String = "res://music/tracks/wanderers_tale.ogg"
 const CREDITS_MUSIC_PATH: String = "res://music/classics/gymnopedie_no_1.ogg"
+const SPRAY_INTERVAL: float = 0.08
+const SPRAY_RADIUS: float = 2.0
+const SPRAY_PARTICLES_PER_TICK: int = 3
 
 # ---------------------------------------------------------------------------
 # Exports
@@ -63,6 +66,8 @@ var _brush_drag_start: Vector2i = Vector2i(-1, -1)
 var _brush_drag_current: Vector2i = Vector2i(-1, -1)
 var _is_painting_terrain: bool = false
 var _last_painted_tile: Vector2i = Vector2i(-1, -1)
+var _is_spray_painting: bool = false
+var _spray_accumulator: float = 0.0
 
 # Selection
 var _selected_pawn_id: int = -1
@@ -443,6 +448,12 @@ func _process(delta: float) -> void:
 	var mouse_pos: Vector2 = get_local_mouse_position()
 	_hovered_tile = _screen_to_tile(mouse_pos)
 
+	if _is_spray_painting:
+		_spray_accumulator += delta
+		while _spray_accumulator >= SPRAY_INTERVAL:
+			_spray_accumulator -= SPRAY_INTERVAL
+			_spray_at(_hovered_tile)
+
 	if _debug_mode or BuildToolMode.current_mode != BuildToolMode.Mode.SELECT:
 		queue_redraw()
 
@@ -556,6 +567,12 @@ func _handle_left_press(tile_coord: Vector2i) -> void:
 		_sync_edited_tiles(tiles_to_update)
 		return
 
+	if mode == BuildToolMode.Mode.SPRAY_PAINT:
+		_is_spray_painting = true
+		_spray_accumulator = 0.0
+		_spray_at(tile_coord)
+		return
+
 	if mode == BuildToolMode.Mode.FILL_SQUARE or mode == BuildToolMode.Mode.OUTLINE_SQUARE:
 		_brush_drag_start = tile_coord
 		_brush_drag_current = tile_coord
@@ -618,6 +635,7 @@ func _handle_left_press(tile_coord: Vector2i) -> void:
 func _handle_left_release() -> void:
 	_is_painting_terrain = false
 	_last_painted_tile = Vector2i(-1, -1)
+	_is_spray_painting = false
 
 	var mode: BuildToolMode.Mode = BuildToolMode.current_mode
 	if (
@@ -691,6 +709,32 @@ func _handle_mouse_motion() -> void:
 	):
 		_brush_drag_current = _screen_to_tile(get_local_mouse_position())
 		queue_redraw()
+
+
+## Scatters a few tiles within SPRAY_RADIUS of center, biased toward the middle (uniform-disc
+## sampling) rather than filling the whole radius solid — repeated calls while the button is
+## held are what build up an organic-looking patch instead of a hard-edged circle.
+func _spray_at(center: Vector2i) -> void:
+	var tiles_to_update: Array[Vector2i] = []
+	for i in SPRAY_PARTICLES_PER_TICK:
+		var angle: float = randf() * TAU
+		var dist: float = sqrt(randf()) * SPRAY_RADIUS
+		var offset := Vector2i(roundi(cos(angle) * dist), roundi(sin(angle) * dist))
+		var coord: Vector2i = center + offset
+		if BuildToolMode.selected_terrain_def_id != -1:
+			tiles_to_update.append_array(
+				_sim.paint_terrain(
+					coord, BuildToolMode.selected_terrain_def_id, BuildToolMode.selected_color_index
+				)
+			)
+		else:
+			tiles_to_update.append_array(_sim.delete_at_tile(coord))
+
+	if tiles_to_update.is_empty():
+		return
+	if _sound_manager != null:
+		_sound_manager.play_paint_tick()
+	_sync_edited_tiles(tiles_to_update)
 
 
 # ---------------------------------------------------------------------------
@@ -820,6 +864,21 @@ func _draw_hover_preview(coord: Vector2i) -> void:
 		else:
 			draw_rect(rect, Color(1, 0, 0, 0.3), true)
 		draw_rect(rect, Color.WHITE, false, 2.0)
+
+	elif mode == BuildToolMode.Mode.SPRAY_PAINT:
+		var color: Color
+		if BuildToolMode.selected_terrain_def_id != -1:
+			color = (
+				_current_palette[BuildToolMode.selected_color_index]
+				if not _current_palette.is_empty()
+				else Color.WHITE
+			)
+			color.a = 0.3
+		else:
+			color = Color(1, 0, 0, 0.3)
+		var center: Vector2 = Vector2(coord.x * ts + ts * 0.5, coord.y * ts + ts * 0.5)
+		draw_circle(center, SPRAY_RADIUS * ts, color)
+		draw_arc(center, SPRAY_RADIUS * ts, 0, TAU, 32, Color.WHITE, 2.0)
 
 	elif (
 		(mode == BuildToolMode.Mode.FILL_SQUARE or mode == BuildToolMode.Mode.OUTLINE_SQUARE)

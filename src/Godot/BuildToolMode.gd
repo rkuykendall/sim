@@ -3,6 +3,7 @@ class_name BuildToolMode
 enum Mode {
 	PLACE_BUILDING,
 	PLACE_TERRAIN,
+	SPRAY_PAINT,
 	FILL_SQUARE,
 	OUTLINE_SQUARE,
 	FLOOD_FILL,
