@@ -145,7 +145,7 @@ func _find_emigrating_pawn(sim: Simulation) -> int:
 func test_real_content_home_capacities() -> void:
 	var content := ContentLoader.load_all()
 	var expected: Dictionary[String, int] = {
-		"Home1": 1, "Home2": 1, "Home3": 1, "Home4": 2, "Home5": 4
+		"Home1": 1, "Home2": 1, "Home3": 1, "Home4": 2, "Home5": 4, "Home6": 4
 	}
 	for home_name: String in expected:
 		var building_id: int = content.get_building_id(home_name)
@@ -161,15 +161,17 @@ func test_real_content_home_capacities() -> void:
 		)
 
 
-# Mirrors an actual house layout (1x Home1, 2x Home2, 2x Home3, 1x Home4, 1x Home5) against
-# real content and checks the full get_max_pawns() computation, not just individual fields.
+# Mirrors an actual house layout (1x Home1, 2x Home2, 2x Home3, 1x Home4, 1x Home5, 1x Home6)
+# against real content and checks the full get_max_pawns() computation, not just individual fields.
 func test_real_content_max_pawns_for_known_layout() -> void:
 	var content := ContentLoader.load_all()
 	var sim := Simulation.new(content)
 
-	var layout: Array[String] = ["Home1", "Home2", "Home2", "Home3", "Home3", "Home4", "Home5"]
+	var layout: Array[String] = [
+		"Home1", "Home2", "Home2", "Home3", "Home3", "Home4", "Home5", "Home6"
+	]
 	for i in layout.size():
 		var building_id: int = content.get_building_id(layout[i])
 		sim.create_building(building_id, Vector2i(i * 3, 0))
 
-	assert_eq(sim.get_max_pawns(), 11, "1+1+1+1+1+2+4 across this layout should total 11")
+	assert_eq(sim.get_max_pawns(), 15, "1+1+1+1+1+2+4+4 across this layout should total 15")

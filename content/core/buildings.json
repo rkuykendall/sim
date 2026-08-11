@@ -6,7 +6,7 @@
     "buffDuration": 800,
     "spriteKey": "home",
     "tileSize": 2,
-    "spriteVariants": 2,
+    "spriteVariants": 1,
     "spriteColumn": 0,
     "isHome": true,
     "capacity": 1
@@ -18,7 +18,7 @@
     "buffDuration": 800,
     "spriteKey": "home",
     "tileSize": 2,
-    "spriteVariants": 2,
+    "spriteVariants": 1,
     "spriteColumn": 1,
     "isHome": true,
     "capacity": 1
@@ -30,7 +30,7 @@
     "buffDuration": 800,
     "spriteKey": "home",
     "tileSize": 2,
-    "spriteVariants": 2,
+    "spriteVariants": 1,
     "spriteColumn": 2,
     "isHome": true,
     "capacity": 1
@@ -42,7 +42,7 @@
     "buffDuration": 800,
     "spriteKey": "home",
     "tileSize": 2,
-    "spriteVariants": 2,
+    "spriteVariants": 1,
     "spriteColumn": 3,
     "isHome": true,
     "capacity": 2
@@ -54,8 +54,20 @@
     "buffDuration": 800,
     "spriteKey": "home",
     "tileSize": 2,
-    "spriteVariants": 2,
+    "spriteVariants": 1,
     "spriteColumn": 4,
+    "isHome": true,
+    "capacity": 4
+  },
+  "Home6": {
+    "satisfiesNeed": "Energy",
+    "interactionDuration": 1600,
+    "grantsBuff": 20,
+    "buffDuration": 800,
+    "spriteKey": "home",
+    "tileSize": 2,
+    "spriteVariants": 1,
+    "spriteColumn": 5,
     "isHome": true,
     "capacity": 4
   },
