@@ -238,7 +238,7 @@ func _execute_work(sim: Simulation, pawn_id: int, action_comp: Components.Action
 	# Replenish building resources
 	var resource_comp: Components.ResourceComponent = sim.entities.resources.get(target_id)
 	if resource_comp != null:
-		var production_amount: float = float(obj_def.get("productionAmount", 30.0))
+		var production_amount: float = DefUtils.get_float(obj_def, "productionAmount", 30.0)
 		resource_comp.current_amount = minf(
 			resource_comp.max_amount, resource_comp.current_amount + production_amount
 		)
@@ -456,12 +456,13 @@ func _execute_drop_off(
 
 
 func _is_in_use_area(pawn_coord: Vector2i, obj_coord: Vector2i, building_def: Dictionary) -> bool:
-	var use_areas: Array = building_def.get("useAreas", [])
+	var use_areas: Array[Vector2i] = []
+	use_areas.assign(DefUtils.get_array(building_def, "useAreas", []))
 	if use_areas.is_empty():
 		var dist: int = abs(pawn_coord.x - obj_coord.x) + abs(pawn_coord.y - obj_coord.y)
 		return dist <= 1
 
-	for offset in use_areas:
+	for offset: Vector2i in use_areas:
 		if pawn_coord == obj_coord + offset:
 			return true
 	return false
@@ -470,14 +471,15 @@ func _is_in_use_area(pawn_coord: Vector2i, obj_coord: Vector2i, building_def: Di
 func _find_valid_use_area(
 	sim: Simulation, obj_coord: Vector2i, from_coord: Vector2i, building_def: Dictionary
 ) -> Vector2i:
-	var use_areas: Array = building_def.get("useAreas", [])
+	var use_areas: Array[Vector2i] = []
+	use_areas.assign(DefUtils.get_array(building_def, "useAreas", []))
 	if use_areas.is_empty():
 		use_areas = [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
 
 	var best := Vector2i(-1, -1)
 	var best_dist: int = 2147483647
 
-	for offset in use_areas:
+	for offset: Vector2i in use_areas:
 		var candidate: Vector2i = obj_coord + offset
 		if not sim.world.is_in_bounds(candidate):
 			continue
@@ -495,11 +497,11 @@ func _find_valid_use_area(
 
 
 func _find_adjacent_walkable(world: World, target: Vector2i, from_coord: Vector2i) -> Vector2i:
-	var dirs := [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
+	var dirs: Array[Vector2i] = [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
 	var best := Vector2i(-1, -1)
 	var best_dist: int = 2147483647
 
-	for d in dirs:
+	for d: Vector2i in dirs:
 		var adj: Vector2i = target + d
 		if not world.is_in_bounds(adj):
 			continue

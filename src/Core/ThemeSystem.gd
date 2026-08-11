@@ -4,7 +4,7 @@ class_name ThemeSystem
 # has_shadows defaults to true (see SimTheme) unless overridden here. Themes needing their own
 # simulation-layer behavior are dedicated SimTheme.* subclasses instead of plain data entries
 # here — see Theme.gd — and get appended to the roster below.
-const ROSTER_DATA: Array = [
+const ROSTER_DATA: Array[Dictionary] = [
 	{"name": "Cuddle Clouds", "file": "res://music/tracks/cuddle_clouds.ogg"},
 	{"name": "Evening Harmony", "file": "res://music/tracks/evening_harmony.ogg"},
 	{"name": "Sunlight Through Leaves", "file": "res://music/tracks/sunlight_through_leaves.ogg"},
@@ -26,10 +26,12 @@ var _disabled: bool = false
 func _init(disabled: bool = false) -> void:
 	_disabled = disabled
 	_available_themes = []
-	for entry in ROSTER_DATA:
+	for entry: Dictionary in ROSTER_DATA:
 		_available_themes.append(
 			SimTheme.SimpleTheme.new(
-				entry.get("name", ""), entry.get("file", ""), entry.get("shadows", true)
+				DefUtils.get_string(entry, "name", ""),
+				DefUtils.get_string(entry, "file", ""),
+				DefUtils.get_bool(entry, "shadows", true)
 			)
 		)
 	_available_themes.append(SimTheme.GymnopedieTheme.new())
@@ -116,7 +118,7 @@ func _pick_random_theme() -> SimTheme:
 		min_priority = mini(min_priority, t.priority)
 
 	var lowest: Array[SimTheme] = _available_themes.filter(
-		func(t): return t.priority == min_priority
+		func(t: SimTheme) -> bool: return t.priority == min_priority
 	)
 	var picked: SimTheme = lowest[randi() % lowest.size()]
 	picked.priority += picked.get_priority_gain()

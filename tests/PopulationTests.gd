@@ -116,7 +116,7 @@ func test_emigration_does_not_retarget_mid_walk() -> void:
 	sim.run_ticks(Simulation.PAWN_SPAWN_INTERVAL)
 
 	assert_eq(sim.entities.all_pawns().size(), 2, "Pawn should still be en route, not yet removed")
-	var action_comp = sim.entities.actions.get(emigrant_id)
+	var action_comp: Components.ActionComponent = sim.entities.actions.get(emigrant_id)
 	assert_not_null(
 		action_comp.current_action, "Emigrating pawn should still have an active action"
 	)
@@ -127,9 +127,9 @@ func test_emigration_does_not_retarget_mid_walk() -> void:
 	)
 
 
-func _find_emigrating_pawn(sim) -> int:
-	for pawn_id in sim.entities.all_pawns():
-		var action_comp = sim.entities.actions.get(pawn_id)
+func _find_emigrating_pawn(sim: Simulation) -> int:
+	for pawn_id: int in sim.entities.all_pawns():
+		var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 		if (
 			action_comp != null
 			and action_comp.current_action != null
@@ -144,14 +144,18 @@ func _find_emigrating_pawn(sim) -> int:
 # production content directly.
 func test_real_content_home_capacities() -> void:
 	var content := ContentLoader.load_all()
-	var expected := {"Home1": 1, "Home2": 1, "Home3": 1, "Home4": 2, "Home5": 4}
-	for home_name in expected:
+	var expected: Dictionary[String, int] = {
+		"Home1": 1, "Home2": 1, "Home3": 1, "Home4": 2, "Home5": 4
+	}
+	for home_name: String in expected:
 		var building_id: int = content.get_building_id(home_name)
 		assert_not_eq(building_id, -1, "%s should exist in production content" % home_name)
 		var bdef: Dictionary = content.buildings.get(building_id, {})
-		assert_true(bool(bdef.get("isHome", false)), "%s should be marked isHome" % home_name)
+		assert_true(
+			DefUtils.get_bool(bdef, "isHome", false), "%s should be marked isHome" % home_name
+		)
 		assert_eq(
-			int(bdef.get("capacity", -1)),
+			DefUtils.get_int(bdef, "capacity", -1),
 			expected[home_name],
 			"%s capacity should be %d" % [home_name, expected[home_name]]
 		)
@@ -163,7 +167,7 @@ func test_real_content_max_pawns_for_known_layout() -> void:
 	var content := ContentLoader.load_all()
 	var sim := Simulation.new(content)
 
-	var layout := ["Home1", "Home2", "Home2", "Home3", "Home3", "Home4", "Home5"]
+	var layout: Array[String] = ["Home1", "Home2", "Home2", "Home3", "Home3", "Home4", "Home5"]
 	for i in layout.size():
 		var building_id: int = content.get_building_id(layout[i])
 		sim.create_building(building_id, Vector2i(i * 3, 0))

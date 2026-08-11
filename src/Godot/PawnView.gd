@@ -161,7 +161,11 @@ func initialize_with_sprite(sheet_tex: Texture2D) -> void:
 	var frames := SpriteFrames.new()
 	for anim_name: String in CHAR_ANIMS:
 		var def: Array = CHAR_ANIMS[anim_name]
-		_add_animation(frames, anim_name, sheet_tex, def[0], def[1], def[2], def[3])
+		var row: int = def[0]
+		var frame_count: int = def[1]
+		var fps: float = def[2]
+		var loop: bool = def[3]
+		_add_animation(frames, anim_name, sheet_tex, row, frame_count, fps, loop)
 	_sprite.sprite_frames = frames
 	_sprite.scale = Vector2(RenderingConstants.SPRITE_SCALE, RenderingConstants.SPRITE_SCALE)
 	# The character art rests at the bottom-center of each (larger) frame; shift the

@@ -39,7 +39,7 @@ func refresh_saves_list() -> void:
 	_grid_container.add_child(_create_new_game_item())
 
 	var saves: Array = SaveFileManager.get_all_saves()
-	for save_meta in saves:
+	for save_meta: Dictionary in saves:
 		_grid_container.add_child(_create_save_item(save_meta))
 
 	if OS.has_feature("web"):
@@ -67,7 +67,8 @@ func _create_new_game_item() -> Control:
 	container.gui_input.connect(
 		func(event: InputEvent) -> void:
 			if event is InputEventMouseButton:
-				if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+				var mb_event: InputEventMouseButton = event
+				if mb_event.button_index == MOUSE_BUTTON_LEFT and mb_event.pressed:
 					if _sound_manager != null:
 						_sound_manager.play_select()
 					new_game_requested.emit()
@@ -109,7 +110,8 @@ func _create_save_item(save_meta: Dictionary) -> Control:
 	container.gui_input.connect(
 		func(event: InputEvent) -> void:
 			if event is InputEventMouseButton:
-				if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+				var mb_event: InputEventMouseButton = event
+				if mb_event.button_index == MOUSE_BUTTON_LEFT and mb_event.pressed:
 					if _sound_manager != null:
 						_sound_manager.play_select()
 					load_game_requested.emit(slot_name)
@@ -139,7 +141,8 @@ func _create_quit_item() -> Control:
 	container.gui_input.connect(
 		func(event: InputEvent) -> void:
 			if event is InputEventMouseButton:
-				if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+				var mb_event: InputEventMouseButton = event
+				if mb_event.button_index == MOUSE_BUTTON_LEFT and mb_event.pressed:
 					if _sound_manager != null:
 						_sound_manager.play_select()
 					quit_requested.emit()
@@ -169,7 +172,8 @@ func _create_fullscreen_item() -> Control:
 	container.gui_input.connect(
 		func(event: InputEvent) -> void:
 			if event is InputEventMouseButton:
-				if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+				var mb_event: InputEventMouseButton = event
+				if mb_event.button_index == MOUSE_BUTTON_LEFT and mb_event.pressed:
 					if _sound_manager != null:
 						_sound_manager.play_click()
 					var is_fullscreen := (

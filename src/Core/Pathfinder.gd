@@ -23,7 +23,7 @@ class MinHeap:
 
 	func pop() -> Vector2i:
 		var top: Vector2i = _data[0][1]
-		var last = _data.pop_back()
+		var last: Array = _data.pop_back()
 		if not _data.is_empty():
 			_data[0] = last
 			_sink_down(0)
@@ -37,7 +37,7 @@ class MinHeap:
 			var parent: int = (i - 1) / 2
 			if _data[parent][0] <= _data[i][0]:
 				break
-			var tmp = _data[parent]
+			var tmp: Array = _data[parent]
 			_data[parent] = _data[i]
 			_data[i] = tmp
 			i = parent
@@ -54,7 +54,7 @@ class MinHeap:
 				smallest = right
 			if smallest == i:
 				break
-			var tmp = _data[i]
+			var tmp: Array = _data[i]
 			_data[i] = _data[smallest]
 			_data[smallest] = tmp
 			i = smallest
@@ -97,6 +97,7 @@ static func find_path(world: World, start: Vector2i, goal: Vector2i) -> Array[Ve
 
 
 static func _heuristic(a: Vector2i, b: Vector2i) -> float:
+	@warning_ignore("unsafe_call_argument")  # abs() on an int doesn't statically narrow past Variant
 	return float(abs(a.x - b.x) + abs(a.y - b.y))
 
 

@@ -55,7 +55,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _active_key.is_empty():
 		return
-	var density: float = float(_profile.get("spawn_density", 0.0))
+	var density: float = DefUtils.get_float(_profile, "spawn_density", 0.0)
 	var area: float = _get_visible_world_rect().get_area()
 	_spawn_accumulator += delta * density * area
 	while _spawn_accumulator >= 1.0:
@@ -103,7 +103,7 @@ func _spawn_drop() -> void:
 		return
 
 	var world_rect: Rect2 = _get_visible_world_rect()
-	var fall_height: float = float(_profile.get("fall_height", 64.0))
+	var fall_height: float = DefUtils.get_float(_profile, "fall_height", 64.0)
 
 	# Land somewhere across the whole visible ground — not just along one screen-relative
 	# edge — then work backward to where the drop must have started to fall fall_height and
@@ -114,7 +114,8 @@ func _spawn_drop() -> void:
 	)
 
 	var speed_mult: float = randf_range(1.0 - FALL_SPEED_VARIANCE, 1.0 + FALL_SPEED_VARIANCE)
-	var velocity: Vector2 = Vector2(_profile.get("fall_velocity", Vector2(0, 200))) * speed_mult
+	var raw_velocity: Vector2 = _profile.get("fall_velocity", Vector2(0, 200))
+	var velocity: Vector2 = raw_velocity * speed_mult
 	var duration: float = fall_height / velocity.y
 	var start_pos: Vector2 = landing_pos - velocity * duration
 
@@ -138,7 +139,8 @@ func _on_drop_landed(drop: AnimatedSprite2D) -> void:
 
 
 func _build_sprite_frames(profile: Dictionary) -> SpriteFrames:
-	var texture: Texture2D = load(profile["texture"])
+	var texture_path: String = profile["texture"]
+	var texture: Texture2D = load(texture_path)
 	var frame_size: int = profile["frame_size"]
 	var columns: int = profile["columns"]
 
@@ -150,8 +152,8 @@ func _build_sprite_frames(profile: Dictionary) -> SpriteFrames:
 
 	frames.add_animation("splash")
 	frames.set_animation_loop("splash", false)
-	frames.set_animation_speed("splash", float(profile.get("splash_fps", 16.0)))
-	for i in int(profile.get("splash_frame_count", 0)):
+	frames.set_animation_speed("splash", DefUtils.get_float(profile, "splash_fps", 16.0))
+	for i in DefUtils.get_int(profile, "splash_frame_count", 0):
 		frames.add_frame("splash", _atlas_frame(texture, i + 1, columns, frame_size))
 
 	return frames

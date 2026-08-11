@@ -84,6 +84,8 @@ class AttachmentComponent:
 	# visiting a building to satisfy Social doesn't carry over to Purpose (work) scoring there.
 	var need_attachments: Dictionary[int, Dictionary] = {}
 
+	# per_pawn's value type isn't statically known past Dictionary[int, Dictionary]
+	@warning_ignore("unsafe_call_argument")
 	func get_strength(need_id: int, pawn_id: int) -> int:
 		var per_pawn: Dictionary = need_attachments.get(need_id, {})
 		return per_pawn.get(pawn_id, 0)
@@ -92,15 +94,16 @@ class AttachmentComponent:
 		if not need_attachments.has(need_id):
 			need_attachments[need_id] = {}
 		var per_pawn: Dictionary = need_attachments[need_id]
+		@warning_ignore("unsafe_call_argument")
 		per_pawn[pawn_id] = mini(10, per_pawn.get(pawn_id, 0) + 1)
 
 	## Pivots need_attachments into pawn_id -> {need_id: strength} — for display/snapshot
 	## purposes only; AI scoring always reads a specific need's bucket via get_strength().
 	func per_pawn_breakdown() -> Dictionary:
 		var breakdown: Dictionary = {}
-		for need_id in need_attachments:
+		for need_id: int in need_attachments:
 			var per_pawn: Dictionary = need_attachments[need_id]
-			for pawn_id in per_pawn:
+			for pawn_id: int in per_pawn:
 				if not breakdown.has(pawn_id):
 					breakdown[pawn_id] = {}
 				breakdown[pawn_id][need_id] = per_pawn[pawn_id]

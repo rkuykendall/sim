@@ -27,15 +27,15 @@ var _pawn_action_label: Label
 var _pawn_needs_container: VBoxContainer
 var _pawn_mood_factors_container: VBoxContainer
 var _pawn_attachments_container: VBoxContainer
-var _need_bars: Dictionary = {}  # need_id -> ProgressBar
-var _mood_factor_labels: Array = []
-var _pawn_attachment_labels: Array = []
+var _need_bars: Dictionary[int, ProgressBar] = {}
+var _mood_factor_labels: Array[Label] = []
+var _pawn_attachment_labels: Array[Label] = []
 
 var _building_name_label: Label
 var _building_status_label: Label
 var _building_desc_label: Label
 var _building_debug_container: VBoxContainer
-var _building_debug_labels: Array = []
+var _building_debug_labels: Array[Label] = []
 
 
 func _ready() -> void:
@@ -177,12 +177,12 @@ func show_building(building: Dictionary, sim: Simulation) -> void:
 		var bdef: Dictionary = _content.buildings.get(building.get("building_def_id", -1), {})
 		if not bdef.is_empty():
 			var need_name: String = "nothing"
-			var need_id: int = int(bdef.get("satisfiesNeedId", -1))
+			var need_id: int = DefUtils.get_int(bdef, "satisfiesNeedId", -1)
 			if need_id != -1:
 				var ndef: Dictionary = _content.needs.get(need_id, {})
 				if not ndef.is_empty():
-					need_name = ndef.get("name", "nothing")
-			var amount: float = float(bdef.get("needSatisfactionAmount", 0))
+					need_name = DefUtils.get_string(ndef, "name", "nothing")
+			var amount: float = DefUtils.get_float(bdef, "needSatisfactionAmount", 0)
 			_building_desc_label.text = "Satisfies: %s (+%d)" % [need_name, int(amount)]
 
 	_update_building_debug_display(building)
@@ -212,7 +212,7 @@ func _update_needs_display(pawn_id: int) -> void:
 	var need_comp: Components.NeedsComponent = _sim.entities.needs.get(pawn_id)
 	if need_comp == null:
 		return
-	for need_id in need_comp.needs.keys():
+	for need_id: int in need_comp.needs.keys():
 		var ndef: Dictionary = _content.needs.get(need_id, {})
 		if ndef.is_empty():
 			continue
@@ -220,12 +220,12 @@ func _update_needs_display(pawn_id: int) -> void:
 		if _need_bars.has(need_id):
 			bar = _need_bars[need_id]
 		else:
-			bar = _create_need_bar(ndef.get("name", str(need_id)))
+			bar = _create_need_bar(DefUtils.get_string(ndef, "name", str(need_id)))
 			_need_bars[need_id] = bar
 		var value: float = need_comp.needs[need_id]
 		bar.value = value
-		var crit: float = float(ndef.get("criticalThreshold", 20.0))
-		var low: float = float(ndef.get("lowThreshold", 40.0))
+		var crit: float = DefUtils.get_float(ndef, "criticalThreshold", 20.0)
+		var low: float = DefUtils.get_float(ndef, "lowThreshold", 40.0)
 		bar.modulate = Color.RED if value < crit else (Color.YELLOW if value < low else Color.LIME)
 
 
@@ -249,7 +249,7 @@ func _create_need_bar(need_name: String) -> ProgressBar:
 ## every need's (value - 50) * 2 (0..100 need range rescaled to -100..100, 50 = neutral), so
 ## each need's own score on that same scale is shown individually to explain the average.
 func _update_mood_factors_display(pawn_id: int) -> void:
-	for lbl in _mood_factor_labels:
+	for lbl: Label in _mood_factor_labels:
 		lbl.queue_free()
 	_mood_factor_labels.clear()
 
@@ -262,7 +262,7 @@ func _update_mood_factors_display(pawn_id: int) -> void:
 		_mood_factor_labels.append(lbl)
 		return
 
-	for need_id in need_comp.needs:
+	for need_id: int in need_comp.needs:
 		var ndef: Dictionary = _content.needs.get(need_id, {})
 		if ndef.is_empty():
 			continue
@@ -271,7 +271,7 @@ func _update_mood_factors_display(pawn_id: int) -> void:
 
 		var lbl := _add_label(
 			_pawn_mood_factors_container,
-			"%s (%+d)" % [ndef.get("name", str(need_id)), int(contribution)],
+			"%s (%+d)" % [DefUtils.get_string(ndef, "name", str(need_id)), int(contribution)],
 			16
 		)
 		lbl.modulate = (
@@ -281,23 +281,23 @@ func _update_mood_factors_display(pawn_id: int) -> void:
 
 
 func _update_pawn_attachments_display(pawn: Dictionary) -> void:
-	for lbl in _pawn_attachment_labels:
+	for lbl: Label in _pawn_attachment_labels:
 		lbl.queue_free()
 	_pawn_attachment_labels.clear()
 
-	var attachments: Dictionary = pawn.get("attachments", {})
+	var attachments: Dictionary = DefUtils.get_dict(pawn, "attachments", {})
 	if attachments.is_empty():
 		var lbl := _add_label(_pawn_attachments_container, "(none)", 14)
 		lbl.modulate = Color.GRAY
 		_pawn_attachment_labels.append(lbl)
 		return
 
-	for building_id in attachments.keys():
+	for building_id: int in attachments.keys():
 		var formatted_id: String = (
 			_sim.format_entity_id(building_id) if _sim != null else str(building_id)
 		)
 		var per_need: Dictionary = attachments[building_id]
-		for need_id in per_need.keys():
+		for need_id: int in per_need.keys():
 			var strength: int = per_need[need_id]
 			var need_name: String = _need_name(need_id)
 			var lbl := _add_label(
@@ -310,7 +310,7 @@ func _update_pawn_attachments_display(pawn: Dictionary) -> void:
 
 
 func _update_building_debug_display(building: Dictionary) -> void:
-	for lbl in _building_debug_labels:
+	for lbl: Label in _building_debug_labels:
 		lbl.queue_free()
 	_building_debug_labels.clear()
 
@@ -339,15 +339,15 @@ func _update_building_debug_display(building: Dictionary) -> void:
 		res_lbl.modulate = Color.RED if pct < 0.2 else (Color.ORANGE if pct < 0.5 else Color.LIME)
 		_building_debug_labels.append(res_lbl)
 
-	var attach: Dictionary = building.get("attachments", {})
+	var attach: Dictionary = DefUtils.get_dict(building, "attachments", {})
 	if not attach.is_empty():
 		var hdr := _add_label(_building_debug_container, "Attachments:", 14)
 		hdr.modulate = Color.GRAY
 		_building_debug_labels.append(hdr)
-		for pawn_id in attach.keys():
+		for pawn_id: int in attach.keys():
 			var formatted: String = _sim.format_entity_id(pawn_id) if _sim != null else str(pawn_id)
 			var per_need: Dictionary = attach[pawn_id]
-			for need_id in per_need.keys():
+			for need_id: int in per_need.keys():
 				var strength: int = per_need[need_id]
 				var need_name: String = _need_name(need_id)
 				var lbl := _add_label(

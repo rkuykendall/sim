@@ -47,7 +47,7 @@ func test_diversity_map_stable_across_wandering() -> void:
 	var builder := _Builder.new()
 	builder.with_world_bounds(8, 8)
 	builder.add_pawn("Wanderer", 4, 4, {})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var before: Array = sim.ai_system._get_diversity_map(sim.world).duplicate()
 
@@ -64,7 +64,7 @@ func test_diversity_map_rebuilds_after_paint() -> void:
 	var builder := _Builder.new()
 	builder.with_world_bounds(8, 8)
 	var wall_id := builder.define_terrain("Wall", false)
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var before: Array = sim.ai_system._get_diversity_map(sim.world).duplicate()
 
@@ -85,7 +85,7 @@ func test_diversity_map_rebuilds_after_delete() -> void:
 	# (see Simulation._get_flat_terrain_id()) — needed for delete to actually change anything.
 	builder.define_terrain("Flat", true, "flat")
 	var floor_id := builder.define_terrain("Floor", true)
-	var sim = builder.build()
+	var sim := builder.build()
 
 	sim.paint_terrain(Vector2i(4, 4), floor_id)
 	var before: Array = sim.ai_system._get_diversity_map(sim.world).duplicate()
@@ -103,7 +103,7 @@ func test_diversity_map_rebuilds_after_delete() -> void:
 func test_diversity_map_cached_reference_reused() -> void:
 	var builder := _Builder.new()
 	builder.with_world_bounds(8, 8)
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var first: Array = sim.ai_system._get_diversity_map(sim.world)
 	var second: Array = sim.ai_system._get_diversity_map(sim.world)
@@ -120,7 +120,7 @@ func test_diversity_map_cached_reference_reused() -> void:
 func test_trapped_pawn_gets_fallback_action() -> void:
 	var sim := _build_trapped_pawn_scenario()
 	var pawn_id := sim.find_pawn_by_name("Trapped")
-	var action_comp = sim.entities.actions.get(pawn_id)
+	var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 
 	sim.tick()  # AISystem's first decision attempt for this pawn
 
@@ -137,14 +137,14 @@ func test_trapped_pawn_gets_fallback_action() -> void:
 func test_trapped_pawn_does_not_redecide_every_tick() -> void:
 	var sim := _build_trapped_pawn_scenario()
 	var pawn_id := sim.find_pawn_by_name("Trapped")
-	var action_comp = sim.entities.actions.get(pawn_id)
+	var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 
 	sim.tick()  # AISystem queues the fallback idle (current_action is still null this tick —
 	# ActionSystem, which pops the queue into current_action, runs before AISystem)
 	sim.tick()  # ActionSystem pops it into current_action and sets action_start_tick
 
 	assert_not_null(action_comp.current_action, "Fallback idle should be the active action by now")
-	var action_ref = action_comp.current_action
+	var action_ref: Definitions.ActionDef = action_comp.current_action
 	var start_tick_ref: int = action_comp.action_start_tick
 
 	sim.run_ticks(5)  # well within the fallback's retry-delay duration
@@ -278,7 +278,7 @@ func test_wander_home_visit_occurs_without_side_effects() -> void:
 
 	var home_building_id := _get_building_by_def_id(sim, home_id)
 	var pawn_id := sim.find_pawn_by_name("Idle")
-	var action_comp = sim.entities.actions.get(pawn_id)
+	var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 
 	var visited := false
 	# Deterministic given TestSimulationBuilder's fixed seed — enough ticks for a hundred-plus
@@ -301,7 +301,7 @@ func test_wander_home_visit_occurs_without_side_effects() -> void:
 		"A cosmetic visit must not touch the real Energy need"
 	)
 
-	var ac = sim.entities.attachments.get(home_building_id)
+	var ac: Components.AttachmentComponent = sim.entities.attachments.get(home_building_id)
 	assert_eq(
 		ac.get_strength(energy_id, pawn_id),
 		0,
@@ -339,7 +339,7 @@ func test_wander_home_visit_excludes_visitors() -> void:
 
 	var home_building_id := _get_building_by_def_id(sim, home_id)
 	var visitor_id := sim.spawn_visitor_pawn("special_4_v2", {}, "Visitor")
-	var action_comp = sim.entities.actions.get(visitor_id)
+	var action_comp: Components.ActionComponent = sim.entities.actions.get(visitor_id)
 
 	for _i in 6000:
 		sim.tick()
@@ -371,9 +371,9 @@ func test_wander_expression_shows_unsatisfiable_need() -> void:
 	# deterministic "unhappy" — _wander_randomly is called directly below, without a sim.tick()
 	# that would let MoodSystem recompute this from needs
 	sim.entities.moods[pawn_id].mood = -50.0
-	var action_comp = sim.entities.actions.get(pawn_id)
+	var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 
-	var sit_action = _find_sit_action_by_wandering(sim, pawn_id, action_comp)
+	var sit_action: Definitions.ActionDef = _find_sit_action_by_wandering(sim, pawn_id, action_comp)
 
 	assert_not_null(sit_action, "Should eventually trigger the sit-and-observe emote")
 	assert_eq(sit_action.animation, Definitions.AnimationType.SIT, "Should play the sit animation")
@@ -401,9 +401,9 @@ func test_wander_expression_shows_best_need_when_happy() -> void:
 
 	var pawn_id := sim.find_pawn_by_name("Content")
 	sim.entities.moods[pawn_id].mood = 50.0  # deterministic "happy"
-	var action_comp = sim.entities.actions.get(pawn_id)
+	var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 
-	var sit_action = _find_sit_action_by_wandering(sim, pawn_id, action_comp)
+	var sit_action: Definitions.ActionDef = _find_sit_action_by_wandering(sim, pawn_id, action_comp)
 
 	assert_not_null(sit_action, "Should eventually trigger the sit-and-observe emote")
 	assert_eq(sit_action.animation, Definitions.AnimationType.SIT, "Should play the sit animation")
@@ -425,7 +425,7 @@ func test_wander_expression_shows_best_need_when_happy() -> void:
 # triggered within the attempt budget.
 func _find_sit_action_by_wandering(
 	sim: Simulation, pawn_id: int, action_comp: Components.ActionComponent
-):
+) -> Definitions.ActionDef:
 	for _i in 200:
 		action_comp.action_queue.clear()
 		sim.ai_system._wander_randomly(sim, pawn_id, action_comp)

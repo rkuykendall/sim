@@ -37,41 +37,48 @@ func run() -> void:
 
 
 func test_serialize_empty() -> void:
-	var builder = _Builder.new()
+	var builder := _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
-	var sim = builder.build()
+	var sim := builder.build()
 
-	var data = _SaveService.to_dict(sim, "test-save")
+	var data := _SaveService.to_dict(sim, "test-save")
 	var json_str: String = JSON.stringify(data)
-	var restored = JSON.parse_string(json_str)
-	assert_true(restored is Dictionary, "Should deserialize to Dictionary")
+	var parsed: Variant = JSON.parse_string(json_str)
+	assert_true(parsed is Dictionary, "Should deserialize to Dictionary")
+	var restored: Dictionary = parsed
 	assert_eq(restored.get("name", ""), "test-save", "Name should be preserved")
-	assert_eq(int(restored.get("seed", -1)), sim.sim_seed, "Seed should be preserved")
-	assert_eq(int(restored.get("current_tick", -1)), sim.time.tick, "Tick should be preserved")
+	assert_eq(DefUtils.get_int(restored, "seed", -1), sim.sim_seed, "Seed should be preserved")
+	assert_eq(
+		DefUtils.get_int(restored, "current_tick", -1), sim.time.tick, "Tick should be preserved"
+	)
 
 
 func test_serialize_impassable() -> void:
-	var builder = _Builder.new()
+	var builder := _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
 	var wall_id := builder.define_terrain("wall", false)
-	var sim = builder.build()
+	var sim := builder.build()
 
 	sim.paint_terrain(Vector2i(2, 2), wall_id)
 
-	var data = _SaveService.to_dict(sim, "test-save")
+	var data := _SaveService.to_dict(sim, "test-save")
 	var json_str: String = JSON.stringify(data)
 	# Should not throw / should produce valid JSON
 	assert_true(json_str.length() > 0, "JSON should not be empty")
-	var restored = JSON.parse_string(json_str)
-	assert_true(restored is Dictionary, "Should parse back to Dictionary")
+	var parsed: Variant = JSON.parse_string(json_str)
+	assert_true(parsed is Dictionary, "Should parse back to Dictionary")
+	var restored: Dictionary = parsed
 
 	# Find the wall tile in restored world
-	var world_data: Dictionary = restored.get("world", {})
-	var tiles: Array = world_data.get("tiles", [])
+	var world_data: Dictionary = DefUtils.get_dict(restored, "world", {})
+	var tiles: Array = DefUtils.get_array(world_data, "tiles", [])
 	var found_wall := false
-	for tile in tiles:
-		if tile is Dictionary and tile.get("x", -1) == 2 and tile.get("y", -1) == 2:
-			var cost: float = float(tile.get("walkability_cost", 1.0))
+	for tile: Variant in tiles:
+		if not tile is Dictionary:
+			continue
+		var tile_data: Dictionary = tile
+		if DefUtils.get_int(tile_data, "x", -1) == 2 and DefUtils.get_int(tile_data, "y", -1) == 2:
+			var cost: float = DefUtils.get_float(tile_data, "walkability_cost", 1.0)
 			# World.IMPASSABLE = 1e9; any value >= 1e9 is a wall
 			assert_gt(cost, 100.0, "Wall tile walkability_cost should be impassable (>= 1e9)")
 			found_wall = true
@@ -80,69 +87,75 @@ func test_serialize_impassable() -> void:
 
 
 func test_serialize_pawns() -> void:
-	var builder = _Builder.new()
+	var builder := _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
 	var hunger_id := builder.define_need("hunger", 0.02)
 	builder.add_pawn("Alice", 1, 1, {hunger_id: 75.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
-	var data = _SaveService.to_dict(sim, "test-save")
+	var data := _SaveService.to_dict(sim, "test-save")
 	var json_str: String = JSON.stringify(data)
-	var restored = JSON.parse_string(json_str)
-	assert_true(restored is Dictionary, "Should parse")
+	var parsed: Variant = JSON.parse_string(json_str)
+	assert_true(parsed is Dictionary, "Should parse")
+	var restored: Dictionary = parsed
 
-	var entities: Array = restored.get("entities", [])
+	var entities: Array = DefUtils.get_array(restored, "entities", [])
 	var pawn_data: Dictionary = {}
-	for e in entities:
-		if e is Dictionary and e.get("type", "") == "Pawn":
+	for e: Dictionary in entities:
+		if DefUtils.get_string(e, "type", "") == "Pawn":
 			pawn_data = e
 			break
 	assert_eq(pawn_data.get("name", ""), "Alice", "Pawn name should be Alice")
-	assert_eq(int(pawn_data.get("x", -1)), 1, "Pawn x should be 1")
-	assert_eq(int(pawn_data.get("y", -1)), 1, "Pawn y should be 1")
-	var needs: Dictionary = pawn_data.get("needs", {})
-	assert_approx(float(needs.get(str(hunger_id), 0.0)), 75.0, 0.1, "Hunger should be ~75")
+	assert_eq(DefUtils.get_int(pawn_data, "x", -1), 1, "Pawn x should be 1")
+	assert_eq(DefUtils.get_int(pawn_data, "y", -1), 1, "Pawn y should be 1")
+	var needs: Dictionary = DefUtils.get_dict(pawn_data, "needs", {})
+	assert_approx(DefUtils.get_float(needs, str(hunger_id), 0.0), 75.0, 0.1, "Hunger should be ~75")
 
 
 func test_serialize_buildings() -> void:
-	var builder = _Builder.new()
+	var builder := _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
 	var bed_id := builder.define_building("bed")
 	builder.add_building(bed_id, 2, 2)
-	var sim = builder.build()
+	var sim := builder.build()
 
-	var data = _SaveService.to_dict(sim, "test-save")
+	var data := _SaveService.to_dict(sim, "test-save")
 	var json_str: String = JSON.stringify(data)
-	var restored = JSON.parse_string(json_str)
-	assert_true(restored is Dictionary, "Should parse")
+	var parsed: Variant = JSON.parse_string(json_str)
+	assert_true(parsed is Dictionary, "Should parse")
+	var restored: Dictionary = parsed
 
-	var entities: Array = restored.get("entities", [])
+	var entities: Array = DefUtils.get_array(restored, "entities", [])
 	var building_data: Dictionary = {}
-	for e in entities:
-		if e is Dictionary and e.get("type", "") == "Building":
+	for e: Dictionary in entities:
+		if DefUtils.get_string(e, "type", "") == "Building":
 			building_data = e
 			break
-	assert_eq(int(building_data.get("building_def_id", -1)), bed_id, "building_def_id should match")
-	assert_eq(int(building_data.get("x", -1)), 2, "Building x should be 2")
-	assert_eq(int(building_data.get("y", -1)), 2, "Building y should be 2")
+	assert_eq(
+		DefUtils.get_int(building_data, "building_def_id", -1),
+		bed_id,
+		"building_def_id should match"
+	)
+	assert_eq(DefUtils.get_int(building_data, "x", -1), 2, "Building x should be 2")
+	assert_eq(DefUtils.get_int(building_data, "y", -1), 2, "Building y should be 2")
 
 
 func test_restore_pawn_state() -> void:
-	var builder = _Builder.new()
+	var builder := _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
 	var hunger_id := builder.define_need("hunger", 0.02)
 	builder.add_pawn("Bob", 2, 3, {hunger_id: 60.0})
-	var original = builder.build()
+	var original := builder.build()
 
 	original.run_ticks(10)
 
-	var data = _SaveService.to_dict(original, "test-save")
-	var restored = _SaveService.from_dict(data, original.content)
+	var data := _SaveService.to_dict(original, "test-save")
+	var restored := _SaveService.from_dict(data, original.content)
 
 	# Find Bob in restored simulation
 	var restored_pawn_id := -1
-	for pid in restored.entities.all_pawns():
-		var pc = restored.entities.pawns.get(pid)
+	for pid: int in restored.entities.all_pawns():
+		var pc: Components.PawnComponent = restored.entities.pawns.get(pid)
 		if pc != null and pc.name == "Bob":
 			restored_pawn_id = pid
 			break
@@ -150,14 +163,14 @@ func test_restore_pawn_state() -> void:
 
 	# Check position
 	var orig_pawn_id := original.find_pawn_by_name("Bob")
-	var orig_pos = original.entities.positions.get(orig_pawn_id)
-	var rest_pos = restored.entities.positions.get(restored_pawn_id)
+	var orig_pos: Components.PositionComponent = original.entities.positions.get(orig_pawn_id)
+	var rest_pos: Components.PositionComponent = restored.entities.positions.get(restored_pawn_id)
 	if orig_pos != null and rest_pos != null:
 		assert_eq(rest_pos.coord, orig_pos.coord, "Position should be restored")
 
 	# Check needs (approximately)
-	var orig_need_comp = original.entities.needs.get(orig_pawn_id)
-	var rest_need_comp = restored.entities.needs.get(restored_pawn_id)
+	var orig_need_comp: Components.NeedsComponent = original.entities.needs.get(orig_pawn_id)
+	var rest_need_comp: Components.NeedsComponent = restored.entities.needs.get(restored_pawn_id)
 	if orig_need_comp != null and rest_need_comp != null:
 		var orig_hunger: float = orig_need_comp.needs.get(hunger_id, 0.0)
 		var rest_hunger: float = rest_need_comp.needs.get(hunger_id, 0.0)
@@ -165,16 +178,16 @@ func test_restore_pawn_state() -> void:
 
 
 func test_restore_world_tiles() -> void:
-	var builder = _Builder.new()
+	var builder := _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
 	var wall_id := builder.define_terrain("wall", false)
-	var original = builder.build()
+	var original := builder.build()
 
 	original.paint_terrain(Vector2i(1, 1), wall_id)
 	original.paint_terrain(Vector2i(2, 2), wall_id)
 
-	var data = _SaveService.to_dict(original, "test-save")
-	var restored = _SaveService.from_dict(data, original.content)
+	var data := _SaveService.to_dict(original, "test-save")
+	var restored := _SaveService.from_dict(data, original.content)
 
 	assert_false(
 		restored.world.is_walkable(Vector2i(1, 1)), "(1,1) should remain a wall after restore"
@@ -186,63 +199,63 @@ func test_restore_world_tiles() -> void:
 
 
 func test_restore_buildings() -> void:
-	var builder = _Builder.new()
+	var builder := _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
 	var bed_id := builder.define_building("bed")
 	builder.add_building(bed_id, 1, 1)
-	var original = builder.build()
+	var original := builder.build()
 
-	var data = _SaveService.to_dict(original, "test-save")
-	var restored = _SaveService.from_dict(data, original.content)
+	var data := _SaveService.to_dict(original, "test-save")
+	var restored := _SaveService.from_dict(data, original.content)
 
-	var buildings = restored.entities.all_buildings()
+	var buildings: Array[int] = restored.entities.all_buildings()
 	assert_eq(buildings.size(), 1, "Should have exactly one building")
 
-	var building_id = buildings[0]
-	var bc = restored.entities.buildings.get(building_id)
+	var building_id: int = buildings[0]
+	var bc: Components.BuildingComponent = restored.entities.buildings.get(building_id)
 	assert_not_null(bc, "Building component should exist")
 	assert_eq(bc.building_def_id, bed_id, "Building def ID should be restored")
 
-	var pos = restored.entities.positions.get(building_id)
+	var pos: Components.PositionComponent = restored.entities.positions.get(building_id)
 	assert_not_null(pos, "Position component should exist")
 	assert_eq(pos.coord, Vector2i(1, 1), "Building position should be restored")
 
 
 func test_restore_time() -> void:
-	var builder = _Builder.new()
+	var builder := _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
-	var original = builder.build()
+	var original := builder.build()
 
 	original.run_ticks(100)
-	var orig_tick = original.time.tick
+	var orig_tick: int = original.time.tick
 
-	var data = _SaveService.to_dict(original, "test-save")
-	var restored = _SaveService.from_dict(data, original.content)
+	var data := _SaveService.to_dict(original, "test-save")
+	var restored := _SaveService.from_dict(data, original.content)
 
 	assert_eq(restored.time.tick, orig_tick, "Time tick should be restored")
 
 
 func test_restore_entity_ids() -> void:
-	var builder = _Builder.new()
+	var builder := _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
 	builder.add_pawn("Pawn1", 0, 0)
 	builder.add_pawn("Pawn2", 1, 0)
-	var original = builder.build()
+	var original := builder.build()
 
-	var orig_ids = original.entities.all_pawns().duplicate()
+	var orig_ids: Array[int] = original.entities.all_pawns().duplicate()
 	orig_ids.sort()
 
-	var data = _SaveService.to_dict(original, "test-save")
-	var restored = _SaveService.from_dict(data, original.content)
+	var data := _SaveService.to_dict(original, "test-save")
+	var restored := _SaveService.from_dict(data, original.content)
 
-	var rest_ids = restored.entities.all_pawns().duplicate()
+	var rest_ids: Array[int] = restored.entities.all_pawns().duplicate()
 	rest_ids.sort()
 
 	assert_eq(rest_ids, orig_ids, "Entity IDs should be preserved across save/load")
 
 
 func test_roundtrip_complex() -> void:
-	var builder = _Builder.new()
+	var builder := _Builder.new()
 	builder.with_world_bounds(9, 9)
 	builder.define_terrain("flat", true, "flat", false, true)
 	var wall_id := builder.define_terrain("wall", false)
@@ -253,7 +266,7 @@ func test_roundtrip_complex() -> void:
 	builder.add_building(farm_id, 2, 2)
 	builder.add_building(bed_id, 5, 5)
 	builder.add_pawn("Worker", 0, 0, {hunger_id: 80.0, energy_id: 90.0})
-	var original = builder.build()
+	var original := builder.build()
 
 	original.paint_terrain(Vector2i(4, 0), wall_id)
 	original.paint_terrain(Vector2i(4, 1), wall_id)
@@ -261,8 +274,8 @@ func test_roundtrip_complex() -> void:
 
 	original.run_ticks(50)
 
-	var data = _SaveService.to_dict(original, "test-save")
-	var restored = _SaveService.from_dict(data, original.content)
+	var data := _SaveService.to_dict(original, "test-save")
+	var restored := _SaveService.from_dict(data, original.content)
 
 	assert_eq(restored.time.tick, original.time.tick, "Tick should match")
 	assert_eq(
@@ -280,17 +293,17 @@ func test_roundtrip_complex() -> void:
 
 
 func test_roundtrip_resources() -> void:
-	var builder = _Builder.new()
+	var builder := _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
 	var farm_id := builder.define_building("farm", -1, 0.0, 100, 0.0, 0, [], 1, true, "food", 100.0)
 	builder.add_building(farm_id, 2, 2)
-	var original = builder.build()
+	var original := builder.build()
 
-	var data = _SaveService.to_dict(original, "test-save")
-	var restored = _SaveService.from_dict(data, original.content)
+	var data := _SaveService.to_dict(original, "test-save")
+	var restored := _SaveService.from_dict(data, original.content)
 
-	var building_id = restored.entities.all_buildings()[0]
-	var rc = restored.entities.resources.get(building_id)
+	var building_id: int = restored.entities.all_buildings()[0]
+	var rc: Components.ResourceComponent = restored.entities.resources.get(building_id)
 	assert_not_null(rc, "Resource component should be restored")
 	assert_eq(rc.resource_type, "food", "Resource type should be 'food'")
 	assert_approx(rc.max_amount, 100.0, 0.1, "Max resource amount should be 100")
@@ -302,24 +315,24 @@ func test_roundtrip_resources() -> void:
 # dropped that building's resourceType) but the CURRENT content definition no longer declares
 # one, saving must not propagate it forward — otherwise vestigial fields never go away.
 func test_serialize_drops_stale_resource() -> void:
-	var builder = _Builder.new()
+	var builder := _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
 	# No resource_type passed -> content declares no resourceType for this building.
 	var mill_id := builder.define_building("Mill", -1, 0.0, 100, 0.0, 0, [], 1, true, "")
 	builder.add_building(mill_id, 2, 2)
-	var sim = builder.build()
+	var sim := builder.build()
 
-	var building_id = sim.entities.all_buildings()[0]
+	var building_id: int = sim.entities.all_buildings()[0]
 	var stale_rc := Components.ResourceComponent.new()
 	stale_rc.resource_type = "lumber"
 	stale_rc.current_amount = 100.0
 	stale_rc.max_amount = 100.0
 	sim.entities.resources[building_id] = stale_rc
 
-	var data = _SaveService.to_dict(sim, "test-save")
+	var data := _SaveService.to_dict(sim, "test-save")
 	var building_entry: Dictionary = {}
-	for e in data["entities"]:
-		if int(e.get("id", -1)) == building_id:
+	for e: Dictionary in DefUtils.get_array(data, "entities", []):
+		if DefUtils.get_int(e, "id", -1) == building_id:
 			building_entry = e
 
 	assert_false(
@@ -329,24 +342,24 @@ func test_serialize_drops_stale_resource() -> void:
 
 
 func test_roundtrip_can_continue() -> void:
-	var builder = _Builder.new()
+	var builder := _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
 	var hunger_id := builder.define_need("hunger", 0.02)
 	builder.add_pawn("TestPawn", 2, 2, {hunger_id: 100.0})
-	var original = builder.build()
+	var original := builder.build()
 
 	original.run_ticks(50)
 
-	var data = _SaveService.to_dict(original, "test-save")
-	var restored = _SaveService.from_dict(data, original.content)
+	var data := _SaveService.to_dict(original, "test-save")
+	var restored := _SaveService.from_dict(data, original.content)
 
-	var tick_before = restored.time.tick
+	var tick_before: int = restored.time.tick
 	restored.run_ticks(100)
 
 	assert_eq(restored.time.tick, tick_before + 100, "Restored sim should advance 100 more ticks")
 
-	var pawn_id = restored.entities.all_pawns()[0]
-	var need_comp = restored.entities.needs.get(pawn_id)
+	var pawn_id: int = restored.entities.all_pawns()[0]
+	var need_comp: Components.NeedsComponent = restored.entities.needs.get(pawn_id)
 	if need_comp != null:
 		var hunger: float = need_comp.needs.get(hunger_id, 100.0)
 		assert_lt(hunger, 100.0, "Hunger should have decayed after running ticks")
@@ -356,21 +369,21 @@ func test_roundtrip_can_continue() -> void:
 # would reload them as permanent needs-less "ghost" colonists — counted forever, never cleaned
 # up. Confirms both fields survive the round-trip and the visitor stays excluded afterward.
 func test_roundtrip_visitor_pawn() -> void:
-	var builder = _Builder.new()
+	var builder := _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
 	var home_id := builder.define_building(
 		"TinyHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
 	)
 	builder.add_building(home_id, 2, 2)
 	builder.add_pawn("Colonist", 1, 1, {})
-	var original = builder.build()
+	var original := builder.build()
 
 	var visitor_id := original.spawn_visitor_pawn("special_4_v2", {}, "Visitor")
 
-	var data = _SaveService.to_dict(original, "test-save")
-	var restored = _SaveService.from_dict(data, original.content)
+	var data := _SaveService.to_dict(original, "test-save")
+	var restored := _SaveService.from_dict(data, original.content)
 
-	var restored_pawn = restored.entities.pawns.get(visitor_id)
+	var restored_pawn: Components.PawnComponent = restored.entities.pawns.get(visitor_id)
 	assert_not_null(restored_pawn, "Visitor pawn should be restored")
 	assert_eq(
 		restored_pawn.membership,
@@ -389,7 +402,9 @@ func test_roundtrip_visitor_pawn() -> void:
 		"Restored visitor should still be excluded from the colonist count"
 	)
 
-	var restored_colonist = restored.entities.pawns.get(restored.find_pawn_by_name("Colonist"))
+	var restored_colonist: Components.PawnComponent = restored.entities.pawns.get(
+		restored.find_pawn_by_name("Colonist")
+	)
 	assert_eq(
 		restored_colonist.membership,
 		Definitions.PawnMembership.COLONIST,
@@ -400,21 +415,23 @@ func test_roundtrip_visitor_pawn() -> void:
 # Without persisting a building's skin_override, a save made mid-theme (e.g. Strange Worlds)
 # would lose track of which houses were overridden, silently reverting everyone's look on load.
 func test_roundtrip_building_skin_override() -> void:
-	var builder = _Builder.new()
+	var builder := _Builder.new()
 	builder.define_terrain("flat", true, "flat", false, true)
 	var home_id := builder.define_building(
 		"TinyHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 1, true
 	)
 	builder.add_building(home_id, 2, 2)
-	var original = builder.build()
+	var original := builder.build()
 
-	var home_building_id = original.entities.all_buildings()[0]
+	var home_building_id: int = original.entities.all_buildings()[0]
 	original.set_building_skin_override(home_building_id, "character_7_v2")
 
-	var data = _SaveService.to_dict(original, "test-save")
-	var restored = _SaveService.from_dict(data, original.content)
+	var data := _SaveService.to_dict(original, "test-save")
+	var restored := _SaveService.from_dict(data, original.content)
 
-	var restored_bc = restored.entities.buildings.get(home_building_id)
+	var restored_bc: Components.BuildingComponent = restored.entities.buildings.get(
+		home_building_id
+	)
 	assert_not_null(restored_bc, "Building should be restored")
 	assert_eq(
 		restored_bc.skin_override, "character_7_v2", "skin_override should survive the round-trip"
@@ -428,24 +445,24 @@ func test_roundtrip_building_skin_override() -> void:
 # that reloaded into the night theme). Also confirms on_start does NOT get re-run on restore —
 # it would double-spawn visitors, since they're already present as restored pawn data.
 func test_roundtrip_current_theme() -> void:
-	var builder = _Builder.new().with_themes_enabled()
+	var builder := _Builder.new().with_themes_enabled()
 	builder.define_terrain("flat", true, "flat", false, true)
 	builder.with_world_bounds(10, 10)
 	var home_id := builder.define_building(
 		"TestHome", -1, 50.0, 20, 0.0, 0, [], 1, false, "", 100.0, "direct", "", "", true, 4, true
 	)
 	builder.add_building(home_id, 5, 5)
-	var original = builder.build()
+	var original := builder.build()
 
-	var theme = SimTheme.StrangeWorldsTheme.new()
+	var theme: SimTheme = SimTheme.StrangeWorldsTheme.new()
 	original.theme_system._start_theme(original, theme)
 	var original_visitor_count: int = original.entities.all_pawns().size()
 	assert_gt(
 		float(original_visitor_count), 0.0, "Setup should have spawned Strange Worlds' visitors"
 	)
 
-	var data = _SaveService.to_dict(original, "test-save")
-	var restored = _SaveService.from_dict(data, original.content)
+	var data := _SaveService.to_dict(original, "test-save")
+	var restored := _SaveService.from_dict(data, original.content)
 
 	assert_not_null(
 		restored.theme_system.current_theme, "current_theme should be restored, not left null"
@@ -461,7 +478,7 @@ func test_roundtrip_current_theme() -> void:
 		"Visitor count should match exactly — restore must not re-run on_start and double-spawn"
 	)
 
-	var home_building_id = restored.entities.all_buildings()[0]
+	var home_building_id: int = restored.entities.all_buildings()[0]
 	assert_eq(
 		restored.entities.buildings[home_building_id].skin_override,
 		"character_7_v2",
@@ -473,13 +490,13 @@ func test_roundtrip_current_theme() -> void:
 # to current_theme == null — the exact same starting state as a brand-new game, which already
 # picks a fresh theme on the next tick.
 func test_roundtrip_missing_theme_name_falls_back() -> void:
-	var builder = _Builder.new().with_themes_enabled()
+	var builder := _Builder.new().with_themes_enabled()
 	builder.define_terrain("flat", true, "flat", false, true)
-	var original = builder.build()
+	var original := builder.build()
 
-	var data = _SaveService.to_dict(original, "test-save")
+	var data := _SaveService.to_dict(original, "test-save")
 	data.erase("current_theme_name")
-	var restored = _SaveService.from_dict(data, original.content)
+	var restored := _SaveService.from_dict(data, original.content)
 
 	assert_true(
 		restored.theme_system.current_theme == null,
@@ -488,16 +505,16 @@ func test_roundtrip_missing_theme_name_falls_back() -> void:
 
 
 func test_roundtrip_current_theme_start_tick() -> void:
-	var builder = _Builder.new().with_themes_enabled()
+	var builder := _Builder.new().with_themes_enabled()
 	builder.define_terrain("flat", true, "flat", false, true)
-	var original = builder.build()
+	var original := builder.build()
 
-	var theme = SimTheme.GymnopedieTheme.new()
+	var theme: SimTheme = SimTheme.GymnopedieTheme.new()
 	original.run_ticks(37)
 	original.theme_system._start_theme(original, theme)
 
-	var data = _SaveService.to_dict(original, "test-save")
-	var restored = _SaveService.from_dict(data, original.content)
+	var data := _SaveService.to_dict(original, "test-save")
+	var restored := _SaveService.from_dict(data, original.content)
 
 	assert_eq(
 		restored.theme_system.get_current_theme_start_tick(),

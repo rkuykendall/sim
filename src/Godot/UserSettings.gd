@@ -11,9 +11,10 @@ static func load() -> UserSettings:
 		return settings
 
 	var text: String = FileAccess.get_file_as_string(SETTINGS_PATH)
-	var data = JSON.parse_string(text)
-	if data is Dictionary:
-		settings.fullscreen = bool(data.get("fullscreen", true))
+	var parsed: Variant = JSON.parse_string(text)
+	if parsed is Dictionary:
+		var data: Dictionary = parsed
+		settings.fullscreen = DefUtils.get_bool(data, "fullscreen", true)
 
 	return settings
 

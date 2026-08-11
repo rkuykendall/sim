@@ -12,8 +12,8 @@ var _disable_themes: bool = true
 var _start_hour: int = TimeService.DEFAULT_START_HOUR
 
 var _content: ContentRegistry
-var _pending_pawns: Array = []  # [{name, x, y, needs}]
-var _pending_buildings: Array = []  # [{building_def_id, x, y}]
+var _pending_pawns: Array[Dictionary] = []  # [{name, x, y, needs}]
+var _pending_buildings: Array[Dictionary] = []  # [{building_def_id, x, y}]
 
 
 func _init() -> void:
@@ -196,14 +196,20 @@ func build() -> Simulation:
 	)
 
 	for b in _pending_buildings:
-		sim.create_building(b["building_def_id"], Vector2i(b["x"], b["y"]))
+		var building_def_id: int = DefUtils.get_int(b, "building_def_id", -1)
+		var bx: int = DefUtils.get_int(b, "x", 0)
+		var by: int = DefUtils.get_int(b, "y", 0)
+		sim.create_building(building_def_id, Vector2i(bx, by))
 
 	for p in _pending_pawns:
-		var use_needs: Dictionary = p["needs"]
+		var use_needs: Dictionary = DefUtils.get_dict(p, "needs", {})
 		if use_needs.is_empty():
 			# Full needs for all registered needs
-			for need_id in _content.needs.keys():
+			for need_id: int in _content.needs.keys():
 				use_needs[need_id] = 100.0
-		sim.create_pawn_at(Vector2i(p["x"], p["y"]), p["name"], use_needs)
+		var px: int = DefUtils.get_int(p, "x", 0)
+		var py: int = DefUtils.get_int(p, "y", 0)
+		var pname: String = DefUtils.get_string(p, "name", "Pawn")
+		sim.create_pawn_at(Vector2i(px, py), pname, use_needs)
 
 	return sim

@@ -13,11 +13,13 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_F4:
-			_enabled = not _enabled
-			if _shader_rect != null:
-				_shader_rect.visible = _enabled
+	if not event is InputEventKey:
+		return
+	var key_event: InputEventKey = event
+	if key_event.pressed and key_event.keycode == KEY_F4:
+		_enabled = not _enabled
+		if _shader_rect != null:
+			_shader_rect.visible = _enabled
 
 
 ## warm/night/weather_tint are pre-computed by GameRoot from the current theme's playback

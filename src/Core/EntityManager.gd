@@ -45,7 +45,9 @@ func create_pawn(
 	moods[id] = mood
 
 	var need_comp := Components.NeedsComponent.new()
-	for k in starting_needs:
+	for k: int in starting_needs:
+		# starting_needs is a caller-provided, dynamically-typed Dictionary
+		@warning_ignore("unsafe_call_argument")
 		need_comp.needs[k] = float(starting_needs[k])
 	needs[id] = need_comp
 

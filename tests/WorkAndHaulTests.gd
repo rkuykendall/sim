@@ -56,7 +56,7 @@ func test_direct_work() -> void:
 	)
 	builder.add_building(mine_id, 4, 4)
 	builder.add_pawn("Miner", 3, 4, {purpose_id: 50.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var mine_entity_id := _get_building_by_def_id(sim, mine_id)
 	# below 0.8 of max -> eligible for work
@@ -103,7 +103,7 @@ func test_direct_work_uses_custom_production_amount() -> void:
 	)
 	builder.add_building(mine_id, 4, 4)
 	builder.add_pawn("Miner", 3, 4, {purpose_id: 50.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var mine_entity_id := _get_building_by_def_id(sim, mine_id)
 	sim.entities.resources[mine_entity_id].current_amount = 10.0
@@ -145,7 +145,7 @@ func test_haul_from_building() -> void:
 	builder.add_building(source_id, 1, 4)
 	builder.add_building(dest_id, 6, 4)
 	builder.add_pawn("Hauler", 4, 4, {purpose_id: 50.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var source_entity_id := _get_building_by_def_id(sim, source_id)
 	var dest_entity_id := _get_building_by_def_id(sim, dest_id)
@@ -200,7 +200,7 @@ func test_haul_from_terrain() -> void:
 	)
 	builder.add_building(dest_id, 4, 4)
 	builder.add_pawn("Woodcutter", 4, 5, {purpose_id: 50.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	# Paint a harvestable tile a couple steps from the building.
 	sim.paint_terrain(Vector2i(6, 4), trees_id)
@@ -269,7 +269,7 @@ func test_haul_from_terrain_stays_eligible_when_full() -> void:
 	builder.add_building(sawmill_id, 4, 4)
 	builder.add_building(warehouse_id, 4, 6)
 	builder.add_pawn("Worker", 4, 5, {purpose_id: 50.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var sawmill_entity_id := _get_building_by_def_id(sim, sawmill_id)
 	var warehouse_entity_id := _get_building_by_def_id(sim, warehouse_id)
@@ -304,7 +304,7 @@ func test_haul_from_terrain_without_resource_component() -> void:
 	)
 	builder.add_building(mill_id, 4, 4)
 	builder.add_pawn("Woodcutter", 4, 5, {purpose_id: 50.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	sim.paint_terrain(Vector2i(6, 4), trees_id)
 
@@ -362,7 +362,7 @@ func test_haul_from_terrain_clears_inventory_without_storage() -> void:
 	)
 	builder.add_building(mill_id, 4, 4)
 	builder.add_pawn("Woodcutter", 4, 5, {purpose_id: 50.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	sim.paint_terrain(Vector2i(6, 4), trees_id)
 	var pawn_id := sim.find_pawn_by_name("Woodcutter")
@@ -403,13 +403,13 @@ func test_haul_from_building_no_source_falls_back() -> void:
 	)
 	builder.add_building(dest_id, 4, 4)
 	builder.add_pawn("Hauler", 3, 4, {purpose_id: 50.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var dest_entity_id := _get_building_by_def_id(sim, dest_id)
 	# below 0.8 of max -> eligible for work
 	sim.entities.resources[dest_entity_id].current_amount = 10.0
 	var pawn_id := sim.find_pawn_by_name("Hauler")
-	var action_comp = sim.entities.actions.get(pawn_id)
+	var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 
 	sim.tick()
 
@@ -445,12 +445,12 @@ func test_haul_from_terrain_no_terrain_falls_back() -> void:
 	)
 	builder.add_building(dest_id, 4, 4)
 	builder.add_pawn("Woodcutter", 4, 5, {purpose_id: 50.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var dest_entity_id := _get_building_by_def_id(sim, dest_id)
 	sim.entities.resources[dest_entity_id].current_amount = 10.0
 	var pawn_id := sim.find_pawn_by_name("Woodcutter")
-	var action_comp = sim.entities.actions.get(pawn_id)
+	var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 
 	sim.tick()
 
@@ -493,7 +493,7 @@ func test_haul_from_building_no_source_spills_over() -> void:
 	builder.add_building(market_id, 4, 4)
 	builder.add_building(farm_id, 4, 6)
 	builder.add_pawn("Worker", 4, 5, {purpose_id: 50.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var market_entity_id := _get_building_by_def_id(sim, market_id)
 	var farm_entity_id := _get_building_by_def_id(sim, farm_id)
@@ -504,7 +504,7 @@ func test_haul_from_building_no_source_spills_over() -> void:
 	# max attachment
 	sim.entities.attachments[market_entity_id].need_attachments[purpose_id] = {pawn_id: 10}
 
-	var action_comp = sim.entities.actions.get(pawn_id)
+	var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 
 	sim.tick()
 
@@ -549,7 +549,7 @@ func test_snapshot_haul_from_terrain_pickup_has_no_building_target() -> void:
 	)
 	builder.add_building(mill_id, 4, 4)
 	builder.add_pawn("Woodcutter", 4, 5, {purpose_id: 50.0})
-	var sim = builder.build()
+	var sim := builder.build()
 	sim.paint_terrain(Vector2i(6, 4), trees_id)
 
 	var pawn_id := sim.find_pawn_by_name("Woodcutter")
@@ -566,7 +566,7 @@ func test_snapshot_haul_from_terrain_pickup_has_no_building_target() -> void:
 		"Should be captured mid-harvest"
 	)
 	assert_false(
-		pawn_snap.get("has_building_target", true),
+		DefUtils.get_bool(pawn_snap, "has_building_target", true),
 		"Harvesting from terrain should have no building target"
 	)
 
@@ -596,7 +596,7 @@ func test_snapshot_haul_from_building_pickup_has_building_target() -> void:
 	builder.add_building(source_id, 1, 4)
 	builder.add_building(dest_id, 6, 4)
 	builder.add_pawn("Hauler", 4, 4, {purpose_id: 50.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var dest_entity_id := _get_building_by_def_id(sim, dest_id)
 	sim.entities.resources[dest_entity_id].current_amount = 10.0
@@ -615,15 +615,17 @@ func test_snapshot_haul_from_building_pickup_has_building_target() -> void:
 		"Should be captured mid-pickup"
 	)
 	assert_true(
-		pawn_snap.get("has_building_target", false),
+		DefUtils.get_bool(pawn_snap, "has_building_target", false),
 		"Hauling from a building should have a building target"
 	)
 
 
-func _run_until_action_type(sim, pawn_id: int, action_type: int, max_ticks: int) -> bool:
+func _run_until_action_type(
+	sim: Simulation, pawn_id: int, action_type: int, max_ticks: int
+) -> bool:
 	for i in max_ticks:
 		sim.run_ticks(1)
-		var action_comp = sim.entities.actions.get(pawn_id)
+		var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 		if (
 			action_comp != null
 			and action_comp.current_action != null
@@ -634,7 +636,7 @@ func _run_until_action_type(sim, pawn_id: int, action_type: int, max_ticks: int)
 
 
 func _find_pawn_snapshot(snapshot: Dictionary, pawn_id: int) -> Dictionary:
-	for pawn_snap in snapshot.get("pawns", []):
-		if int(pawn_snap.get("id", -1)) == pawn_id:
+	for pawn_snap: Dictionary in DefUtils.get_array(snapshot, "pawns", []):
+		if DefUtils.get_int(pawn_snap, "id", -1) == pawn_id:
 			return pawn_snap
 	return {}

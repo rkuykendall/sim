@@ -85,14 +85,14 @@ var _loading_screen: Control = null
 var _debug_panel: DebugPanel = null
 
 # Entity nodes
-var _pawn_nodes: Dictionary = {}  # int -> Node2D
-var _building_nodes: Dictionary = {}  # int -> Node2D
+var _pawn_nodes: Dictionary[int, Node2D] = {}
+var _building_nodes: Dictionary[int, Node2D] = {}
 
 # Autotile layers
-var _auto_tile_layers: Dictionary = {}  # int (terrain_id) -> ModulatableTileMapLayer
-var _tile_sprites: Dictionary = {}  # Vector2i -> [Sprite2D base, Sprite2D overlay]
-var _autotile_updates: Dictionary = {}  # int -> Array of [Vector2i, Color]
-var _autotile_clear_cells: Dictionary = {}  # int -> Array of Vector2i
+var _auto_tile_layers: Dictionary[int, ModulatableTileMapLayer] = {}
+var _tile_sprites: Dictionary[Vector2i, Array] = {}  # value: [Sprite2D base, Sprite2D overlay]
+var _autotile_updates: Dictionary[int, Array] = {}  # value: Array of [Vector2i, Color]
+var _autotile_clear_cells: Dictionary[int, Array] = {}  # value: Array of Vector2i
 
 # Reusable collections
 var _active_ids: Dictionary = {}
@@ -311,17 +311,19 @@ func _initialize_game_world() -> void:
 
 
 func _clear_all_nodes() -> void:
-	for node in _pawn_nodes.values():
+	for node: Node2D in _pawn_nodes.values():
 		node.queue_free()
 	_pawn_nodes.clear()
-	for node in _building_nodes.values():
+	for node: Node2D in _building_nodes.values():
 		node.queue_free()
 	_building_nodes.clear()
-	for sprites in _tile_sprites.values():
-		sprites[0].queue_free()
-		sprites[1].queue_free()
+	for sprites: Array in _tile_sprites.values():
+		var base_sprite: Sprite2D = sprites[0]
+		var overlay_sprite: Sprite2D = sprites[1]
+		base_sprite.queue_free()
+		overlay_sprite.queue_free()
 	_tile_sprites.clear()
-	for layer in _auto_tile_layers.values():
+	for layer: ModulatableTileMapLayer in _auto_tile_layers.values():
 		layer.queue_free()
 	_auto_tile_layers.clear()
 
@@ -367,7 +369,7 @@ func _process(delta: float) -> void:
 
 	# Music
 	if _music_manager != null:
-		_music_manager.update_music_state(snapshot.get("theme", {}))
+		_music_manager.update_music_state(DefUtils.get_dict(snapshot, "theme", {}))
 
 	# Autosave
 	_time_since_autosave += delta
@@ -403,23 +405,26 @@ func _perform_autosave() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed:
+	if event is InputEventKey:
+		var key_event: InputEventKey = event
+		if not key_event.pressed:
+			return
 		# F11: Toggle fullscreen (any screen)
-		if event.keycode == KEY_F11:
+		if key_event.keycode == KEY_F11:
 			_user_settings.fullscreen = not _user_settings.fullscreen
 			_user_settings.save()
 			_apply_fullscreen()
 			return
 
 		# Escape: Return to home (game only)
-		if event.keycode == KEY_ESCAPE and _current_screen == _AppScreen.GAME:
+		if key_event.keycode == KEY_ESCAPE and _current_screen == _AppScreen.GAME:
 			_return_to_home()
 			return
 
 		if _current_screen != _AppScreen.GAME:
 			return
 
-		match event.keycode:
+		match key_event.keycode:
 			KEY_F3:
 				_debug_mode = not _debug_mode
 				if _toolbar != null:
@@ -448,11 +453,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventMouseButton:
+		var mb_event: InputEventMouseButton = event
 		var local_pos: Vector2 = get_local_mouse_position()
 		var tile_coord: Vector2i = _screen_to_tile(local_pos)
 
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			if event.pressed:
+		if mb_event.button_index == MOUSE_BUTTON_LEFT:
+			if mb_event.pressed:
 				_handle_left_press(tile_coord)
 			else:
 				_handle_left_release()
@@ -522,9 +528,10 @@ func _handle_left_press(tile_coord: Vector2i) -> void:
 		_deselect_pawn()
 		_selected_pawn_id = pawn_id
 		_selected_building_id = -1
-		var pawn_node = _pawn_nodes.get(pawn_id)
+		var pawn_node: Node2D = _pawn_nodes.get(pawn_id)
 		if pawn_node is PawnView:
-			pawn_node.set_selected(true)
+			var view: PawnView = pawn_node
+			view.set_selected(true)
 		return
 
 	var building_id: int = _find_building_at(get_local_mouse_position())
@@ -633,7 +640,7 @@ func _draw() -> void:
 		return
 
 	var half: float = PAWN_HITBOX_SIZE * 0.5
-	for node in _pawn_nodes.values():
+	for node: Node2D in _pawn_nodes.values():
 		draw_rect(
 			Rect2(
 				node.position.x - half, node.position.y - half, PAWN_HITBOX_SIZE, PAWN_HITBOX_SIZE
@@ -643,20 +650,23 @@ func _draw() -> void:
 			2.0
 		)
 
-	for building_id in _building_nodes.keys():
+	var buildings_snap: Array = DefUtils.get_array(_last_snapshot, "buildings", [])
+	for building_id: int in _building_nodes.keys():
 		var b_snap: Dictionary = {}
-		for b in _last_snapshot.get("buildings", []):
-			if b.get("id", -1) == building_id:
+		for b: Dictionary in buildings_snap:
+			if DefUtils.get_int(b, "id", -1) == building_id:
 				b_snap = b
 				break
 		if not b_snap.is_empty() and _sim != null:
-			var bdef: Dictionary = _sim.content.buildings.get(b_snap.get("building_def_id", -1), {})
+			var bdef: Dictionary = _sim.content.buildings.get(
+				DefUtils.get_int(b_snap, "building_def_id", -1), {}
+			)
 			if not bdef.is_empty():
-				var ts: int = int(bdef.get("tileSize", 1))
+				var ts: int = DefUtils.get_int(bdef, "tileSize", 1)
 				var occupied: Array[Vector2i] = BuildingUtilities.get_occupied_tiles(
-					Vector2i(b_snap.get("x", 0), b_snap.get("y", 0)), ts
+					Vector2i(DefUtils.get_int(b_snap, "x", 0), DefUtils.get_int(b_snap, "y", 0)), ts
 				)
-				for tile in occupied:
+				for tile: Vector2i in occupied:
 					draw_rect(
 						Rect2(
 							tile.x * RenderingConstants.RENDERED_TILE_SIZE,
@@ -669,37 +679,39 @@ func _draw() -> void:
 						2.0
 					)
 
-	for pawn_snap in _last_snapshot.get("pawns", []):
+	var pawns_snap: Array = DefUtils.get_array(_last_snapshot, "pawns", [])
+	for pawn_snap: Dictionary in pawns_snap:
 		var center := Vector2(
 			(
-				pawn_snap.get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE
+				DefUtils.get_int(pawn_snap, "x", 0) * RenderingConstants.RENDERED_TILE_SIZE
 				+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
 			),
 			(
-				pawn_snap.get("y", 0) * RenderingConstants.RENDERED_TILE_SIZE
+				DefUtils.get_int(pawn_snap, "y", 0) * RenderingConstants.RENDERED_TILE_SIZE
 				+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
 			)
 		)
-		var path: Array = pawn_snap.get("current_path", [])
-		var path_idx: int = pawn_snap.get("path_index", 0)
+		var path: Array[Dictionary] = []
+		path.assign(DefUtils.get_array(pawn_snap, "current_path", []))
+		var path_idx: int = DefUtils.get_int(pawn_snap, "path_index", 0)
 		for i in range(path_idx, path.size() - 1):
 			var from_p := Vector2(
 				(
-					path[i].get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE
+					DefUtils.get_int(path[i], "x", 0) * RenderingConstants.RENDERED_TILE_SIZE
 					+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
 				),
 				(
-					path[i].get("y", 0) * RenderingConstants.RENDERED_TILE_SIZE
+					DefUtils.get_int(path[i], "y", 0) * RenderingConstants.RENDERED_TILE_SIZE
 					+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
 				)
 			)
 			var to_p := Vector2(
 				(
-					path[i + 1].get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE
+					DefUtils.get_int(path[i + 1], "x", 0) * RenderingConstants.RENDERED_TILE_SIZE
 					+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
 				),
 				(
-					path[i + 1].get("y", 0) * RenderingConstants.RENDERED_TILE_SIZE
+					DefUtils.get_int(path[i + 1], "y", 0) * RenderingConstants.RENDERED_TILE_SIZE
 					+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
 				)
 			)
@@ -782,7 +794,7 @@ func _draw_hover_preview(coord: Vector2i) -> void:
 			BuildToolMode.selected_building_def_id, {}
 		)
 		if not bdef.is_empty():
-			var building_tile_size: int = int(bdef.get("tileSize", 1))
+			var building_tile_size: int = DefUtils.get_int(bdef, "tileSize", 1)
 			var occupied: Array[Vector2i] = BuildingUtilities.get_occupied_tiles(
 				coord, building_tile_size
 			)
@@ -792,7 +804,7 @@ func _draw_hover_preview(coord: Vector2i) -> void:
 				else Color.WHITE
 			)
 			color.a = 0.5
-			for tile in occupied:
+			for tile: Vector2i in occupied:
 				var tile_rect := Rect2(tile.x * ts, tile.y * ts, ts, ts)
 				draw_rect(tile_rect, color, true)
 				draw_rect(tile_rect, Color.WHITE, false, 2.0)
@@ -806,20 +818,19 @@ func _draw_hover_preview(coord: Vector2i) -> void:
 func _initialize_auto_tile_layers() -> void:
 	if _sim == null:
 		return
-	for terrain_id in _sim.content.terrains.keys():
+	for terrain_id: int in _sim.content.terrains.keys():
 		var tdef: Dictionary = _sim.content.terrains[terrain_id]
-		if not bool(tdef.get("isAutotiling", false)):
+		if not DefUtils.get_bool(tdef, "isAutotiling", false):
 			continue
-		var texture: Texture2D = SpriteResourceManager.get_texture(tdef.get("spriteKey", ""))
+		var sprite_key: String = DefUtils.get_string(tdef, "spriteKey", "")
+		var texture: Texture2D = SpriteResourceManager.get_texture(sprite_key)
 		if texture == null:
 			push_error("GameRoot: no texture for autotile terrain %d" % terrain_id)
 			continue
-		var blocks_light: bool = bool(tdef.get("blocksLight", false))
+		var blocks_light: bool = DefUtils.get_bool(tdef, "blocksLight", false)
 		var layer := ModulatableTileMapLayer.new()
-		layer.name = "%sTileMapLayer" % tdef.get("spriteKey", str(terrain_id))
-		layer.tile_set = AutoTileSetBuilder.create_auto_tile_set(
-			texture, tdef.get("spriteKey", ""), blocks_light
-		)
+		layer.name = "%sTileMapLayer" % sprite_key
+		layer.tile_set = AutoTileSetBuilder.create_auto_tile_set(texture, sprite_key, blocks_light)
 		layer.scale = Vector2(RenderingConstants.SPRITE_SCALE, RenderingConstants.SPRITE_SCALE)
 		if blocks_light:
 			layer.z_index = ZIndexConstants.TERRAIN_BLOCKING_AND_PAWNS
@@ -877,7 +888,7 @@ func _initialize_tile_nodes() -> void:
 
 func _sync_tiles(coords: Array) -> void:
 	_prepare_autotile_batches()
-	for coord in coords:
+	for coord: Vector2i in coords:
 		_sync_single_tile(coord)
 	_apply_autotile_batches()
 	_recompute_has_occluders()
@@ -899,7 +910,7 @@ func _recompute_has_occluders() -> void:
 
 
 func _prepare_autotile_batches() -> void:
-	for terrain_id in _auto_tile_layers.keys():
+	for terrain_id: int in _auto_tile_layers.keys():
 		if not _autotile_updates.has(terrain_id):
 			_autotile_updates[terrain_id] = []
 			_autotile_clear_cells[terrain_id] = []
@@ -932,7 +943,7 @@ func _sync_single_tile(coord: Vector2i) -> void:
 func _process_autotile_layers(
 	tile: World.Tile, base_tdef: Dictionary, overlay_tdef: Dictionary, map_coord: Vector2i
 ) -> void:
-	if not base_tdef.is_empty() and bool(base_tdef.get("isAutotiling", false)):
+	if not base_tdef.is_empty() and DefUtils.get_bool(base_tdef, "isAutotiling", false):
 		var color: Color = (
 			_current_palette[tile.color_index]
 			if tile.color_index < _current_palette.size()
@@ -942,7 +953,7 @@ func _process_autotile_layers(
 
 	if (
 		not overlay_tdef.is_empty()
-		and bool(overlay_tdef.get("isAutotiling", false))
+		and DefUtils.get_bool(overlay_tdef, "isAutotiling", false)
 		and tile.overlay_terrain_type_id != -1
 	):
 		var color: Color = (
@@ -952,17 +963,19 @@ func _process_autotile_layers(
 		)
 		_autotile_updates[tile.overlay_terrain_type_id].append([map_coord, color])
 
-	for terrain_id in _auto_tile_layers.keys():
+	for terrain_id: int in _auto_tile_layers.keys():
 		_autotile_clear_cells[terrain_id].append(map_coord)
 
 
 func _update_terrain_sprite(
 	sprite: Sprite2D, tdef: Dictionary, color_index: int, variant_index: int
 ) -> void:
-	if tdef.is_empty() or bool(tdef.get("isAutotiling", false)):
+	if tdef.is_empty() or DefUtils.get_bool(tdef, "isAutotiling", false):
 		sprite.visible = false
 		return
-	var texture: Texture2D = SpriteResourceManager.get_texture(tdef.get("spriteKey", ""))
+	var texture: Texture2D = SpriteResourceManager.get_texture(
+		DefUtils.get_string(tdef, "spriteKey", "")
+	)
 	if texture == null:
 		sprite.visible = false
 		return
@@ -970,7 +983,7 @@ func _update_terrain_sprite(
 	sprite.modulate = (
 		_current_palette[color_index] if color_index < _current_palette.size() else Color.WHITE
 	)
-	var variant_count: int = int(tdef.get("variantCount", 1))
+	var variant_count: int = DefUtils.get_int(tdef, "variantCount", 1)
 	if variant_count > 1:
 		var atlas_x: int = (
 			(variant_index % RenderingConstants.VARIANTS_PER_ROW)
@@ -993,14 +1006,14 @@ func _update_terrain_sprite(
 
 
 func _apply_autotile_batches() -> void:
-	for terrain_id in _auto_tile_layers.keys():
+	for terrain_id: int in _auto_tile_layers.keys():
 		var layer: ModulatableTileMapLayer = _auto_tile_layers[terrain_id]
 		_clear_inactive_cells(layer, terrain_id)
 		_apply_autotile_updates(layer, terrain_id)
 
 
 func _clear_inactive_cells(layer: ModulatableTileMapLayer, terrain_id: int) -> void:
-	for cell in _autotile_clear_cells[terrain_id]:
+	for cell: Vector2i in _autotile_clear_cells[terrain_id]:
 		layer.erase_cell(cell)
 		layer.clear_tile_color(cell)
 
@@ -1010,11 +1023,13 @@ func _apply_autotile_updates(layer: ModulatableTileMapLayer, terrain_id: int) ->
 	if updates.is_empty():
 		return
 	var cells := Array([], TYPE_VECTOR2I, "", null)
-	for entry in updates:
+	for entry: Array in updates:
 		cells.append(entry[0])
 	layer.set_cells_terrain_connect(cells, 0, 0, false)
-	for entry in updates:
-		layer.set_tile_color(entry[0], entry[1])
+	for entry: Array in updates:
+		var map_coord: Vector2i = entry[0]
+		var color: Color = entry[1]
+		layer.set_tile_color(map_coord, color)
 
 
 # ---------------------------------------------------------------------------
@@ -1034,69 +1049,76 @@ func _sync_pawns(snapshot: Dictionary) -> void:
 		(float(move_ticks_per_tile) / float(tick_rate)) / float(speed_multiplier)
 	)
 
-	for pawn in snapshot.get("pawns", []):
-		var pawn_id: int = pawn.get("id", -1)
+	for pawn: Dictionary in DefUtils.get_array(snapshot, "pawns", []):
+		var pawn_id: int = DefUtils.get_int(pawn, "id", -1)
 		if pawn_id == -1:
 			continue
 		_active_ids[pawn_id] = true
 
 		var is_new: bool = not _pawn_nodes.has(pawn_id)
 		if is_new:
-			var node: Node2D
+			var new_node: Node2D
 			if pawn_scene != null:
-				node = pawn_scene.instantiate()
+				new_node = pawn_scene.instantiate()
 			else:
-				node = PawnView.new()
-			_pawns_root.get_parent().add_child(node)
-			_pawn_nodes[pawn_id] = node
-			if node is PawnView:
-				var forced_sheet_key: String = pawn.get("forced_sheet_key", "")
+				new_node = PawnView.new()
+			_pawns_root.get_parent().add_child(new_node)
+			_pawn_nodes[pawn_id] = new_node
+			if new_node is PawnView:
+				var new_view: PawnView = new_node
+				var forced_sheet_key: String = DefUtils.get_string(pawn, "forced_sheet_key", "")
 				if not forced_sheet_key.is_empty():
-					node.assign_forced_sheet(forced_sheet_key)
+					new_view.assign_forced_sheet(forced_sheet_key)
 				else:
-					node.initialize_with_sprite(
+					new_view.initialize_with_sprite(
 						SpriteResourceManager.get_texture("character_sheet")
 					)
 
+		var pawn_x: int = DefUtils.get_int(pawn, "x", 0)
+		var pawn_y: int = DefUtils.get_int(pawn, "y", 0)
 		var target_pos := Vector2(
 			(
-				pawn.get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE
+				pawn_x * RenderingConstants.RENDERED_TILE_SIZE
 				+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
 			),
 			(
-				pawn.get("y", 0) * RenderingConstants.RENDERED_TILE_SIZE
+				pawn_y * RenderingConstants.RENDERED_TILE_SIZE
 				+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
 			)
 		)
-		var node = _pawn_nodes[pawn_id]
+		var node: Node2D = _pawn_nodes[pawn_id]
 		if node is PawnView:
+			var view: PawnView = node
 			if is_new:
-				var entry_pos: Vector2 = _calculate_entry_position(
-					pawn.get("x", 0), pawn.get("y", 0)
-				)
-				node.set_initial_position(entry_pos)
-			node.set_move_duration(move_duration)
-			node.set_target_position(target_pos)
-			node.set_current_animation(pawn.get("animation", Definitions.AnimationType.IDLE))
-			node.set_carrying(pawn.get("carrying_resource_type", ""))
-			var home_visit_building_id: int = pawn.get("home_visit_building_id", -1)
+				var entry_pos: Vector2 = _calculate_entry_position(pawn_x, pawn_y)
+				view.set_initial_position(entry_pos)
+			view.set_move_duration(move_duration)
+			view.set_target_position(target_pos)
+			var animation: int = DefUtils.get_int(pawn, "animation", Definitions.AnimationType.IDLE)
+			view.set_current_animation(animation)
+			view.set_carrying(DefUtils.get_string(pawn, "carrying_resource_type", ""))
+			var home_visit_building_id: int = DefUtils.get_int(pawn, "home_visit_building_id", -1)
 			if home_visit_building_id != -1:
-				var home_visit_skin_override: String = pawn.get("home_visit_skin_override", "")
+				var home_visit_skin_override: String = DefUtils.get_string(
+					pawn, "home_visit_skin_override", ""
+				)
 				var house_tex: Texture2D
 				if not home_visit_skin_override.is_empty():
 					house_tex = CharacterSheetPool.get_sheet_by_name(home_visit_skin_override)
 				else:
 					house_tex = CharacterSheetPool.get_sheet_for_house(home_visit_building_id)
-				node.sync_house_sheet(house_tex)
-			node.set_mood(pawn.get("mood", 0.0))
-			node.set_selected(pawn_id == _selected_pawn_id)
-			node.set_expression(
-				pawn.get("has_expression", false),
-				pawn.get("expression", Definitions.ExpressionType.THOUGHT),
-				pawn.get("expression_icon_def_id", -1),
+				view.sync_house_sheet(house_tex)
+			view.set_mood(DefUtils.get_float(pawn, "mood", 0.0))
+			view.set_selected(pawn_id == _selected_pawn_id)
+			view.set_expression(
+				DefUtils.get_bool(pawn, "has_expression", false),
+				DefUtils.get_int(pawn, "expression", Definitions.ExpressionType.THOUGHT),
+				DefUtils.get_int(pawn, "expression_icon_def_id", -1),
 				_sim.content
 			)
-			var action_type: int = pawn.get("current_action_type", Definitions.ActionType.IDLE)
+			var action_type: int = DefUtils.get_int(
+				pawn, "current_action_type", Definitions.ActionType.IDLE
+			)
 			# PICK_UP covers both hauling from a building (pawn is inside it) and harvesting
 			# from open terrain (e.g. chopping trees) — only the former should hide the pawn.
 			var at_building: bool = (
@@ -1110,16 +1132,16 @@ func _sync_pawns(snapshot: Dictionary) -> void:
 				)
 				or (
 					action_type == Definitions.ActionType.PICK_UP
-					and pawn.get("has_building_target", false)
+					and DefUtils.get_bool(pawn, "has_building_target", false)
 				)
 			)
-			node.visible = not at_building
+			view.visible = not at_building
 
 	_ids_to_remove.clear()
-	for id in _pawn_nodes.keys():
+	for id: int in _pawn_nodes.keys():
 		if not _active_ids.has(id):
 			_ids_to_remove.append(id)
-	for id in _ids_to_remove:
+	for id: int in _ids_to_remove:
 		_pawn_nodes[id].queue_free()
 		_pawn_nodes.erase(id)
 		if _selected_pawn_id == id:
@@ -1130,58 +1152,62 @@ func _sync_pawns(snapshot: Dictionary) -> void:
 
 func _sync_buildings(snapshot: Dictionary) -> void:
 	_active_ids.clear()
-	for obj in snapshot.get("buildings", []):
-		var obj_id: int = obj.get("id", -1)
+	for obj: Dictionary in DefUtils.get_array(snapshot, "buildings", []):
+		var obj_id: int = DefUtils.get_int(obj, "id", -1)
 		if obj_id == -1:
 			continue
 		_active_ids[obj_id] = true
 
 		if not _building_nodes.has(obj_id):
-			var node: Node2D
+			var new_node: Node2D
 			if building_scene != null:
-				node = building_scene.instantiate()
+				new_node = building_scene.instantiate()
 			else:
-				node = BuildingView.new()
-			node.z_index = ZIndexConstants.BUILDINGS
-			_buildings_root.get_parent().add_child(node)
-			_building_nodes[obj_id] = node
+				new_node = BuildingView.new()
+			new_node.z_index = ZIndexConstants.BUILDINGS
+			_buildings_root.get_parent().add_child(new_node)
+			_building_nodes[obj_id] = new_node
 
-			if node is BuildingView:
+			if new_node is BuildingView:
+				var new_view: BuildingView = new_node
 				var bdef: Dictionary = _sim.content.buildings.get(
-					obj.get("building_def_id", -1), {}
+					DefUtils.get_int(obj, "building_def_id", -1), {}
 				)
 				if not bdef.is_empty():
 					var texture: Texture2D = SpriteResourceManager.get_texture(
-						bdef.get("spriteKey", "")
+						DefUtils.get_string(bdef, "spriteKey", "")
 					)
 					if texture != null:
-						node.initialize_with_sprite(
+						new_view.initialize_with_sprite(
 							texture,
-							int(bdef.get("tileSize", 1)),
-							int(bdef.get("spriteVariants", 1)),
-							int(bdef.get("spriteColumn", 0)),
+							DefUtils.get_int(bdef, "tileSize", 1),
+							DefUtils.get_int(bdef, "spriteVariants", 1),
+							DefUtils.get_int(bdef, "spriteColumn", 0),
 							obj_id
 						)
 
-		var node = _building_nodes[obj_id]
+		var node: Node2D = _building_nodes[obj_id]
+		var obj_x: int = DefUtils.get_int(obj, "x", 0)
+		var obj_y: int = DefUtils.get_int(obj, "y", 0)
 		node.position = Vector2(
 			(
-				obj.get("x", 0) * RenderingConstants.RENDERED_TILE_SIZE
+				obj_x * RenderingConstants.RENDERED_TILE_SIZE
 				+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
 			),
 			(
-				obj.get("y", 0) * RenderingConstants.RENDERED_TILE_SIZE
+				obj_y * RenderingConstants.RENDERED_TILE_SIZE
 				+ RenderingConstants.RENDERED_TILE_SIZE * 0.5
 			)
 		)
 		if node is BuildingView:
-			node.set_building_info(obj.get("color_index", 0), _current_palette)
+			var view: BuildingView = node
+			view.set_building_info(DefUtils.get_int(obj, "color_index", 0), _current_palette)
 
 	_ids_to_remove.clear()
-	for id in _building_nodes.keys():
+	for id: int in _building_nodes.keys():
 		if not _active_ids.has(id):
 			_ids_to_remove.append(id)
-	for id in _ids_to_remove:
+	for id: int in _ids_to_remove:
 		_building_nodes[id].queue_free()
 		_building_nodes.erase(id)
 		if _selected_building_id == id:
@@ -1199,8 +1225,8 @@ func _update_info_panel(snapshot: Dictionary) -> void:
 	if _debug_panel == null or _selected_pawn_id == -1:
 		return
 	var pawn_snap: Dictionary = {}
-	for p in snapshot.get("pawns", []):
-		if p.get("id", -1) == _selected_pawn_id:
+	for p: Dictionary in DefUtils.get_array(snapshot, "pawns", []):
+		if DefUtils.get_int(p, "id", -1) == _selected_pawn_id:
 			pawn_snap = p
 			break
 	if pawn_snap.is_empty():
@@ -1214,8 +1240,8 @@ func _update_building_info_panel(snapshot: Dictionary) -> void:
 	if _debug_panel == null or _selected_building_id == -1:
 		return
 	var b_snap: Dictionary = {}
-	for b in snapshot.get("buildings", []):
-		if b.get("id", -1) == _selected_building_id:
+	for b: Dictionary in DefUtils.get_array(snapshot, "buildings", []):
+		if DefUtils.get_int(b, "id", -1) == _selected_building_id:
 			b_snap = b
 			break
 	if b_snap.is_empty():
@@ -1228,7 +1254,7 @@ func _update_building_info_panel(snapshot: Dictionary) -> void:
 func _update_time_display(snapshot: Dictionary) -> void:
 	if _debug_panel == null:
 		return
-	_debug_panel.update_time(snapshot.get("time", {}))
+	_debug_panel.update_time(DefUtils.get_dict(snapshot, "time", {}))
 	if _selected_pawn_id == -1 and _selected_building_id == -1:
 		_debug_panel.clear_selection()
 
@@ -1257,19 +1283,21 @@ func _update_speed_display() -> void:
 ## started, 1 = about to end) instead of a real-world clock, so every theme's "day" (if it has
 ## shadows) or "night" (if it doesn't) always aligns with its own song.
 func _update_theme_visuals(snapshot: Dictionary) -> void:
-	var theme: Dictionary = snapshot.get("theme", {})
-	var has_shadows: bool = theme.get("has_shadows", true)
-	var weather_tint: float = float(theme.get("weather_tint", 0.0))
+	var theme: Dictionary = DefUtils.get_dict(snapshot, "theme", {})
+	var has_shadows: bool = DefUtils.get_bool(theme, "has_shadows", true)
+	var weather_tint: float = DefUtils.get_float(theme, "weather_tint", 0.0)
 	var progress: float = _music_manager.get_playback_progress() if _music_manager != null else 0.0
 
 	var visuals: Dictionary = _compute_theme_visuals(progress, has_shadows, weather_tint)
 	if _crt_shader_controller != null:
 		_crt_shader_controller.set_theme_visuals(
-			visuals["warm"], visuals["night"], visuals["weather_tint"]
+			DefUtils.get_float(visuals, "warm", 0.0),
+			DefUtils.get_float(visuals, "night", 0.0),
+			DefUtils.get_float(visuals, "weather_tint", 0.0)
 		)
 
 	if _weather_controller != null:
-		_weather_controller.set_active_weather(theme.get("weather_effect_key", ""))
+		_weather_controller.set_active_weather(DefUtils.get_string(theme, "weather_effect_key", ""))
 
 	if _shadow_shader_mat != null:
 		if has_shadows:
@@ -1350,7 +1378,7 @@ func _screen_to_tile(screen_pos: Vector2) -> Vector2i:
 
 func _find_pawn_at(pos: Vector2) -> int:
 	var half: float = PAWN_HITBOX_SIZE * 0.5
-	for id in _pawn_nodes.keys():
+	for id: int in _pawn_nodes.keys():
 		var p: Vector2 = _pawn_nodes[id].position
 		if (
 			pos.x >= p.x - half
@@ -1364,17 +1392,20 @@ func _find_pawn_at(pos: Vector2) -> int:
 
 func _find_building_at(pos: Vector2) -> int:
 	var half: float = BUILDING_HITBOX_SIZE * 0.5
-	for id in _building_nodes.keys():
-		var node = _building_nodes[id]
+	var buildings_snap: Array = DefUtils.get_array(_last_snapshot, "buildings", [])
+	for id: int in _building_nodes.keys():
+		var node: Node2D = _building_nodes[id]
 		var b_snap: Dictionary = {}
-		for b in _last_snapshot.get("buildings", []):
-			if b.get("id", -1) == id:
+		for b: Dictionary in buildings_snap:
+			if DefUtils.get_int(b, "id", -1) == id:
 				b_snap = b
 				break
 		if b_snap.is_empty():
 			continue
-		var bdef: Dictionary = _sim.content.buildings.get(b_snap.get("building_def_id", -1), {})
-		var ts: int = int(bdef.get("tileSize", 1)) if not bdef.is_empty() else 1
+		var bdef: Dictionary = _sim.content.buildings.get(
+			DefUtils.get_int(b_snap, "building_def_id", -1), {}
+		)
+		var ts: int = DefUtils.get_int(bdef, "tileSize", 1) if not bdef.is_empty() else 1
 		var p: Vector2 = node.position
 		var right_expand: float = (ts - 1) * RenderingConstants.RENDERED_TILE_SIZE + half
 		var down_expand: float = (ts - 1) * RenderingConstants.RENDERED_TILE_SIZE + half
@@ -1390,9 +1421,10 @@ func _find_building_at(pos: Vector2) -> int:
 
 func _deselect_pawn() -> void:
 	if _selected_pawn_id != -1 and _pawn_nodes.has(_selected_pawn_id):
-		var node = _pawn_nodes[_selected_pawn_id]
+		var node: Node2D = _pawn_nodes[_selected_pawn_id]
 		if node is PawnView:
-			node.set_selected(false)
+			var view: PawnView = node
+			view.set_selected(false)
 
 
 func _calculate_entry_position(tile_x: int, tile_y: int) -> Vector2:

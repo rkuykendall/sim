@@ -29,12 +29,13 @@ static func load_file(path: String, content: ContentRegistry) -> Simulation:
 		return null
 
 	var text: String = FileAccess.get_file_as_string(path)
-	var data = JSON.parse_string(text)
-	if data == null or not data is Dictionary:
+	var parsed: Variant = JSON.parse_string(text)
+	if parsed == null or not parsed is Dictionary:
 		push_error("SaveService.load_file: failed to parse JSON: %s" % path)
 		return null
+	var data: Dictionary = parsed
 
-	if int(data.get("version", 0)) != SAVE_VERSION:
+	if DefUtils.get_int(data, "version", 0) != SAVE_VERSION:
 		push_error(
 			(
 				"SaveService.load_file: incompatible save version in '%s' (expected %d)"
@@ -51,22 +52,26 @@ static func read_metadata(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
 		return {}
 	var text: String = FileAccess.get_file_as_string(path)
-	var data = JSON.parse_string(text)
-	if data == null or not data is Dictionary:
+	var parsed: Variant = JSON.parse_string(text)
+	if parsed == null or not parsed is Dictionary:
 		return {}
+	var data: Dictionary = parsed
 
-	var current_tick: int = int(data.get("current_tick", 0))
+	var current_tick: int = DefUtils.get_int(data, "current_tick", 0)
 	var day: int = (current_tick / TimeService.TICKS_PER_DAY) + 1
-	var entities: Array = data.get("entities", [])
+	var entities: Array = DefUtils.get_array(data, "entities", [])
 	var pawn_count: int = 0
-	for e in entities:
-		if e is Dictionary and e.get("type", "") == "Pawn":
+	for e: Variant in entities:
+		if not e is Dictionary:
+			continue
+		var ed: Dictionary = e
+		if DefUtils.get_string(ed, "type", "") == "Pawn":
 			pawn_count += 1
 
 	return {
-		"version": int(data.get("version", 0)),
-		"display_name": data.get("name", ""),
-		"saved_at": data.get("saved_at", ""),
+		"version": DefUtils.get_int(data, "version", 0),
+		"display_name": DefUtils.get_string(data, "name", ""),
+		"saved_at": DefUtils.get_string(data, "saved_at", ""),
 		"day": day,
 		"pawn_count": pawn_count,
 	}
@@ -191,7 +196,7 @@ static func _serialize_entities(sim: Simulation) -> Array:
 		# save back out is what lets data self-correct to match current content, rather than
 		# propagating vestigial fields forward indefinitely.
 		var res: Components.ResourceComponent = em.resources.get(building_id)
-		if res != null and not String(bdef.get("resourceType", "")).is_empty():
+		if res != null and not DefUtils.get_string(bdef, "resourceType", "").is_empty():
 			e["resource"] = {
 				"resource_type": res.resource_type,
 				"current_amount": res.current_amount,
@@ -205,7 +210,7 @@ static func _serialize_entities(sim: Simulation) -> Array:
 			for need_id in ac.need_attachments:
 				var per_pawn: Dictionary = ac.need_attachments[need_id]
 				var per_pawn_out: Dictionary = {}
-				for pawn_id in per_pawn:
+				for pawn_id: int in per_pawn:
 					per_pawn_out[str(pawn_id)] = per_pawn[pawn_id]
 				attachments[str(need_id)] = per_pawn_out
 			e["attachments"] = attachments
@@ -221,13 +226,13 @@ static func _serialize_entities(sim: Simulation) -> Array:
 
 
 static func from_dict(data: Dictionary, content: ContentRegistry) -> Simulation:
-	var world_data: Dictionary = data.get("world", {})
-	var world_width: int = int(world_data.get("width", World.DEFAULT_WIDTH))
-	var world_height: int = int(world_data.get("height", World.DEFAULT_HEIGHT))
+	var world_data: Dictionary = DefUtils.get_dict(data, "world", {})
+	var world_width: int = DefUtils.get_int(world_data, "width", World.DEFAULT_WIDTH)
+	var world_height: int = DefUtils.get_int(world_data, "height", World.DEFAULT_HEIGHT)
 
 	var sim := Simulation.new(
 		content,
-		int(data.get("seed", -1)),
+		DefUtils.get_int(data, "seed", -1),
 		TimeService.DEFAULT_START_HOUR,
 		world_width,
 		world_height,
@@ -238,32 +243,38 @@ static func from_dict(data: Dictionary, content: ContentRegistry) -> Simulation:
 	_restore_world(sim, world_data)
 
 	# Restore entities — buildings first (pawns may share IDs referencing them)
-	var entities: Array = data.get("entities", [])
-	for e in entities:
-		if e is Dictionary and e.get("type", "") == "Building":
-			_restore_building(sim, e)
-	for e in entities:
-		if e is Dictionary and e.get("type", "") == "Pawn":
-			_restore_pawn(sim, e)
+	var entities: Array = DefUtils.get_array(data, "entities", [])
+	for e: Variant in entities:
+		if not e is Dictionary:
+			continue
+		var ed: Dictionary = e
+		if DefUtils.get_string(ed, "type", "") == "Building":
+			_restore_building(sim, ed)
+	for e: Variant in entities:
+		if not e is Dictionary:
+			continue
+		var ed: Dictionary = e
+		if DefUtils.get_string(ed, "type", "") == "Pawn":
+			_restore_pawn(sim, ed)
 
 	# Restore simulation-level state
-	sim.entities.set_next_id(int(data.get("next_entity_id", 1)))
-	sim.time.set_tick(int(data.get("current_tick", 0)))
-	sim.selected_palette_id = int(data.get("selected_palette_id", -1))
+	sim.entities.set_next_id(DefUtils.get_int(data, "next_entity_id", 1))
+	sim.time.set_tick(DefUtils.get_int(data, "current_tick", 0))
+	sim.selected_palette_id = DefUtils.get_int(data, "selected_palette_id", -1)
 
 	# Additive/optional — older saves without this just fall through to picking a fresh theme
 	# on the next tick, same as any new game. Without this, a theme's visitors/skin overrides
 	# (already correctly restored above as plain pawn/building data) would be orphaned under
 	# whatever unrelated theme gets randomly picked next.
 	sim.theme_system.restore_current_theme(
-		String(data.get("current_theme_name", "")),
-		int(data.get("current_theme_start_tick", sim.time.tick))
+		DefUtils.get_string(data, "current_theme_name", ""),
+		DefUtils.get_int(data, "current_theme_start_tick", sim.time.tick)
 	)
 
-	var palette_hexes: Array = data.get("palette", [])
+	var palette_hexes: Array = DefUtils.get_array(data, "palette", [])
 	if not palette_hexes.is_empty():
 		var restored_palette: Array[Color] = []
-		for hex in palette_hexes:
+		for hex: String in palette_hexes:
 			restored_palette.append(Color(hex))
 		sim.palette = restored_palette
 
@@ -271,46 +282,47 @@ static func from_dict(data: Dictionary, content: ContentRegistry) -> Simulation:
 
 
 static func _restore_world(sim: Simulation, world_data: Dictionary) -> void:
-	var tiles: Array = world_data.get("tiles", [])
-	for t in tiles:
+	var tiles: Array = DefUtils.get_array(world_data, "tiles", [])
+	for t: Variant in tiles:
 		if not t is Dictionary:
 			continue
-		var x: int = int(t.get("x", 0))
-		var y: int = int(t.get("y", 0))
+		var td: Dictionary = t
+		var x: int = DefUtils.get_int(td, "x", 0)
+		var y: int = DefUtils.get_int(td, "y", 0)
 		if not sim.world.is_in_bounds(Vector2i(x, y)):
 			continue
 
 		var tile: World.Tile = sim.world.get_tile_xy(x, y)
-		tile.base_terrain_type_id = int(t.get("base_terrain_type_id", -1))
-		tile.base_variant_index = int(t.get("base_variant_index", 0))
-		tile.color_index = int(t.get("color_index", 0))
-		tile.walkability_cost = float(t.get("walkability_cost", 1.0))
-		tile.blocks_light = bool(t.get("blocks_light", false))
-		tile.building_blocks_movement = bool(t.get("building_blocks_movement", false))
+		tile.base_terrain_type_id = DefUtils.get_int(td, "base_terrain_type_id", -1)
+		tile.base_variant_index = DefUtils.get_int(td, "base_variant_index", 0)
+		tile.color_index = DefUtils.get_int(td, "color_index", 0)
+		tile.walkability_cost = DefUtils.get_float(td, "walkability_cost", 1.0)
+		tile.blocks_light = DefUtils.get_bool(td, "blocks_light", false)
+		tile.building_blocks_movement = DefUtils.get_bool(td, "building_blocks_movement", false)
 
 		# Overlay (optional)
-		if t.has("overlay_terrain_type_id"):
-			tile.overlay_terrain_type_id = int(t["overlay_terrain_type_id"])
-			tile.overlay_variant_index = int(t.get("overlay_variant_index", 0))
-			tile.overlay_color_index = int(t.get("overlay_color_index", 0))
+		if td.has("overlay_terrain_type_id"):
+			tile.overlay_terrain_type_id = DefUtils.get_int(td, "overlay_terrain_type_id", -1)
+			tile.overlay_variant_index = DefUtils.get_int(td, "overlay_variant_index", 0)
+			tile.overlay_color_index = DefUtils.get_int(td, "overlay_color_index", 0)
 		else:
 			tile.overlay_terrain_type_id = -1
 
 
 static func _restore_building(sim: Simulation, e: Dictionary) -> void:
-	var entity_id: int = int(e.get("id", -1))
+	var entity_id: int = DefUtils.get_int(e, "id", -1)
 	if entity_id == -1:
 		return
 
-	var coord := Vector2i(int(e.get("x", 0)), int(e.get("y", 0)))
+	var coord := Vector2i(DefUtils.get_int(e, "x", 0), DefUtils.get_int(e, "y", 0))
 
 	# Prefer name-based lookup (stable across content reloads), fall back to saved ID
-	var building_def_name: String = e.get("building_def_name", "")
+	var building_def_name: String = DefUtils.get_string(e, "building_def_name", "")
 	var building_def_id: int
 	if not building_def_name.is_empty():
 		building_def_id = sim.content.get_building_id(building_def_name)
 	else:
-		building_def_id = int(e.get("building_def_id", -1))
+		building_def_id = DefUtils.get_int(e, "building_def_id", -1)
 
 	if building_def_id == -1:
 		push_warning(
@@ -327,30 +339,30 @@ static func _restore_building(sim: Simulation, e: Dictionary) -> void:
 
 	var bc := Components.BuildingComponent.new()
 	bc.building_def_id = building_def_id
-	bc.color_index = int(e.get("building_color_index", 0))
-	bc.skin_override = String(e.get("skin_override", ""))
+	bc.color_index = DefUtils.get_int(e, "building_color_index", 0)
+	bc.skin_override = DefUtils.get_string(e, "skin_override", "")
 	sim.entities.buildings[entity_id] = bc
 
 	# Resource component
 	if e.has("resource"):
-		var r: Dictionary = e["resource"]
+		var r: Dictionary = DefUtils.get_dict(e, "resource", {})
 		var rc := Components.ResourceComponent.new()
-		rc.resource_type = r.get("resource_type", "")
-		rc.current_amount = float(r.get("current_amount", 0.0))
-		rc.max_amount = float(r.get("max_amount", 100.0))
-		rc.depletion_mult = float(r.get("depletion_mult", 1.0))
+		rc.resource_type = DefUtils.get_string(r, "resource_type", "")
+		rc.current_amount = DefUtils.get_float(r, "current_amount", 0.0)
+		rc.max_amount = DefUtils.get_float(r, "max_amount", 100.0)
+		rc.depletion_mult = DefUtils.get_float(r, "depletion_mult", 1.0)
 		sim.entities.resources[entity_id] = rc
 	else:
 		# Legacy save compat: init from building def if it has a resource type
 		var bdef: Dictionary = sim.content.buildings.get(building_def_id, {})
-		var resource_type: String = bdef.get("resourceType", "")
+		var resource_type: String = DefUtils.get_string(bdef, "resourceType", "")
 		if not resource_type.is_empty():
-			var max_amount: float = float(bdef.get("maxResourceAmount", 100.0))
+			var max_amount: float = DefUtils.get_float(bdef, "maxResourceAmount", 100.0)
 			var rc := Components.ResourceComponent.new()
 			rc.resource_type = resource_type
 			rc.current_amount = max_amount
 			rc.max_amount = max_amount
-			rc.depletion_mult = float(bdef.get("depletionMult", 1.0))
+			rc.depletion_mult = DefUtils.get_float(bdef, "depletionMult", 1.0)
 			sim.entities.resources[entity_id] = rc
 
 	# Attachment component. Values are per-need pawn maps ({"need_id": {"pawn_id": strength}}).
@@ -358,45 +370,46 @@ static func _restore_building(sim: Simulation, e: Dictionary) -> void:
 	# attributed to a need, so it's dropped rather than guessed; attachments rebuild through play.
 	var ac := Components.AttachmentComponent.new()
 	if e.has("attachments"):
-		var att: Dictionary = e["attachments"]
-		for key in att:
-			var value = att[key]
+		var att: Dictionary = DefUtils.get_dict(e, "attachments", {})
+		for key: String in att:
+			var value: Variant = att[key]
 			if value is Dictionary:
+				var per_pawn_data: Dictionary = value
 				var need_id: int = int(key)
 				var per_pawn_out: Dictionary = {}
-				for pawn_key in value:
-					per_pawn_out[int(pawn_key)] = int(value[pawn_key])
+				for pawn_key: String in per_pawn_data:
+					per_pawn_out[int(pawn_key)] = DefUtils.get_int(per_pawn_data, pawn_key, 0)
 				ac.need_attachments[need_id] = per_pawn_out
 	sim.entities.attachments[entity_id] = ac
 
 
 static func _restore_pawn(sim: Simulation, e: Dictionary) -> void:
-	var entity_id: int = int(e.get("id", -1))
+	var entity_id: int = DefUtils.get_int(e, "id", -1)
 	if entity_id == -1:
 		return
 
-	var coord := Vector2i(int(e.get("x", 0)), int(e.get("y", 0)))
+	var coord := Vector2i(DefUtils.get_int(e, "x", 0), DefUtils.get_int(e, "y", 0))
 
 	var pos := Components.PositionComponent.new()
 	pos.coord = coord
 	sim.entities.positions[entity_id] = pos
 
 	var pawn := Components.PawnComponent.new()
-	pawn.name = e.get("name", "Pawn")
+	pawn.name = DefUtils.get_string(e, "name", "Pawn")
 	# Additive/optional — old saves never had visitors, so defaulting to COLONIST/"" is correct.
-	pawn.membership = int(e.get("membership", 0)) as Definitions.PawnMembership
-	pawn.forced_sheet_key = String(e.get("forced_sheet_key", ""))
+	pawn.membership = DefUtils.get_int(e, "membership", 0) as Definitions.PawnMembership
+	pawn.forced_sheet_key = DefUtils.get_string(e, "forced_sheet_key", "")
 	sim.entities.pawns[entity_id] = pawn
 
 	var need_comp := Components.NeedsComponent.new()
 	if e.has("needs"):
-		var raw: Dictionary = e["needs"]
-		for key in raw:
-			need_comp.needs[int(key)] = float(raw[key])
+		var raw: Dictionary = DefUtils.get_dict(e, "needs", {})
+		for key: String in raw:
+			need_comp.needs[int(key)] = DefUtils.get_float(raw, key, 0.0)
 	sim.entities.needs[entity_id] = need_comp
 
 	var mood := Components.MoodComponent.new()
-	mood.mood = float(e.get("mood", 0.0))
+	mood.mood = DefUtils.get_float(e, "mood", 0.0)
 	sim.entities.moods[entity_id] = mood
 
 	# Clear action state — pawn will re-decide on next tick
@@ -404,8 +417,8 @@ static func _restore_pawn(sim: Simulation, e: Dictionary) -> void:
 
 	var inv := Components.InventoryComponent.new()
 	if e.has("inventory"):
-		var inv_data: Dictionary = e["inventory"]
-		inv.resource_type = inv_data.get("resource_type", "")
-		inv.amount = float(inv_data.get("amount", 0.0))
-		inv.max_amount = float(inv_data.get("max_amount", 0.0))
+		var inv_data: Dictionary = DefUtils.get_dict(e, "inventory", {})
+		inv.resource_type = DefUtils.get_string(inv_data, "resource_type", "")
+		inv.amount = DefUtils.get_float(inv_data, "amount", 0.0)
+		inv.max_amount = DefUtils.get_float(inv_data, "max_amount", 0.0)
 	sim.entities.inventory[entity_id] = inv

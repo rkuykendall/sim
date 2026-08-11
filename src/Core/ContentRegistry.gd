@@ -4,17 +4,17 @@ class_name ContentRegistry
 #   name (String) -> id (int)
 #   id (int)      -> def (Dictionary)
 
-var palettes: Dictionary = {}  # name -> { name, colors: Array }
-var palette_ids: Dictionary = {}  # name -> id  /  id -> name
+var palettes: Dictionary[int, Dictionary] = {}  # id -> { name, colors: Array }
+var palette_ids: Dictionary[String, int] = {}  # name -> id
 
-var needs: Dictionary = {}  # id -> NeedDef dict
-var need_ids: Dictionary = {}  # name -> id
+var needs: Dictionary[int, Dictionary] = {}  # id -> NeedDef dict
+var need_ids: Dictionary[String, int] = {}  # name -> id
 
-var terrains: Dictionary = {}  # id -> TerrainDef dict
-var terrain_ids: Dictionary = {}  # name -> id
+var terrains: Dictionary[int, Dictionary] = {}  # id -> TerrainDef dict
+var terrain_ids: Dictionary[String, int] = {}  # name -> id
 
-var buildings: Dictionary = {}  # id -> BuildingDef dict
-var building_ids: Dictionary = {}  # name -> id
+var buildings: Dictionary[int, Dictionary] = {}  # id -> BuildingDef dict
+var building_ids: Dictionary[String, int] = {}  # name -> id
 
 var _next_id: int = 1
 

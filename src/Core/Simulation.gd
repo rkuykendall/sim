@@ -61,7 +61,7 @@ func _init(
 	if not palette_keys.is_empty():
 		selected_palette_id = palette_keys[sim_seed % palette_keys.size()]
 		var palette_def: Dictionary = content.palettes[selected_palette_id]
-		palette.assign(palette_def.get("colors", []))
+		palette.assign(DefUtils.get_array(palette_def, "colors", []))
 
 	theme_system = ThemeSystem.new(disable_themes)
 
@@ -78,7 +78,7 @@ func _init(
 # Initialize all world tiles with Flat terrain.
 func _initialize_world_terrain() -> void:
 	var flat_id: int = -1
-	for id in content.terrains:
+	for id: int in content.terrains:
 		var tdef: Dictionary = content.terrains[id]
 		if tdef.get("spriteKey", "") == "flat":
 			flat_id = id
@@ -93,8 +93,8 @@ func _initialize_world_terrain() -> void:
 			var tile: World.Tile = world.get_tile_xy(x, y)
 			tile.base_terrain_type_id = flat_id
 			tile.color_index = 2  # Default color #3
-			tile.walkability_cost = float(flat_def.get("walkabilityCost", 1.0))
-			tile.blocks_light = bool(flat_def.get("blocksLight", false))
+			tile.walkability_cost = DefUtils.get_float(flat_def, "walkabilityCost", 1.0)
+			tile.blocks_light = DefUtils.get_bool(flat_def, "blocksLight", false)
 
 
 # --- Tick ------------------------------------------------------------------
@@ -232,11 +232,11 @@ func _find_least_interesting_pawn() -> int:
 ## are to the town overall, regardless of which specific need or building it came from.
 func _total_attachment(pawn_id: int) -> int:
 	var total: int = 0
-	for building_id in entities.buildings:
+	for building_id: int in entities.buildings:
 		var ac: Components.AttachmentComponent = entities.attachments.get(building_id)
 		if ac == null:
 			continue
-		for need_id in ac.need_attachments:
+		for need_id: int in ac.need_attachments:
 			total += ac.need_attachments[need_id].get(pawn_id, 0)
 	return total
 
@@ -297,7 +297,7 @@ func _colonist_count() -> int:
 
 func _full_needs() -> Dictionary:
 	var needs: Dictionary = {}
-	for need_id in content.needs.keys():
+	for need_id: int in content.needs.keys():
 		needs[need_id] = 100.0
 	return needs
 
@@ -329,7 +329,7 @@ func create_building(building_def_id: int, coord: Vector2i, color_index: int = 0
 		push_error("Simulation.create_building: unknown building_def_id %d" % building_def_id)
 		return -1
 
-	var tile_size: int = int(building_def.get("tileSize", 1))
+	var tile_size: int = DefUtils.get_int(building_def, "tileSize", 1)
 	var occupied: Array[Vector2i] = BuildingUtilities.get_occupied_tiles(coord, tile_size)
 
 	for tile_coord in occupied:
@@ -350,12 +350,12 @@ func create_building(building_def_id: int, coord: Vector2i, color_index: int = 0
 	# Resource component
 	var resource_type: String = building_def.get("resourceType", "")
 	if not resource_type.is_empty():
-		var max_amount: float = float(building_def.get("maxResourceAmount", 100.0))
+		var max_amount: float = DefUtils.get_float(building_def, "maxResourceAmount", 100.0)
 		var rc := Components.ResourceComponent.new()
 		rc.resource_type = resource_type
 		rc.current_amount = max_amount
 		rc.max_amount = max_amount
-		rc.depletion_mult = float(building_def.get("depletionMult", 1.0))
+		rc.depletion_mult = DefUtils.get_float(building_def, "depletionMult", 1.0)
 		entities.resources[entity_id] = rc
 
 	# Attachment component (all buildings track which pawns use them)
@@ -375,7 +375,7 @@ func destroy_entity(entity_id: int) -> void:
 		var pos: Components.PositionComponent = entities.positions.get(entity_id)
 		if pos != null:
 			var building_def: Dictionary = content.buildings[building_comp.building_def_id]
-			var tile_size: int = int(building_def.get("tileSize", 1))
+			var tile_size: int = DefUtils.get_int(building_def, "tileSize", 1)
 			var occupied: Array[Vector2i] = BuildingUtilities.get_occupied_tiles(
 				pos.coord, tile_size
 			)
@@ -387,11 +387,11 @@ func destroy_entity(entity_id: int) -> void:
 	# A pawn's attachment strength lives on the buildings it visited, not on the pawn itself —
 	# entities.destroy() only erases the destroyed entity's own component entries, so without
 	# this an emigrated/removed pawn's entries would linger in every building it ever visited.
-	for building_id in entities.buildings:
+	for building_id: int in entities.buildings:
 		var ac: Components.AttachmentComponent = entities.attachments.get(building_id)
 		if ac == null:
 			continue
-		for need_id in ac.need_attachments:
+		for need_id: int in ac.need_attachments:
 			ac.need_attachments[need_id].erase(entity_id)
 
 	entities.destroy(entity_id)
@@ -413,9 +413,9 @@ func paint_terrain(coord: Vector2i, terrain_def_id: int, color_index: int = 0) -
 	var tile: World.Tile = world.get_tile(coord)
 	var palette_size: int = palette.size() if not palette.is_empty() else 1
 	var safe_color: int = color_index % palette_size
-	var variant_count: int = int(terrain_def.get("variantCount", 1))
+	var variant_count: int = DefUtils.get_int(terrain_def, "variantCount", 1)
 
-	if bool(terrain_def.get("paintsToBase", false)):
+	if DefUtils.get_bool(terrain_def, "paintsToBase", false):
 		tile.base_terrain_type_id = terrain_def_id
 		tile.color_index = safe_color
 		tile.base_variant_index = randi() % variant_count if variant_count > 1 else 0
@@ -424,8 +424,8 @@ func paint_terrain(coord: Vector2i, terrain_def_id: int, color_index: int = 0) -
 		tile.overlay_color_index = safe_color
 		tile.overlay_variant_index = randi() % variant_count if variant_count > 1 else 0
 
-	tile.walkability_cost = float(terrain_def.get("walkabilityCost", 1.0))
-	tile.blocks_light = bool(terrain_def.get("blocksLight", false))
+	tile.walkability_cost = DefUtils.get_float(terrain_def, "walkabilityCost", 1.0)
+	tile.blocks_light = DefUtils.get_bool(terrain_def, "blocksLight", false)
 
 	ai_system.mark_world_dirty()
 	_walkable_edge_tiles_dirty = true
@@ -449,13 +449,13 @@ func flood_fill(start: Vector2i, new_terrain_id: int, new_color_index: int) -> A
 	):
 		return []
 
-	var affected: Dictionary = {}  # Using dict as set for deduplication
+	var affected: Dictionary[Vector2i, bool] = {}  # Using dict as set for deduplication
 	for coord in tiles_to_paint:
 		for affected_coord in paint_terrain(coord, new_terrain_id, new_color_index):
 			affected[affected_coord] = true
 
 	var result: Array[Vector2i] = []
-	for coord in affected.keys():
+	for coord: Vector2i in affected.keys():
 		result.append(coord)
 	return result
 
@@ -463,12 +463,12 @@ func flood_fill(start: Vector2i, new_terrain_id: int, new_color_index: int) -> A
 func paint_rectangle(
 	start: Vector2i, end: Vector2i, terrain_def_id: int, color_index: int = 0
 ) -> Array[Vector2i]:
-	var affected: Dictionary = {}
+	var affected: Dictionary[Vector2i, bool] = {}
 	for coord in _get_rectangle_tiles(start, end):
 		for affected_coord in paint_terrain(coord, terrain_def_id, color_index):
 			affected[affected_coord] = true
 	var result: Array[Vector2i] = []
-	for coord in affected.keys():
+	for coord: Vector2i in affected.keys():
 		result.append(coord)
 	return result
 
@@ -476,12 +476,12 @@ func paint_rectangle(
 func paint_rectangle_outline(
 	start: Vector2i, end: Vector2i, terrain_def_id: int, color_index: int = 0
 ) -> Array[Vector2i]:
-	var affected: Dictionary = {}
+	var affected: Dictionary[Vector2i, bool] = {}
 	for coord in _get_rectangle_outline_tiles(start, end):
 		for affected_coord in paint_terrain(coord, terrain_def_id, color_index):
 			affected[affected_coord] = true
 	var result: Array[Vector2i] = []
-	for coord in affected.keys():
+	for coord: Vector2i in affected.keys():
 		result.append(coord)
 	return result
 
@@ -507,8 +507,8 @@ func delete_at_tile(coord: Vector2i) -> Array[Vector2i]:
 		# Restore walkability from base terrain
 		var base_def: Dictionary = content.terrains.get(tile.base_terrain_type_id, {})
 		if not base_def.is_empty():
-			tile.walkability_cost = float(base_def.get("walkabilityCost", 1.0))
-			tile.blocks_light = bool(base_def.get("blocksLight", false))
+			tile.walkability_cost = DefUtils.get_float(base_def, "walkabilityCost", 1.0)
+			tile.blocks_light = DefUtils.get_bool(base_def, "blocksLight", false)
 		return get_tiles_with_neighbors([coord])
 
 	# Reset base to flat
@@ -516,8 +516,8 @@ func delete_at_tile(coord: Vector2i) -> Array[Vector2i]:
 	if flat_id != -1:
 		var flat_def: Dictionary = content.terrains[flat_id]
 		tile.base_terrain_type_id = flat_id
-		tile.walkability_cost = float(flat_def.get("walkabilityCost", 1.0))
-		tile.blocks_light = bool(flat_def.get("blocksLight", false))
+		tile.walkability_cost = DefUtils.get_float(flat_def, "walkabilityCost", 1.0)
+		tile.blocks_light = DefUtils.get_bool(flat_def, "blocksLight", false)
 		tile.color_index = 2
 
 	return get_tiles_with_neighbors([coord])
@@ -530,7 +530,7 @@ func try_delete_building(coord: Vector2i) -> bool:
 		if pos == null or building_comp == null:
 			continue
 		var building_def: Dictionary = content.buildings[building_comp.building_def_id]
-		var tile_size: int = int(building_def.get("tileSize", 1))
+		var tile_size: int = DefUtils.get_int(building_def, "tileSize", 1)
 		var occupied: Array[Vector2i] = BuildingUtilities.get_occupied_tiles(pos.coord, tile_size)
 		if occupied.has(coord):
 			destroy_entity(obj_id)
@@ -539,34 +539,34 @@ func try_delete_building(coord: Vector2i) -> bool:
 
 
 func flood_delete(start: Vector2i) -> Array[Vector2i]:
-	var affected: Dictionary = {}
+	var affected: Dictionary[Vector2i, bool] = {}
 	for coord in _get_flood_tiles(start):
 		for affected_coord in delete_at_tile(coord):
 			affected[affected_coord] = true
 	var result: Array[Vector2i] = []
-	for coord in affected.keys():
+	for coord: Vector2i in affected.keys():
 		result.append(coord)
 	return result
 
 
 func delete_rectangle(start: Vector2i, end: Vector2i) -> Array[Vector2i]:
-	var affected: Dictionary = {}
+	var affected: Dictionary[Vector2i, bool] = {}
 	for coord in _get_rectangle_tiles(start, end):
 		for affected_coord in delete_at_tile(coord):
 			affected[affected_coord] = true
 	var result: Array[Vector2i] = []
-	for coord in affected.keys():
+	for coord: Vector2i in affected.keys():
 		result.append(coord)
 	return result
 
 
 func delete_rectangle_outline(start: Vector2i, end: Vector2i) -> Array[Vector2i]:
-	var affected: Dictionary = {}
+	var affected: Dictionary[Vector2i, bool] = {}
 	for coord in _get_rectangle_outline_tiles(start, end):
 		for affected_coord in delete_at_tile(coord):
 			affected[affected_coord] = true
 	var result: Array[Vector2i] = []
-	for coord in affected.keys():
+	for coord: Vector2i in affected.keys():
 		result.append(coord)
 	return result
 
@@ -600,8 +600,8 @@ func _total_home_capacity() -> int:
 	for obj_id in entities.buildings:
 		var bc: Components.BuildingComponent = entities.buildings[obj_id]
 		var bdef: Dictionary = content.buildings.get(bc.building_def_id, {})
-		if bool(bdef.get("isHome", false)):
-			total += int(bdef.get("capacity", 1))
+		if DefUtils.get_bool(bdef, "isHome", false):
+			total += DefUtils.get_int(bdef, "capacity", 1)
 	return total
 
 
@@ -616,7 +616,7 @@ func get_home_building_ids() -> Array[int]:
 	for building_id in entities.buildings:
 		var bc: Components.BuildingComponent = entities.buildings[building_id]
 		var bdef: Dictionary = content.buildings.get(bc.building_def_id, {})
-		if bool(bdef.get("isHome", false)):
+		if DefUtils.get_bool(bdef, "isHome", false):
 			result.append(building_id)
 	return result
 
@@ -681,7 +681,7 @@ func run_ticks(count: int) -> void:
 func score_map_diversity() -> int:
 	var diversity_map: Array = ai_system._get_diversity_map(world)
 	var score: int = 0
-	for value in diversity_map:
+	for value: int in diversity_map:
 		score += value
 	score += entities.buildings.size()
 	return score
@@ -696,7 +696,7 @@ func _perform_attachment_decay() -> void:
 		for need_id in ac.need_attachments:
 			var per_pawn: Dictionary = ac.need_attachments[need_id]
 			var to_remove: Array[int] = []
-			for pawn_id in per_pawn.keys():
+			for pawn_id: int in per_pawn.keys():
 				var new_strength: int = per_pawn[pawn_id] - 1
 				if new_strength <= 0:
 					to_remove.append(pawn_id)
@@ -710,9 +710,9 @@ func _perform_attachment_decay() -> void:
 # --- Tile geometry helpers -------------------------------------------------
 
 
-func get_tiles_with_neighbors(coords: Array) -> Array[Vector2i]:
-	var result: Dictionary = {}
-	var offsets := [
+func get_tiles_with_neighbors(coords: Array[Vector2i]) -> Array[Vector2i]:
+	var result: Dictionary[Vector2i, bool] = {}
+	var offsets: Array[Vector2i] = [
 		Vector2i(-1, -1),
 		Vector2i(0, -1),
 		Vector2i(1, -1),
@@ -723,13 +723,13 @@ func get_tiles_with_neighbors(coords: Array) -> Array[Vector2i]:
 		Vector2i(0, 1),
 		Vector2i(1, 1),
 	]
-	for coord in coords:
-		for offset in offsets:
+	for coord: Vector2i in coords:
+		for offset: Vector2i in offsets:
 			var neighbor: Vector2i = coord + offset
 			if world.is_in_bounds(neighbor):
 				result[neighbor] = true
 	var out: Array[Vector2i] = []
-	for coord in result.keys():
+	for coord: Vector2i in result.keys():
 		out.append(coord)
 	return out
 
@@ -745,7 +745,7 @@ func _get_flood_tiles(start: Vector2i) -> Array[Vector2i]:
 
 	while not queue.is_empty():
 		var coord: Vector2i = queue.pop_front()
-		for d in [Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)]:
+		for d: Vector2i in [Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)]:
 			var neighbor: Vector2i = coord + d
 			if world.is_in_bounds(neighbor) and not visited.has(neighbor):
 				if world.get_tile(neighbor).tile_hash == target_hash:
@@ -753,7 +753,7 @@ func _get_flood_tiles(start: Vector2i) -> Array[Vector2i]:
 					queue.push_back(neighbor)
 
 	var result: Array[Vector2i] = []
-	for coord in visited.keys():
+	for coord: Vector2i in visited.keys():
 		result.append(coord)
 	return result
 
@@ -783,7 +783,7 @@ func _get_rectangle_outline_tiles(start: Vector2i, end: Vector2i) -> Array[Vecto
 		result[Vector2i(min_x, y)] = true
 		result[Vector2i(max_x, y)] = true
 	var out: Array[Vector2i] = []
-	for coord in result.keys():
+	for coord: Vector2i in result.keys():
 		out.append(coord)
 	return out
 
@@ -826,8 +826,8 @@ func create_render_snapshot() -> Dictionary:
 
 	var snap_theme: Dictionary = {}
 	if theme_system != null:
-		var ct = theme_system.current_theme
-		var qt = theme_system.queued_theme
+		var ct: SimTheme = theme_system.current_theme
+		var qt: SimTheme = theme_system.queued_theme
 		snap_theme["current_theme_name"] = ct.get_name() if ct != null else ""
 		snap_theme["current_music_file"] = ct.get_music_file() if ct != null else ""
 		snap_theme["queued_theme_name"] = qt.get_name() if qt != null else ""
@@ -854,7 +854,7 @@ func _build_pawn_snapshots() -> Array:
 		if ac == null:
 			continue
 		var breakdown: Dictionary = ac.per_pawn_breakdown()
-		for attached_pawn_id in breakdown:
+		for attached_pawn_id: int in breakdown:
 			if not pawn_attachments.has(attached_pawn_id):
 				pawn_attachments[attached_pawn_id] = {}
 			pawn_attachments[attached_pawn_id][building_id] = breakdown[attached_pawn_id]
@@ -910,7 +910,7 @@ func _build_pawn_snapshots() -> Array:
 					var target_bdef: Dictionary = content.buildings.get(
 						target_bc.building_def_id, {}
 					)
-					if bool(target_bdef.get("isHome", false)):
+					if DefUtils.get_bool(target_bdef, "isHome", false):
 						home_visit_building_id = act.target_entity
 						home_visit_skin_override = target_bc.skin_override
 
@@ -1000,12 +1000,12 @@ func _build_building_snapshots() -> Array:
 					"in_use": in_use,
 					"used_by_name": used_by_name,
 					"color_index": bc.color_index,
-					"capacity": int(bdef.get("capacity", 1)),
+					"capacity": DefUtils.get_int(bdef, "capacity", 1),
 					"current_users": current_users,
 					"resource_type": rc.resource_type if rc != null else "",
 					"current_resource": rc.current_amount if rc != null else -1.0,
 					"max_resource": rc.max_amount if rc != null else -1.0,
-					"can_be_worked_at": bool(bdef.get("canBeWorkedAt", false)),
+					"can_be_worked_at": DefUtils.get_bool(bdef, "canBeWorkedAt", false),
 					"attachments": attachments,
 				}
 			)

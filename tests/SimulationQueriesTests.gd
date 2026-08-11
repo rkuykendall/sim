@@ -83,7 +83,7 @@ func test_score_map_diversity_matches_cache() -> void:
 	sim.paint_terrain(Vector2i(3, 3), wall_id)
 
 	var expected_score := 0
-	for value in sim.ai_system._get_diversity_map(sim.world):
+	for value: int in sim.ai_system._get_diversity_map(sim.world):
 		expected_score += value
 	expected_score += sim.entities.all_buildings().size()
 

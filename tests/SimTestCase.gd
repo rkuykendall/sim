@@ -1,7 +1,7 @@
 class_name SimTestCase
 extends RefCounted
 
-var _fail_msgs: Array = []
+var _fail_msgs: Array[String] = []
 var _pass_count: int = 0
 var _fail_count: int = 0
 
@@ -83,14 +83,14 @@ func run_all() -> Dictionary:
 
 
 ## Returns the first pawn entity id, or -1 if there are none. Useful for single-pawn tests.
-func _get_first_pawn(sim) -> int:
-	var pawns = sim.entities.all_pawns()
+func _get_first_pawn(sim: Simulation) -> int:
+	var pawns: Array = sim.entities.all_pawns()
 	return pawns[0] if not pawns.is_empty() else -1
 
 
 ## Finds a building entity id by its building_def_id. Assumes at most one instance of that
 ## def exists — fine for tests, but not meaningful in real gameplay where many can coexist.
-func _get_building_by_def_id(sim, def_id: int) -> int:
+func _get_building_by_def_id(sim: Simulation, def_id: int) -> int:
 	for building_id in sim.entities.buildings:
 		if sim.entities.buildings[building_id].building_def_id == def_id:
 			return building_id

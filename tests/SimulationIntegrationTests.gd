@@ -24,7 +24,7 @@ func test_low_hunger_uses_market() -> void:
 	)
 	builder.add_building(market_id, 4, 0)
 	builder.add_pawn("TestPawn", 0, 0, {hunger_id: 0.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var pawn_id := _get_first_pawn(sim)
 	assert_not_null(pawn_id, "Should have a pawn")
@@ -48,7 +48,7 @@ func test_full_hunger_no_market() -> void:
 	)
 	builder.add_building(market_id, 4, 0)
 	builder.add_pawn("TestPawn", 0, 0, {hunger_id: 100.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var pawn_id := _get_first_pawn(sim)
 	assert_not_null(pawn_id, "Should have a pawn")
@@ -64,8 +64,8 @@ func test_full_hunger_no_market() -> void:
 # Ticks advance the simulation time counter.
 func test_ticks_advance_time() -> void:
 	var builder := _Builder.new()
-	var sim = builder.build()
-	var initial_tick = sim.time.tick
+	var sim := builder.build()
+	var initial_tick: int = sim.time.tick
 
 	sim.run_ticks(100)
 
@@ -77,7 +77,7 @@ func test_needs_decay() -> void:
 	var builder := _Builder.new()
 	var hunger_id := builder.define_need("Hunger", 0.5)
 	builder.add_pawn("TestPawn", 2, 2, {hunger_id: 100.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var pawn_id := _get_first_pawn(sim)
 	assert_not_null(pawn_id, "Should have a pawn")
@@ -102,7 +102,7 @@ func test_navigates_to_building() -> void:
 	)
 	builder.add_building(market_id, 9, 0)
 	builder.add_pawn("TestPawn", 0, 0, {hunger_id: 10.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var pawn_id := _get_first_pawn(sim)
 	assert_not_null(pawn_id, "Should have a pawn")
@@ -120,9 +120,9 @@ func test_destroy_restores_walkability() -> void:
 	var hunger_id := builder.define_need("Hunger")
 	var market_id := builder.define_building("Market", hunger_id)
 	builder.add_building(market_id, 2, 2)
-	var sim = builder.build()
+	var sim := builder.build()
 
-	var building_id = sim.entities.all_buildings()[0]
+	var building_id: int = sim.entities.all_buildings()[0]
 	var coord := Vector2i(2, 2)
 
 	# Tile should be blocked by the building

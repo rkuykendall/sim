@@ -131,8 +131,8 @@ static func delete_save(slot_name: String) -> void:
 static func generate_save_name() -> String:
 	var existing := get_all_saves()
 	var used_numbers: Dictionary = {}
-	for save in existing:
-		var name: String = save.get("display_name", "")
+	for save: Dictionary in existing:
+		var name: String = DefUtils.get_string(save, "display_name", "")
 		if name.begins_with("Save "):
 			var num_str: String = name.substr(5)
 			if num_str.is_valid_int():

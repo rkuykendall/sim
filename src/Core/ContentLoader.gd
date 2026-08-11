@@ -35,13 +35,13 @@ static func _load_mods(registry: ContentRegistry) -> void:
 
 	for mod_name in mod_dir.get_directories():
 		var base := "user://mods/".path_join(mod_name).path_join("/")
-		var parsers := {
+		var parsers: Dictionary[String, Callable] = {
 			"palettes.json": _parse_palette,
 			"needs.json": _parse_need,
 			"terrains.json": _parse_terrain,
 			"buildings.json": _parse_building,
 		}
-		for file_name in parsers:
+		for file_name: String in parsers:
 			var path := base.path_join(file_name)
 			if FileAccess.file_exists(path):
 				_load_file(registry, path, parsers[file_name])
@@ -59,26 +59,28 @@ static func _load_file(
 		return
 
 	var text := FileAccess.get_file_as_string(path)
-	var data = JSON.parse_string(text)
+	var data: Variant = JSON.parse_string(text)
 
 	if data == null or not data is Dictionary:
 		push_error("ContentLoader: failed to parse JSON: %s" % path)
 		return
 
-	for key in data:
-		parser.call(registry, key, data[key])
+	var dict: Dictionary = data
+	for key: String in dict:
+		parser.call(registry, key, dict[key])
 
 
 # --- Parsers ---------------------------------------------------------------
 
 
-static func _parse_palette(registry: ContentRegistry, key: String, value) -> void:
+static func _parse_palette(registry: ContentRegistry, key: String, value: Variant) -> void:
 	if not value is Array:
 		push_error("ContentLoader: palette '%s' must be an array of hex strings" % key)
 		return
 
+	var hex_values: Array = value
 	var colors: Array[Color] = []
-	for hex in value:
+	for hex: String in hex_values:
 		colors.append(Color(hex))
 
 	registry.register_palette(key, {"colors": colors})
@@ -90,11 +92,11 @@ static func _parse_need(registry: ContentRegistry, key: String, value: Dictionar
 		. register_need(
 			key,
 			{
-				"name": value.get("name", key),
-				"decayPerTick": float(value.get("decayPerTick", 0.05)),
-				"criticalThreshold": float(value.get("criticalThreshold", 20.0)),
-				"lowThreshold": float(value.get("lowThreshold", 40.0)),
-				"spriteKey": value.get("spriteKey", ""),
+				"name": DefUtils.get_string(value, "name", key),
+				"decayPerTick": DefUtils.get_float(value, "decayPerTick", 0.05),
+				"criticalThreshold": DefUtils.get_float(value, "criticalThreshold", 20.0),
+				"lowThreshold": DefUtils.get_float(value, "lowThreshold", 40.0),
+				"spriteKey": DefUtils.get_string(value, "spriteKey", ""),
 			}
 		)
 	)
@@ -106,12 +108,12 @@ static func _parse_terrain(registry: ContentRegistry, key: String, value: Dictio
 		. register_terrain(
 			key,
 			{
-				"walkabilityCost": float(value.get("walkabilityCost", 1.0)),
-				"blocksLight": bool(value.get("blocksLight", false)),
-				"spriteKey": value.get("spriteKey", ""),
-				"isAutotiling": bool(value.get("isAutotiling", false)),
-				"paintsToBase": bool(value.get("paintsToBase", false)),
-				"variantCount": int(value.get("variantCount", 1)),
+				"walkabilityCost": DefUtils.get_float(value, "walkabilityCost", 1.0),
+				"blocksLight": DefUtils.get_bool(value, "blocksLight", false),
+				"spriteKey": DefUtils.get_string(value, "spriteKey", ""),
+				"isAutotiling": DefUtils.get_bool(value, "isAutotiling", false),
+				"paintsToBase": DefUtils.get_bool(value, "paintsToBase", false),
+				"variantCount": DefUtils.get_int(value, "variantCount", 1),
 			}
 		)
 	)
@@ -121,19 +123,22 @@ static func _parse_building(registry: ContentRegistry, key: String, value: Dicti
 	# Resolve satisfiesNeed string -> need id
 	var satisfies_need_id: int = -1
 	if value.has("satisfiesNeed"):
-		satisfies_need_id = registry.get_need_id(value["satisfiesNeed"])
+		var satisfies_need_key: String = DefUtils.get_string(value, "satisfiesNeed", "")
+		satisfies_need_id = registry.get_need_id(satisfies_need_key)
 		if satisfies_need_id == -1:
 			push_error(
 				(
 					"ContentLoader: building '%s' references unknown need '%s'"
-					% [key, value["satisfiesNeed"]]
+					% [key, satisfies_need_key]
 				)
 			)
 
 	# Resolve haulSourceTerrainKey string -> terrain id
 	var haul_terrain_id: int = -1
 	if value.has("haulSourceTerrainKey"):
-		haul_terrain_id = registry.get_terrain_id(value["haulSourceTerrainKey"])
+		haul_terrain_id = registry.get_terrain_id(
+			DefUtils.get_string(value, "haulSourceTerrainKey", "")
+		)
 
 	(
 		registry
@@ -141,23 +146,23 @@ static func _parse_building(registry: ContentRegistry, key: String, value: Dicti
 			key,
 			{
 				"satisfiesNeedId": satisfies_need_id,
-				"spriteKey": value.get("spriteKey", ""),
-				"tileSize": int(value.get("tileSize", 1)),
-				"spriteVariants": int(value.get("spriteVariants", 1)),
-				"spriteColumn": int(value.get("spriteColumn", 0)),
-				"isHome": bool(value.get("isHome", false)),
-				"capacity": int(value.get("capacity", 1)),
-				"resourceType": value.get("resourceType", ""),
-				"maxResourceAmount": float(value.get("maxResourceAmount", 100.0)),
-				"depletionMult": float(value.get("depletionMult", 1.0)),
-				"canBeWorkedAt": bool(value.get("canBeWorkedAt", false)),
-				"workType": value.get("workType", "direct"),
-				"haulSourceResourceType": value.get("haulSourceResourceType", ""),
-				"haulSourceTerrainKey": value.get("haulSourceTerrainKey", ""),
+				"spriteKey": DefUtils.get_string(value, "spriteKey", ""),
+				"tileSize": DefUtils.get_int(value, "tileSize", 1),
+				"spriteVariants": DefUtils.get_int(value, "spriteVariants", 1),
+				"spriteColumn": DefUtils.get_int(value, "spriteColumn", 0),
+				"isHome": DefUtils.get_bool(value, "isHome", false),
+				"capacity": DefUtils.get_int(value, "capacity", 1),
+				"resourceType": DefUtils.get_string(value, "resourceType", ""),
+				"maxResourceAmount": DefUtils.get_float(value, "maxResourceAmount", 100.0),
+				"depletionMult": DefUtils.get_float(value, "depletionMult", 1.0),
+				"canBeWorkedAt": DefUtils.get_bool(value, "canBeWorkedAt", false),
+				"workType": DefUtils.get_string(value, "workType", "direct"),
+				"haulSourceResourceType": DefUtils.get_string(value, "haulSourceResourceType", ""),
+				"haulSourceTerrainKey": DefUtils.get_string(value, "haulSourceTerrainKey", ""),
 				"haulSourceTerrainId": haul_terrain_id,
-				"canSellToConsumers": bool(value.get("canSellToConsumers", true)),
-				"satisfactionAmount": float(value.get("satisfactionAmount", 100.0)),
-				"interactionDuration": int(value.get("interactionDuration", 100)),
+				"canSellToConsumers": DefUtils.get_bool(value, "canSellToConsumers", true),
+				"satisfactionAmount": DefUtils.get_float(value, "satisfactionAmount", 100.0),
+				"interactionDuration": DefUtils.get_int(value, "interactionDuration", 100),
 			}
 		)
 	)

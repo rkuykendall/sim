@@ -22,7 +22,7 @@ func test_seeks_food_when_debuff() -> void:
 	)
 	builder.add_building(market_id, 4, 0)
 	builder.add_pawn("TestPawn", 0, 0, {hunger_id: 30.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var pawn_id := _get_first_pawn(sim)
 	assert_not_eq(pawn_id, -1, "Should have a pawn")
@@ -30,7 +30,7 @@ func test_seeks_food_when_debuff() -> void:
 	sim.run_ticks(5)
 
 	# After 5 ticks pawn should be en route to or queued for Market
-	var action_comp = sim.entities.actions.get(pawn_id)
+	var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 	var is_going_to_market := false
 	if action_comp != null:
 		if action_comp.current_action != null:
@@ -55,14 +55,14 @@ func test_wanders_when_no_debuffs() -> void:
 	var market_id := builder.define_building("Market", hunger_id, 50.0, 20)
 	builder.add_building(market_id, 4, 0)
 	builder.add_pawn("TestPawn", 0, 0, {hunger_id: 95.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var pawn_id := _get_first_pawn(sim)
 	assert_not_eq(pawn_id, -1, "Should have a pawn")
 
 	sim.run_ticks(5)
 
-	var action_comp = sim.entities.actions.get(pawn_id)
+	var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 	var is_going_to_market := false
 	if action_comp != null:
 		if action_comp.current_action != null:
@@ -80,7 +80,7 @@ func test_lifecycle_eat_wander_return() -> void:
 	var market_id := builder.define_building("Market", hunger_id, 50.0, 20)
 	builder.add_building(market_id, 5, 5)
 	builder.add_pawn("TestPawn", 0, 0, {hunger_id: 10.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var pawn_id := _get_first_pawn(sim)
 	assert_not_eq(pawn_id, -1, "Should have a pawn")
@@ -93,7 +93,7 @@ func test_lifecycle_eat_wander_return() -> void:
 	for tick in 500:
 		sim.tick()
 		var hunger := sim.get_need_value(pawn_id, hunger_id)
-		var action_comp = sim.entities.actions.get(pawn_id)
+		var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 
 		# Detect market use (hunger jumps up significantly)
 		if hunger > last_hunger + 10.0:
@@ -130,7 +130,7 @@ func test_survives_long_term() -> void:
 	var market_id := builder.define_building("Market", hunger_id, 60.0, 20)
 	builder.add_building(market_id, 5, 5)
 	builder.add_pawn("TestPawn", 0, 0, {hunger_id: 50.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var pawn_id := _get_first_pawn(sim)
 	assert_not_eq(pawn_id, -1, "Should have a pawn")

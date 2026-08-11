@@ -24,7 +24,7 @@ func _init() -> void:
 	var total_pass := 0
 	var total_fail := 0
 
-	for suite_script in [
+	for suite_script: GDScript in [
 		_IntegrationTests,
 		_PathfindingTests,
 		_LifecycleTests,
@@ -40,8 +40,12 @@ func _init() -> void:
 		_ThemeSystemTests,
 		_VisitorPawnTests
 	]:
-		var suite = suite_script.new()
+		# Each suite extends SimTestCase but defines its own run() — not on the shared base —
+		# so this stays duck-typed rather than statically resolved (see SystemManager.gd).
+		var suite: SimTestCase = suite_script.new()
+		@warning_ignore("unsafe_method_access")
 		suite.run()
+		@warning_ignore("unsafe_method_access")
 		var results: Dictionary = suite.run_all()
 		total_pass += results["pass"]
 		total_fail += results["fail"]

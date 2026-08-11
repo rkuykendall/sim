@@ -10,50 +10,52 @@ static func generate_from_path(path: String, content: ContentRegistry) -> ImageT
 
 	# We need to read full save data for tile colors
 	var text: String = FileAccess.get_file_as_string(path)
-	var data = JSON.parse_string(text)
-	if not data is Dictionary:
+	var parsed: Variant = JSON.parse_string(text)
+	if not parsed is Dictionary:
 		return null
+	var data: Dictionary = parsed
 
 	return _generate_from_data(data, content)
 
 
 static func _generate_from_data(data: Dictionary, content: ContentRegistry) -> ImageTexture:
-	var world_data: Dictionary = data.get("world", {})
-	var world_width: int = int(world_data.get("width", World.DEFAULT_WIDTH))
-	var world_height: int = int(world_data.get("height", World.DEFAULT_HEIGHT))
+	var world_data: Dictionary = DefUtils.get_dict(data, "world", {})
+	var world_width: int = DefUtils.get_int(world_data, "width", World.DEFAULT_WIDTH)
+	var world_height: int = DefUtils.get_int(world_data, "height", World.DEFAULT_HEIGHT)
 
 	var image := Image.create_empty(world_width, world_height, false, Image.FORMAT_RGB8)
 
 	# Build palette from saved hex strings or fall back to content palette
 	var palette: Array[Color] = []
-	var palette_hexes: Array = data.get("palette", [])
+	var palette_hexes: Array = DefUtils.get_array(data, "palette", [])
 	if not palette_hexes.is_empty():
-		for hex in palette_hexes:
+		for hex: String in palette_hexes:
 			palette.append(Color(hex))
 	else:
-		var palette_id: int = int(data.get("selected_palette_id", -1))
+		var palette_id: int = DefUtils.get_int(data, "selected_palette_id", -1)
 		if content.palettes.has(palette_id):
-			palette = content.palettes[palette_id].get("colors", [])
+			palette.assign(DefUtils.get_array(content.palettes[palette_id], "colors", []))
 
 	if palette.is_empty():
 		image.fill(Color(0.3, 0.3, 0.3))
 		return ImageTexture.create_from_image(image)
 
 	# Render 1 pixel per tile (tiles stored column-major: (0,0), (0,1)...)
-	var tiles: Array = world_data.get("tiles", [])
-	for tile in tiles:
+	var tiles: Array = DefUtils.get_array(world_data, "tiles", [])
+	for tile: Variant in tiles:
 		if not tile is Dictionary:
 			continue
-		var x: int = int(tile.get("x", 0))
-		var y: int = int(tile.get("y", 0))
+		var td: Dictionary = tile
+		var x: int = DefUtils.get_int(td, "x", 0)
+		var y: int = DefUtils.get_int(td, "y", 0)
 		if x < 0 or x >= world_width or y < 0 or y >= world_height:
 			continue
 
 		var color_index: int
-		if tile.has("overlay_terrain_type_id"):
-			color_index = int(tile.get("overlay_color_index", 0))
+		if td.has("overlay_terrain_type_id"):
+			color_index = DefUtils.get_int(td, "overlay_color_index", 0)
 		else:
-			color_index = int(tile.get("color_index", 0))
+			color_index = DefUtils.get_int(td, "color_index", 0)
 
 		if color_index >= 0 and color_index < palette.size():
 			image.set_pixel(x, y, palette[color_index])

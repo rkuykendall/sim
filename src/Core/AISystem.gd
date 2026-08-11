@@ -63,7 +63,7 @@ func _decide_next_action(
 	var urgent_needs := _calculate_urgent_needs(need_comp)
 	var purpose_need_id: int = sim.content.get_need_id("Purpose")
 
-	for pair in urgent_needs:
+	for pair: Array in urgent_needs:
 		var need_id: int = pair[0]
 		if need_id == purpose_need_id:
 			if _try_queue_work(sim, pawn_id, action_comp, purpose_need_id):
@@ -94,12 +94,12 @@ func _try_queue_work(
 
 func _calculate_urgent_needs(need_comp: Components.NeedsComponent) -> Array:
 	var urgent: Array = []
-	for need_id in need_comp.needs.keys():
+	for need_id: int in need_comp.needs.keys():
 		var value: float = need_comp.needs[need_id]
 		if value < NEED_THRESHOLD:
 			urgent.append([need_id, value])
 	# Sort ascending by value (lowest = most urgent first)
-	urgent.sort_custom(func(a, b): return a[1] < b[1])
+	urgent.sort_custom(func(a: Array, b: Array) -> bool: return a[1] < b[1])
 	return urgent
 
 
@@ -116,9 +116,9 @@ func _queue_use_building(
 	action.type = Definitions.ActionType.USE_BUILDING
 	action.animation = Definitions.AnimationType.IDLE
 	action.target_entity = target_id
-	action.duration_ticks = int(building_def.get("interactionDuration", 100))
-	action.satisfies_need_id = int(building_def.get("satisfiesNeedId", -1))
-	action.need_satisfaction_amount = float(building_def.get("satisfactionAmount", 100.0))
+	action.duration_ticks = DefUtils.get_int(building_def, "interactionDuration", 100)
+	action.satisfies_need_id = DefUtils.get_int(building_def, "satisfiesNeedId", -1)
+	action.need_satisfaction_amount = DefUtils.get_float(building_def, "satisfactionAmount", 100.0)
 	action.display_name = "Going to %s" % building_def["name"]
 	action_comp.action_queue.push_back(action)
 
@@ -215,7 +215,7 @@ func _queue_haul_from_terrain(
 	dest_def: Dictionary,
 	purpose_need_id: int
 ) -> bool:
-	var terrain_def_id: int = int(dest_def.get("haulSourceTerrainId", -1))
+	var terrain_def_id: int = DefUtils.get_int(dest_def, "haulSourceTerrainId", -1)
 	var terrain_coord: Vector2i = _find_nearest_terrain(sim, dest_id, terrain_def_id)
 	if terrain_coord == Vector2i(-1, -1):
 		return false
@@ -270,7 +270,7 @@ func _wander_randomly(
 	for _i in 10:
 		potential.append(Vector2i(randi() % sim.world.width, randi() % sim.world.height))
 
-	var dirs := [
+	var dirs: Array[Vector2i] = [
 		Vector2i(0, 1),
 		Vector2i(0, -1),
 		Vector2i(1, 0),
@@ -292,7 +292,7 @@ func _wander_randomly(
 				capped_nearby[nearby.x + nearby.y * sim.world.width] = true
 
 	# Filter to valid walkable candidates (not current position)
-	var candidates: Array = []
+	var candidates: Array[Dictionary] = []
 	for target in potential:
 		if target == pos.coord:
 			continue
@@ -309,14 +309,16 @@ func _wander_randomly(
 		return
 
 	# Sort by diversity descending (higher diversity = more interesting area)
-	candidates.sort_custom(func(a, b): return a["diversity"] > b["diversity"])
+	candidates.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool: return a["diversity"] > b["diversity"]
+	)
 
 	var selected: Dictionary
-	var all_zero: bool = candidates.all(func(c): return c["diversity"] == 0)
+	var all_zero: bool = candidates.all(func(c: Dictionary) -> bool: return c["diversity"] == 0)
 	if all_zero:
 		# Prefer closer tiles when everything looks the same
 		candidates.sort_custom(
-			func(a, b):
+			func(a: Dictionary, b: Dictionary) -> bool:
 				var da: int = abs(a["coord"].x - pos.coord.x) + abs(a["coord"].y - pos.coord.y)
 				var db: int = abs(b["coord"].x - pos.coord.x) + abs(b["coord"].y - pos.coord.y)
 				return da < db
@@ -346,6 +348,7 @@ func _wander_randomly(
 		var expr_result: Array = _decide_need_expression(sim, pawn_id)
 		if expr_result[0] != -1:
 			idle.has_expression = true
+			@warning_ignore("unsafe_cast")
 			idle.expression = expr_result[0] as Definitions.ExpressionType
 			idle.expression_icon_def_id = expr_result[1]
 	else:
@@ -505,16 +508,17 @@ func _find_building_for_need(sim: Simulation, pawn_id: int, need_id: int) -> int
 		pawn_id,
 		func(ctx: Dictionary) -> bool:
 			var bdef: Dictionary = ctx["obj_def"]
-			if int(bdef.get("satisfiesNeedId", -1)) != captured_need_id:
+			if DefUtils.get_int(bdef, "satisfiesNeedId", -1) != captured_need_id:
 				return false
-			if not bool(bdef.get("canSellToConsumers", true)):
+			if not DefUtils.get_bool(bdef, "canSellToConsumers", true):
 				return false
 			var res: Components.ResourceComponent = ctx["resource_comp"]
 			if res != null and res.current_amount <= 0:
 				return false
 			return true,
 		func(ctx: Dictionary, pid: int) -> float:
-			return _get_attachment_score(ctx["attachment_comp"], pid, captured_need_id, 20.0, 15.0)
+			var ac: Components.AttachmentComponent = ctx["attachment_comp"]
+			return _get_attachment_score(ac, pid, captured_need_id, 20.0, 15.0)
 	)
 
 
@@ -526,7 +530,7 @@ func _find_work_candidates(sim: Simulation, pawn_id: int, purpose_need_id: int) 
 		pawn_id,
 		func(ctx: Dictionary) -> bool:
 			var bdef: Dictionary = ctx["obj_def"]
-			if not bool(bdef.get("canBeWorkedAt", false)):
+			if not DefUtils.get_bool(bdef, "canBeWorkedAt", false):
 				return false
 			# haulFromTerrain sources (e.g. Trees) never run dry, so there's no real
 			# "already fully stocked, back off" signal the way there is for a Farm or
@@ -540,7 +544,8 @@ func _find_work_candidates(sim: Simulation, pawn_id: int, purpose_need_id: int) 
 				return false
 			return (res.current_amount / res.max_amount) < 0.8,
 		func(ctx: Dictionary, pid: int) -> float:
-			return _get_attachment_score(ctx["attachment_comp"], pid, purpose_need_id, 10.0, 5.0)
+			var ac: Components.AttachmentComponent = ctx["attachment_comp"]
+			return _get_attachment_score(ac, pid, purpose_need_id, 10.0, 5.0)
 	)
 
 
@@ -599,7 +604,7 @@ func _find_nearest_terrain(sim: Simulation, near_building_id: int, terrain_def_i
 
 
 func _has_adjacent_walkable(world: World, coord: Vector2i) -> bool:
-	for d in [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]:
+	for d: Vector2i in [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]:
 		if world.is_in_bounds(coord + d) and world.is_walkable(coord + d):
 			return true
 	return false
@@ -616,9 +621,9 @@ func _gather_reachable_candidates(
 	if pawn_pos == null:
 		return []
 
-	var candidates: Array = []
+	var candidates: Array[Dictionary] = []
 
-	for obj_id in sim.entities.buildings:
+	for obj_id: int in sim.entities.buildings:
 		var obj_comp: Components.BuildingComponent = sim.entities.buildings[obj_id]
 		var obj_def: Dictionary = sim.content.buildings.get(obj_comp.building_def_id, {})
 		if obj_def.is_empty():
@@ -655,15 +660,19 @@ func _gather_reachable_candidates(
 			continue
 
 		var base_score: float = -(dist * 0.5) - (other_targeting * 10.0)
+		@warning_ignore("unsafe_call_argument")  # Callable.call() erases the callable's own return type
 		var custom_score: float = scorer.call(ctx, pawn_id)
 		candidates.append({"id": obj_id, "score": base_score + custom_score})
 
-	candidates.sort_custom(func(a, b): return a["score"] > b["score"])
+	candidates.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool: return a["score"] > b["score"]
+	)
 
 	var reachable: Array[int] = []
-	for candidate in candidates:
-		if _is_building_reachable(sim, pawn_id, candidate["id"]):
-			reachable.append(candidate["id"])
+	for candidate: Dictionary in candidates:
+		var candidate_id: int = candidate["id"]
+		if _is_building_reachable(sim, pawn_id, candidate_id):
+			reachable.append(candidate_id)
 	return reachable
 
 
@@ -687,11 +696,12 @@ func _is_building_reachable(sim: Simulation, pawn_id: int, obj_id: int) -> bool:
 		return false
 
 	var obj_def: Dictionary = sim.content.buildings[obj_comp.building_def_id]
-	var use_areas: Array = obj_def.get("useAreas", [])
+	var use_areas: Array[Vector2i] = []
+	use_areas.assign(DefUtils.get_array(obj_def, "useAreas", []))
 	if use_areas.is_empty():
 		use_areas = [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
 
-	for offset in use_areas:
+	for offset: Vector2i in use_areas:
 		var target: Vector2i = obj_pos.coord + offset
 		if not sim.world.is_walkable(target):
 			continue
@@ -706,7 +716,7 @@ func _is_building_reachable(sim: Simulation, pawn_id: int, obj_id: int) -> bool:
 
 
 func _get_capacity(building_def: Dictionary) -> int:
-	return int(building_def.get("capacity", 1))
+	return DefUtils.get_int(building_def, "capacity", 1)
 
 
 func _count_pawns_targeting(sim: Simulation, building_id: int, exclude_pawn: int) -> int:
@@ -737,14 +747,16 @@ func _get_attachment_score(
 	if attachment_comp == null:
 		return 0.0
 	var per_pawn: Dictionary = attachment_comp.need_attachments.get(need_id, {})
-	var my_attachment: int = per_pawn.get(pawn_id, 0)
+	# per_pawn's value type isn't statically known past Dictionary[int, Dictionary]
+	@warning_ignore("unsafe_call_argument")
+	var my_attachment: int = int(per_pawn.get(pawn_id, 0))
 	var score: float = my_attachment * my_weight
 	# Sum (not max) of everyone else's attachment — a building three others are already
 	# attached to should look less inviting than one only a single pawn has claimed, so
 	# demand naturally spreads across capacity instead of piling onto whichever building
 	# happened to recruit first.
 	var others_total: int = 0
-	for other_id in per_pawn.keys():
+	for other_id: int in per_pawn.keys():
 		if other_id != pawn_id:
 			others_total += per_pawn[other_id]
 	score -= others_total * other_weight

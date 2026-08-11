@@ -25,8 +25,11 @@ static func create_auto_tile_set(
 	tile_set.add_source(atlas_source, 0)
 
 	# Configure all 47 tile patterns
-	for pattern in AutoTileConfig.STANDARD_47_TILE_PATTERNS:
-		_configure_tile(atlas_source, pattern[0], pattern[1], 0, 0, pattern[2], blocks_light)
+	for pattern: Array in AutoTileConfig.STANDARD_47_TILE_PATTERNS:
+		var atlas_x: int = pattern[0]
+		var atlas_y: int = pattern[1]
+		var peering_bits: int = pattern[2]
+		_configure_tile(atlas_source, atlas_x, atlas_y, 0, 0, peering_bits, blocks_light)
 
 	return tile_set
 

@@ -13,9 +13,9 @@ var _sound_manager: SoundManager = null
 var _current_palette: Array = []
 var _debug_mode: bool = false
 
-var _color_buttons: Array = []
-var _tool_buttons: Array = []
-var _tool_button_modes: Array = []  # Array of int (BuildToolMode.Mode) or -1 for home
+var _color_buttons: Array[Button] = []
+var _tool_buttons: Array[Button] = []
+var _tool_button_modes: Array[int] = []  # BuildToolMode.Mode value or -1 for home
 var _option_buttons: Array[SpriteIconButton] = []
 
 
@@ -82,7 +82,7 @@ func _create_color_and_tool_buttons() -> void:
 			child.queue_free()
 
 	# Tool definitions: [create_callable, mode_or_-1]
-	var tool_defs: Array = [
+	var tool_defs: Array[Array] = [
 		[func() -> Button: return _create_home_button(), -1],
 		[func() -> Button: return _create_paint_tool_button(), BuildToolMode.Mode.PLACE_TERRAIN],
 		[
@@ -147,11 +147,15 @@ func _create_color_and_tool_buttons() -> void:
 
 		# Tool column
 		if row < tool_rows:
-			var btn: Button = tool_defs[row][0].call()
+			var row_def: Array = tool_defs[row]
+			var factory: Callable = row_def[0]
+			@warning_ignore("unsafe_call_argument")  # Callable.call() always returns Variant
+			var btn: Button = factory.call()
 			if _tools_grid != null:
 				_tools_grid.add_child(btn)
 			_tool_buttons.append(btn)
-			_tool_button_modes.append(tool_defs[row][1])
+			var mode_value: int = row_def[1]
+			_tool_button_modes.append(mode_value)
 		else:
 			var spacer := Control.new()
 			spacer.custom_minimum_size = Vector2(96, 96)
@@ -211,9 +215,9 @@ func _rebuild_options() -> void:
 	if BuildToolMode.current_mode == BuildToolMode.Mode.PLACE_BUILDING:
 		var building_keys: Array = _content.buildings.keys()
 		building_keys.sort()
-		for id in building_keys:
+		for id: int in building_keys:
 			var btn := _create_option_button(
-				id, _content.buildings[id].get("spriteKey", ""), true, false
+				id, DefUtils.get_string(_content.buildings[id], "spriteKey", ""), true, false
 			)
 			_option_buttons.append(btn)
 			if _options_container != null:
@@ -235,9 +239,9 @@ func _rebuild_options() -> void:
 
 		var terrain_keys: Array = _content.terrains.keys()
 		terrain_keys.sort()
-		for id in terrain_keys:
+		for id: int in terrain_keys:
 			var btn := _create_option_button(
-				id, _content.terrains[id].get("spriteKey", ""), false, false
+				id, DefUtils.get_string(_content.terrains[id], "spriteKey", ""), false, false
 			)
 			_option_buttons.append(btn)
 			if _options_container != null:
@@ -255,13 +259,13 @@ func _create_option_button(
 		if ResourceLoader.exists(sprite_key):
 			texture = load(sprite_key)
 	elif is_building:
-		var ts: int = int(_content.buildings[id].get("tileSize", 1))
+		var ts: int = DefUtils.get_int(_content.buildings[id], "tileSize", 1)
 		var px: int = ts * RenderingConstants.SOURCE_TILE_SIZE
-		var col: int = int(_content.buildings[id].get("spriteColumn", 0))
+		var col: int = DefUtils.get_int(_content.buildings[id], "spriteColumn", 0)
 		texture = SpriteResourceManager.get_icon_texture(sprite_key, Rect2(col * px, 0, px, px))
 	else:
 		var tile_size: int = RenderingConstants.SOURCE_TILE_SIZE
-		var is_auto: bool = _content.terrains[id].get("isAutotiling", false)
+		var is_auto: bool = DefUtils.get_bool(_content.terrains[id], "isAutotiling", false)
 		# Autotile row 3 col 0 = isolated tile (bitmask 0x00) — best representative icon
 		var icon_y: int = 3 * tile_size if is_auto else 0
 		texture = SpriteResourceManager.get_icon_texture(
@@ -289,10 +293,11 @@ func _create_option_button(
 func _update_color_button(color_index: int) -> void:
 	if color_index >= _color_buttons.size() or color_index >= _current_palette.size():
 		return
-	var btn = _color_buttons[color_index]
+	var btn: Button = _color_buttons[color_index]
 	if btn is PreviewSquare:
-		btn.update_preview(color_index, -1, -1, _content, _current_palette)
-		btn.set_selected(color_index == BuildToolMode.selected_color_index)
+		var preview_btn: PreviewSquare = btn
+		preview_btn.update_preview(color_index, -1, -1, _content, _current_palette)
+		preview_btn.set_selected(color_index == BuildToolMode.selected_color_index)
 
 
 func _on_color_selected(color_index: int) -> void:
@@ -343,12 +348,13 @@ func _update_all_buttons() -> void:
 		_update_color_button(i)
 
 	for i in _tool_buttons.size():
-		var btn = _tool_buttons[i]
+		var btn: Button = _tool_buttons[i]
 		var mode: int = _tool_button_modes[i]
 		var is_active: bool = mode != -1 and mode == BuildToolMode.current_mode
 
 		if btn is PreviewSquare:
-			btn.update_preview(
+			var preview_btn: PreviewSquare = btn
+			preview_btn.update_preview(
 				BuildToolMode.selected_color_index,
 				-1,
 				-1,
@@ -359,17 +365,18 @@ func _update_all_buttons() -> void:
 				false,
 				false
 			)
-			btn.set_selected(is_active)
+			preview_btn.set_selected(is_active)
 		elif btn is SpriteIconButton:
-			var tex_rect: TextureRect = btn.get_node_or_null("TextureRect")
+			var icon_btn: SpriteIconButton = btn
+			var tex_rect: TextureRect = icon_btn.get_node_or_null("TextureRect")
 			if tex_rect != null and tex_rect.texture != null:
 				var color: Color = (
 					_current_palette[BuildToolMode.selected_color_index]
 					if not _current_palette.is_empty()
 					else Color.WHITE
 				)
-				btn.set_sprite(tex_rect.texture, color)
-			btn.set_selected(is_active)
+				icon_btn.set_sprite(tex_rect.texture, color)
+			icon_btn.set_selected(is_active)
 
 	var building_keys_sorted: Array = []
 	var terrain_keys_sorted: Array = []

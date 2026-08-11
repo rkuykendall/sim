@@ -56,7 +56,7 @@ func test_visitor_wanders_forever() -> void:
 	var visitor_id := sim.spawn_visitor_pawn("special_4_v2", {}, "Wanderer")
 	assert_not_eq(visitor_id, -1, "Visitor should spawn on a walkable edge tile")
 
-	var needs_comp = sim.entities.needs.get(visitor_id)
+	var needs_comp: Components.NeedsComponent = sim.entities.needs.get(visitor_id)
 	assert_true(
 		needs_comp.needs.is_empty(), "Visitor should start with a genuinely empty needs dict"
 	)
@@ -67,7 +67,7 @@ func test_visitor_wanders_forever() -> void:
 		needs_comp.needs.is_empty(),
 		"Visitor's needs dict should stay empty — nothing should populate it"
 	)
-	var action_comp = sim.entities.actions.get(visitor_id)
+	var action_comp: Components.ActionComponent = sim.entities.actions.get(visitor_id)
 	var targeted_canteen: bool = false
 	if (
 		action_comp.current_action != null
@@ -116,14 +116,14 @@ func test_remove_all_visitors_sends_them_away() -> void:
 	builder.with_world_bounds(20, 20)
 	var sim := builder.build()
 
-	var visitor_ids: Array = []
+	var visitor_ids: Array[int] = []
 	for i in 3:
 		visitor_ids.append(sim.spawn_visitor_pawn("special_4_v2", {}, "Visitor %d" % (i + 1)))
 
 	sim.remove_all_visitors()
 
 	for visitor_id in visitor_ids:
-		var action_comp = sim.entities.actions.get(visitor_id)
+		var action_comp: Components.ActionComponent = sim.entities.actions.get(visitor_id)
 		assert_not_null(
 			action_comp.current_action, "Each visitor should have an active leave-town action"
 		)
@@ -221,7 +221,7 @@ func test_walkable_edge_tile_cache_invalidates_after_building() -> void:
 	for i in 10:
 		var visitor_id := sim.spawn_visitor_pawn("special_4_v2", {}, "Visitor %d" % i)
 		assert_not_eq(visitor_id, -1, "The one remaining walkable tile should still be spawnable")
-		var pos = sim.entities.positions.get(visitor_id)
+		var pos: Components.PositionComponent = sim.entities.positions.get(visitor_id)
 		assert_eq(
 			pos.coord,
 			Vector2i(1, 1),

@@ -30,7 +30,7 @@ func test_decay_reduces_strong_attachment() -> void:
 
 	var tavern_id := _get_building_by_def_id(sim, building_id)
 	var pawn_id := sim.find_pawn_by_name("Regular")
-	var ac = sim.entities.attachments.get(tavern_id)
+	var ac: Components.AttachmentComponent = sim.entities.attachments.get(tavern_id)
 	for i in 10:
 		ac.increment(need_id, pawn_id)
 	assert_eq(ac.get_strength(need_id, pawn_id), 10, "Setup should reach max strength")
@@ -55,7 +55,7 @@ func test_decay_removes_attachment_at_zero() -> void:
 
 	var tavern_id := _get_building_by_def_id(sim, building_id)
 	var pawn_id := sim.find_pawn_by_name("OneTimer")
-	var ac = sim.entities.attachments.get(tavern_id)
+	var ac: Components.AttachmentComponent = sim.entities.attachments.get(tavern_id)
 	ac.increment(need_id, pawn_id)
 	assert_eq(
 		ac.get_strength(need_id, pawn_id), 1, "Setup should have a single point of attachment"
@@ -68,8 +68,9 @@ func test_decay_removes_attachment_at_zero() -> void:
 		0,
 		"A single point of attachment should fully decay away after one interval"
 	)
+	var remaining_after_decay: Dictionary = ac.need_attachments.get(need_id, {})
 	assert_false(
-		ac.need_attachments.get(need_id, {}).has(pawn_id),
+		remaining_after_decay.has(pawn_id),
 		"Decayed-to-zero entries should be erased, not left at 0"
 	)
 
@@ -85,13 +86,14 @@ func test_destroy_entity_cleans_up_attachments() -> void:
 
 	var tavern_id := _get_building_by_def_id(sim, building_id)
 	var pawn_id := sim.find_pawn_by_name("Leaving")
-	var ac = sim.entities.attachments.get(tavern_id)
+	var ac: Components.AttachmentComponent = sim.entities.attachments.get(tavern_id)
 	ac.increment(need_id, pawn_id)
 	assert_eq(ac.get_strength(need_id, pawn_id), 1, "Setup should have an attachment entry")
 
 	sim.destroy_entity(pawn_id)
 
+	var remaining: Dictionary = ac.need_attachments.get(need_id, {})
 	assert_false(
-		ac.need_attachments.get(need_id, {}).has(pawn_id),
+		remaining.has(pawn_id),
 		"Destroying a pawn should remove its attachment entries from buildings it visited"
 	)

@@ -33,7 +33,7 @@ func _init_border() -> void:
 	add_theme_stylebox_override("pressed", style)
 	add_theme_stylebox_override("focus", style)
 
-	for node in [_color_rect, _texture_rect]:
+	for node: Control in [_color_rect, _texture_rect]:
 		if node != null:
 			node.offset_left = 8
 			node.offset_top = 8
@@ -66,16 +66,18 @@ func update_preview(
 		if building_def_id != -1:
 			var bdef: Dictionary = content.buildings.get(building_def_id, {})
 			if not bdef.is_empty():
-				var ts: int = int(bdef.get("tileSize", 1))
+				var ts: int = DefUtils.get_int(bdef, "tileSize", 1)
 				var px: int = ts * RenderingConstants.SOURCE_TILE_SIZE
-				var col: int = int(bdef.get("spriteColumn", 0))
+				var col: int = DefUtils.get_int(bdef, "spriteColumn", 0)
 				texture = SpriteResourceManager.get_icon_texture(
-					bdef.get("spriteKey", ""), Rect2(col * px, 0, px, px)
+					DefUtils.get_string(bdef, "spriteKey", ""), Rect2(col * px, 0, px, px)
 				)
 		elif terrain_def_id != -1:
 			var tdef: Dictionary = content.terrains.get(terrain_def_id, {})
 			if not tdef.is_empty():
-				texture = SpriteResourceManager.get_texture(tdef.get("spriteKey", ""))
+				texture = SpriteResourceManager.get_texture(
+					DefUtils.get_string(tdef, "spriteKey", "")
+				)
 
 	# Fallback to generic icons
 	if texture == null and (building_def_id != -1 or terrain_def_id != -1):

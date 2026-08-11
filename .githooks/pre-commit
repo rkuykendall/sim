@@ -1,6 +1,7 @@
 #!/bin/bash
-# Auto-formats staged GDScript files with gdformat, then blocks the commit if gdlint still
-# finds problems (gdtoolkit). Requires both on PATH: pipx install "gdtoolkit==4.*"
+# Auto-formats staged GDScript files with gdformat, then blocks the commit if gdlint or Godot's
+# own --check-only static check still finds problems. Requires gdformat/gdlint on PATH:
+# pipx install "gdtoolkit==4.*"
 
 staged_gd_files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.gd$')
 
@@ -20,6 +21,32 @@ if ! echo "$staged_gd_files" | xargs gdlint; then
     echo ""
     echo "gdlint found problems in staged files (see above). Fix them, or adjust .gdlintrc, then commit again."
     exit 1
+fi
+
+GODOT=""
+if command -v godot &> /dev/null; then
+    GODOT="godot"
+elif [ -f "/Applications/Godot.app/Contents/MacOS/Godot" ]; then
+    GODOT="/Applications/Godot.app/Contents/MacOS/Godot"
+fi
+
+if [ -n "$GODOT" ]; then
+    check_failed=0
+    for file in $staged_gd_files; do
+        output=$("$GODOT" --headless --check-only --script "$file" 2>&1)
+        if echo "$output" | grep -qE "SCRIPT ERROR|Parse Error|ERROR:"; then
+            echo "FAIL: $file"
+            echo "$output" | grep -E "SCRIPT ERROR|Parse Error|ERROR:" | sed 's/^/    /'
+            check_failed=1
+        fi
+    done
+    if [ "$check_failed" -eq 1 ]; then
+        echo ""
+        echo "Godot --check-only found problems in staged files (see above)."
+        exit 1
+    fi
+else
+    echo "warning: godot not found on PATH or in /Applications, skipping static check"
 fi
 
 exit 0

@@ -1,13 +1,15 @@
 class_name SystemManager
 
-# Each system must implement: func tick(sim: Simulation) -> void
-var _systems: Array = []
+# Each system must implement: func tick(sim: Simulation) -> void. No shared base class exists
+# (they're otherwise unrelated), so this is duck-typed by convention rather than by interface.
+var _systems: Array[Object] = []
 
 
-func add(system) -> void:
+func add(system: Object) -> void:
 	_systems.append(system)
 
 
 func tick_all(sim: Simulation) -> void:
-	for system in _systems:
+	for system: Object in _systems:
+		@warning_ignore("unsafe_method_access")  # duck-typed tick(sim) — see note above
 		system.tick(sim)

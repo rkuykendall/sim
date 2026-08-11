@@ -127,12 +127,12 @@ func test_roster_completeness() -> void:
 	var builder := _Builder.new().with_themes_enabled()
 	var sim := builder.build()
 
-	var themes: Array = sim.theme_system._available_themes
+	var themes: Array[SimTheme] = sim.theme_system._available_themes
 	assert_eq(themes.size(), 16, "Roster should have exactly 16 themes, one per music file")
 
 	var names: Dictionary = {}
 	var files: Dictionary = {}
-	for t in themes:
+	for t: SimTheme in themes:
 		names[t.get_name()] = true
 		files[t.get_music_file()] = true
 	assert_eq(names.size(), 16, "All 16 theme names should be unique")
@@ -171,7 +171,7 @@ func test_gymnopedie_drains_energy() -> void:
 		sim.get_need_value(pawn_id, energy_id), 80.0, "Setup should start with non-zero Energy"
 	)
 
-	var gymnopedie = _find_theme_by_name(sim, "Gymnopédie No. 1")
+	var gymnopedie: SimTheme = _find_theme_by_name(sim, "Gymnopédie No. 1")
 	assert_not_null(gymnopedie, "Roster should contain Gymnopédie No. 1")
 	sim.theme_system._start_theme(sim, gymnopedie)
 
@@ -184,12 +184,13 @@ func test_gymnopedie_snapshot_has_shadows_false() -> void:
 	var builder := _Builder.new().with_themes_enabled()
 	var sim := builder.build()
 
-	var gymnopedie = _find_theme_by_name(sim, "Gymnopédie No. 1")
+	var gymnopedie: SimTheme = _find_theme_by_name(sim, "Gymnopédie No. 1")
 	sim.theme_system._start_theme(sim, gymnopedie)
 
 	var snapshot: Dictionary = sim.create_render_snapshot()
+	var snap_theme: Dictionary = DefUtils.get_dict(snapshot, "theme", {})
 	assert_false(
-		snapshot.get("theme", {}).get("has_shadows", true),
+		DefUtils.get_bool(snap_theme, "has_shadows", true),
 		"Snapshot should reflect Gymnopédie's has_shadows=false"
 	)
 
@@ -258,7 +259,7 @@ func test_disabled_by_default() -> void:
 
 
 func test_priority_defaults_and_tiers() -> void:
-	var simple = SimTheme.SimpleTheme.new("Trial", "res://music/tracks/cuddle_clouds.ogg")
+	var simple: SimTheme = SimTheme.SimpleTheme.new("Trial", "res://music/tracks/cuddle_clouds.ogg")
 	assert_eq(simple.priority, 0, "A fresh theme should start at priority 0")
 	assert_eq(
 		simple.get_priority_gain(), 6, "SimpleTheme should inherit the default tier's gain (6)"
@@ -288,11 +289,11 @@ func test_priority_lifecycle() -> void:
 	var builder := _Builder.new().with_themes_enabled()
 	var sim := builder.build()
 
-	var themes: Array = sim.theme_system._available_themes
-	for t in themes:
+	var themes: Array[SimTheme] = sim.theme_system._available_themes
+	for t: SimTheme in themes:
 		t.priority = 0
 
-	var picked_first = sim.theme_system._pick_random_theme()
+	var picked_first: SimTheme = sim.theme_system._pick_random_theme()
 	# Can't compare against a second live get_priority_gain() call — rare themes roll a fresh
 	# random value (10-20) every call, so it won't necessarily match what was actually added
 	# during the pick. Check the result landed in a valid tier's range instead.
@@ -304,7 +305,7 @@ func test_priority_lifecycle() -> void:
 		"Picked theme's priority (%d) should jump to a valid tier's gain" % picked_first.priority
 	)
 
-	for t in themes:
+	for t: SimTheme in themes:
 		if t != picked_first:
 			assert_eq(
 				t.priority,
@@ -336,13 +337,13 @@ func test_pick_random_theme_selects_lowest_priority() -> void:
 	var builder := _Builder.new().with_themes_enabled()
 	var sim := builder.build()
 
-	var themes: Array = sim.theme_system._available_themes
-	for t in themes:
+	var themes: Array[SimTheme] = sim.theme_system._available_themes
+	for t: SimTheme in themes:
 		t.priority = 5
-	var target = themes[3]
+	var target: SimTheme = themes[3]
 	target.priority = 0
 
-	var picked = sim.theme_system._pick_random_theme()
+	var picked: SimTheme = sim.theme_system._pick_random_theme()
 	assert_eq(
 		picked,
 		target,
@@ -356,15 +357,15 @@ func test_common_theme_picked_more_often_than_rare() -> void:
 	var builder := _Builder.new().with_themes_enabled()
 	var sim := builder.build()
 
-	var gymnopedie = _find_theme_by_name(sim, "Gymnopédie No. 1")
-	var strange_worlds = _find_theme_by_name(sim, "Strange Worlds")
+	var gymnopedie: SimTheme = _find_theme_by_name(sim, "Gymnopédie No. 1")
+	var strange_worlds: SimTheme = _find_theme_by_name(sim, "Strange Worlds")
 	assert_not_null(gymnopedie, "Roster should contain Gymnopédie No. 1")
 	assert_not_null(strange_worlds, "Roster should contain Strange Worlds")
 
 	var gymnopedie_count := 0
 	var strange_worlds_count := 0
 	for i in 500:
-		var picked = sim.theme_system._pick_random_theme()
+		var picked: SimTheme = sim.theme_system._pick_random_theme()
 		if picked == gymnopedie:
 			gymnopedie_count += 1
 		elif picked == strange_worlds:
@@ -409,7 +410,7 @@ func test_first_pick_is_always_common_tier() -> void:
 	var builder := _Builder.new().with_themes_enabled()
 	var sim := builder.build()
 
-	var picked = sim.theme_system._pick_random_theme()
+	var picked: SimTheme = sim.theme_system._pick_random_theme()
 	# get_priority_gain() is deterministic (always 6) for default-tier themes regardless of when
 	# it's called, so a fresh call here still reliably identifies the tier even though priority
 	# itself was already bumped by the pick.
@@ -434,7 +435,7 @@ func test_strange_worlds_visitor_lifecycle() -> void:
 
 	assert_eq(sim.get_max_pawns(), 4, "Setup should give a pawn goal of 4")
 
-	var theme = SimTheme.StrangeWorldsTheme.new()
+	var theme: SimTheme = SimTheme.StrangeWorldsTheme.new()
 	sim.theme_system._start_theme(sim, theme)
 
 	var visitor_count := 0
@@ -481,7 +482,7 @@ func test_strange_worlds_home_skin_override_lifecycle() -> void:
 	var home_ids: Array[int] = sim.get_home_building_ids()
 	assert_eq(home_ids.size(), 2, "Setup should have two home buildings")
 
-	var theme = SimTheme.StrangeWorldsTheme.new()
+	var theme: SimTheme = SimTheme.StrangeWorldsTheme.new()
 	sim.theme_system._start_theme(sim, theme)
 
 	for building_id in home_ids:
@@ -543,7 +544,7 @@ func test_home_skin_override_plumbs_to_pawn_snapshot() -> void:
 	use_action.type = Definitions.ActionType.USE_BUILDING
 	use_action.target_entity = home_building_id
 	use_action.satisfies_need_id = energy_id
-	var action_comp = sim.entities.actions.get(pawn_id)
+	var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 	action_comp.current_action = use_action
 
 	var snapshot_before: Dictionary = sim.create_render_snapshot()
@@ -605,7 +606,7 @@ func test_vienna_woods_visitor_lifecycle() -> void:
 
 	assert_eq(sim.get_max_pawns(), 6, "Setup should give a pawn goal of 6")
 
-	var theme = SimTheme.ViennaWoodsTheme.new()
+	var theme: SimTheme = SimTheme.ViennaWoodsTheme.new()
 	sim.theme_system._start_theme(sim, theme)
 
 	var sheet_counts: Dictionary = {"spring_2_v2": 0, "spring_3_v2": 0}
@@ -655,7 +656,7 @@ func test_vienna_woods_home_skin_override_lifecycle() -> void:
 
 	var home_ids: Array[int] = sim.get_home_building_ids()
 
-	var theme = SimTheme.ViennaWoodsTheme.new()
+	var theme: SimTheme = SimTheme.ViennaWoodsTheme.new()
 	sim.theme_system._start_theme(sim, theme)
 
 	for building_id in home_ids:
@@ -692,7 +693,7 @@ func test_polar_lights_home_skin_override_alternates() -> void:
 	var home_ids: Array[int] = sim.get_home_building_ids()
 	assert_eq(home_ids.size(), 4, "Setup should have four home buildings")
 
-	var theme = SimTheme.PolarLightsTheme.new()
+	var theme: SimTheme = SimTheme.PolarLightsTheme.new()
 	sim.theme_system._start_theme(sim, theme)
 
 	for i in home_ids.size():
@@ -727,7 +728,7 @@ func test_polar_lights_visitor_lifecycle() -> void:
 
 	assert_eq(sim.get_max_pawns(), 6, "Setup should give a pawn goal of 6")
 
-	var theme = SimTheme.PolarLightsTheme.new()
+	var theme: SimTheme = SimTheme.PolarLightsTheme.new()
 	sim.theme_system._start_theme(sim, theme)
 
 	var visitor_count := 0
@@ -777,7 +778,7 @@ func test_golden_gleam_home_skin_override_rotates() -> void:
 	var home_ids: Array[int] = sim.get_home_building_ids()
 	assert_eq(home_ids.size(), 5, "Setup should have five home buildings")
 
-	var theme = SimTheme.GoldenGleamTheme.new()
+	var theme: SimTheme = SimTheme.GoldenGleamTheme.new()
 	sim.theme_system._start_theme(sim, theme)
 
 	var expected_skins: Array[String] = [
@@ -821,7 +822,7 @@ func test_golden_gleam_visitor_lifecycle() -> void:
 		"Setup should give a pawn goal of 6 (unrelated to visitor count here)"
 	)
 
-	var theme = SimTheme.GoldenGleamTheme.new()
+	var theme: SimTheme = SimTheme.GoldenGleamTheme.new()
 	sim.theme_system._start_theme(sim, theme)
 
 	var visitor_count := 0
@@ -862,7 +863,7 @@ func test_drifting_memories_home_skin_override_lifecycle() -> void:
 	var home_ids: Array[int] = sim.get_home_building_ids()
 	assert_eq(home_ids.size(), 2, "Setup should have two home buildings")
 
-	var theme = SimTheme.DriftingMemoriesTheme.new()
+	var theme: SimTheme = SimTheme.DriftingMemoriesTheme.new()
 	sim.theme_system._start_theme(sim, theme)
 
 	for building_id in home_ids:
@@ -895,7 +896,7 @@ func test_drifting_memories_visitor_lifecycle() -> void:
 
 	assert_eq(sim.get_max_pawns(), 4, "Setup should give a pawn goal of 4")
 
-	var theme = SimTheme.DriftingMemoriesTheme.new()
+	var theme: SimTheme = SimTheme.DriftingMemoriesTheme.new()
 	sim.theme_system._start_theme(sim, theme)
 
 	var visitor_count := 0
@@ -941,7 +942,7 @@ func test_gentle_breeze_visitor_lifecycle() -> void:
 	assert_eq(sim.get_max_pawns(), 3, "Setup should give a pawn goal of 3")
 	var home_building_id := _get_building_by_def_id(sim, home_id)
 
-	var theme = SimTheme.GentleBreezeTheme.new()
+	var theme: SimTheme = SimTheme.GentleBreezeTheme.new()
 	sim.theme_system._start_theme(sim, theme)
 
 	assert_eq(
@@ -993,7 +994,7 @@ func test_forgotten_biomes_visitor_lifecycle() -> void:
 	assert_eq(sim.get_max_pawns(), 3, "Setup should give a pawn goal of 3")
 	var home_building_id := _get_building_by_def_id(sim, home_id)
 
-	var theme = SimTheme.ForgottenBiomesTheme.new()
+	var theme: SimTheme = SimTheme.ForgottenBiomesTheme.new()
 	sim.theme_system._start_theme(sim, theme)
 
 	assert_eq(
@@ -1045,7 +1046,7 @@ func test_floating_dream_lifecycle() -> void:
 	assert_eq(sim.get_max_pawns(), 6, "Setup should give a pawn goal of 6")
 	var home_building_id := _get_building_by_def_id(sim, home_id)
 
-	var theme = SimTheme.FloatingDreamTheme.new()
+	var theme: SimTheme = SimTheme.FloatingDreamTheme.new()
 	sim.theme_system._start_theme(sim, theme)
 
 	assert_eq(
@@ -1095,7 +1096,7 @@ func test_floating_dream_weather_properties() -> void:
 	var builder := _Builder.new().with_themes_enabled()
 	var sim := builder.build()
 
-	var theme = SimTheme.FloatingDreamTheme.new()
+	var theme: SimTheme = SimTheme.FloatingDreamTheme.new()
 	assert_false(theme.has_shadows(), "Floating Dream should have no shadows")
 	assert_gt(theme.get_weather_tint(), 0.0, "Floating Dream should have a non-zero weather tint")
 	assert_eq(
@@ -1106,16 +1107,17 @@ func test_floating_dream_weather_properties() -> void:
 
 	sim.theme_system._start_theme(sim, theme)
 	var snapshot: Dictionary = sim.create_render_snapshot()
+	var snap_theme: Dictionary = DefUtils.get_dict(snapshot, "theme", {})
 	assert_false(
-		snapshot.get("theme", {}).get("has_shadows", true), "Snapshot should reflect no shadows"
+		DefUtils.get_bool(snap_theme, "has_shadows", true), "Snapshot should reflect no shadows"
 	)
 	assert_gt(
-		float(snapshot.get("theme", {}).get("weather_tint", 0.0)),
+		DefUtils.get_float(snap_theme, "weather_tint", 0.0),
 		0.0,
 		"Snapshot should carry a non-zero weather_tint"
 	)
 	assert_eq(
-		snapshot.get("theme", {}).get("weather_effect_key", ""),
+		DefUtils.get_string(snap_theme, "weather_effect_key", ""),
 		"rain",
 		"Snapshot should carry the 'rain' weather_effect_key"
 	)
@@ -1134,7 +1136,9 @@ func test_simple_theme_stray_trigger_rate() -> void:
 	var trials := 500
 	var triggered := 0
 	for i in trials:
-		var theme = SimTheme.SimpleTheme.new("Trial", "res://music/tracks/cuddle_clouds.ogg")
+		var theme: SimTheme = SimTheme.SimpleTheme.new(
+			"Trial", "res://music/tracks/cuddle_clouds.ogg"
+		)
 		theme.on_start(sim)
 		if _count_and_destroy_visitors(sim) > 0:
 			triggered += 1
@@ -1158,7 +1162,9 @@ func test_simple_theme_stray_combination_varies() -> void:
 	var stray_pool: Array[String] = SimTheme.SimpleTheme.STRAY_POOL
 
 	for i in 500:
-		var theme = SimTheme.SimpleTheme.new("Trial", "res://music/tracks/cuddle_clouds.ogg")
+		var theme: SimTheme = SimTheme.SimpleTheme.new(
+			"Trial", "res://music/tracks/cuddle_clouds.ogg"
+		)
 		theme.on_start(sim)
 
 		for pawn_id in sim.entities.pawns:
@@ -1183,32 +1189,32 @@ func test_simple_theme_stray_combination_varies() -> void:
 ## animation, which only resolves over real ticks) and returns how many there were —
 ## deliberately not the theme's real on_end path, since these tests are about spawn
 ## distribution, not despawn behavior (already covered by other tests).
-func _count_and_destroy_visitors(sim) -> int:
-	var visitor_ids: Array = []
-	for pawn_id in sim.entities.pawns:
+func _count_and_destroy_visitors(sim: Simulation) -> int:
+	var visitor_ids: Array[int] = []
+	for pawn_id: int in sim.entities.pawns:
 		if sim.entities.pawns[pawn_id].membership == Definitions.PawnMembership.VISITOR:
 			visitor_ids.append(pawn_id)
-	for pawn_id in visitor_ids:
+	for pawn_id: int in visitor_ids:
 		sim.destroy_entity(pawn_id)
 	return visitor_ids.size()
 
 
 func _find_pawn_snapshot(snapshot: Dictionary, pawn_id: int) -> Dictionary:
-	for p in snapshot.get("pawns", []):
-		if p.get("id", -1) == pawn_id:
+	for p: Dictionary in DefUtils.get_array(snapshot, "pawns", []):
+		if DefUtils.get_int(p, "id", -1) == pawn_id:
 			return p
 	return {}
 
 
-func _get_building_by_def_id(sim, def_id: int) -> int:
-	for building_id in sim.entities.buildings:
+func _get_building_by_def_id(sim: Simulation, def_id: int) -> int:
+	for building_id: int in sim.entities.buildings:
 		if sim.entities.buildings[building_id].building_def_id == def_id:
 			return building_id
 	return -1
 
 
-func _find_theme_by_name(sim, theme_name: String):
-	for t in sim.theme_system._available_themes:
+func _find_theme_by_name(sim: Simulation, theme_name: String) -> SimTheme:
+	for t: SimTheme in sim.theme_system._available_themes:
 		if t.get_name() == theme_name:
 			return t
 	return null

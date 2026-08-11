@@ -25,7 +25,7 @@ func test_capacity_one_serializes_pawns() -> void:
 	builder.add_building(market_id, 4, 4)
 	builder.add_pawn("Alice", 0, 4, {hunger_id: 50.0})
 	builder.add_pawn("Bob", 7, 4, {hunger_id: 50.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var building_id: int = sim.entities.all_buildings()[0]
 	var max_simultaneous := 0
@@ -69,7 +69,7 @@ func test_capacity_two_serves_both() -> void:
 	builder.add_building(market_id, 4, 4)
 	builder.add_pawn("Alice", 0, 4, {hunger_id: 20.0})
 	builder.add_pawn("Bob", 7, 4, {hunger_id: 20.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var alice_id := sim.find_pawn_by_name("Alice")
 	var bob_id := sim.find_pawn_by_name("Bob")
@@ -92,7 +92,7 @@ func test_second_pawn_wanders_when_full() -> void:
 	builder.add_building(market_id, 4, 4)
 	builder.add_pawn("Alice", 3, 4, {hunger_id: 50.0})
 	builder.add_pawn("Bob", 5, 4, {hunger_id: 50.0})
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var building_id: int = sim.entities.all_buildings()[0]
 	var bob_id := sim.find_pawn_by_name("Bob")
@@ -101,7 +101,7 @@ func test_second_pawn_wanders_when_full() -> void:
 	# first, since she was added first) claims the market and Bob should not queue behind her.
 	sim.tick()
 
-	var bob_action_comp = sim.entities.actions.get(bob_id)
+	var bob_action_comp: Components.ActionComponent = sim.entities.actions.get(bob_id)
 	var bob_targets_market := false
 	if bob_action_comp != null:
 		if (
@@ -123,10 +123,10 @@ func test_second_pawn_wanders_when_full() -> void:
 # -------------------------------------------------------------------------
 
 
-func _count_targeting(sim, building_id: int) -> int:
+func _count_targeting(sim: Simulation, building_id: int) -> int:
 	var count := 0
-	for pawn_id in sim.entities.all_pawns():
-		var action_comp = sim.entities.actions.get(pawn_id)
+	for pawn_id: int in sim.entities.all_pawns():
+		var action_comp: Components.ActionComponent = sim.entities.actions.get(pawn_id)
 		if action_comp == null:
 			continue
 		var targets := false

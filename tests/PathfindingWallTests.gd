@@ -21,7 +21,7 @@ func test_pawn_blocked_by_wall() -> void:
 	var wall_id := builder.define_terrain("Wall", false)
 	builder.add_pawn("Alice", 1, 2, {restfulness_id: 0.0})
 	builder.add_building(bed_id, 3, 2)
-	var sim = builder.build()
+	var sim := builder.build()
 
 	# Paint vertical wall at x=2, all y
 	for y in 5:
@@ -48,7 +48,7 @@ func test_pawn_can_reach_with_gap() -> void:
 	var wall_id := builder.define_terrain("Wall", false)
 	builder.add_pawn("Bob", 1, 2, {tiredness_id: 100.0})
 	builder.add_building(bed_id, 3, 2)
-	var sim = builder.build()
+	var sim := builder.build()
 
 	# Block (2,1) and (2,3) but leave (2,2) open
 	sim.paint_terrain(Vector2i(2, 1), wall_id)
@@ -74,7 +74,7 @@ func test_pawn_never_on_wall() -> void:
 	var wall_id := builder.define_terrain("Wall", false)
 	builder.add_pawn("Carol", 0, 1, {tiredness_id: 100.0})
 	builder.add_building(bed_id, 2, 1)
-	var sim = builder.build()
+	var sim := builder.build()
 
 	sim.paint_terrain(Vector2i(1, 1), wall_id)
 
@@ -84,7 +84,7 @@ func test_pawn_never_on_wall() -> void:
 
 	sim.run_ticks(100)
 
-	var pos_comp = sim.entities.positions.get(pawn_id)
+	var pos_comp: Components.PositionComponent = sim.entities.positions.get(pawn_id)
 	if pos_comp != null:
 		assert_not_eq(pos_comp.coord, Vector2i(1, 1), "Pawn should never be on wall tile")
 
@@ -98,7 +98,7 @@ func test_pawn_reach_diagonal() -> void:
 	builder.define_terrain("Floor", true)
 	builder.add_pawn("Dave", 0, 0, {tiredness_id: 100.0})
 	builder.add_building(bed_id, 2, 2)
-	var sim = builder.build()
+	var sim := builder.build()
 
 	var pawn_id := sim.find_pawn_by_name("Dave")
 	assert_not_null(pawn_id)
@@ -119,7 +119,7 @@ func test_pawn_blocked_diagonal() -> void:
 	var wall_id := builder.define_terrain("Wall", false)
 	builder.add_pawn("Eve", 0, 0, {tiredness_id: 0.0})
 	builder.add_building(bed_id, 4, 4)
-	var sim = builder.build()
+	var sim := builder.build()
 
 	# Diagonal wall: paint (4,0),(3,1),(2,2),(1,3),(0,4) — anti-diagonal
 	for x in 5:

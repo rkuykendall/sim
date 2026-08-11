@@ -15,7 +15,7 @@ func test_paint_rectangle_inclusive() -> void:
 	var builder := _Builder.new()
 	builder.with_world_bounds(9, 9)
 	var path_id := builder.define_terrain("Path", true)
-	var sim = builder.build()
+	var sim := builder.build()
 
 	sim.paint_rectangle(Vector2i(1, 1), Vector2i(3, 3), path_id)
 
@@ -44,7 +44,7 @@ func test_paint_rectangle_corner_order() -> void:
 	var builder := _Builder.new()
 	builder.with_world_bounds(9, 9)
 	var path_id := builder.define_terrain("Path", true)
-	var sim = builder.build()
+	var sim := builder.build()
 
 	# Bottom-right to top-left corner order should paint the same region as top-left to bottom-right.
 	sim.paint_rectangle(Vector2i(3, 3), Vector2i(1, 1), path_id)
@@ -62,7 +62,7 @@ func test_paint_rectangle_outline() -> void:
 	var builder := _Builder.new()
 	builder.with_world_bounds(9, 9)
 	var wall_id := builder.define_terrain("Wall", false)
-	var sim = builder.build()
+	var sim := builder.build()
 
 	sim.paint_rectangle_outline(Vector2i(1, 1), Vector2i(5, 5), wall_id)
 
@@ -106,7 +106,7 @@ func test_flood_fill_bounded() -> void:
 	builder.define_terrain("Floor", true, "flat")  # seeds the whole world as one connected region
 	var wall_id := builder.define_terrain("Wall", false)
 	var path_id := builder.define_terrain("Path", true)
-	var sim = builder.build()
+	var sim := builder.build()
 
 	# Enclose a 3x3 interior (2,2)-(4,4) with a wall ring at x/y = 1 and 5.
 	sim.paint_rectangle_outline(Vector2i(1, 1), Vector2i(5, 5), wall_id)
