@@ -2,7 +2,7 @@ class_name GameRoot
 extends Node2D
 
 enum _SimSpeed { PAUSED = 0, NORMAL = 1, FAST_4X = 4, FAST_16X = 16, FAST_64X = 64 }
-enum _AppScreen { HOME, GAME }
+enum _AppScreen { MAIN_MENU, GALLERY, CREDITS, GAME }
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -16,6 +16,8 @@ const THEME_SUNRISE_LEN: float = 0.15
 # Fraction of a no-shadow theme's (e.g. Gymnopédie) playback spent easing in/out of full dim,
 # rather than snapping abruptly when it starts/ends.
 const THEME_NIGHT_FADE: float = 0.05
+const MENU_MUSIC_PATH: String = "res://music/tracks/wanderers_tale.ogg"
+const CREDITS_MUSIC_PATH: String = "res://music/classics/gymnopedie_no_1.ogg"
 
 # ---------------------------------------------------------------------------
 # Exports
@@ -33,7 +35,9 @@ const THEME_NIGHT_FADE: float = 0.05
 @export var toolbar_path: NodePath = ""
 @export var music_manager_path: NodePath = ""
 @export var sound_manager_path: NodePath = ""
-@export var home_screen_path: NodePath = ""
+@export var main_menu_path: NodePath = ""
+@export var gallery_path: NodePath = ""
+@export var credits_path: NodePath = ""
 @export var loading_screen_path: NodePath = ""
 
 # ---------------------------------------------------------------------------
@@ -42,7 +46,7 @@ const THEME_NIGHT_FADE: float = 0.05
 var _sim: Simulation = null
 var _content: ContentRegistry = null
 var _user_settings: UserSettings = null
-var _current_screen: _AppScreen = _AppScreen.HOME
+var _current_screen: _AppScreen = _AppScreen.MAIN_MENU
 var _current_save_slot: String = ""
 var _sim_speed: _SimSpeed = _SimSpeed.NORMAL
 var _accumulator: float = 0.0
@@ -80,7 +84,9 @@ var _ui_layer: CanvasLayer = null
 var _toolbar: BuildToolbar = null
 var _music_manager: MusicManager = null
 var _sound_manager: SoundManager = null
-var _home_screen: HomeScreen = null
+var _main_menu: MainMenu = null
+var _gallery: HomeScreen = null
+var _credits: CreditsScreen = null
 var _loading_screen: Control = null
 var _debug_panel: DebugPanel = null
 
@@ -168,18 +174,34 @@ func _ready() -> void:
 
 	SaveFileManager.migrate_legacy_saves()
 
-	if not home_screen_path.is_empty():
-		_home_screen = get_node_or_null(home_screen_path)
-		if _home_screen != null:
-			_home_screen.new_game_requested.connect(_on_new_game_requested)
-			_home_screen.load_game_requested.connect(_on_load_game_requested)
-			_home_screen.quit_requested.connect(_on_quit_requested)
-			_home_screen.initialize(_content, _sound_manager)
+	if not main_menu_path.is_empty():
+		_main_menu = get_node_or_null(main_menu_path)
+		if _main_menu != null:
+			_main_menu.new_game_requested.connect(_on_new_game_requested)
+			_main_menu.gallery_requested.connect(_show_gallery)
+			_main_menu.credits_requested.connect(_show_credits)
+			_main_menu.quit_requested.connect(_on_quit_requested)
+			_main_menu.initialize(_content, _sound_manager)
+
+	if not gallery_path.is_empty():
+		_gallery = get_node_or_null(gallery_path)
+		if _gallery != null:
+			_gallery.load_game_requested.connect(_on_load_game_requested)
+			_gallery.back_requested.connect(_show_main_menu)
+			_gallery.initialize(_content, _sound_manager)
+
+	if not credits_path.is_empty():
+		_credits = get_node_or_null(credits_path)
+		if _credits != null:
+			_credits.back_requested.connect(_show_main_menu)
 
 	if not loading_screen_path.is_empty():
 		_loading_screen = get_node_or_null(loading_screen_path)
 
-	_show_home_screen()
+	# Deferred: GameRoot is declared before MusicManager under Main, so MusicManager's own
+	# _ready() (which sets up its AudioStreamPlayer) hasn't run yet at this point — a direct
+	# call here would silently no-op and boot with no menu music (see MusicManager.play_track).
+	_show_main_menu.call_deferred()
 
 
 func _apply_fullscreen() -> void:
@@ -189,10 +211,9 @@ func _apply_fullscreen() -> void:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 
 
-func _show_home_screen() -> void:
-	_current_screen = _AppScreen.HOME
-	if _music_manager != null:
-		_music_manager.stop()
+## Hides every screen/game layer except whatever the caller shows next — the shared teardown
+## behind all of _show_main_menu/_show_gallery/_show_credits/_show_game.
+func _hide_all_screens() -> void:
 	if _toolbar != null:
 		_toolbar.hide()
 	if _debug_panel != null:
@@ -203,15 +224,48 @@ func _show_home_screen() -> void:
 		_buildings_root.hide()
 	if _tiles_root != null:
 		_tiles_root.hide()
-	if _home_screen != null:
-		_home_screen.show()
-		_home_screen.refresh_saves_list()
+	if _main_menu != null:
+		_main_menu.hide()
+	if _gallery != null:
+		_gallery.hide()
+	if _credits != null:
+		_credits.hide()
+
+
+func _show_main_menu() -> void:
+	_current_screen = _AppScreen.MAIN_MENU
+	_hide_all_screens()
+	if _music_manager != null:
+		_music_manager.play_track(MENU_MUSIC_PATH)
+	if _main_menu != null:
+		_main_menu.on_shown()
+
+
+func _show_gallery() -> void:
+	_current_screen = _AppScreen.GALLERY
+	_hide_all_screens()
+	if _music_manager != null:
+		_music_manager.play_track(MENU_MUSIC_PATH)
+	if _gallery != null:
+		if _main_menu != null:
+			_gallery.set_background_color(_main_menu.get_background_color())
+		_gallery.show()
+		_gallery.refresh_saves_list()
+
+
+func _show_credits() -> void:
+	_current_screen = _AppScreen.CREDITS
+	_hide_all_screens()
+	if _music_manager != null:
+		_music_manager.play_track(CREDITS_MUSIC_PATH)
+	if _credits != null:
+		_credits.show()
+		_credits.play_scroll()
 
 
 func _show_game() -> void:
 	_current_screen = _AppScreen.GAME
-	if _home_screen != null:
-		_home_screen.hide()
+	_hide_all_screens()
 	if _toolbar != null:
 		_toolbar.show()
 	if _pawns_root != null:
@@ -272,7 +326,7 @@ func _on_music_finished() -> void:
 func _return_to_home() -> void:
 	if _sim != null and not _current_save_slot.is_empty():
 		SaveFileManager.write_save(_current_save_slot, _sim, _current_save_slot)
-	_show_home_screen()
+	_show_main_menu()
 
 
 func _initialize_game_world() -> void:
@@ -416,10 +470,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			_apply_fullscreen()
 			return
 
-		# Escape: Return to home (game only)
-		if key_event.keycode == KEY_ESCAPE and _current_screen == _AppScreen.GAME:
-			_return_to_home()
-			return
+		# Escape: back out one level (game -> main menu; gallery/credits -> main menu)
+		if key_event.keycode == KEY_ESCAPE:
+			if _current_screen == _AppScreen.GAME:
+				_return_to_home()
+				return
+			if _current_screen == _AppScreen.GALLERY or _current_screen == _AppScreen.CREDITS:
+				_show_main_menu()
+				return
 
 		if _current_screen != _AppScreen.GAME:
 			return

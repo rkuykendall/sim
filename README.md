@@ -85,9 +85,11 @@ To build distributable executables for Windows, macOS, and Linux:
 ```
 
 **Prerequisites:**
+
 - Godot export templates must be installed (Editor → Manage Export Templates → Download)
 
 **Output locations:**
+
 - `builds/windows/SimGame.exe`
 - `builds/macos/SimGame.app`
 - `builds/linux/SimGame.x86_64`
@@ -114,14 +116,16 @@ The simulation runs independently of rendering at 20 ticks/second. Godot receive
 
 ## Credits
 
-- [Pixel Simple Human Character 16x16 px by Brysia](https://brysiaa.itch.io/pixel-simple-human-character-16x16-px)
-- [KidPix 1.0 by Craig Hickman](https://en.wikipedia.org/wiki/Kid_Pix)
-- [Tileset Templates by Patrik](https://patrik-arts.itch.io/tileset-templates)
-- [Puny World by Shade](https://merchant-shade.itch.io/16x16-puny-world)
-- [Tinyworld by Fliegevogel](https://fliegevogel.itch.io/)
-- [Webtyler by Alexander Nadeau](https://wareya.github.io/webtyler/)
-- [Cozy Tunes by Pizza Doggy](https://pizzadoggy.itch.io/cozy-tunes)
-- [Universal UI Soundpack by Nathan Gibson](https://nathangibson.myportfolio.com) (CC BY 4.0)
+- Characters: [Pixel Plains by SnowHex](https://snowhex.itch.io/pixel-plains)
+- Music: [Cozy Tunes by Pizza Doggy](https://pizzadoggy.itch.io/cozy-tunes)
+- Sound effects: [Universal UI Soundpack by Nathan Gibson](https://nathangibson.myportfolio.com) (CC BY 4.0)
+- Inspiration: [KidPix 1.0 by Craig Hickman](https://en.wikipedia.org/wiki/Kid_Pix)
+- Pixels: [Tileset Templates by Patrik](https://patrik-arts.itch.io/tileset-templates)
+- Pixels: [Puny World by Shade](https://merchant-shade.itch.io/16x16-puny-world)
+- Pixels: [Tinyworld by Fliegevogel](https://fliegevogel.itch.io/)
+- Thanks to: [Webtyler by Alexander Nadeau](https://wareya.github.io/webtyler/)
+- Characters (early version): [Pixel Simple Human Character 16x16 px by Brysia](https://brysiaa.itch.io/pixel-simple-human-character-16x16-px)
+- Building a bad Rimworld clone for kids then removing the mechanics one-by-one until you get KidPix with Sims: Robert Kuykendall
 
 ## Art guide
 

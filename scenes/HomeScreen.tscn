@@ -11,6 +11,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
 grid_container_path = NodePath("Background/MarginContainer/ScrollContainer/GridContainer")
+background_path = NodePath("Background")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
@@ -28,10 +29,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 32
-theme_override_constants/margin_top = 32
-theme_override_constants/margin_right = 32
-theme_override_constants/margin_bottom = 32
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 48
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 48
 
 [node name="ScrollContainer" type="ScrollContainer" parent="Background/MarginContainer"]
 layout_mode = 2

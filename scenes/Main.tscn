@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://main"]
+[gd_scene load_steps=14 format=3 uid="uid://main"]
 
 [ext_resource type="Script" path="res://src/Godot/GameRoot.gd" id="1"]
 [ext_resource type="Script" path="res://src/Godot/CameraController.gd" id="1_camera"]
@@ -12,6 +12,8 @@
 [ext_resource type="PackedScene" uid="uid://loadingscreen" path="res://scenes/LoadingScreen.tscn" id="15"]
 [ext_resource type="Script" path="res://src/Godot/SoundManager.gd" id="13"]
 [ext_resource type="Script" path="res://src/Godot/WeatherEffectController.gd" id="14"]
+[ext_resource type="PackedScene" uid="uid://mainmenu" path="res://scenes/MainMenu.tscn" id="16"]
+[ext_resource type="PackedScene" uid="uid://creditsscreen" path="res://scenes/CreditsScreen.tscn" id="17"]
 
 [node name="Main" type="Node2D"]
 y_sort_enabled = true
@@ -56,14 +58,20 @@ ui_layer_path = NodePath("../UI")
 toolbar_path = NodePath("../UI/BuildToolbar")
 music_manager_path = NodePath("../MusicManager")
 sound_manager_path = NodePath("../SoundManager")
-home_screen_path = NodePath("../UI/HomeScreen")
+main_menu_path = NodePath("../UI/MainMenu")
+gallery_path = NodePath("../UI/Gallery")
+credits_path = NodePath("../UI/CreditsScreen")
 loading_screen_path = NodePath("../UI/LoadingScreen")
 
 [node name="UI" type="CanvasLayer" parent="."]
 
 [node name="BuildToolbar" parent="UI" instance=ExtResource("7")]
 
-[node name="HomeScreen" parent="UI" instance=ExtResource("12")]
+[node name="MainMenu" parent="UI" instance=ExtResource("16")]
+
+[node name="Gallery" parent="UI" instance=ExtResource("12")]
+
+[node name="CreditsScreen" parent="UI" instance=ExtResource("17")]
 
 [node name="LoadingScreen" parent="UI" instance=ExtResource("15")]
 

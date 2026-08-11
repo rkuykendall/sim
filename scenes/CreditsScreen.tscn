@@ -1,0 +1,51 @@
+[gd_scene load_steps=2 format=3 uid="uid://creditsscreen"]
+
+[ext_resource type="Script" path="res://src/Godot/CreditsScreen.gd" id="1"]
+
+[node name="CreditsScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+scroll_track_path = NodePath("Background/ScrollClip/ScrollTrack")
+back_button_path = NodePath("Background/BackButton")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.08, 0.1, 1)
+
+[node name="ScrollClip" type="Control" parent="Background"]
+clip_contents = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ScrollTrack" type="VBoxContainer" parent="Background/ScrollClip"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -520.0
+offset_right = 520.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="BackButton" type="Button" parent="Background"]
+layout_mode = 1
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 224.0
+offset_bottom = 120.0
+theme_override_font_sizes/font_size = 96
+text = "BACK"

@@ -1,12 +1,12 @@
 class_name SoundManager
 extends Node
 
-const _UI_CLICK_PATH: String = "res://audio/sfx/ui_click.ogg"
-const _UI_SELECT_PATH: String = "res://audio/sfx/ui_select.ogg"
-const _PAINT_PATH: String = "res://audio/sfx/paint.ogg"
-const _PAINT_TICK_PATH: String = "res://audio/sfx/paint_tick.ogg"
-const _BUILD_PATH: String = "res://audio/sfx/build.ogg"
-const _DELETE_PATH: String = "res://audio/sfx/delete.ogg"
+const _UI_CLICK_PATH: String = "res://sfx/ui_click.ogg"
+const _UI_SELECT_PATH: String = "res://sfx/ui_select.ogg"
+const _PAINT_PATH: String = "res://sfx/paint.ogg"
+const _PAINT_TICK_PATH: String = "res://sfx/paint_tick.ogg"
+const _BUILD_PATH: String = "res://sfx/build.ogg"
+const _DELETE_PATH: String = "res://sfx/delete.ogg"
 
 var _ui_player: AudioStreamPlayer
 var _action_player: AudioStreamPlayer
@@ -73,4 +73,5 @@ func _play_on(player: AudioStreamPlayer, stream: AudioStream) -> void:
 func _try_load(path: String) -> AudioStream:
 	if ResourceLoader.exists(path):
 		return load(path)
+	push_warning("SoundManager: sfx file not found: %s" % path)
 	return null

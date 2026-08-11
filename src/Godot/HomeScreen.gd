@@ -1,16 +1,17 @@
 class_name HomeScreen
 extends Control
 
-signal new_game_requested
 signal load_game_requested(slot_name: String)
-signal quit_requested
+signal back_requested
 
 const THUMBNAIL_DISPLAY_WIDTH: int = 450
 const THUMBNAIL_DISPLAY_HEIGHT: int = 300
 
 @export var grid_container_path: NodePath = ""
+@export var background_path: NodePath = ""
 
 var _grid_container: HFlowContainer = null
+var _background: ColorRect = null
 var _content: ContentRegistry = null
 var _sound_manager: SoundManager = null
 
@@ -18,6 +19,8 @@ var _sound_manager: SoundManager = null
 func _ready() -> void:
 	if not grid_container_path.is_empty():
 		_grid_container = get_node_or_null(grid_container_path)
+	if not background_path.is_empty():
+		_background = get_node_or_null(background_path)
 	if _content != null:
 		refresh_saves_list()
 
@@ -29,6 +32,14 @@ func initialize(content: ContentRegistry, sound_manager: SoundManager) -> void:
 		refresh_saves_list()
 
 
+## Matches this screen's background to whatever the Main Menu is currently tinted with — see
+## MainMenu.get_background_color(). Gallery doesn't roll its own palette; it just inherits
+## whatever's active so the two screens read as one continuous "menu" visually.
+func set_background_color(color: Color) -> void:
+	if _background != null:
+		_background.color = color
+
+
 func refresh_saves_list() -> void:
 	if _grid_container == null:
 		return
@@ -36,7 +47,7 @@ func refresh_saves_list() -> void:
 	for child in _grid_container.get_children():
 		child.queue_free()
 
-	_grid_container.add_child(_create_new_game_item())
+	_grid_container.add_child(_create_back_item())
 
 	var saves: Array = SaveFileManager.get_all_saves()
 	for save_meta: Dictionary in saves:
@@ -44,23 +55,21 @@ func refresh_saves_list() -> void:
 
 	if OS.has_feature("web"):
 		_grid_container.add_child(_create_fullscreen_item())
-	else:
-		_grid_container.add_child(_create_quit_item())
 
 
-func _create_new_game_item() -> Control:
+func _create_back_item() -> Control:
 	var container := PanelContainer.new()
 	container.custom_minimum_size = Vector2(THUMBNAIL_DISPLAY_WIDTH, THUMBNAIL_DISPLAY_HEIGHT)
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.15, 0.35, 0.15)
+	style.bg_color = Color(0.2, 0.2, 0.2)
 	style.set_corner_radius_all(8)
 	container.add_theme_stylebox_override("panel", style)
 
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var label := Label.new()
-	label.text = "NEW"
-	label.add_theme_color_override("font_color", Color(0.4, 0.7, 0.4))
+	label.text = "BACK"
+	label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 	center.add_child(label)
 	container.add_child(center)
 
@@ -71,10 +80,10 @@ func _create_new_game_item() -> Control:
 				if mb_event.button_index == MOUSE_BUTTON_LEFT and mb_event.pressed:
 					if _sound_manager != null:
 						_sound_manager.play_select()
-					new_game_requested.emit()
+					back_requested.emit()
 	)
-	container.mouse_entered.connect(func() -> void: style.bg_color = Color(0.2, 0.45, 0.2))
-	container.mouse_exited.connect(func() -> void: style.bg_color = Color(0.15, 0.35, 0.15))
+	container.mouse_entered.connect(func() -> void: style.bg_color = Color(0.27, 0.27, 0.27))
+	container.mouse_exited.connect(func() -> void: style.bg_color = Color(0.2, 0.2, 0.2))
 
 	return container
 
@@ -118,37 +127,6 @@ func _create_save_item(save_meta: Dictionary) -> Control:
 	)
 	container.mouse_entered.connect(func() -> void: style.bg_color = Color(0.2, 0.2, 0.2))
 	container.mouse_exited.connect(func() -> void: style.bg_color = Color(0.1, 0.1, 0.1))
-
-	return container
-
-
-func _create_quit_item() -> Control:
-	var container := PanelContainer.new()
-	container.custom_minimum_size = Vector2(THUMBNAIL_DISPLAY_WIDTH, THUMBNAIL_DISPLAY_HEIGHT)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.35, 0.15, 0.15)
-	style.set_corner_radius_all(8)
-	container.add_theme_stylebox_override("panel", style)
-
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var label := Label.new()
-	label.text = "QUIT"
-	label.add_theme_color_override("font_color", Color(0.7, 0.4, 0.4))
-	center.add_child(label)
-	container.add_child(center)
-
-	container.gui_input.connect(
-		func(event: InputEvent) -> void:
-			if event is InputEventMouseButton:
-				var mb_event: InputEventMouseButton = event
-				if mb_event.button_index == MOUSE_BUTTON_LEFT and mb_event.pressed:
-					if _sound_manager != null:
-						_sound_manager.play_select()
-					quit_requested.emit()
-	)
-	container.mouse_entered.connect(func() -> void: style.bg_color = Color(0.45, 0.2, 0.2))
-	container.mouse_exited.connect(func() -> void: style.bg_color = Color(0.35, 0.15, 0.15))
 
 	return container
 

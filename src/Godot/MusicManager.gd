@@ -58,6 +58,35 @@ func update_music_state(snapshot_theme: Dictionary) -> void:
 	_audio_player.play()
 
 
+## Direct (non-sim-driven) playback for menu/credits screens — as opposed to update_music_state,
+## which is driven by a Simulation's render snapshot. No-ops if this exact file is already
+## playing, so switching between two screens that share a track (e.g. Main Menu <-> Gallery,
+## both on wanderers_tale) doesn't restart it.
+func play_track(path: String) -> void:
+	# See stop()'s comment: GameRoot can call this during boot before this node's own _ready()
+	# has set up _audio_player.
+	if _audio_player == null:
+		return
+	if path == _current_music_file and _audio_player.playing:
+		return
+
+	if not ResourceLoader.exists(path):
+		push_warning("MusicManager: music file not found: %s" % path)
+		_audio_player.stop()
+		return
+
+	var stream: AudioStream = load(path)
+	if stream == null:
+		_audio_player.stop()
+		return
+
+	_audio_player.stream = stream
+	_current_stream_length = stream.get_length()
+	_current_music_file = path
+	_current_theme_name = ""
+	_audio_player.play()
+
+
 ## Stops playback and clears tracked theme/file state — without the reset, resuming a save whose
 ## restored theme happens to match what was already loaded (see ThemeSystem.restore_current_theme)
 ## would look like "no change" to update_music_state and silently never call play() again.
