@@ -1,6 +1,7 @@
 class_name MainMenu
 extends Control
 
+signal resume_requested(slot_name: String)
 signal new_game_requested
 signal gallery_requested
 signal credits_requested
@@ -38,10 +39,12 @@ func initialize(content: ContentRegistry, sound_manager: SoundManager) -> void:
 	_sound_manager = sound_manager
 
 
-## Called by GameRoot instead of a raw show() — re-rolls the palette every time the menu
-## becomes the active screen, same "pick a random palette" feel as the in-game palette cycler.
+## Called by GameRoot instead of a raw show() — rebuilds the button list (so Resume's presence
+## reflects whatever's on disk right now) and re-rolls the palette every time the menu becomes
+## the active screen, same "pick a random palette" feel as the in-game palette cycler.
 func on_shown() -> void:
 	show()
+	_build_buttons()
 	apply_random_palette()
 
 
@@ -57,6 +60,14 @@ func _build_buttons() -> void:
 	for child in _button_container.get_children():
 		child.queue_free()
 	_buttons.clear()
+
+	var most_recent_slot: String = _get_most_recent_save_slot()
+	if not most_recent_slot.is_empty():
+		var resume_btn := _create_button(
+			"RESUME", 64, func() -> void: _on_resume_pressed(most_recent_slot)
+		)
+		_button_container.add_child(resume_btn)
+		_buttons.append(resume_btn)
 
 	var new_town_btn := _create_button(
 		"NEW TOWN", 64, func() -> void: _on_action(new_game_requested)
@@ -97,6 +108,22 @@ func _on_action(requested_signal: Signal) -> void:
 	requested_signal.emit()
 
 
+func _on_resume_pressed(slot_name: String) -> void:
+	if _sound_manager != null:
+		_sound_manager.play_select()
+	resume_requested.emit(slot_name)
+
+
+## Empty string if there's no save to resume — SaveFileManager already returns saves sorted
+## newest first.
+func _get_most_recent_save_slot() -> String:
+	var saves: Array = SaveFileManager.get_all_saves()
+	if saves.is_empty():
+		return ""
+	var most_recent: Dictionary = saves[0]
+	return DefUtils.get_string(most_recent, "slot_name", "")
+
+
 func _on_fullscreen_pressed() -> void:
 	if _sound_manager != null:
 		_sound_manager.play_click()
@@ -129,8 +156,10 @@ func apply_random_palette() -> void:
 	if _title_label != null:
 		_title_label.add_theme_color_override("font_color", colors[0].darkened(0.4))
 
+	# Reversed so the "go" actions (Resume/New Town) land on the palette's cooler/greener end
+	# and "stop" (Quit) lands on the warmer/redder end, instead of the other way around.
 	for i in _buttons.size():
-		var color: Color = colors[i % colors.size()]
+		var color: Color = colors[(_buttons.size() - 1 - i) % colors.size()]
 		_style_button(_buttons[i], color)
 
 

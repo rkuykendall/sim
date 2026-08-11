@@ -48,6 +48,10 @@ var _content: ContentRegistry = null
 var _user_settings: UserSettings = null
 var _current_screen: _AppScreen = _AppScreen.MAIN_MENU
 var _current_save_slot: String = ""
+# True once the player has actually changed something (painted/deleted terrain, placed a
+# building) since the current game started or was last saved — an untouched game shouldn't
+# create/overwrite a save file just because an autosave interval or exit-to-menu happened.
+var _world_dirty: bool = false
 var _sim_speed: _SimSpeed = _SimSpeed.NORMAL
 var _accumulator: float = 0.0
 var _tick_delta: float = 0.0
@@ -177,6 +181,7 @@ func _ready() -> void:
 	if not main_menu_path.is_empty():
 		_main_menu = get_node_or_null(main_menu_path)
 		if _main_menu != null:
+			_main_menu.resume_requested.connect(_on_load_game_requested)
 			_main_menu.new_game_requested.connect(_on_new_game_requested)
 			_main_menu.gallery_requested.connect(_show_gallery)
 			_main_menu.credits_requested.connect(_show_credits)
@@ -324,7 +329,7 @@ func _on_music_finished() -> void:
 
 
 func _return_to_home() -> void:
-	if _sim != null and not _current_save_slot.is_empty():
+	if _sim != null and not _current_save_slot.is_empty() and _world_dirty:
 		SaveFileManager.write_save(_current_save_slot, _sim, _current_save_slot)
 	_show_main_menu()
 
@@ -362,6 +367,7 @@ func _initialize_game_world() -> void:
 	_selected_building_id = -1
 	_accumulator = 0.0
 	_time_since_autosave = 0.0
+	_world_dirty = false
 
 
 func _clear_all_nodes() -> void:
@@ -448,8 +454,14 @@ func _process(delta: float) -> void:
 func _perform_autosave() -> void:
 	if _sim == null or _current_save_slot.is_empty():
 		return
-	SaveFileManager.write_save(_current_save_slot, _sim, _current_save_slot)
+	# Always reset the timer, even when skipping the write — otherwise an untouched game would
+	# re-check (and re-skip) every single frame once past the interval instead of waiting another
+	# full interval.
 	_time_since_autosave = 0.0
+	if not _world_dirty:
+		return
+	SaveFileManager.write_save(_current_save_slot, _sim, _current_save_slot)
+	_world_dirty = false
 	print("[GameRoot] Autosaved: %s" % _current_save_slot)
 
 
@@ -545,7 +557,7 @@ func _handle_left_press(tile_coord: Vector2i) -> void:
 			tiles_to_update = _sim.delete_at_tile(tile_coord)
 			if _sound_manager != null:
 				_sound_manager.play_delete()
-		_sync_tiles(tiles_to_update)
+		_sync_edited_tiles(tiles_to_update)
 		return
 
 	if mode == BuildToolMode.Mode.FILL_SQUARE or mode == BuildToolMode.Mode.OUTLINE_SQUARE:
@@ -568,7 +580,7 @@ func _handle_left_press(tile_coord: Vector2i) -> void:
 			tiles_to_update = _sim.flood_delete(tile_coord)
 			if _sound_manager != null:
 				_sound_manager.play_delete()
-		_sync_tiles(tiles_to_update)
+		_sync_edited_tiles(tiles_to_update)
 		return
 
 	if mode == BuildToolMode.Mode.PLACE_BUILDING and BuildToolMode.selected_building_def_id != -1:
@@ -576,6 +588,7 @@ func _handle_left_press(tile_coord: Vector2i) -> void:
 			BuildToolMode.selected_building_def_id, tile_coord, BuildToolMode.selected_color_index
 		)
 		if result != -1:
+			_world_dirty = true
 			if _sound_manager != null:
 				_sound_manager.play_build()
 		return
@@ -623,11 +636,11 @@ func _handle_left_release() -> void:
 					BuildToolMode.selected_terrain_def_id,
 					BuildToolMode.selected_color_index
 				)
-				_sync_tiles(_sim.get_tiles_with_neighbors(painted))
+				_sync_edited_tiles(_sim.get_tiles_with_neighbors(painted))
 				if _sound_manager != null:
 					_sound_manager.play_paint()
 			else:
-				_sync_tiles(_sim.delete_rectangle(_brush_drag_start, _brush_drag_current))
+				_sync_edited_tiles(_sim.delete_rectangle(_brush_drag_start, _brush_drag_current))
 				if _sound_manager != null:
 					_sound_manager.play_delete()
 		else:
@@ -638,11 +651,13 @@ func _handle_left_release() -> void:
 					BuildToolMode.selected_terrain_def_id,
 					BuildToolMode.selected_color_index
 				)
-				_sync_tiles(_sim.get_tiles_with_neighbors(painted))
+				_sync_edited_tiles(_sim.get_tiles_with_neighbors(painted))
 				if _sound_manager != null:
 					_sound_manager.play_paint()
 			else:
-				_sync_tiles(_sim.delete_rectangle_outline(_brush_drag_start, _brush_drag_current))
+				_sync_edited_tiles(
+					_sim.delete_rectangle_outline(_brush_drag_start, _brush_drag_current)
+				)
 				if _sound_manager != null:
 					_sound_manager.play_delete()
 
@@ -670,7 +685,7 @@ func _handle_mouse_motion() -> void:
 			tiles_to_update = _sim.delete_at_tile(tile_coord)
 			if _sound_manager != null:
 				_sound_manager.play_paint_tick()
-		_sync_tiles(tiles_to_update)
+		_sync_edited_tiles(tiles_to_update)
 		return
 
 	var mode: BuildToolMode.Mode = BuildToolMode.current_mode
@@ -932,6 +947,15 @@ func _initialize_tile_nodes() -> void:
 			tile_node.add_child(overlay_sprite)
 
 			_tile_sprites[coord] = [base_sprite, overlay_sprite]
+
+
+## Wraps _sync_tiles for the handful of call sites that represent an actual player edit (paint,
+## delete, fill, flood) — as opposed to _sync_tiles' other callers (initial world load, palette
+## re-render), which redraw tiles without the world having actually changed.
+func _sync_edited_tiles(coords: Array[Vector2i]) -> void:
+	if not coords.is_empty():
+		_world_dirty = true
+	_sync_tiles(coords)
 
 
 func _sync_tiles(coords: Array) -> void:
