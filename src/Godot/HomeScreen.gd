@@ -53,9 +53,6 @@ func refresh_saves_list() -> void:
 	for save_meta: Dictionary in saves:
 		_grid_container.add_child(_create_save_item(save_meta))
 
-	if OS.has_feature("web"):
-		_grid_container.add_child(_create_fullscreen_item())
-
 
 func _create_back_item() -> Control:
 	var container := PanelContainer.new()
@@ -127,42 +124,5 @@ func _create_save_item(save_meta: Dictionary) -> Control:
 	)
 	container.mouse_entered.connect(func() -> void: style.bg_color = Color(0.2, 0.2, 0.2))
 	container.mouse_exited.connect(func() -> void: style.bg_color = Color(0.1, 0.1, 0.1))
-
-	return container
-
-
-func _create_fullscreen_item() -> Control:
-	var container := PanelContainer.new()
-	container.custom_minimum_size = Vector2(THUMBNAIL_DISPLAY_WIDTH, THUMBNAIL_DISPLAY_HEIGHT)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.15, 0.15, 0.35)
-	style.set_corner_radius_all(8)
-	container.add_theme_stylebox_override("panel", style)
-
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var label := Label.new()
-	label.text = "FULLSCREEN"
-	label.add_theme_color_override("font_color", Color(0.4, 0.4, 0.7))
-	center.add_child(label)
-	container.add_child(center)
-
-	container.gui_input.connect(
-		func(event: InputEvent) -> void:
-			if event is InputEventMouseButton:
-				var mb_event: InputEventMouseButton = event
-				if mb_event.button_index == MOUSE_BUTTON_LEFT and mb_event.pressed:
-					if _sound_manager != null:
-						_sound_manager.play_click()
-					var is_fullscreen := (
-						DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
-					)
-					if is_fullscreen:
-						DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-					else:
-						DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-	)
-	container.mouse_entered.connect(func() -> void: style.bg_color = Color(0.2, 0.2, 0.45))
-	container.mouse_exited.connect(func() -> void: style.bg_color = Color(0.15, 0.15, 0.35))
 
 	return container
