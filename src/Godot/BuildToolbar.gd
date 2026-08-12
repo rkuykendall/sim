@@ -397,6 +397,7 @@ func _update_all_buttons() -> void:
 			BuildToolMode.current_mode
 			in [
 				BuildToolMode.Mode.PLACE_TERRAIN,
+				BuildToolMode.Mode.BIG_BRUSH,
 				BuildToolMode.Mode.SPRAY_PAINT,
 				BuildToolMode.Mode.FILL_SQUARE,
 				BuildToolMode.Mode.OUTLINE_SQUARE,
